@@ -14,6 +14,7 @@ import { Logo } from "./Logo";
 // authOnly 항목은 로그인해야 쓸 수 있는 기능이라 비로그인 상태에선 노출하지 않는다.
 const NAV = [
   { href: "/search", label: "시설 찾기" },
+  { href: "/grade-test", label: "등급 테스트" },
   { href: "/care-request", label: "돌봄 요청", authOnly: true },
   { href: "/compare", label: "비교하기" },
   { href: "/favorites", label: "관심시설" },
