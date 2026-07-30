@@ -45,7 +45,7 @@ export function FacilityCard({
         type="button"
         aria-label={favorite ? "관심시설에서 제거" : "관심시설에 추가"}
         onClick={() => toggleFavorite(facility.id)}
-        className={`absolute left-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-full backdrop-blur transition-all duration-200 ease-snappy active:scale-90 ${
+        className={`absolute left-2.5 top-2.5 z-10 flex h-11 w-11 items-center justify-center rounded-full backdrop-blur transition-all duration-200 ease-snappy active:scale-90 ${
           favorite
             ? "scale-110 bg-white text-accent-500"
             : "bg-black/20 text-white hover:scale-110 hover:bg-white hover:text-accent-500"
@@ -60,7 +60,7 @@ export function FacilityCard({
           aria-label={selected ? "비교 목록에서 제거" : "비교 목록에 추가"}
           disabled={disabled}
           onClick={() => toggle(facility.id)}
-          className={`absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 text-sm font-bold transition-all duration-200 ease-snappy active:scale-90 ${
+          className={`absolute right-2.5 top-2.5 z-10 flex h-11 w-11 items-center justify-center rounded-full border-2 text-sm font-bold transition-all duration-200 ease-snappy active:scale-90 ${
             selected
               ? "scale-110 border-primary-500 bg-primary-500 text-white"
               : disabled

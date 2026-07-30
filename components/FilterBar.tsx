@@ -212,7 +212,9 @@ export function FilterBar({
 
   return (
     <div>
-      <div className="flex flex-wrap items-center gap-1 rounded-2xl bg-ink-100/40 p-1.5">
+      {/* 모바일에서는 줄바꿈 대신 옆으로 밀어보게 한다.
+          7개 필터가 3줄로 접히면 목록이 보이기도 전에 화면 절반을 필터가 차지한다. */}
+      <div className="-mx-1 flex items-center gap-1 overflow-x-auto rounded-2xl bg-ink-100/40 p-1.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden">
         <FilterDropdown
           label="시설 유형"
           icon={<Building2 size={15} />}
@@ -381,16 +383,17 @@ export function FilterBar({
           {activeChips.map((chip) => (
             <span
               key={chip.key}
-              className="flex items-center gap-1 rounded-lg bg-primary-50 py-1 pl-2.5 pr-1.5 text-xs font-medium text-primary-700"
+              className="flex items-center gap-0.5 rounded-lg bg-primary-50 py-0.5 pl-2.5 pr-0.5 text-xs font-medium text-primary-700"
             >
               {chip.label}
+              {/* X 버튼이 12px이라 손가락으로 누르기 어려워서 여백으로 영역을 넓혔다 */}
               <button
                 type="button"
                 aria-label={`${chip.label} 필터 제거`}
                 onClick={chip.onRemove}
-                className="rounded-full p-0.5 transition-colors duration-150 hover:bg-primary-100 active:scale-90"
+                className="flex h-8 w-8 items-center justify-center rounded-full transition-colors duration-150 hover:bg-primary-100 active:scale-90"
               >
-                <X size={12} />
+                <X size={13} />
               </button>
             </span>
           ))}

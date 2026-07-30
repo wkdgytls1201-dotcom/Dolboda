@@ -129,7 +129,7 @@ export function HeroBanner() {
             type="button"
             aria-label="이전 시설"
             onClick={prev}
-            className="absolute left-1 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/30 text-white opacity-0 backdrop-blur transition-all duration-200 ease-snappy hover:scale-110 hover:bg-white/50 active:scale-95 group-hover:opacity-100 sm:left-3"
+            className="absolute left-1 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/30 text-white opacity-0 backdrop-blur transition-all duration-200 ease-snappy hover:scale-110 hover:bg-white/50 active:scale-95 group-hover:opacity-100 sm:left-3"
           >
             <ChevronLeft size={20} />
           </button>
@@ -137,22 +137,27 @@ export function HeroBanner() {
             type="button"
             aria-label="다음 시설"
             onClick={next}
-            className="absolute right-1 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/30 text-white opacity-0 backdrop-blur transition-all duration-200 ease-snappy hover:scale-110 hover:bg-white/50 active:scale-95 group-hover:opacity-100 sm:right-3"
+            className="absolute right-1 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/30 text-white opacity-0 backdrop-blur transition-all duration-200 ease-snappy hover:scale-110 hover:bg-white/50 active:scale-95 group-hover:opacity-100 sm:right-3"
           >
             <ChevronRight size={20} />
           </button>
 
-          <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 gap-1.5">
+          {/* 점은 작게 보이되 손가락으로 누를 수 있게 버튼 자체는 위아래 여백을 넉넉히 준다 */}
+          <div className="absolute bottom-1 left-1/2 z-20 flex -translate-x-1/2 items-center gap-0.5">
             {SLIDES.map((_, i) => (
               <button
                 key={i}
                 type="button"
                 aria-label={`${i + 1}번째 시설로 이동`}
                 onClick={() => setIndex(i)}
-                className={`h-1.5 rounded-full transition-all ${
-                  i === index ? "w-6 bg-white" : "w-1.5 bg-white/50"
-                }`}
-              />
+                className="flex h-10 w-6 items-center justify-center"
+              >
+                <span
+                  className={`block h-1.5 rounded-full transition-all ${
+                    i === index ? "w-6 bg-white" : "w-1.5 bg-white/50"
+                  }`}
+                />
+              </button>
             ))}
           </div>
         </>

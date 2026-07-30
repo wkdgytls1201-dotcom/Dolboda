@@ -32,7 +32,7 @@ export function CompareSelectBar() {
                   type="button"
                   aria-label="선택 해제"
                   onClick={() => toggle(id)}
-                  className="rounded-full p-0.5 transition-colors duration-150 hover:bg-primary-100 active:scale-90"
+                  className="-my-1 flex h-8 w-8 items-center justify-center rounded-full transition-colors duration-150 hover:bg-primary-100 active:scale-90"
                 >
                   <X size={14} />
                 </button>

@@ -163,16 +163,17 @@ function SearchContent() {
         />
       </form>
 
-      <div className="sticky top-16 z-20 mb-6 flex flex-col gap-3 rounded-2xl bg-white/90 p-3 shadow-card backdrop-blur sm:flex-row sm:items-start sm:justify-between">
+      {/* top 값은 헤더 높이와 같아야 한다 (모바일 h-12 / 데스크톱 sm:h-16) */}
+      <div className="sticky top-12 z-20 mb-6 flex flex-col gap-2 rounded-2xl bg-white/90 p-2.5 shadow-card backdrop-blur sm:top-16 sm:flex-row sm:items-start sm:justify-between sm:gap-3 sm:p-3">
         <FilterBar filters={filters} onChange={setFilters} facilities={facilities} />
 
         <div className="flex shrink-0 items-center gap-2">
-          <div className="flex overflow-hidden rounded-xl border border-ink-100">
+          <div className="flex flex-1 overflow-hidden rounded-xl border border-ink-100 sm:flex-none">
             {(["distance", "grade", "rating"] as SortKey[]).map((key) => (
               <button
                 key={key}
                 onClick={() => setSortKey(key)}
-                className={`px-3 py-1.5 text-xs font-semibold transition-colors duration-150 ${
+                className={`min-h-[44px] flex-1 px-3 text-xs font-semibold transition-colors duration-150 sm:min-h-0 sm:flex-none sm:py-1.5 ${
                   sortKey === key
                     ? "bg-primary-500 text-white"
                     : "bg-white text-ink-500 hover:bg-ink-100"
@@ -183,11 +184,11 @@ function SearchContent() {
             ))}
           </div>
 
-          <div className="flex overflow-hidden rounded-xl border border-ink-100">
+          <div className="flex shrink-0 overflow-hidden rounded-xl border border-ink-100">
             <button
               onClick={() => setView("list")}
               aria-label="리스트 보기"
-              className={`p-2 transition-colors duration-150 ${
+              className={`flex min-h-[44px] w-11 items-center justify-center transition-colors duration-150 sm:min-h-0 sm:w-auto sm:p-2 ${
                 view === "list" ? "bg-primary-500 text-white" : "bg-white text-ink-500 hover:bg-ink-100"
               }`}
             >
@@ -196,7 +197,7 @@ function SearchContent() {
             <button
               onClick={() => setView("map")}
               aria-label="지도 보기"
-              className={`p-2 transition-colors duration-150 ${
+              className={`flex min-h-[44px] w-11 items-center justify-center transition-colors duration-150 sm:min-h-0 sm:w-auto sm:p-2 ${
                 view === "map" ? "bg-primary-500 text-white" : "bg-white text-ink-500 hover:bg-ink-100"
               }`}
             >
@@ -225,7 +226,7 @@ function SearchContent() {
             type="button"
             onClick={requestLocation}
             disabled={locating}
-            className="flex shrink-0 items-center gap-1 rounded-full bg-primary-500 px-3.5 py-1.5 text-xs font-bold text-white transition-colors duration-150 hover:bg-primary-600 disabled:opacity-60"
+            className="flex min-h-[44px] shrink-0 items-center gap-1 rounded-full bg-primary-500 px-4 text-xs font-bold text-white transition-colors duration-150 hover:bg-primary-600 disabled:opacity-60"
           >
             <Crosshair size={13} />
             {locating ? "위치 확인 중..." : "내 위치로 정렬"}

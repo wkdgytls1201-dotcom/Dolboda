@@ -21,7 +21,8 @@ export function InfoTooltip({ text }: { text: string }) {
         type="button"
         aria-label="용어 설명"
         onClick={() => setOpen((o) => !o)}
-        className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full text-ink-300 transition-colors duration-150 hover:text-primary-500"
+        // 아이콘은 작게 보이되 손가락으로 누를 수 있게 실제 버튼 영역은 넉넉히
+        className="-my-2 ml-0.5 inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-300 transition-colors duration-150 hover:bg-ink-100 hover:text-primary-500 active:scale-90"
       >
         <HelpCircle size={14} />
       </button>
