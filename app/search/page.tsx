@@ -69,6 +69,7 @@ function SearchContent() {
     limit: 300,
     types: filters.types,
     enabled: !useNearest,
+    cardView: true,
   });
   const nearestQuery = useNearbyFacilities(origin.lat, origin.lng, 300, {
     types: filters.types,

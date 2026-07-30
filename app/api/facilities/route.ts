@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { Prisma, FacilityType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { rowToFacility } from "@/lib/facilityRepo";
+import { rowToFacility, toCardFacility } from "@/lib/facilityRepo";
 
 const DEFAULT_LIMIT = 200;
 const MAX_LIMIT = 500;
@@ -39,5 +39,11 @@ export async function GET(req: Request) {
     prisma.facility.count({ where }),
   ]);
 
-  return NextResponse.json({ items: rows.map(rowToFacility), total });
+  const items = rows.map(rowToFacility);
+  // 목록 화면은 카드에 쓰는 몇 개 필드만 필요한데, 전체를 내려주면 300건에 290KB가 넘는다.
+  // view=card면 필요한 것만 추려 보낸다(상세 페이지는 ids= 조회라 영향 없음).
+  return NextResponse.json({
+    items: searchParams.get("view") === "card" ? items.map(toCardFacility) : items,
+    total,
+  });
 }

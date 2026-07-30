@@ -7,6 +7,7 @@ import {
   CARE_SERVICES,
   SERVICE_STEPS,
   SAMPLE_LISTINGS,
+  COMPARISON_ROWS,
   type CareService,
 } from "@/lib/careServices";
 
@@ -129,6 +130,59 @@ export function ServicesShowcase() {
           <ServiceCard key={s.slug} service={s} index={i} />
         ))}
       </div>
+
+      <section className="mt-10">
+        <h2 className="mb-1 text-center text-xl font-bold text-ink-900">한눈에 비교하기</h2>
+        <p className="mb-5 text-center text-sm leading-relaxed text-ink-500">
+          가장 많이 헷갈리시는 부분만 모았어요.
+        </p>
+        <div className="-mx-4 overflow-x-auto px-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <table className="w-full min-w-[560px] border-collapse overflow-hidden rounded-2xl bg-white text-sm shadow-card">
+            <thead>
+              <tr>
+                <th className="w-[128px] border-b border-ink-100 bg-ink-100/40 p-3 text-left text-xs font-bold text-ink-500">
+                  구분
+                </th>
+                {CARE_SERVICES.map((s) => (
+                  <th
+                    key={s.slug}
+                    className="border-b border-l border-ink-100 bg-ink-100/40 p-3 text-xs font-bold text-ink-900"
+                  >
+                    {s.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {COMPARISON_ROWS.map((row) => (
+                <tr key={row.label} className="even:bg-ivory-100/60">
+                  <th className="border-b border-ink-100 p-3 text-left text-xs font-semibold text-ink-500">
+                    {row.label}
+                  </th>
+                  {row.values.map((v, i) => (
+                    <td
+                      key={CARE_SERVICES[i].slug}
+                      className={`border-b border-l border-ink-100 p-3 text-center text-xs leading-relaxed ${
+                        // 우리가 처리할 수 있는지 여부는 눈에 띄게 구분해준다
+                        v === "요청 가능"
+                          ? "font-bold text-primary-600"
+                          : v === "안내만 제공"
+                          ? "font-bold text-ink-300"
+                          : "text-ink-700"
+                      }`}
+                    >
+                      {v}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-2 text-center text-[11px] text-ink-300">
+          표가 잘리면 옆으로 밀어서 보실 수 있어요
+        </p>
+      </section>
 
       <section className="mt-10">
         <div className="mb-1 flex items-center justify-center gap-2">

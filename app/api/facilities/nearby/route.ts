@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { rowToFacility } from "@/lib/facilityRepo";
+import { rowToFacility, toCardFacility } from "@/lib/facilityRepo";
 
 // "내 주변 시설"은 /api/facilities의 200건 제한 목록 안에서 계산하면 그 200건이
 // 우연히 어느 지역에 몰려있는지에 따라 전국 어디서든 같은 결과만 나온다.
@@ -44,7 +44,11 @@ export async function GET(req: Request) {
   const items = nearest
     .map((n) => rowById.get(n.id))
     .filter((r): r is NonNullable<typeof r> => !!r)
-    .map((row) => ({ ...rowToFacility(row), distanceKm: distanceById.get(row.id) }));
+    .map((row) => {
+      const f = rowToFacility(row);
+      const base = searchParams.get("view") === "card" ? toCardFacility(f) : f;
+      return { ...base, distanceKm: distanceById.get(row.id) };
+    });
 
   // 좌표가 있어 거리 계산이 가능한 전체 건수 (목록 위 "총 N개" 표시에 사용)
   const total = await prisma.facility.count({

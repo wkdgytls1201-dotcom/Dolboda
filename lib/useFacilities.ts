@@ -10,6 +10,8 @@ export interface FacilitiesQuery {
   types?: string[];
   /** false면 요청을 보내지 않는다(다른 소스를 쓰는 동안 낭비되는 호출 방지) */
   enabled?: boolean;
+  /** 목록 카드용 슬림 응답을 받는다(상세 필드 제외) */
+  cardView?: boolean;
 }
 
 interface FacilitiesResult {
@@ -22,7 +24,7 @@ interface FacilitiesResult {
 // 멈춘다. q(검색어)/limit으로 서버에서 좁힌 결과만 받아온다. q가 비어있으면 최근 등록순
 // limit건만 받아오므로, 검색창에 입력해야 원하는 시설을 찾을 수 있다.
 export function useFacilities(query: FacilitiesQuery = {}): FacilitiesResult {
-  const { q = "", limit = 200, enabled = true } = query;
+  const { q = "", limit = 200, enabled = true, cardView = false } = query;
   // 배열을 그대로 의존성에 쓰면 매 렌더마다 새 배열이라 무한 요청이 된다.
   const typeKey = (query.types ?? []).join(",");
   const [state, setState] = useState<{ facilities: Facility[]; total: number }>({
@@ -41,6 +43,7 @@ export function useFacilities(query: FacilitiesQuery = {}): FacilitiesResult {
     const params = new URLSearchParams();
     if (q) params.set("q", q);
     if (typeKey) params.set("type", typeKey);
+    if (cardView) params.set("view", "card");
     params.set("limit", String(limit));
 
     fetch(`/api/facilities?${params}`)
@@ -57,7 +60,7 @@ export function useFacilities(query: FacilitiesQuery = {}): FacilitiesResult {
     return () => {
       cancelled = true;
     };
-  }, [q, limit, typeKey, enabled]);
+  }, [q, limit, typeKey, enabled, cardView]);
 
   return { facilities: state.facilities, total: state.total, loading };
 }
@@ -120,7 +123,7 @@ export function useNearbyFacilities(
     }
     let cancelled = false;
     setLoading(true);
-    const params = new URLSearchParams({ lat: String(lat), lng: String(lng), limit: String(limit) });
+    const params = new URLSearchParams({ lat: String(lat), lng: String(lng), limit: String(limit), view: "card" });
     if (typeKey) params.set("type", typeKey);
 
     fetch(`/api/facilities/nearby?${params}`)
