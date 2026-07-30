@@ -15,6 +15,7 @@ import { Logo } from "./Logo";
 const NAV = [
   // highlight: 다른 메뉴와 색을 달리해 눈에 띄게 (신규·핵심 기능)
   { href: "/grade-test", label: "등급 테스트", highlight: true },
+  { href: "/services", label: "돌봄 서비스" },
   { href: "/search", label: "시설 찾기" },
   { href: "/compare", label: "시설 비교" },
   { href: "/favorites", label: "관심시설" },

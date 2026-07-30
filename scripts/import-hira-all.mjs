@@ -256,6 +256,10 @@ for (const f of facilities) {
        phone = COALESCE(EXCLUDED.phone, "Facility".phone),
        "establishedYear" = COALESCE(EXCLUDED."establishedYear", "Facility"."establishedYear"),
        "sourceUpdatedAt" = EXCLUDED."sourceUpdatedAt",
+       -- extra를 빼먹으면 상세 지표(인력등급·병상·진료과목)를 받아오고도 저장되지 않는다.
+       -- 단, --detail 없이 돌린 회차가 기존 상세를 빈 값으로 덮어쓰지 않도록 주의할 것.
+       parking = COALESCE(EXCLUDED.parking, "Facility".parking),
+       extra = EXCLUDED.extra,
        "updatedAt" = now()
      RETURNING (xmax = 0) AS is_insert`,
     [

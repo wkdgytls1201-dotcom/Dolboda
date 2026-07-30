@@ -1,0 +1,201 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { ArrowRight, Check, Info, ChevronDown } from "lucide-react";
+import {
+  CARE_SERVICES,
+  SERVICE_STEPS,
+  SAMPLE_LISTINGS,
+  type CareService,
+} from "@/lib/careServices";
+
+function ServiceCard({ service, index }: { service: CareService; index: number }) {
+  const [open, setOpen] = useState(index === 0);
+  const Icon = service.icon;
+
+  return (
+    <article
+      className={`group relative overflow-hidden rounded-3xl border border-ink-100 bg-white transition-all duration-300 ${service.accent.ring} ${
+        open ? "shadow-card-hover" : "shadow-card hover:-translate-y-0.5"
+      }`}
+    >
+      {/* 카드 위쪽에 은은하게 깔리는 색 — 유형마다 다른 인상을 준다 */}
+      <div
+        className={`pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-gradient-to-br ${service.accent.glow} to-transparent blur-2xl`}
+      />
+
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="relative flex w-full items-center gap-4 p-5 text-left sm:p-6"
+      >
+        <span
+          className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${service.accent.icon} transition-transform duration-300 group-hover:scale-105`}
+        >
+          <Icon size={24} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="mb-1 flex flex-wrap items-center gap-2">
+            <span className="text-lg font-bold text-ink-900">{service.label}</span>
+            {service.action.kind === "guide" && (
+              <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${service.accent.badge}`}>
+                제도 안내
+              </span>
+            )}
+          </span>
+          <span className="block text-sm leading-relaxed text-ink-500">{service.tagline}</span>
+        </span>
+        <ChevronDown
+          size={20}
+          className={`shrink-0 text-ink-300 transition-transform duration-300 ${
+            open ? "rotate-180" : ""
+          }`}
+        />
+      </button>
+
+      {/* 펼침 영역 — grid-template-rows 트랜지션으로 높이를 몰라도 부드럽게 열린다 */}
+      <div
+        className={`grid transition-all duration-300 ease-snappy ${
+          open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+        }`}
+      >
+        <div className="overflow-hidden">
+          <div className="relative border-t border-ink-100 p-5 sm:p-6">
+            <div className="mb-5 grid gap-5 sm:grid-cols-2">
+              <div>
+                <h3 className="mb-2.5 text-xs font-bold text-ink-300">이런 분께 맞아요</h3>
+                <ul className="space-y-2">
+                  {service.fitFor.map((t) => (
+                    <li key={t} className="flex gap-2 text-sm leading-relaxed text-ink-700">
+                      <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-ink-300" />
+                      {t}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h3 className="mb-2.5 text-xs font-bold text-ink-300">
+                  {service.action.kind === "guide" ? "어떻게 되나요" : "이런 걸 도와드려요"}
+                </h3>
+                <ul className="space-y-2">
+                  {service.includes.map((t) => (
+                    <li key={t} className="flex gap-2 text-sm leading-relaxed text-ink-700">
+                      <Check size={14} className="mt-1 shrink-0 text-primary-500" />
+                      {t}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            <div className="mb-5 flex gap-2.5 rounded-2xl bg-ink-100/40 p-4">
+              <Info size={15} className="mt-0.5 shrink-0 text-ink-300" />
+              <p className="text-xs leading-relaxed text-ink-500">{service.note}</p>
+            </div>
+
+            {service.action.kind === "request" ? (
+              <Link
+                href="/care-request"
+                className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-2xl bg-primary-500 text-sm font-bold text-white shadow-soft transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:bg-primary-600 hover:shadow-card-hover active:translate-y-0 active:scale-[0.99]"
+              >
+                {service.action.label}
+                <ArrowRight size={16} />
+              </Link>
+            ) : (
+              <a
+                href="https://www.longtermcare.or.kr"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-2xl border border-ink-100 text-sm font-bold text-ink-700 transition-colors duration-200 hover:bg-ink-100"
+              >
+                {service.action.label}
+                <ArrowRight size={16} />
+              </a>
+            )}
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+export function ServicesShowcase() {
+  return (
+    <>
+      <div className="space-y-3">
+        {CARE_SERVICES.map((s, i) => (
+          <ServiceCard key={s.slug} service={s} index={i} />
+        ))}
+      </div>
+
+      <section className="mt-10">
+        <div className="mb-1 flex items-center justify-center gap-2">
+          <h2 className="text-center text-xl font-bold text-ink-900">이렇게 올라와요</h2>
+          <span className="rounded-full bg-ink-100 px-2 py-0.5 text-[11px] font-bold text-ink-500">
+            예시
+          </span>
+        </div>
+        <p className="mb-5 text-center text-sm leading-relaxed text-ink-500">
+          아래는 실제 등록된 요청이 아니라 화면을 보여드리기 위한 예시예요.
+        </p>
+        <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {SAMPLE_LISTINGS.map((s) => (
+            <div
+              key={s.place}
+              className="w-[270px] shrink-0 snap-start rounded-2xl border border-dashed border-ink-100 bg-white/70 p-4"
+            >
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${s.badge}`}>
+                  {s.type}
+                </span>
+                <span className="text-[11px] font-bold text-ink-300">예시</span>
+              </div>
+              <p className="mb-2 truncate text-sm font-bold text-ink-900">{s.place}</p>
+              <dl className="space-y-1 text-xs">
+                <div className="flex gap-2">
+                  <dt className="w-11 shrink-0 text-ink-300">기간</dt>
+                  <dd className="font-medium text-ink-700">
+                    {s.period} ({s.days}일)
+                  </dd>
+                </div>
+                <div className="flex gap-2">
+                  <dt className="w-11 shrink-0 text-ink-300">시간</dt>
+                  <dd className="font-medium text-ink-700">{s.time}</dd>
+                </div>
+                <div className="flex gap-2">
+                  <dt className="w-11 shrink-0 text-ink-300">대상</dt>
+                  <dd className="font-medium text-ink-700">{s.target}</dd>
+                </div>
+              </dl>
+              <p className="mt-2 border-t border-ink-100 pt-2 text-xs leading-relaxed text-ink-500">
+                {s.detail}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="mt-10">
+        <h2 className="mb-1 text-center text-xl font-bold text-ink-900">어떻게 진행되나요</h2>
+        <p className="mb-6 text-center text-sm text-ink-500">
+          요청을 올리시면 시터가 지원하고, 보호자가 직접 고르시는 방식이에요.
+        </p>
+        <ol className="relative space-y-4 before:absolute before:left-[19px] before:top-4 before:h-[calc(100%-2rem)] before:w-px before:bg-ink-100">
+          {SERVICE_STEPS.map((step, i) => (
+            <li key={step.title} className="relative flex gap-4">
+              <span className="z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-500 text-sm font-bold text-white shadow-soft">
+                {i + 1}
+              </span>
+              <span className="min-w-0 flex-1 rounded-2xl border border-ink-100 bg-white p-4">
+                <span className="block text-sm font-bold text-ink-900">{step.title}</span>
+                <span className="mt-1 block text-xs leading-relaxed text-ink-500">{step.desc}</span>
+              </span>
+            </li>
+          ))}
+        </ol>
+      </section>
+    </>
+  );
+}
