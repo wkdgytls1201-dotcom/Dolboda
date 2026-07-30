@@ -69,6 +69,17 @@ export function FacilityThumbnail({
   facility: Facility;
   className?: string;
 }) {
+  // 시설이 동의하고 제공한 실제 사진이 있으면 로드뷰/일러스트/스톡사진보다 항상 우선한다.
+  if (facility.photos && facility.photos.length > 0) {
+    return (
+      <img
+        src={facility.photos[0]}
+        alt=""
+        className={`h-full w-full object-cover ${className}`}
+      />
+    );
+  }
+
   if (facility.dataSource === "public") {
     if (facility.lat !== undefined && facility.lng !== undefined) {
       return (
