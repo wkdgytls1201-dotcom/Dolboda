@@ -37,7 +37,13 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     title: "돌보다 — 전국 요양병원·요양시설 찾기·비교",
     description: SITE_DESCRIPTION,
-    images: [{ url: "/logo.png", width: 512, height: 512, alt: SITE_NAME }],
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: SITE_NAME }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "돌보다 — 전국 요양병원·요양시설 찾기·비교",
+    description: SITE_DESCRIPTION,
+    images: ["/og.png"],
   },
   robots: { index: true, follow: true },
   // 서치콘솔 소유 확인 코드 — 어차피 HTML에 공개되는 값이라 코드에 직접 둔다.

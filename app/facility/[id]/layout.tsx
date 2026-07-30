@@ -3,6 +3,7 @@ import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { FACILITY_TYPE_LABEL, type FacilityType } from "@/lib/types";
 import { SITE_URL } from "@/lib/siteConfig";
+import { findRegionByAddress, sigunguOf } from "@/lib/regionSeo";
 
 // generateMetadata와 레이아웃 렌더가 같은 요청 안에서 한 번만 조회하도록 캐시.
 const getFacility = cache((id: string) =>
@@ -60,29 +61,62 @@ export default async function FacilityLayout({
 }) {
   const facility = await getFacility(params.id);
 
-  // 지역 검색 노출용 구조화 데이터 — 좌표(geo)가 있으면 함께 제공한다.
-  const jsonLd = facility
-    ? {
-        "@context": "https://schema.org",
-        "@type": facility.facilityType === "NURSING_HOSPITAL" ? "Hospital" : "LocalBusiness",
-        name: facility.name,
-        url: `${SITE_URL}/facility/${facility.id}`,
-        address: {
-          "@type": "PostalAddress",
-          streetAddress: facility.address,
-          addressCountry: "KR",
-        },
-        ...(facility.phone && { telephone: facility.phone }),
-        ...(facility.lat != null &&
-          facility.lng != null && {
-            geo: {
-              "@type": "GeoCoordinates",
-              latitude: facility.lat,
-              longitude: facility.lng,
-            },
-          }),
+  // 지역 검색 노출용 구조화 데이터 — 좌표(geo)와 시/도·시/군/구를 함께 제공한다.
+  let jsonLd: object | null = null;
+  if (facility) {
+    const region = findRegionByAddress(facility.address);
+    const sigungu = sigunguOf(facility.address);
+    const facilityUrl = `${SITE_URL}/facility/${facility.id}`;
+
+    const place = {
+      "@type": facility.facilityType === "NURSING_HOSPITAL" ? "Hospital" : "LocalBusiness",
+      name: facility.name,
+      url: facilityUrl,
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: facility.address,
+        ...(region && { addressRegion: region.full }),
+        ...(sigungu && { addressLocality: sigungu }),
+        addressCountry: "KR",
+      },
+      ...(facility.phone && { telephone: facility.phone }),
+      ...(facility.lat != null &&
+        facility.lng != null && {
+          geo: {
+            "@type": "GeoCoordinates",
+            latitude: facility.lat,
+            longitude: facility.lng,
+          },
+        }),
+    };
+
+    // 홈 → 시/도 → 시/군/구 → 시설 (지역 랜딩 페이지로 연결되는 크롤 경로)
+    const crumbs: { name: string; item: string }[] = [{ name: "돌보다", item: SITE_URL }];
+    if (region) {
+      const sidoUrl = `${SITE_URL}/region/${encodeURIComponent(region.slug)}`;
+      crumbs.push({ name: `${region.label} 요양시설`, item: sidoUrl });
+      if (sigungu) {
+        crumbs.push({ name: `${sigungu} 요양시설`, item: `${sidoUrl}/${encodeURIComponent(sigungu)}` });
       }
-    : null;
+    }
+    crumbs.push({ name: facility.name, item: facilityUrl });
+
+    jsonLd = {
+      "@context": "https://schema.org",
+      "@graph": [
+        place,
+        {
+          "@type": "BreadcrumbList",
+          itemListElement: crumbs.map((c, i) => ({
+            "@type": "ListItem",
+            position: i + 1,
+            name: c.name,
+            item: c.item,
+          })),
+        },
+      ],
+    };
+  }
 
   return (
     <>
