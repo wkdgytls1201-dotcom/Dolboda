@@ -85,38 +85,45 @@ export default function MyPageAccountPage() {
         </button>
       </div>
 
-      <div className="mt-10 text-right">
+      {/* 회원탈퇴 — 일부러 화면 한참 아래, 푸터 직전에 흐린 글씨로 둔다.
+          찾는 사람만 찾을 수 있으면 충분한 기능이라 시각적 무게를 최소화. */}
+      <div className="mt-32 border-t border-ink-100/60 pt-6 text-right sm:mt-40">
         {!confirming ? (
           <button
             type="button"
             onClick={() => setConfirming(true)}
-            className="text-[11px] text-ink-300 hover:text-ink-400"
+            className="text-[10px] text-ink-100 transition-colors duration-150 hover:text-ink-300"
           >
             회원탈퇴
           </button>
         ) : (
-          <div className="rounded-xl bg-primary-50 p-4 text-center">
-            <p className="mb-3 text-sm text-ink-700">
-              정말 탈퇴하시겠어요? 관심시설·비교함·모심시터 프로필 등 계정 정보가 모두
-              삭제되고 되돌릴 수 없어요.
+          <div className="rounded-2xl border border-ink-100 bg-white p-5 text-center shadow-card">
+            <p className="mb-1 text-sm font-bold text-ink-900">잠깐만요, 탈퇴하시면</p>
+            <ul className="mx-auto mb-4 max-w-[280px] space-y-1 text-left text-xs leading-relaxed text-ink-500">
+              <li>· 관심시설과 비교함 기록이 모두 삭제돼요</li>
+              <li>· 모심시터 프로필과 지원 내역이 사라져요</li>
+              <li>· 진행 중인 돌봄 요청도 함께 취소돼요</li>
+              <li>· 삭제된 정보는 되돌릴 수 없어요</li>
+            </ul>
+            <p className="mb-4 text-xs text-ink-500">
+              잠시 쉬고 싶으신 거라면 로그아웃만 해도 충분해요.
             </p>
-            <div className="flex justify-center gap-2">
-              <button
-                type="button"
-                onClick={() => setConfirming(false)}
-                className="rounded-lg px-4 py-2 text-sm font-semibold text-ink-500 hover:bg-white"
-              >
-                취소
-              </button>
-              <button
-                type="button"
-                disabled={deleting}
-                onClick={handleDeleteAccount}
-                className="rounded-lg bg-primary-500 px-4 py-2 text-sm font-bold text-white hover:bg-primary-600 disabled:opacity-60"
-              >
-                {deleting ? "탈퇴 처리 중..." : "탈퇴하기"}
-              </button>
-            </div>
+            {/* 눈에 띄는 큰 버튼 = 취소(안전한 선택), 탈퇴는 작은 텍스트로 */}
+            <button
+              type="button"
+              onClick={() => setConfirming(false)}
+              className="min-h-[48px] w-full rounded-xl bg-primary-500 text-sm font-bold text-white shadow-soft transition-all duration-200 hover:bg-primary-600 active:scale-[0.98]"
+            >
+              계속 이용할게요
+            </button>
+            <button
+              type="button"
+              disabled={deleting}
+              onClick={handleDeleteAccount}
+              className="mt-3 text-[11px] text-ink-300 underline underline-offset-2 transition-colors duration-150 hover:text-ink-500 disabled:opacity-60"
+            >
+              {deleting ? "탈퇴 처리 중..." : "그래도 탈퇴할게요"}
+            </button>
           </div>
         )}
       </div>
