@@ -280,22 +280,34 @@ export default function FacilityDetailPage() {
               </p>
             </DetailSection>
 
-            {/* 의사(간호인력) 등급 */}
+            {/* 의사(간호인력) 등급 — 값이 없는 시설은 0등급처럼 보이지 않게 안내로 대체 */}
             <DetailSection id="staff-grade" title="의사(간호인력) 등급" tooltip={TOOLTIPS.nurseGrade}>
               <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="rounded-2xl bg-mint-50 p-4">
                   <p className="text-sm font-medium text-ink-500">의사 인력</p>
-                  <p className="mb-3 mt-0.5 text-2xl font-extrabold text-mint-700">
-                    {hospital.doctorGrade}등급
-                  </p>
-                  <GradeScaleBar grade={hospital.doctorGrade} levels={4} />
+                  {hospital.doctorGrade > 0 ? (
+                    <>
+                      <p className="mb-3 mt-0.5 text-2xl font-extrabold text-mint-700">
+                        {hospital.doctorGrade}등급
+                      </p>
+                      <GradeScaleBar grade={hospital.doctorGrade} levels={4} />
+                    </>
+                  ) : (
+                    <p className="mt-1.5 text-sm text-ink-300">아직 공개된 등급이 없어요</p>
+                  )}
                 </div>
                 <div className="rounded-2xl bg-primary-50 p-4">
                   <p className="text-sm font-medium text-ink-500">간호 인력</p>
-                  <p className="mb-3 mt-0.5 text-2xl font-extrabold text-primary-700">
-                    {hospital.nurseGrade}등급
-                  </p>
-                  <GradeScaleBar grade={hospital.nurseGrade} levels={6} />
+                  {hospital.nurseGrade > 0 ? (
+                    <>
+                      <p className="mb-3 mt-0.5 text-2xl font-extrabold text-primary-700">
+                        {hospital.nurseGrade}등급
+                      </p>
+                      <GradeScaleBar grade={hospital.nurseGrade} levels={6} />
+                    </>
+                  ) : (
+                    <p className="mt-1.5 text-sm text-ink-300">아직 공개된 등급이 없어요</p>
+                  )}
                 </div>
               </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

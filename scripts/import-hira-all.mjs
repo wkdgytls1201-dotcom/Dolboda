@@ -29,7 +29,11 @@ const env = Object.fromEntries(
 const KEY = env.HIRA_SERVICE_KEY;
 const INFO_BASE = env.HIRA_HOSP_INFO_BASE;
 const EVAL_BASE = env.HIRA_HOSP_EVAL_BASE;
+const DETAIL_BASE = env.HIRA_HOSP_DETAIL_BASE;
+const NONPAY_BASE = env.HIRA_NONPAYMENT_BASE;
 const NURSING_HOSPITAL_CL_CD = "28";
+// --detail 을 붙이면 병원마다 상세 API를 더 호출해 인력등급·병상·진료과목까지 채운다(느림).
+const WITH_DETAIL = process.argv.includes("--detail");
 
 async function callApi(base, operation, params) {
   const qs = new URLSearchParams({ serviceKey: KEY, _type: "json", ...params });
@@ -99,11 +103,75 @@ for (let i = 0; i < hospitals.length; i += 6) {
 }
 console.log(`\n등급 확보 ${gradeByYkiho.size}곳 (조회 실패 ${evalFailed}건)`);
 
-// --- 3. 우리 Facility 형태로 변환 ---
+// --- 3. (선택) 병원별 상세 지표 ---
 const num = (v) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
 };
+
+const detailByYkiho = new Map();
+if (WITH_DETAIL) {
+  console.log("병원별 상세 정보 조회 중... (시간이 좀 걸려요)");
+  let done = 0;
+
+  async function fetchDetail(h) {
+    const ykiho = h.ykiho;
+    try {
+      const [nursingGrd, depts, equip, eqp, dtl, etcStaff, nonpay] = await Promise.all([
+        callApi(DETAIL_BASE, "getNursigGrdInfo2.8", { ykiho, numOfRows: 10 }).catch(() => []),
+        callApi(DETAIL_BASE, "getDgsbjtInfo2.8", { ykiho, numOfRows: 50 }).catch(() => []),
+        callApi(DETAIL_BASE, "getMedOftInfo2.8", { ykiho, numOfRows: 50 }).catch(() => []),
+        callApi(DETAIL_BASE, "getEqpInfo2.8", { ykiho, numOfRows: 1 }).catch(() => []),
+        callApi(DETAIL_BASE, "getDtlInfo2.8", { ykiho, numOfRows: 1 }).catch(() => []),
+        callApi(DETAIL_BASE, "getEtcHstInfo2.8", { ykiho, numOfRows: 20 }).catch(() => []),
+        callApi(NONPAY_BASE, "getNonPaymentItemHospDtlList", { ykiho, numOfRows: 8 }).catch(() => []),
+      ]);
+
+      const eqpInfo = eqp[0];
+      const dtlInfo = dtl[0];
+      const staffOf = (nameKr) => num(etcStaff.find((r) => r.dtlGnlNopCdNm === nameKr)?.gnlNopCnt);
+
+      detailByYkiho.set(ykiho, {
+        // tyCd 03=의사, 04=간호 인력등급
+        doctorGrade: num(nursingGrd.find((r) => r.tyCd === "03")?.careGrd),
+        nurseGrade: num(nursingGrd.find((r) => r.tyCd === "04")?.careGrd),
+        departments: depts.map((d) => ({ name: d.dgsbjtCdNm, doctorCount: num(d.dgsbjtPrSdrCnt) })),
+        equipment: equip.map((e) => ({ name: e.oftCdNm, count: num(e.oftCnt) })),
+        nonCoveredFees: nonpay
+          .filter((n) => n.yadmNpayCdNm || n.npayKorNm)
+          .map((n) => ({ name: n.yadmNpayCdNm || n.npayKorNm, min: num(n.curAmt), max: num(n.curAmt) })),
+        facilityStatus: {
+          generalBeds: num(eqpInfo?.stdSickbdCnt),
+          upgradeBeds: num(eqpInfo?.hghrSickbdCnt),
+          physicalTherapyRooms: num(eqpInfo?.ptrmCnt),
+          isolationRooms: num(eqpInfo?.isnrSbdCnt),
+        },
+        emergencyRoom: { day: dtlInfo?.emyDayYn === "Y", night: dtlInfo?.emyNgtYn === "Y" },
+        parking: dtlInfo?.parkQty
+          ? { spots: num(dtlInfo.parkQty), isFree: dtlInfo.parkXpnsYn !== "Y" }
+          : null,
+        staffExtra: {
+          socialWorkers: staffOf("사회복지사"),
+          physicalTherapists: staffOf("물리치료사"),
+          occupationalTherapists: staffOf("작업치료사"),
+          pharmacists: staffOf("약사"),
+        },
+      });
+    } catch {
+      /* 실패한 병원은 기본값 유지 */
+    } finally {
+      if (++done % 50 === 0) process.stdout.write(`\r  ${done}/${hospitals.length}`);
+    }
+  }
+
+  for (let i = 0; i < hospitals.length; i += 5) {
+    await Promise.all(hospitals.slice(i, i + 5).map(fetchDetail));
+  }
+  const withGradeInfo = [...detailByYkiho.values()].filter((d) => d.doctorGrade > 0).length;
+  console.log(`\n상세 확보 ${detailByYkiho.size}곳 (인력등급 있는 곳 ${withGradeInfo}곳)`);
+}
+
+// --- 4. 우리 Facility 형태로 변환 ---
 
 const facilities = hospitals
   .filter((h) => h.yadmNm && h.addr)
@@ -114,6 +182,7 @@ const facilities = hospitals
     const lng = Number(h.XPos);
     const estbDd = String(h.estbDd ?? "");
     const doctors = num(h.drTotCnt);
+    const d = detailByYkiho.get(h.ykiho);
 
     return {
       id: `hira-${hashId(name + address)}`,
@@ -128,30 +197,30 @@ const facilities = hospitals
       phone: h.telno ? String(h.telno).trim() : null,
       establishedYear: /^\d{8}$/.test(estbDd) ? Number(estbDd.slice(0, 4)) : null,
       sourceUpdatedAt: new Date().toISOString().slice(0, 10),
-      parking: null,
-      // 상세 지표는 병원마다 별도 API를 6번씩 더 호출해야 해서 여기서는 비워둔다.
-      // 화면은 0이나 빈 배열이면 해당 섹션을 감추도록 되어 있다.
+      parking: d?.parking ?? null,
+      // --detail 없이 돌리면 상세 지표는 0/빈 배열로 남고, 화면에서는 "아직 공개된
+      // 정보가 없어요"로 표시된다(0등급처럼 보이지 않게).
       extra: {
-        doctorGrade: 0,
-        nurseGrade: 0,
-        nonCoveredFees: [],
-        departments: [],
+        doctorGrade: d?.doctorGrade ?? 0,
+        nurseGrade: d?.nurseGrade ?? 0,
+        nonCoveredFees: d?.nonCoveredFees ?? [],
+        departments: d?.departments ?? [],
         staff: {
-          generalDoctors: doctors,
-          specialistDoctors: 0,
-          socialWorkers: 0,
-          physicalTherapists: 0,
-          occupationalTherapists: 0,
-          pharmacists: 0,
+          generalDoctors: num(h.mdeptGdrCnt) || doctors,
+          specialistDoctors: num(h.mdeptSdrCnt),
+          socialWorkers: d?.staffExtra.socialWorkers ?? 0,
+          physicalTherapists: d?.staffExtra.physicalTherapists ?? 0,
+          occupationalTherapists: d?.staffExtra.occupationalTherapists ?? 0,
+          pharmacists: d?.staffExtra.pharmacists ?? 0,
         },
-        facilityStatus: {
+        facilityStatus: d?.facilityStatus ?? {
           generalBeds: 0,
           upgradeBeds: 0,
           physicalTherapyRooms: 0,
           isolationRooms: 0,
         },
-        emergencyRoom: { day: false, night: false },
-        equipment: [],
+        emergencyRoom: d?.emergencyRoom ?? { day: false, night: false },
+        equipment: d?.equipment ?? [],
       },
     };
   });

@@ -14,7 +14,8 @@ import { Logo } from "./Logo";
 // authOnly 항목은 로그인해야 쓸 수 있는 기능이라 비로그인 상태에선 노출하지 않는다.
 const NAV = [
   { href: "/search", label: "시설 찾기" },
-  { href: "/grade-test", label: "등급 테스트" },
+  // highlight: 다른 메뉴와 색을 달리해 눈에 띄게 (신규·핵심 기능)
+  { href: "/grade-test", label: "등급 테스트", highlight: true },
   { href: "/care-request", label: "돌봄 요청", authOnly: true },
   { href: "/compare", label: "비교하기" },
   { href: "/favorites", label: "관심시설" },
@@ -64,7 +65,12 @@ export function Header() {
                   href={item.href}
                   className={`relative rounded-full px-4 py-2 text-sm font-semibold transition-all duration-200 ${
                     active
-                      ? "bg-primary-50 text-primary-700"
+                      ? item.highlight
+                        ? "bg-royal-500 text-white shadow-royal"
+                        : "bg-primary-50 text-primary-700"
+                      : item.highlight
+                      ? // 눈에 띄게: 보라색 배경으로 다른 메뉴와 구분
+                        "bg-royal-50 text-royal-700 hover:-translate-y-0.5 hover:bg-royal-100 hover:shadow-royal"
                       : "text-ink-500 hover:-translate-y-0.5 hover:bg-royal-50 hover:text-royal-700"
                   }`}
                 >
@@ -154,10 +160,23 @@ export function Header() {
                     key={item.href}
                     href={item.href}
                     className={`flex items-center justify-between rounded-xl px-4 py-3 text-base font-semibold transition-colors duration-200 ${
-                      active ? "bg-primary-50 text-primary-700" : "text-ink-700 hover:bg-ink-100"
+                      active
+                        ? item.highlight
+                          ? "bg-royal-500 text-white"
+                          : "bg-primary-50 text-primary-700"
+                        : item.highlight
+                        ? "bg-royal-50 text-royal-700"
+                        : "text-ink-700 hover:bg-ink-100"
                     }`}
                   >
-                    {item.label}
+                    <span className="flex items-center gap-1.5">
+                      {item.label}
+                      {item.highlight && !active && (
+                        <span className="rounded-full bg-royal-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                          NEW
+                        </span>
+                      )}
+                    </span>
                     {badge > 0 && (
                       <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-accent-300 px-1.5 text-xs font-bold text-ink-900">
                         {badge}
