@@ -87,22 +87,35 @@ export function GradeTest() {
     setAnswers((prev) => ({ ...prev, [itemId]: score }));
   }
 
+  // 화면이 바뀔 때는 항상 맨 위에서 시작해야 한다. 모바일에서 스크롤을 내린 채
+  // 다음 단계로 넘어가면 문항 중간부터 보여서 처음 문항을 놓치게 된다.
+  function goTop(smooth = false) {
+    window.scrollTo({ top: 0, behavior: smooth ? "smooth" : "auto" });
+  }
+
+  function start() {
+    setPhase("test");
+    setAreaIndex(0);
+    goTop();
+  }
+
   function next() {
     if (areaIndex < TEST_AREAS.length - 1) {
       setAreaIndex((i) => i + 1);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      goTop(true);
     } else {
       setPhase("result");
-      window.scrollTo({ top: 0 });
+      goTop();
     }
   }
 
   function back() {
     if (areaIndex > 0) {
       setAreaIndex((i) => i - 1);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      goTop(true);
     } else {
       setPhase("intro");
+      goTop();
     }
   }
 
@@ -115,7 +128,7 @@ export function GradeTest() {
     } catch {
       /* 무시 */
     }
-    window.scrollTo({ top: 0 });
+    goTop();
   }
 
   /* ---------------------------------- 소개 ---------------------------------- */
@@ -166,7 +179,7 @@ export function GradeTest() {
 
         <button
           type="button"
-          onClick={() => setPhase("test")}
+          onClick={start}
           className="flex min-h-[54px] w-full items-center justify-center gap-2 rounded-2xl bg-primary-500 text-base font-bold text-white shadow-soft transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:bg-primary-600 hover:shadow-card-hover active:translate-y-0 active:scale-[0.99]"
         >
           <ClipboardList size={18} />
