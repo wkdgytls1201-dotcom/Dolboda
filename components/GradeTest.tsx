@@ -1,12 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
+import { AuthModal } from "./AuthModal";
 import {
   ChevronLeft,
   Check,
   Sparkles,
   ClipboardList,
+  Lock,
   RotateCcw,
   ArrowRight,
   ExternalLink,
@@ -31,10 +34,44 @@ const TONE_STYLES: Record<string, { chip: string; ring: string; bar: string }> =
   none: { chip: "bg-ink-100 text-ink-500", ring: "text-ink-300", bar: "bg-ink-300" },
 };
 
+// 카카오 로그인은 페이지를 완전히 떠났다가 돌아오기 때문에, 답변을 세션에 저장해두지
+// 않으면 로그인하고 온 사이에 52문항이 전부 날아간다.
+const SAVE_KEY = "dolboda-grade-test";
+
+interface SavedState {
+  phase: Phase;
+  areaIndex: number;
+  answers: Answers;
+}
+
+function readSaved(): SavedState | null {
+  try {
+    const raw = sessionStorage.getItem(SAVE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as SavedState;
+    return parsed?.answers ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
 export function GradeTest() {
-  const [phase, setPhase] = useState<Phase>("intro");
-  const [areaIndex, setAreaIndex] = useState(0);
-  const [answers, setAnswers] = useState<Answers>({});
+  const { status } = useSession();
+  const [showAuth, setShowAuth] = useState(false);
+  const saved = typeof window !== "undefined" ? readSaved() : null;
+
+  const [phase, setPhase] = useState<Phase>(saved?.phase ?? "intro");
+  const [areaIndex, setAreaIndex] = useState(saved?.areaIndex ?? 0);
+  const [answers, setAnswers] = useState<Answers>(saved?.answers ?? {});
+
+  // 진행 상황을 계속 저장해둔다 (로그인 왕복 후 복원용)
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(SAVE_KEY, JSON.stringify({ phase, areaIndex, answers }));
+    } catch {
+      // 저장이 막혀 있어도 테스트 자체는 계속 진행된다
+    }
+  }, [phase, areaIndex, answers]);
 
   const area = TEST_AREAS[areaIndex];
   const answeredCount = Object.keys(answers).length;
@@ -73,6 +110,11 @@ export function GradeTest() {
     setAnswers({});
     setAreaIndex(0);
     setPhase("intro");
+    try {
+      sessionStorage.removeItem(SAVE_KEY);
+    } catch {
+      /* 무시 */
+    }
     window.scrollTo({ top: 0 });
   }
 
@@ -137,8 +179,17 @@ export function GradeTest() {
   /* ---------------------------------- 결과 ---------------------------------- */
   if (phase === "result" && result) {
     const tone = TONE_STYLES[result.band.tone];
+    // 로그인 전에는 예상 등급을 가려두고, 로그인하면 그대로 펼쳐 보여준다.
+    const locked = status !== "authenticated";
     return (
       <main className="mx-auto max-w-lg px-4 pb-24 pt-8">
+        <div className="relative mb-6">
+          <div
+            className={
+              locked ? "pointer-events-none select-none blur-[7px] saturate-50" : undefined
+            }
+            aria-hidden={locked}
+          >
         <div className="mb-6 rounded-3xl border border-ink-100 bg-white p-7 text-center shadow-card sm:p-8">
           <p className="mb-2 text-xs font-bold text-ink-300">예상 결과</p>
           <h1 className="mb-2 text-2xl font-bold text-ink-900">{result.band.label}</h1>
@@ -197,6 +248,34 @@ export function GradeTest() {
             ))}
           </div>
         </section>
+          </div>
+
+          {locked && (
+            <div className="absolute inset-0 flex items-center justify-center px-2">
+              <div className="w-full max-w-[320px] rounded-3xl border border-ink-100 bg-white/95 p-6 text-center shadow-card-hover backdrop-blur-sm">
+                <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary-50 text-primary-600">
+                  <Lock size={20} />
+                </span>
+                <h2 className="mb-1.5 text-base font-bold text-ink-900">
+                  답변 {TOTAL_ITEMS}개를 모두 마쳤어요
+                </h2>
+                <p className="mb-5 text-xs leading-relaxed text-ink-500">
+                  로그인하시면 예상 등급과 영역별 분석 결과를 바로 확인하실 수 있어요.
+                  지금까지 고르신 답변은 그대로 남아 있어요.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowAuth(true)}
+                  className="flex min-h-[50px] w-full items-center justify-center gap-1.5 rounded-xl bg-primary-500 text-sm font-bold text-white shadow-soft transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:bg-primary-600 hover:shadow-card-hover active:translate-y-0 active:scale-[0.98]"
+                >
+                  로그인하고 결과 보기
+                  <ArrowRight size={16} />
+                </button>
+                <p className="mt-3 text-[11px] text-ink-300">카카오로 3초면 가입돼요</p>
+              </div>
+            </div>
+          )}
+        </div>
 
         <section className="mb-6 rounded-2xl border border-ink-100 bg-white p-5 shadow-card sm:p-6">
           <h2 className="mb-3 text-sm font-bold text-ink-900">신청은 이렇게 진행돼요</h2>
@@ -267,6 +346,13 @@ export function GradeTest() {
             다시 해보기
           </button>
         </div>
+
+        {showAuth && (
+          <AuthModal
+            onClose={() => setShowAuth(false)}
+            reason="로그인하면 예상 등급 결과를 확인할 수 있어요."
+          />
+        )}
       </main>
     );
   }
