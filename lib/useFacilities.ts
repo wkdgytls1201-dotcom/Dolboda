@@ -8,6 +8,8 @@ export interface FacilitiesQuery {
   limit?: number;
   /** 시설 유형(복수 가능) — 서버에서 22,000건 전체를 대상으로 걸러준다 */
   types?: string[];
+  /** false면 요청을 보내지 않는다(다른 소스를 쓰는 동안 낭비되는 호출 방지) */
+  enabled?: boolean;
 }
 
 interface FacilitiesResult {
@@ -20,16 +22,20 @@ interface FacilitiesResult {
 // 멈춘다. q(검색어)/limit으로 서버에서 좁힌 결과만 받아온다. q가 비어있으면 최근 등록순
 // limit건만 받아오므로, 검색창에 입력해야 원하는 시설을 찾을 수 있다.
 export function useFacilities(query: FacilitiesQuery = {}): FacilitiesResult {
-  const { q = "", limit = 200 } = query;
+  const { q = "", limit = 200, enabled = true } = query;
   // 배열을 그대로 의존성에 쓰면 매 렌더마다 새 배열이라 무한 요청이 된다.
   const typeKey = (query.types ?? []).join(",");
   const [state, setState] = useState<{ facilities: Facility[]; total: number }>({
     facilities: [],
     total: 0,
   });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(enabled);
 
   useEffect(() => {
+    if (!enabled) {
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
     setLoading(true);
     const params = new URLSearchParams();
@@ -51,7 +57,7 @@ export function useFacilities(query: FacilitiesQuery = {}): FacilitiesResult {
     return () => {
       cancelled = true;
     };
-  }, [q, limit, typeKey]);
+  }, [q, limit, typeKey, enabled]);
 
   return { facilities: state.facilities, total: state.total, loading };
 }
@@ -93,18 +99,35 @@ export function useFacilitiesByIds(ids: string[]) {
 // "내 주변 시설" — 좌표가 있는 전체 시설(2만여 건) 중 서버에서 진짜 거리순으로 골라온다.
 // /api/facilities의 200건 제한 목록으로 클라이언트에서 계산하면 그 200건이 우연히 몰려있는
 // 지역(예: 서울/경기) 기준으로만 결과가 나오는 문제가 있어 이 방식으로 분리했다.
-export function useNearbyFacilities(lat: number, lng: number, limit = 6) {
-  const [facilities, setFacilities] = useState<(Facility & { distanceKm: number })[]>([]);
-  const [loading, setLoading] = useState(true);
+export function useNearbyFacilities(
+  lat: number,
+  lng: number,
+  limit = 6,
+  options: { types?: string[]; enabled?: boolean } = {}
+) {
+  const { enabled = true } = options;
+  const typeKey = (options.types ?? []).join(",");
+  const [state, setState] = useState<{
+    facilities: (Facility & { distanceKm: number })[];
+    total: number;
+  }>({ facilities: [], total: 0 });
+  const [loading, setLoading] = useState(enabled);
 
   useEffect(() => {
+    if (!enabled) {
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
     setLoading(true);
-    fetch(`/api/facilities/nearby?lat=${lat}&lng=${lng}&limit=${limit}`)
+    const params = new URLSearchParams({ lat: String(lat), lng: String(lng), limit: String(limit) });
+    if (typeKey) params.set("type", typeKey);
+
+    fetch(`/api/facilities/nearby?${params}`)
       .then((r) => r.json())
-      .then((data: { items: (Facility & { distanceKm: number })[] }) => {
+      .then((data: { items: (Facility & { distanceKm: number })[]; total?: number }) => {
         if (!cancelled) {
-          setFacilities(data.items);
+          setState({ facilities: data.items ?? [], total: data.total ?? 0 });
           setLoading(false);
         }
       })
@@ -114,9 +137,9 @@ export function useNearbyFacilities(lat: number, lng: number, limit = 6) {
     return () => {
       cancelled = true;
     };
-  }, [lat, lng, limit]);
+  }, [lat, lng, limit, typeKey, enabled]);
 
-  return { facilities, loading };
+  return { facilities: state.facilities, total: state.total, loading };
 }
 
 export interface FacilityStats {

@@ -2,18 +2,18 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useFacilities } from "@/lib/useFacilities";
+import { DEMO_FACILITIES } from "@/lib/mockData";
 import { FACILITY_TYPE_LABEL } from "@/lib/types";
 import { facilityPhotoFor } from "@/lib/stockPhotos";
 import { useViewGate } from "@/lib/viewGateContext";
 
+// 배너에 쓰는 데모 시설은 코드 안에 있는 고정 데이터라 서버를 기다릴 필요가 없다.
+// 예전엔 시설 200건을 통째로 받아온 뒤 그중 7개를 골라서, 새로고침하면 배너가
+// 한참 뒤에야 떴다. 모듈 로드 시점에 한 번만 계산해서 첫 페인트에 바로 보이게 한다.
+const SLIDES = DEMO_FACILITIES.filter((f) => f.grade === 1 || f.grade === 2).slice(0, 7);
+
 export function HeroBanner() {
   const { requestFacilityView } = useViewGate();
-  const { facilities, loading } = useFacilities();
-  // 실사진 없는 실제 공공데이터 시설엔 스톡사진을 못 붙이므로 배너는 데모(mock) 시설만 사용
-  const SLIDES = facilities
-    .filter((f) => (f.grade === 1 || f.grade === 2) && f.dataSource === "mock")
-    .slice(0, 7);
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const trackRef = useRef<HTMLDivElement>(null);
@@ -40,14 +40,6 @@ export function HeroBanner() {
     }, 500);
     return () => clearTimeout(t);
   }, [index]);
-
-  // 데이터가 오기 전 배너가 잠깐 사라졌다가 나타나면 아래 검색창까지 같이 밀리는
-  // 레이아웃 흔들림이 생긴다 — 로딩 중엔 같은 크기의 스켈레톤으로 자리를 미리 잡아둔다.
-  if (loading) {
-    return (
-      <div className="relative mx-auto aspect-[5/4] w-[84%] animate-pulse rounded-3xl bg-ink-100/60 shadow-soft sm:aspect-[21/9] sm:w-[78%]" />
-    );
-  }
 
   if (SLIDES.length === 0) return null;
 
@@ -101,10 +93,20 @@ export function HeroBanner() {
               i === index ? "scale-100 opacity-100" : "scale-[0.94] cursor-pointer opacity-50"
             }`}
           >
+            {/* 첫 장만 즉시 받고 나머지는 지연 로드. 화면 폭에 맞는 크기를 고르게 해서
+                모바일에서 1200px 원본을 통째로 받지 않도록 한다. */}
             <img
-              src={facilityPhotoFor(f.id, 1200)}
+              src={facilityPhotoFor(f.id, 800)}
+              srcSet={`${facilityPhotoFor(f.id, 480)} 480w, ${facilityPhotoFor(
+                f.id,
+                800
+              )} 800w, ${facilityPhotoFor(f.id, 1200)} 1200w`}
+              sizes="(max-width: 640px) 84vw, 78vw"
               alt=""
-              className="absolute inset-0 h-full w-full object-cover"
+              loading={i === 0 ? "eager" : "lazy"}
+              fetchPriority={i === 0 ? "high" : "low"}
+              decoding="async"
+              className="absolute inset-0 h-full w-full bg-ink-100 object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-ink-900/75 via-ink-900/10 to-transparent" />
 

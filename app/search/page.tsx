@@ -7,7 +7,7 @@ import { FacilityCard } from "@/components/FacilityCard";
 import { CompareSelectBar } from "@/components/CompareSelectBar";
 import { FilterBar, FacilityFilters, EMPTY_FILTERS } from "@/components/FilterBar";
 import { KakaoMultiMap } from "@/components/KakaoMap";
-import { useFacilities } from "@/lib/useFacilities";
+import { useFacilities, useNearbyFacilities } from "@/lib/useFacilities";
 import { haversineDistanceKm } from "@/lib/distance";
 import { useUserOrigin } from "@/lib/userLocation";
 import { FacilityType, isHospital } from "@/lib/types";
@@ -57,14 +57,26 @@ function SearchContent() {
     restored?.filters ?? { ...EMPTY_FILTERS, types: initialType ? [initialType] : [] }
   );
 
-  // 검색어 없이는 전국 22,000여건을 다 못 내려주니 300건만 기본으로 보여주고,
-  // 검색어·시설 유형은 서버로 넘겨 전체 데이터에서 좁힌 결과를 받아온다.
-  // (유형을 클라이언트에서만 걸러내면 방문요양센터처럼 뒤쪽에 있는 유형이 안 보였다)
-  const { facilities, total } = useFacilities({
+  // 홈에서 위치를 허용했다면 그 좌표를 그대로 쓰고, 아직 없으면 직접 요청할 수 있게 한다.
+  const { origin, hasLocation, locating, requestLocation } = useUserOrigin();
+
+  // 거리순인데 검색어가 없으면 서버에서 전국 기준 최근접을 계산해 받아온다.
+  // (등록순 300건 안에서 거리를 재면 그 300건이 몰려있는 지역만 계속 나온다)
+  const useNearest = sortKey === "distance" && hasLocation && !query.trim();
+
+  const listQuery = useFacilities({
     q: query,
     limit: 300,
     types: filters.types,
+    enabled: !useNearest,
   });
+  const nearestQuery = useNearbyFacilities(origin.lat, origin.lng, 300, {
+    types: filters.types,
+    enabled: useNearest,
+  });
+
+  const facilities = useNearest ? nearestQuery.facilities : listQuery.facilities;
+  const total = useNearest ? nearestQuery.total : listQuery.total;
 
   useEffect(() => {
     try {
@@ -76,9 +88,6 @@ function SearchContent() {
       // 저장 실패해도 검색 자체에는 지장 없음
     }
   }, [query, filters, sortKey]);
-
-  // 홈에서 위치를 허용했다면 그 좌표를 그대로 쓰고, 아직 없으면 직접 요청할 수 있게 한다.
-  const { origin, hasLocation, locating, requestLocation } = useUserOrigin();
 
   const results = useMemo(() => {
     let list = facilities.map((f) => ({

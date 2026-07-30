@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { rowToFacility } from "@/lib/facilityRepo";
 
@@ -9,11 +10,18 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const lat = Number(searchParams.get("lat"));
   const lng = Number(searchParams.get("lng"));
-  const limit = Math.min(Number(searchParams.get("limit")) || 6, 50);
+  const limit = Math.min(Number(searchParams.get("limit")) || 6, 300);
+  // 시설 유형 필터(쉼표 구분) — 시설 찾기의 거리순 정렬에서 함께 쓰인다.
+  const types = (searchParams.get("type") ?? "")
+    .split(",")
+    .map((t) => t.trim())
+    .filter((t) => /^[A-Z_]+$/.test(t));
 
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
     return NextResponse.json({ error: "lat, lng가 필요해요." }, { status: 400 });
   }
+
+  const typeFilter = types.length > 0 ? Prisma.sql`AND "facilityType"::text = ANY(${types})` : Prisma.empty;
 
   const nearest = await prisma.$queryRaw<{ id: string; distanceKm: number }[]>`
     SELECT id,
@@ -24,7 +32,7 @@ export async function GET(req: Request) {
         ))
       ) AS "distanceKm"
     FROM "Facility"
-    WHERE lat IS NOT NULL AND lng IS NOT NULL
+    WHERE lat IS NOT NULL AND lng IS NOT NULL ${typeFilter}
     ORDER BY "distanceKm" ASC
     LIMIT ${limit}
   `;
@@ -38,5 +46,14 @@ export async function GET(req: Request) {
     .filter((r): r is NonNullable<typeof r> => !!r)
     .map((row) => ({ ...rowToFacility(row), distanceKm: distanceById.get(row.id) }));
 
-  return NextResponse.json({ items });
+  // 좌표가 있어 거리 계산이 가능한 전체 건수 (목록 위 "총 N개" 표시에 사용)
+  const total = await prisma.facility.count({
+    where: {
+      lat: { not: null },
+      lng: { not: null },
+      ...(types.length > 0 && { facilityType: { in: types as never } }),
+    },
+  });
+
+  return NextResponse.json({ items, total });
 }

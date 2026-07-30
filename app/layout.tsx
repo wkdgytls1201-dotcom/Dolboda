@@ -95,6 +95,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko">
+      <head>
+        {/* 히어로 배너 사진 도메인에 미리 연결해 첫 이미지 로딩을 앞당긴다 */}
+        <link rel="preconnect" href="https://images.unsplash.com" />
+        <link rel="dns-prefetch" href="https://images.unsplash.com" />
+      </head>
       <body className="font-sans">
         <script
           type="application/ld+json"
