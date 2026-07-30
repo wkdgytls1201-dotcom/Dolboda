@@ -96,6 +96,38 @@ model User {
   image         String?
   accounts      Account[]
   sessions      Session[]
+  sitterProfile SitterProfile?
+}
+
+// 로그인한 보호자가 마이페이지에서 옵트인으로 추가하는 "모심시터" 프로필.
+// User와 별개 테이블로 둬서, 시터가 아닌 일반 회원에겐 아무 영향이 없다.
+model SitterProfile {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nickname          String
+  photoUrl          String?
+  nationality       String
+  intro             String?
+  experienceYears   Int      @default(0)
+  regions           String[] // 활동 가능 지역(시/도 단위), 최대 10개
+  bankName          String?
+  bankAccountNumber String?
+  bankAccountHolder String?
+  agreedAt          DateTime // 필수 약관 동의 시각
+  marketingOptIn    Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  certifications    SitterCertification[]
+}
+
+model SitterCertification {
+  id              String        @id @default(cuid())
+  sitterProfileId String
+  sitterProfile   SitterProfile @relation(fields: [sitterProfileId], references: [id], onDelete: Cascade)
+  name            String
+  issuedBy        String?
+  createdAt       DateTime      @default(now())
 }
 
 model VerificationToken {

@@ -9,11 +9,7 @@ import { useFacilitiesByIds } from "@/lib/useFacilities";
 import { Switch } from "@/components/Switch";
 import { AuthModal } from "@/components/AuthModal";
 import { InfoTooltip } from "@/components/InfoTooltip";
-
-const REGIONS = [
-  "서울", "부산", "대구", "인천", "광주", "대전", "울산", "세종",
-  "경기", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주",
-];
+import { REGIONS } from "@/lib/regions";
 
 export default function NotificationsPage() {
   const { data: session } = useSession();

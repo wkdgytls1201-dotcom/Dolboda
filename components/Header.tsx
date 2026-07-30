@@ -88,7 +88,7 @@ export function Header() {
               {user ? (
                 <>
                   <Link
-                    href="/account"
+                    href="/mypage"
                     className="text-sm font-medium text-ink-700 transition-colors duration-150 hover:text-primary-600"
                   >
                     {user.name}
@@ -172,7 +172,7 @@ export function Header() {
                 {user ? (
                   <div className="flex items-center justify-between px-1">
                     <Link
-                      href="/account"
+                      href="/mypage"
                       className="text-sm font-medium text-ink-700 transition-colors duration-150 hover:text-primary-600"
                     >
                       {user.name}
