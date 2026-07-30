@@ -175,44 +175,49 @@ export function CareRequestWizard({
   const isLast = step === STEPS.length - 1;
 
   return (
-    <main className="mx-auto max-w-lg px-4 pb-28 pt-6">
-      <div className="mb-4 flex items-center gap-3">
-        {step > 0 && (
-          <button
-            type="button"
-            onClick={() => setStep((s) => s - 1)}
-            aria-label="이전 단계"
-            className="rounded-full p-1.5 text-ink-500 transition-colors duration-150 hover:bg-ink-100"
-          >
-            <ChevronLeft size={20} />
-          </button>
-        )}
-        <div className="flex-1">
-          <p className="text-xs font-semibold text-primary-600">
-            {step + 1} / {STEPS.length}
-          </p>
-          <h1 className="text-lg font-bold text-ink-900">{STEPS[step]}</h1>
+    <main className="mx-auto max-w-lg px-4 pb-32 pt-3">
+      {/* 스크롤해도 현재 단계가 보이도록 상단 고정 (모바일에서 길어지는 폼 대비) */}
+      <div className="sticky top-12 z-20 -mx-4 mb-5 border-b border-ink-100 bg-ivory/95 px-4 pb-3 pt-3 backdrop-blur sm:top-16">
+        <div className="mb-3 flex items-center gap-2">
+          {step > 0 ? (
+            <button
+              type="button"
+              onClick={() => setStep((s) => s - 1)}
+              aria-label="이전 단계"
+              className="-ml-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink-500 transition-colors duration-150 hover:bg-ink-100 active:scale-95"
+            >
+              <ChevronLeft size={20} />
+            </button>
+          ) : (
+            <span className="w-1" />
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-bold text-primary-600">
+              {step + 1}단계 · 전체 {STEPS.length}단계
+            </p>
+            <h1 className="truncate text-lg font-bold text-ink-900">{STEPS[step]}</h1>
+          </div>
+          {onCancelEdit && (
+            <button
+              type="button"
+              onClick={onCancelEdit}
+              className="shrink-0 rounded-full px-3 py-2 text-xs font-semibold text-ink-300 transition-colors duration-150 hover:bg-ink-100 hover:text-ink-500"
+            >
+              취소
+            </button>
+          )}
         </div>
-        {onCancelEdit && (
-          <button
-            type="button"
-            onClick={onCancelEdit}
-            className="text-xs font-semibold text-ink-300 hover:text-ink-500"
-          >
-            취소
-          </button>
-        )}
-      </div>
 
-      <div className="mb-6 flex gap-1.5">
-        {STEPS.map((_, i) => (
-          <span
-            key={i}
-            className={`h-1.5 flex-1 rounded-full transition-colors duration-200 ${
-              i <= step ? "bg-primary-500" : "bg-ink-100"
-            }`}
-          />
-        ))}
+        <div className="flex gap-1">
+          {STEPS.map((_, i) => (
+            <span
+              key={i}
+              className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${
+                i < step ? "bg-primary-300" : i === step ? "bg-primary-500" : "bg-ink-100"
+              }`}
+            />
+          ))}
+        </div>
       </div>
 
       {/* 1. 돌봄 유형 */}
@@ -256,7 +261,7 @@ export function CareRequestWizard({
 
       {/* 2. 언제, 어디서 */}
       {step === 1 && (
-        <div className="space-y-5">
+        <div className="space-y-6">
           <div>
             <FieldLabel>지역</FieldLabel>
             <div className="grid grid-cols-4 gap-2">
@@ -265,7 +270,7 @@ export function CareRequestWizard({
                   key={r}
                   type="button"
                   onClick={() => set("region", r)}
-                  className={`rounded-lg border px-2.5 py-2 text-xs font-semibold transition-colors duration-150 ${
+                  className={`min-h-[44px] rounded-xl border px-2 text-xs font-bold transition-all duration-150 active:scale-95 ${
                     form.region === r
                       ? "border-primary-500 bg-primary-500 text-white"
                       : "border-ink-100 text-ink-700 hover:bg-ink-100/60"
@@ -295,7 +300,7 @@ export function CareRequestWizard({
                 type="date"
                 value={form.startDate}
                 onChange={(e) => set("startDate", e.target.value)}
-                className="w-full rounded-xl border border-ink-100 px-3 py-2.5 text-sm focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-100"
+                className="min-h-[48px] w-full rounded-xl border border-ink-100 px-3 py-3 text-sm focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-100"
               />
               <span className="shrink-0 text-sm text-ink-300">~</span>
               <input
@@ -303,7 +308,7 @@ export function CareRequestWizard({
                 value={form.endDate}
                 min={form.startDate || undefined}
                 onChange={(e) => set("endDate", e.target.value)}
-                className="w-full rounded-xl border border-ink-100 px-3 py-2.5 text-sm focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-100"
+                className="min-h-[48px] w-full rounded-xl border border-ink-100 px-3 py-3 text-sm focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-100"
               />
             </div>
             {totalDays && (
@@ -352,7 +357,7 @@ export function CareRequestWizard({
                       key={n}
                       type="button"
                       onClick={() => set("visitsPerWeek", form.visitsPerWeek === n ? null : n)}
-                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors duration-150 ${
+                      className={`min-h-[44px] rounded-full border px-4 text-xs font-bold transition-all duration-150 active:scale-95 ${
                         form.visitsPerWeek === n
                           ? "border-primary-500 bg-primary-500 text-white"
                           : "border-ink-100 text-ink-500 hover:bg-ink-100/60"
@@ -371,7 +376,7 @@ export function CareRequestWizard({
                       key={n}
                       type="button"
                       onClick={() => set("visitHours", form.visitHours === n ? null : n)}
-                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors duration-150 ${
+                      className={`min-h-[44px] rounded-full border px-4 text-xs font-bold transition-all duration-150 active:scale-95 ${
                         form.visitHours === n
                           ? "border-primary-500 bg-primary-500 text-white"
                           : "border-ink-100 text-ink-500 hover:bg-ink-100/60"
@@ -427,7 +432,7 @@ export function CareRequestWizard({
 
       {/* 3. 돌봄 받으실 분 */}
       {step === 2 && (
-        <div className="space-y-5">
+        <div className="space-y-6">
           <div>
             <FieldLabel optional hint="성만 적어주셔도 괜찮아요. 시터에게는 이 이름으로 안내돼요.">
               돌봄 받으실 분 성함
@@ -477,7 +482,7 @@ export function CareRequestWizard({
 
       {/* 4. 필요한 도움 */}
       {step === 3 && (
-        <div className="space-y-5">
+        <div className="space-y-6">
           {isHousekeeping ? (
             <div>
               <FieldLabel>
@@ -555,7 +560,7 @@ export function CareRequestWizard({
                   ? "예: 혼자 지내시는 어머니 식사와 청소를 챙겨주실 분이 필요해요"
                   : "예: 고관절 수술 후 회복 중이라 화장실 이동을 도와주실 분이 필요해요"
               }
-              className="w-full resize-none rounded-xl border border-ink-100 px-3 py-2.5 text-sm focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-100"
+              className="w-full resize-none rounded-xl border border-ink-100 px-3.5 py-3 text-base leading-relaxed focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-100 sm:text-sm"
             />
           </div>
         </div>
@@ -563,7 +568,7 @@ export function CareRequestWizard({
 
       {/* 5. 조건 확인 */}
       {step === 4 && (
-        <div className="space-y-5">
+        <div className="space-y-6">
           <div>
             <FieldLabel>선호하는 시터 성별</FieldLabel>
             <ChipSelect
@@ -616,7 +621,7 @@ export function CareRequestWizard({
               onChange={(e) => set("requestNote", e.target.value)}
               rows={3}
               placeholder="예: 어머니가 낯을 조금 가리세요. 천천히 다가와 주시면 좋겠어요."
-              className="w-full resize-none rounded-xl border border-ink-100 px-3 py-2.5 text-sm focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-100"
+              className="w-full resize-none rounded-xl border border-ink-100 px-3.5 py-3 text-base leading-relaxed focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-100 sm:text-sm"
             />
           </div>
 
@@ -632,27 +637,32 @@ export function CareRequestWizard({
         </div>
       )}
 
-      {error && <p className="mt-4 text-center text-xs font-semibold text-primary-600">{error}</p>}
+      {error && (
+        <p className="mt-4 rounded-xl bg-primary-50 p-3 text-center text-xs font-semibold text-primary-700">
+          {error}
+        </p>
+      )}
 
-      <div className="fixed inset-x-0 bottom-0 border-t border-ink-100 bg-white/95 px-4 py-3 backdrop-blur">
+      {/* 홈 인디케이터가 있는 기기에서도 버튼이 가리지 않도록 safe-area 여백 */}
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-ink-100 bg-white/95 px-4 pt-3 backdrop-blur [padding-bottom:calc(0.75rem+env(safe-area-inset-bottom))]">
         <div className="mx-auto max-w-lg">
           {isLast ? (
             <button
               type="button"
               disabled={submitting}
               onClick={handleSubmit}
-              className="w-full rounded-xl bg-primary-500 py-3 text-sm font-bold text-white shadow-soft transition-all duration-200 ease-snappy hover:bg-primary-600 active:scale-[0.98] disabled:opacity-60"
+              className="min-h-[52px] w-full rounded-xl bg-primary-500 text-base font-bold text-white shadow-soft transition-all duration-200 ease-snappy hover:bg-primary-600 active:scale-[0.98] disabled:opacity-60"
             >
-              {submitting ? "처리 중..." : initial ? "수정 완료하기" : "돌봄 요청 올리기"}
+              {submitting ? "올리는 중..." : initial ? "수정한 내용 저장하기" : "돌봄 요청 올리기"}
             </button>
           ) : (
             <button
               type="button"
               disabled={!canProceed()}
               onClick={() => setStep((s) => s + 1)}
-              className="w-full rounded-xl bg-primary-500 py-3 text-sm font-bold text-white shadow-soft transition-all duration-200 ease-snappy hover:bg-primary-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-ink-100 disabled:text-ink-300"
+              className="min-h-[52px] w-full rounded-xl bg-primary-500 text-base font-bold text-white shadow-soft transition-all duration-200 ease-snappy hover:bg-primary-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-ink-100 disabled:text-ink-300 disabled:shadow-none"
             >
-              다음
+              {canProceed() ? "다음" : "위 항목을 선택해주세요"}
             </button>
           )}
         </div>

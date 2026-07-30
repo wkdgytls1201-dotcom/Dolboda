@@ -77,7 +77,7 @@ function JobCard({
     : null;
 
   return (
-    <div className="rounded-2xl border border-ink-100 bg-white p-4 shadow-card">
+    <div className="rounded-2xl border border-ink-100 bg-white p-4 shadow-card transition-shadow duration-150 active:shadow-none sm:p-5">
       <div className="mb-2 flex flex-wrap items-center gap-1.5">
         <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${meta.badgeClass}`}>
           {meta.label}
@@ -293,7 +293,7 @@ export default function SitterJobsPage() {
             key={t.key}
             type="button"
             onClick={() => setTab(t.key)}
-            className={`shrink-0 border-b-2 px-3 py-2.5 text-sm font-semibold transition-colors duration-150 ${
+            className={`min-h-[46px] shrink-0 border-b-2 px-3.5 text-sm font-bold transition-colors duration-150 ${
               tab === t.key
                 ? "border-primary-500 text-primary-700"
                 : "border-transparent text-ink-300 hover:text-ink-500"
@@ -311,7 +311,7 @@ export default function SitterJobsPage() {
             <button
               type="button"
               onClick={() => setShowFilters((v) => !v)}
-              className={`flex shrink-0 items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors duration-150 ${
+              className={`flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-xs font-bold transition-colors duration-150 active:scale-95 ${
                 showFilters || typeFilter || !hideClosed
                   ? "border-primary-300 bg-primary-50 text-primary-700"
                   : "border-ink-100 text-ink-500 hover:bg-ink-100/60"
@@ -326,7 +326,7 @@ export default function SitterJobsPage() {
                   key={s.key}
                   type="button"
                   onClick={() => setSort(s.key)}
-                  className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors duration-150 ${
+                  className={`min-h-[40px] shrink-0 rounded-full px-3.5 text-xs font-bold transition-colors duration-150 active:scale-95 ${
                     sort === s.key
                       ? "bg-ink-900 text-white"
                       : "text-ink-500 hover:bg-ink-100"
@@ -405,7 +405,7 @@ export default function SitterJobsPage() {
                       type="button"
                       disabled={job.alreadyApplied || applyingId === job.id}
                       onClick={() => handleApply(job.id)}
-                      className={`w-full rounded-xl py-2.5 text-sm font-bold transition-colors duration-150 ${
+                      className={`min-h-[48px] w-full rounded-xl text-sm font-bold transition-all duration-150 active:scale-[0.98] ${
                         job.alreadyApplied
                           ? "cursor-not-allowed bg-ink-100 text-ink-300"
                           : "bg-primary-500 text-white hover:bg-primary-600"
@@ -446,7 +446,7 @@ export default function SitterJobsPage() {
                   <button
                     type="button"
                     onClick={() => handleWithdraw(a.id)}
-                    className="w-full rounded-xl border border-ink-100 py-2.5 text-sm font-semibold text-ink-500 transition-colors duration-150 hover:bg-ink-100"
+                    className="min-h-[48px] w-full rounded-xl border border-ink-100 text-sm font-semibold text-ink-500 transition-colors duration-150 hover:bg-ink-100 active:scale-[0.98]"
                   >
                     지원 취소
                   </button>
@@ -477,7 +477,7 @@ export default function SitterJobsPage() {
                 footer={
                   <Link
                     href="/care-request/confirmation"
-                    className="flex items-center justify-center gap-1.5 rounded-xl border border-mint-200 bg-mint-50 py-2.5 text-sm font-bold text-mint-700 transition-colors duration-150 hover:bg-mint-100"
+                    className="flex min-h-[48px] items-center justify-center gap-1.5 rounded-xl border border-mint-200 bg-mint-50 text-sm font-bold text-mint-700 transition-colors duration-150 hover:bg-mint-100 active:scale-[0.98]"
                   >
                     <FileText size={15} />
                     돌봄 확인서 보기

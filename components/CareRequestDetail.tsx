@@ -252,7 +252,7 @@ export function CareRequestDetail({
                       type="button"
                       disabled={busy === app.id}
                       onClick={() => handleConfirm(app.id)}
-                      className="rounded-lg bg-primary-500 px-3 py-1.5 text-xs font-bold text-white hover:bg-primary-600 disabled:opacity-60"
+                      className="min-h-[42px] w-full rounded-xl bg-primary-500 px-3 text-sm font-bold text-white transition-all duration-150 hover:bg-primary-600 active:scale-[0.98] disabled:opacity-60"
                     >
                       {busy === app.id ? "처리 중..." : "이 분과 함께할래요"}
                     </button>
@@ -269,7 +269,7 @@ export function CareRequestDetail({
           <button
             type="button"
             onClick={onEdit}
-            className="flex-1 rounded-xl border border-ink-100 py-2.5 text-sm font-semibold text-ink-700 hover:bg-ink-100"
+            className="min-h-[48px] flex-1 rounded-xl border border-ink-100 text-sm font-bold text-ink-700 transition-colors duration-150 hover:bg-ink-100 active:scale-[0.98]"
           >
             요청 수정
           </button>
@@ -277,7 +277,7 @@ export function CareRequestDetail({
             type="button"
             disabled={busy === "cancel"}
             onClick={handleCancel}
-            className="flex-1 rounded-xl border border-primary-200 py-2.5 text-sm font-semibold text-primary-600 hover:bg-primary-50 disabled:opacity-60"
+            className="min-h-[48px] flex-1 rounded-xl border border-primary-200 text-sm font-bold text-primary-600 transition-colors duration-150 hover:bg-primary-50 active:scale-[0.98] disabled:opacity-60"
           >
             {busy === "cancel" ? "취소 중..." : "요청 취소"}
           </button>

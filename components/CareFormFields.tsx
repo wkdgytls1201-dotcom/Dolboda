@@ -15,12 +15,13 @@ export function FieldLabel({
   hint?: string;
 }) {
   return (
-    <div className="mb-1.5">
-      <label className="block text-xs font-semibold text-ink-700">
+    <div className="mb-2">
+      {/* 모바일에서 한 손으로 읽기 좋게 라벨을 본문 크기(14px)로 키웠다 */}
+      <label className="block text-sm font-bold text-ink-900">
         {children}
-        {optional && <span className="ml-1 font-normal text-ink-300">(선택)</span>}
+        {optional && <span className="ml-1 text-xs font-normal text-ink-300">선택</span>}
       </label>
-      {hint && <p className="mt-0.5 text-[11px] leading-relaxed text-ink-300">{hint}</p>}
+      {hint && <p className="mt-1 text-xs leading-relaxed text-ink-300">{hint}</p>}
     </div>
   );
 }
@@ -46,10 +47,10 @@ export function ChipSelect({
             key={opt}
             type="button"
             onClick={() => onChange(on ? "" : opt)}
-            className={`rounded-xl border px-3 py-2 text-left text-sm font-semibold transition-colors duration-150 ${
+            className={`min-h-[48px] rounded-xl border px-3.5 py-3 text-left text-sm font-semibold leading-snug transition-all duration-150 active:scale-[0.98] ${
               on
-                ? "border-primary-500 bg-primary-50 text-primary-700"
-                : "border-ink-100 bg-white text-ink-500 hover:bg-ink-100/60"
+                ? "border-primary-500 bg-primary-50 text-primary-700 shadow-soft"
+                : "border-ink-100 bg-white text-ink-700 hover:border-primary-200 hover:bg-primary-50/40"
             }`}
           >
             {opt}
@@ -81,10 +82,10 @@ export function ChipMultiSelect({
             key={opt}
             type="button"
             onClick={() => onToggle(opt)}
-            className={`flex items-center justify-between gap-1.5 rounded-xl border px-3 py-2 text-left text-sm font-semibold transition-colors duration-150 ${
+            className={`flex min-h-[48px] items-center justify-between gap-1.5 rounded-xl border px-3.5 py-3 text-left text-sm font-semibold leading-snug transition-all duration-150 active:scale-[0.98] ${
               on
-                ? "border-primary-500 bg-primary-50 text-primary-700"
-                : "border-ink-100 bg-white text-ink-500 hover:bg-ink-100/60"
+                ? "border-primary-500 bg-primary-50 text-primary-700 shadow-soft"
+                : "border-ink-100 bg-white text-ink-700 hover:border-primary-200 hover:bg-primary-50/40"
             }`}
           >
             <span>{opt}</span>
@@ -119,7 +120,7 @@ export function TextInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className={`w-full rounded-xl border border-ink-100 px-3 py-2.5 text-sm focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-100 ${
+        className={`min-h-[48px] w-full rounded-xl border border-ink-100 px-3.5 py-3 text-base focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-100 sm:text-sm ${
           suffix ? "pr-12" : ""
         }`}
       />
@@ -147,7 +148,7 @@ export function SelectInput({
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full appearance-none rounded-xl border border-ink-100 bg-white px-3 py-2.5 text-sm focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-100"
+      className="min-h-[48px] w-full appearance-none rounded-xl border border-ink-100 bg-white px-3.5 py-3 text-base focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-100 sm:text-sm"
     >
       {placeholder && <option value="">{placeholder}</option>}
       {options.map((o) => (
@@ -162,6 +163,24 @@ export function SelectInput({
 /** 의료행위 안내처럼 조건부로 뜨는 주의 문구 */
 export function NoticeBox({ children }: { children: React.ReactNode }) {
   return (
-    <p className="rounded-xl bg-accent-50 p-3 text-xs leading-relaxed text-ink-700">{children}</p>
+    <p className="rounded-xl border border-accent-200 bg-accent-50 p-3.5 text-xs leading-relaxed text-ink-700">
+      {children}
+    </p>
+  );
+}
+
+/** 마법사 안에서 관련 입력을 묶어주는 카드 */
+export function FieldGroup({
+  title,
+  children,
+}: {
+  title?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-5 rounded-2xl border border-ink-100 bg-white p-4">
+      {title && <p className="text-sm font-bold text-ink-900">{title}</p>}
+      {children}
+    </div>
   );
 }
