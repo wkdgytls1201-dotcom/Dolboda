@@ -124,6 +124,9 @@ export interface FacilityBase {
   phone?: string; // 공공데이터에 연락처가 없는 경우 undefined
   establishedYear?: number; // 공공데이터에 설립연도가 없는 경우 undefined
   updatedAt: string;
+  // 시설이 동의하고 제공한 실제 사진 URL 목록 (아직 수집 전이라 대부분 undefined/빈 배열).
+  // 2장 이상일 때만 상세페이지에서 옆으로 넘기는 갤러리로 보여준다.
+  photos?: string[];
   parking?: {
     spots: number;
     isFree: boolean;

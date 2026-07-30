@@ -21,7 +21,7 @@ import {
 import { useSession } from "next-auth/react";
 import { useFavorites } from "@/lib/favoritesContext";
 import { canViewFacility, registerFacilityView } from "@/lib/viewLimit";
-import { FacilityThumbnail } from "@/components/FacilityThumbnail";
+import { FacilityPhotoGallery } from "@/components/FacilityPhotoGallery";
 import { useFacility, useFacilities } from "@/lib/useFacilities";
 import { FACILITY_TYPE_LABEL, isHospital } from "@/lib/types";
 import { GradeBadge, TypeBadge } from "@/components/GradeBadge";
@@ -192,13 +192,8 @@ export default function FacilityDetailPage() {
           </div>
         )}
 
-        {/* 사진 갤러리 — 가상 시설은 예시 이미지, 실제 공공데이터 시설은 사진 없이 아이콘 처리 */}
-        <div className="relative mb-6 aspect-[21/9] overflow-hidden rounded-2xl">
-          <FacilityThumbnail facility={facility} />
-          <span className="absolute bottom-3 right-3 rounded-full bg-ink-900/50 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur">
-            {facility.dataSource === "public" ? "실제 시설 사진 준비 중" : "예시 이미지 (실제 시설 사진 아님)"}
-          </span>
-        </div>
+        {/* 사진 갤러리 — 사진이 2장 이상이면 옆으로 넘겨볼 수 있고, 그 외엔 기존 썸네일 그대로 */}
+        <FacilityPhotoGallery facility={facility} />
 
         {/* 평가정보 */}
         <DetailSection
