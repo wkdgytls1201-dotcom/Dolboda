@@ -648,10 +648,12 @@ export default function FacilityDetailPage() {
 
         {relatedFacilities.length > 0 && (
           <DetailSection id="related" title="다른 시설도 확인해 보세요">
+            {/* 가로 스크롤 컨테이너는 위아래도 잘라내므로 py-2/-my-2로 여백을 만들어
+                1등급 카드의 노란 테두리(ring-2)와 hover 시 떠오르는 효과가 잘리지 않게 한다. */}
             <div className="group relative">
               <div
                 ref={relatedTrackRef}
-                className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                className="-mx-4 -my-2 flex snap-x gap-4 overflow-x-auto px-4 py-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               >
                 {relatedFacilities.map(({ f, dist }) => (
                   <div key={f.id} className="w-72 shrink-0 snap-start">

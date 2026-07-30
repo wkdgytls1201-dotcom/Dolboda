@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { List, Map as MapIcon } from "lucide-react";
 import { FacilityCard } from "@/components/FacilityCard";
@@ -8,7 +8,8 @@ import { CompareSelectBar } from "@/components/CompareSelectBar";
 import { FilterBar, FacilityFilters, EMPTY_FILTERS } from "@/components/FilterBar";
 import { KakaoMultiMap } from "@/components/KakaoMap";
 import { useFacilities } from "@/lib/useFacilities";
-import { DEFAULT_ORIGIN, haversineDistanceKm } from "@/lib/distance";
+import { haversineDistanceKm } from "@/lib/distance";
+import { useUserOrigin } from "@/lib/userLocation";
 import { FacilityType, isHospital } from "@/lib/types";
 
 type SortKey = "distance" | "grade" | "rating";
@@ -19,23 +20,65 @@ const SORT_LABEL: Record<SortKey, string> = {
   rating: "평점순",
 };
 
+// 시설 상세페이지에 들어갔다 뒤로가기로 돌아와도 검색어·필터가 남아 있게 한다.
+const SEARCH_STATE_KEY = "dolboda-search-state";
+
+interface PersistedSearchState {
+  query: string;
+  filters: FacilityFilters;
+  sortKey: SortKey;
+}
+
+function readPersistedState(): PersistedSearchState | null {
+  try {
+    const raw = sessionStorage.getItem(SEARCH_STATE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as PersistedSearchState;
+    if (!parsed?.filters) return null;
+    // 필드가 추가돼도 깨지지 않게 기본값 위에 덮어쓴다.
+    return { ...parsed, filters: { ...EMPTY_FILTERS, ...parsed.filters } };
+  } catch {
+    return null;
+  }
+}
+
 function SearchContent() {
   const params = useSearchParams();
   const initialQuery = params.get("q") ?? "";
   const initialType = params.get("type") as FacilityType | null;
+  // URL로 검색어/유형이 지정돼 들어온 경우엔 저장된 상태보다 URL을 우선한다.
+  const fromUrl = Boolean(initialQuery || initialType);
+  const restored = typeof window !== "undefined" && !fromUrl ? readPersistedState() : null;
 
-  const [query, setQuery] = useState(initialQuery);
-  // 검색어 없이는 전국 22,000여건을 다 못 내려주니 최근 등록순 300건만 기본으로 보여주고,
-  // 검색어를 입력하면 서버에서 이름/주소로 먼저 좁혀서 받아온다.
-  const { facilities, total } = useFacilities({ q: query, limit: 300 });
+  const [query, setQuery] = useState(restored?.query ?? initialQuery);
   const [view, setView] = useState<"list" | "map">("list");
-  const [sortKey, setSortKey] = useState<SortKey>("distance");
-  const [filters, setFilters] = useState<FacilityFilters>({
-    ...EMPTY_FILTERS,
-    types: initialType ? [initialType] : [],
+  const [sortKey, setSortKey] = useState<SortKey>(restored?.sortKey ?? "distance");
+  const [filters, setFilters] = useState<FacilityFilters>(
+    restored?.filters ?? { ...EMPTY_FILTERS, types: initialType ? [initialType] : [] }
+  );
+
+  // 검색어 없이는 전국 22,000여건을 다 못 내려주니 300건만 기본으로 보여주고,
+  // 검색어·시설 유형은 서버로 넘겨 전체 데이터에서 좁힌 결과를 받아온다.
+  // (유형을 클라이언트에서만 걸러내면 방문요양센터처럼 뒤쪽에 있는 유형이 안 보였다)
+  const { facilities, total } = useFacilities({
+    q: query,
+    limit: 300,
+    types: filters.types,
   });
 
-  const origin = DEFAULT_ORIGIN;
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(
+        SEARCH_STATE_KEY,
+        JSON.stringify({ query, filters, sortKey } satisfies PersistedSearchState)
+      );
+    } catch {
+      // 저장 실패해도 검색 자체에는 지장 없음
+    }
+  }, [query, filters, sortKey]);
+
+  // 홈에서 위치를 허용했다면 그 좌표를 그대로 쓴다(서울 고정이던 문제 수정).
+  const { origin, hasLocation } = useUserOrigin();
 
   const results = useMemo(() => {
     let list = facilities.map((f) => ({
@@ -52,9 +95,7 @@ function SearchContent() {
         (x) => x.f.name.toLowerCase().includes(q) || x.f.address.toLowerCase().includes(q)
       );
     }
-    if (filters.types.length > 0) {
-      list = list.filter((x) => filters.types.includes(x.f.facilityType));
-    }
+    // 시설 유형은 서버에서 이미 걸러져 온다(위 useFacilities의 types).
     if (filters.grades.length > 0) {
       list = list.filter((x) => x.f.grade !== null && filters.grades.includes(x.f.grade));
     }
@@ -161,6 +202,9 @@ function SearchContent() {
           <span className="ml-1 text-ink-300">
             (그중 {results.length}개 표시 · 검색어로 좁혀보세요)
           </span>
+        )}
+        {sortKey === "distance" && !hasLocation && (
+          <span className="ml-1 text-ink-300">· 위치 정보가 없어 서울 기준으로 정렬했어요</span>
         )}
       </p>
 

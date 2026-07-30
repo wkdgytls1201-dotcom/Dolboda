@@ -11,8 +11,7 @@ import { useFacilities, useFacilityStats, useNearbyFacilities } from "@/lib/useF
 import { DEFAULT_ORIGIN } from "@/lib/distance";
 import { isHospital } from "@/lib/types";
 import { PROMOTED_FACILITY_IDS } from "@/lib/promotedFacilities";
-
-const LOCATION_CONSENT_KEY = "dolboda-location-consent";
+import { LOCATION_CONSENT_KEY, saveUserLocation, readUserLocation } from "@/lib/userLocation";
 
 export default function HomePage() {
   const { facilities, total } = useFacilities();
@@ -45,13 +44,22 @@ export default function HomePage() {
   function requestLocation() {
     if (!("geolocation" in navigator)) return;
     navigator.geolocation.getCurrentPosition(
-      (pos) => setOrigin({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      (pos) => {
+        const next = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setOrigin(next);
+        // 시설 찾기 등 다른 페이지에서도 같은 기준점을 쓰도록 저장해둔다.
+        saveUserLocation(next);
+      },
       () => setOrigin(DEFAULT_ORIGIN),
       { timeout: 5000 }
     );
   }
 
   useEffect(() => {
+    // 이전 방문에서 받아둔 위치가 있으면 권한 조회 전에 먼저 반영해 깜빡임을 줄인다.
+    const saved = readUserLocation();
+    if (saved) setOrigin(saved);
+
     // "허용"은 브라우저 자체 위치 권한과 마찬가지로 영구 기억(localStorage)하지만,
     // "다음에 할게요"는 이번 방문(세션)에서만 다시 안 묻고, 다음에 새로 방문하면 다시 물어본다.
     const granted = localStorage.getItem(LOCATION_CONSENT_KEY) === "granted";
@@ -74,7 +82,9 @@ export default function HomePage() {
     setShowLocationConsent(false);
   }
 
-  const { facilities: nearbyFacilities } = useNearbyFacilities(origin.lat, origin.lng);
+  // 한 번에 넉넉히 받아 "내 주변 시설"(가까운 6곳)과 "최근 설립"(주변 후보 중 최신순)에 함께 쓴다.
+  const { facilities: nearbyPool } = useNearbyFacilities(origin.lat, origin.lng, 60);
+  const nearbyFacilities = useMemo(() => nearbyPool.slice(0, 6), [nearbyPool]);
 
   // 추천 시설: PROMOTED_FACILITY_IDS에 넣은 시설을 순서 그대로 맨 앞에 고정 노출하고,
   // 남는 자리는 평가등급 1등급 시설로 채운다. (나중에 프리미엄 상품 구매 시 이 배열만 수정하면 됨)
@@ -101,14 +111,32 @@ export default function HomePage() {
       .slice(0, 6);
   }, [facilities]);
 
-  // 가장 최근 설립: 설립연도 정보가 있는 시설만 대상으로 최신순 정렬
+  // 최근 설립: 내 주변 시설 중에서 고른다(먼 곳의 신축 시설은 의미가 적으므로).
+  // 정렬 = 설립연도 최신순 → 같은 해면 평가등급 높은 순 → 그래도 같으면 가까운 순.
+  // 주변에 설립연도 정보가 있는 시설이 없으면 전국 목록으로 대체한다.
   const recentlyEstablished = useMemo(() => {
+    const byRecency = (
+      a: { establishedYear?: number; grade: number | null },
+      b: { establishedYear?: number; grade: number | null }
+    ) => {
+      const yearDiff = (b.establishedYear ?? 0) - (a.establishedYear ?? 0);
+      if (yearDiff !== 0) return yearDiff;
+      // 등급은 숫자가 작을수록 좋고, 등급 없는 시설은 뒤로
+      return (a.grade ?? 99) - (b.grade ?? 99);
+    };
+
+    const nearbyWithYear = nearbyPool.filter((f) => f.establishedYear !== undefined);
+    if (nearbyWithYear.length > 0) {
+      // nearbyPool은 이미 가까운 순이라 안정 정렬 덕분에 동점 시 거리순이 유지된다.
+      return nearbyWithYear.slice().sort(byRecency).slice(0, 6);
+    }
+
     return facilities
       .filter((f) => f.establishedYear !== undefined)
       .slice()
-      .sort((a, b) => (b.establishedYear ?? 0) - (a.establishedYear ?? 0))
+      .sort(byRecency)
       .slice(0, 6);
-  }, [facilities]);
+  }, [nearbyPool, facilities]);
 
   return (
     <main className="pb-24">

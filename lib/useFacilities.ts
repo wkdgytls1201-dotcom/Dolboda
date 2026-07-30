@@ -6,6 +6,8 @@ import type { Facility } from "./types";
 export interface FacilitiesQuery {
   q?: string;
   limit?: number;
+  /** 시설 유형(복수 가능) — 서버에서 22,000건 전체를 대상으로 걸러준다 */
+  types?: string[];
 }
 
 interface FacilitiesResult {
@@ -19,6 +21,8 @@ interface FacilitiesResult {
 // limit건만 받아오므로, 검색창에 입력해야 원하는 시설을 찾을 수 있다.
 export function useFacilities(query: FacilitiesQuery = {}): FacilitiesResult {
   const { q = "", limit = 200 } = query;
+  // 배열을 그대로 의존성에 쓰면 매 렌더마다 새 배열이라 무한 요청이 된다.
+  const typeKey = (query.types ?? []).join(",");
   const [state, setState] = useState<{ facilities: Facility[]; total: number }>({
     facilities: [],
     total: 0,
@@ -30,6 +34,7 @@ export function useFacilities(query: FacilitiesQuery = {}): FacilitiesResult {
     setLoading(true);
     const params = new URLSearchParams();
     if (q) params.set("q", q);
+    if (typeKey) params.set("type", typeKey);
     params.set("limit", String(limit));
 
     fetch(`/api/facilities?${params}`)
@@ -46,7 +51,7 @@ export function useFacilities(query: FacilitiesQuery = {}): FacilitiesResult {
     return () => {
       cancelled = true;
     };
-  }, [q, limit]);
+  }, [q, limit, typeKey]);
 
   return { facilities: state.facilities, total: state.total, loading };
 }

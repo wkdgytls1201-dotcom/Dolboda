@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Crown, Plus, X } from "lucide-react";
@@ -123,7 +123,18 @@ function CompareContent() {
   const { selectedIds, maxCompare, toggle } = useCompare();
   const { requestFacilityView } = useViewGate();
 
-  const ids = idsParam ? idsParam.split(",").filter(Boolean) : selectedIds;
+  // ?ids=... 로 들어온 경우 URL은 그대로라 X를 눌러도 목록이 안 줄었다.
+  // 제거한 id를 따로 기억해 화면에서도 즉시 빠지게 한다.
+  const [removedIds, setRemovedIds] = useState<string[]>([]);
+
+  function handleRemove(id: string) {
+    toggle(id);
+    setRemovedIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+  }
+
+  const ids = (idsParam ? idsParam.split(",").filter(Boolean) : selectedIds).filter(
+    (id) => !removedIds.includes(id)
+  );
   const { facilities: fetched, loading } = useFacilitiesByIds(ids);
   // ids 순서(비교함에 담은 순서)를 그대로 유지
   const facilities = ids
@@ -161,7 +172,8 @@ function CompareContent() {
     <main className="mx-auto max-w-6xl px-4 py-8">
       <h1 className="mb-1 text-xl font-bold text-ink-900">시설 비교하기</h1>
       <p className="mb-6 indent-[-1rem] pl-4 text-sm text-ink-500">
-        최대 {maxCompare}개까지 나란히 비교할 수 있어요. 더 나은 조건은 보라색으로 표시돼요.
+        최대 {maxCompare}개까지 나란히 비교할 수 있어요. 항목별로 더 나은 쪽에는 왕관 표시가
+        붙어요.
       </p>
 
       {hasMixedTypes && (
@@ -183,7 +195,7 @@ function CompareContent() {
               <button
                 type="button"
                 aria-label="비교에서 제거"
-                onClick={() => toggle(f.id)}
+                onClick={() => handleRemove(f.id)}
                 className="rounded-full p-1 text-ink-300 transition-colors duration-150 hover:bg-ink-100 hover:text-ink-700 active:scale-90"
               >
                 <X size={16} />
@@ -203,10 +215,12 @@ function CompareContent() {
               }}
               className="mb-4 block"
             >
-              <h3 className="text-base font-bold text-ink-900 hover:text-primary-600">
+              {/* 띄어쓰기 없는 긴 시설명(예: 시립서대문노인종합복지관데이케어센터)이
+                  카드 밖으로 넘치지 않게 강제로 줄바꿈한다 (body의 keep-all 예외) */}
+              <h3 className="text-base font-bold text-ink-900 [overflow-wrap:anywhere] hover:text-primary-600">
                 {f.name}
               </h3>
-              <p className="mt-0.5 text-xs text-ink-500">{f.address}</p>
+              <p className="mt-0.5 text-xs text-ink-500 [overflow-wrap:anywhere]">{f.address}</p>
             </Link>
 
             <div className="space-y-3 border-t border-ink-100 pt-3">
