@@ -23,7 +23,6 @@ import {
   GENDER_PREFS,
   BUDGET_UNITS,
   TIME_OPTIONS,
-  daysBetween,
 } from "@/lib/careOptions";
 import {
   EMPTY_FORM,
@@ -39,6 +38,7 @@ import {
   SelectInput,
   NoticeBox,
 } from "./CareFormFields";
+import { DateRangeCalendar } from "./DateRangeCalendar";
 
 const STEPS = [
   "어떤 돌봄이 필요하세요",
@@ -170,8 +170,6 @@ export function CareRequestWizard({
     );
   }
 
-  const totalDays =
-    form.startDate && form.endDate ? daysBetween(form.startDate, form.endDate) : null;
   const isLast = step === STEPS.length - 1;
 
   return (
@@ -294,26 +292,12 @@ export function CareRequestWizard({
           </div>
 
           <div>
-            <FieldLabel>돌봄 기간</FieldLabel>
-            <div className="flex items-center gap-2">
-              <input
-                type="date"
-                value={form.startDate}
-                onChange={(e) => set("startDate", e.target.value)}
-                className="min-h-[48px] w-full rounded-xl border border-ink-100 px-3 py-3 text-sm focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-100"
-              />
-              <span className="shrink-0 text-sm text-ink-300">~</span>
-              <input
-                type="date"
-                value={form.endDate}
-                min={form.startDate || undefined}
-                onChange={(e) => set("endDate", e.target.value)}
-                className="min-h-[48px] w-full rounded-xl border border-ink-100 px-3 py-3 text-sm focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-100"
-              />
-            </div>
-            {totalDays && (
-              <p className="mt-1.5 text-xs font-semibold text-primary-600">총 {totalDays}일</p>
-            )}
+            <FieldLabel hint="시작일을 먼저 고르고, 종료일을 골라주세요.">돌봄 기간</FieldLabel>
+            <DateRangeCalendar
+              start={form.startDate}
+              end={form.endDate}
+              onChange={(s, e) => setForm((f) => ({ ...f, startDate: s, endDate: e }))}
+            />
           </div>
 
           <div>
