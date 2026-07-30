@@ -43,9 +43,9 @@ export const metadata: Metadata = {
   // 서치콘솔 소유 확인 코드 — 어차피 HTML에 공개되는 값이라 코드에 직접 둔다.
   // (환경변수가 있으면 그 값이 우선)
   verification: {
-    ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION && {
-      google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
-    }),
+    google:
+      process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION ??
+      "D0jTYRzQmyfFDSMJOOXVyxKSU9BI-vnARrGfgiEd29M",
     other: {
       "naver-site-verification":
         process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION ??
