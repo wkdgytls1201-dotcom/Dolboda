@@ -64,6 +64,20 @@ export function GradeTest() {
   const [areaIndex, setAreaIndex] = useState(saved?.areaIndex ?? 0);
   const [answers, setAnswers] = useState<Answers>(saved?.answers ?? {});
 
+  // 단계가 바뀌면 항상 맨 위에서 시작한다.
+  // - 클릭 핸들러 안에서 스크롤하면 아직 이전 화면 기준이라 위치가 어긋난다 →
+  //   화면이 그려진 뒤(useEffect)에 옮긴다.
+  // - behavior를 생략하거나 "auto"로 두면 전역 CSS의 scroll-behavior:smooth가 적용돼
+  //   애니메이션 도중 내용이 바뀌면서 중간에 멈춘다 → "instant"로 강제한다.
+  // - 브라우저의 스크롤 앵커링이 화면 높이가 바뀐 뒤 위치를 되돌려놓기 때문에,
+  //   다음 프레임에 한 번 더 맞춘다.
+  useEffect(() => {
+    const toTop = () => window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
+    toTop();
+    const raf = requestAnimationFrame(toTop);
+    return () => cancelAnimationFrame(raf);
+  }, [phase, areaIndex]);
+
   // 진행 상황을 계속 저장해둔다 (로그인 왕복 후 복원용)
   useEffect(() => {
     try {
@@ -87,36 +101,19 @@ export function GradeTest() {
     setAnswers((prev) => ({ ...prev, [itemId]: score }));
   }
 
-  // 화면이 바뀔 때는 항상 맨 위에서 시작해야 한다. 모바일에서 스크롤을 내린 채
-  // 다음 단계로 넘어가면 문항 중간부터 보여서 처음 문항을 놓치게 된다.
-  function goTop(smooth = false) {
-    window.scrollTo({ top: 0, behavior: smooth ? "smooth" : "auto" });
-  }
-
   function start() {
     setPhase("test");
     setAreaIndex(0);
-    goTop();
   }
 
   function next() {
-    if (areaIndex < TEST_AREAS.length - 1) {
-      setAreaIndex((i) => i + 1);
-      goTop(true);
-    } else {
-      setPhase("result");
-      goTop();
-    }
+    if (areaIndex < TEST_AREAS.length - 1) setAreaIndex((i) => i + 1);
+    else setPhase("result");
   }
 
   function back() {
-    if (areaIndex > 0) {
-      setAreaIndex((i) => i - 1);
-      goTop(true);
-    } else {
-      setPhase("intro");
-      goTop();
-    }
+    if (areaIndex > 0) setAreaIndex((i) => i - 1);
+    else setPhase("intro");
   }
 
   function restart() {
@@ -128,7 +125,6 @@ export function GradeTest() {
     } catch {
       /* 무시 */
     }
-    goTop();
   }
 
   /* ---------------------------------- 소개 ---------------------------------- */
