@@ -109,6 +109,31 @@ export function FilterBar({
   onChange: (next: FacilityFilters) => void;
   facilities: Facility[];
 }) {
+  // 드롭다운 안에서 쓰는 알약형 선택지 — 평가등급과 같은 모양으로 통일한다.
+  function FilterPill({
+    label,
+    selected,
+    onClick,
+  }: {
+    label: string;
+    selected: boolean;
+    onClick: () => void;
+  }) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-150 active:scale-95 ${
+          selected
+            ? "bg-primary-500 text-white"
+            : "bg-ink-100/60 text-ink-500 hover:bg-ink-100"
+        }`}
+      >
+        {label}
+      </button>
+    );
+  }
+
   const allDepartments = useMemo(
     () =>
       Array.from(
@@ -198,20 +223,14 @@ export function FilterBar({
             시설 유형이 헷갈리시나요?
             <InfoTooltip text={TOOLTIPS.facilityTypes} />
           </p>
-          <div className="space-y-2">
+          <div className="flex flex-wrap gap-1.5">
             {ALL_TYPES.map((type) => (
-              <label
+              <FilterPill
                 key={type}
-                className="flex cursor-pointer items-center gap-2 text-sm text-ink-700"
-              >
-                <input
-                  type="checkbox"
-                  checked={filters.types.includes(type)}
-                  onChange={() => toggleType(type)}
-                  className="h-4 w-4 rounded accent-primary-500"
-                />
-                {FACILITY_TYPE_LABEL[type]}
-              </label>
+                label={FACILITY_TYPE_LABEL[type]}
+                selected={filters.types.includes(type)}
+                onClick={() => toggleType(type)}
+              />
             ))}
           </div>
         </FilterDropdown>
@@ -259,23 +278,19 @@ export function FilterBar({
           icon={<Navigation size={15} />}
           active={filters.maxDistanceKm !== null}
         >
-          <div className="space-y-2">
+          <div className="flex flex-wrap gap-1.5">
             {DISTANCE_OPTIONS.map((opt) => (
-              <label
+              <FilterPill
                 key={opt.label}
-                className="flex cursor-pointer items-center gap-2 text-sm text-ink-700"
-              >
-                <input
-                  type="radio"
-                  name="distance"
-                  checked={filters.maxDistanceKm === opt.value}
-                  onChange={() => onChange({ ...filters, maxDistanceKm: opt.value })}
-                  className="h-4 w-4 accent-primary-500"
-                />
-                {opt.label}
-              </label>
+                label={opt.label}
+                selected={filters.maxDistanceKm === opt.value}
+                onClick={() => onChange({ ...filters, maxDistanceKm: opt.value })}
+              />
             ))}
           </div>
+          <p className="mt-2 text-[11px] leading-relaxed text-ink-300">
+            내 위치를 켜두면 실제 거리로 걸러져요.
+          </p>
         </FilterDropdown>
 
         <FilterDropdown
@@ -288,23 +303,39 @@ export function FilterBar({
             진료과목이 뭔가요?
             <InfoTooltip text={TOOLTIPS.departments} />
           </p>
-          <div className="max-h-56 space-y-2 overflow-y-auto">
-            {allDepartments.map((name) => (
-              <label
-                key={name}
-                className="flex cursor-pointer items-center gap-2 text-sm text-ink-700"
+          {allDepartments.length > 0 ? (
+            <>
+              <div className="flex max-h-56 flex-wrap gap-1.5 overflow-y-auto">
+                {allDepartments.map((name) => (
+                  <FilterPill
+                    key={name}
+                    label={name}
+                    selected={filters.departments.includes(name)}
+                    onClick={() => toggleDepartment(name)}
+                  />
+                ))}
+              </div>
+              <p className="mt-2 text-[11px] text-ink-300">요양병원에만 해당하는 항목이에요.</p>
+            </>
+          ) : (
+            // 진료과목은 지금 목록에 있는 요양병원에서 뽑아온다. 요양병원이 하나도 없으면
+            // 고를 게 없으므로, 빈 화면 대신 무엇을 하면 되는지 알려준다.
+            <div className="rounded-xl bg-ink-100/40 p-3">
+              <p className="mb-2 text-[11px] leading-relaxed text-ink-500">
+                지금 목록에 요양병원이 없어 고를 진료과목이 없어요. 시설 유형에서 요양병원을
+                선택하면 진료과목으로 좁힐 수 있어요.
+              </p>
+              <button
+                type="button"
+                onClick={() =>
+                  onChange({ ...filters, types: ["NURSING_HOSPITAL"], departments: [] })
+                }
+                className="w-full rounded-lg bg-primary-500 px-3 py-2 text-xs font-bold text-white transition-colors duration-150 hover:bg-primary-600 active:scale-95"
               >
-                <input
-                  type="checkbox"
-                  checked={filters.departments.includes(name)}
-                  onChange={() => toggleDepartment(name)}
-                  className="h-4 w-4 rounded accent-primary-500"
-                />
-                {name}
-              </label>
-            ))}
-          </div>
-          <p className="mt-2 text-[11px] text-ink-300">요양병원에만 해당하는 항목이에요.</p>
+                요양병원만 보기
+              </button>
+            </div>
+          )}
         </FilterDropdown>
 
         <span className="mx-0.5 h-5 w-px shrink-0 bg-ink-100" />

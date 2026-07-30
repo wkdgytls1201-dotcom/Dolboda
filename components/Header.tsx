@@ -13,12 +13,12 @@ import { Logo } from "./Logo";
 
 // authOnly 항목은 로그인해야 쓸 수 있는 기능이라 비로그인 상태에선 노출하지 않는다.
 const NAV = [
-  { href: "/search", label: "시설 찾기" },
   // highlight: 다른 메뉴와 색을 달리해 눈에 띄게 (신규·핵심 기능)
   { href: "/grade-test", label: "등급 테스트", highlight: true },
-  { href: "/care-request", label: "돌봄 요청", authOnly: true },
-  { href: "/compare", label: "비교하기" },
+  { href: "/search", label: "시설 찾기" },
+  { href: "/compare", label: "시설 비교" },
   { href: "/favorites", label: "관심시설" },
+  { href: "/care-request", label: "돌봄 요청", authOnly: true },
 ];
 
 export function Header() {
