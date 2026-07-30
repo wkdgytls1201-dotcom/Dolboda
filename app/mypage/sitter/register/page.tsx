@@ -162,6 +162,25 @@ export default function SitterRegisterPage() {
             </p>
           </div>
 
+          <label className="flex cursor-pointer items-center gap-2.5 rounded-xl border border-primary-200 bg-primary-50 p-3.5 text-sm font-bold text-primary-700">
+            <input
+              type="checkbox"
+              checked={agreedTerms && agreedPrivacy && agreedThirdParty && agreedAge && marketingOptIn}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                setAgreedTerms(checked);
+                setAgreedPrivacy(checked);
+                setAgreedThirdParty(checked);
+                setAgreedAge(checked);
+                setMarketingOptIn(checked);
+              }}
+              className="h-4 w-4 rounded accent-primary-500"
+            />
+            전체 동의하기
+          </label>
+
+          <div className="my-1 border-t border-ink-100" />
+
           <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-ink-100 p-3.5 text-sm">
             <input
               type="checkbox"
