@@ -139,6 +139,12 @@ enum CareRequestStatus {
   COMPLETED // 돌봄 종료
 }
 
+enum CareLocationType {
+  HOSPITAL     // 병원
+  HOUSEKEEPING // 가사돌봄
+  HOME         // 집에서(자택, 병원 아님)
+}
+
 // 보호자가 등록하는 돌봄 요청 — 활동지역이 겹치는 모심시터가 마이페이지 "일자리 관리"에서
 // 보고 지원할 수 있다. 결제/가격 산정 인프라가 없어 금액 관련 필드는 의도적으로 없음.
 model CareRequest {
@@ -146,17 +152,21 @@ model CareRequest {
   guardianId        String
   guardian          User              @relation(fields: [guardianId], references: [id], onDelete: Cascade)
   status            CareRequestStatus @default(OPEN)
+  locationType      CareLocationType  @default(HOSPITAL)
 
   region            String // 시/도 — lib/regions.ts REGIONS 값 중 하나
   locationNote      String?
   startDate         DateTime
   endDate           DateTime
 
-  situation         String
-  mobilityLevel     String
+  situation         String?
+  mobilityLevel     String?
   needsMealAssist   Boolean  @default(false)
   needsToiletAssist Boolean  @default(false)
   conditions        String[]
+  householdTasks    String[] // 가사돌봄일 때 체크리스트 (lib/householdTasks.ts)
+  visitsPerWeek     Int?     // 가사돌봄/집에서처럼 방문 단위일 때(선택)
+  visitHours        Int?     // 1회 방문 시간(선택)
 
   sitterGenderPref  String   @default("무관")
   requestNote       String?
