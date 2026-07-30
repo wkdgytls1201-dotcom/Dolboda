@@ -2,7 +2,18 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Briefcase, MapPin, Calendar, Clock, User, Wallet, FileText, SlidersHorizontal } from "lucide-react";
+import {
+  Briefcase,
+  MapPin,
+  Calendar,
+  Clock,
+  User,
+  Wallet,
+  FileText,
+  SlidersHorizontal,
+  Search,
+  MapPinned,
+} from "lucide-react";
 import { MyPageShell } from "@/components/MyPageShell";
 import { typeMeta, LOCATION_TYPES, type LocationTypeValue } from "@/lib/careLocationTypes";
 import { formatTimeRange, daysBetween } from "@/lib/careOptions";
@@ -181,13 +192,38 @@ function JobCard({
   );
 }
 
-function EmptyState({ text, sub }: { text: string; sub: string }) {
+function EmptyState({
+  text,
+  sub,
+  action,
+}: {
+  text: string;
+  sub: string;
+  action?: React.ReactNode;
+}) {
   return (
-    <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-ink-100 bg-ink-100/20 py-14 text-center">
-      <Briefcase size={26} className="text-ink-300" />
-      <p className="text-sm font-medium text-ink-500">{text}</p>
-      <p className="px-8 text-xs leading-relaxed text-ink-300">{sub}</p>
+    <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-ink-100 bg-ink-100/20 px-6 py-14 text-center">
+      <span className="mb-1 flex h-12 w-12 items-center justify-center rounded-full bg-white text-ink-300 shadow-card">
+        <Briefcase size={22} />
+      </span>
+      <p className="text-sm font-bold text-ink-700">{text}</p>
+      <p className="text-xs leading-relaxed text-ink-300">{sub}</p>
+      {action && <div className="mt-3 w-full max-w-[240px]">{action}</div>}
     </div>
+  );
+}
+
+/** 비어 있는 탭에서 "새 일자리"로 데려가는 버튼 */
+function BrowseJobsButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex min-h-[48px] w-full items-center justify-center gap-1.5 rounded-xl bg-primary-500 text-sm font-bold text-white shadow-soft transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:bg-primary-600 hover:shadow-card-hover active:translate-y-0 active:scale-[0.98]"
+    >
+      <Search size={16} />
+      돌봄 일자리 둘러보기
+    </button>
   );
 }
 
@@ -385,7 +421,16 @@ export default function SitterJobsPage() {
           {jobs.length === 0 ? (
             <EmptyState
               text="지금은 조건에 맞는 일자리가 없어요"
-              sub="필터를 바꾸거나, 프로필에서 활동 지역을 넓히면 더 많은 요청을 볼 수 있어요."
+              sub="필터를 바꾸거나, 활동 지역을 넓히면 더 많은 요청을 볼 수 있어요."
+              action={
+                <Link
+                  href="/mypage/sitter/profile"
+                  className="flex min-h-[48px] w-full items-center justify-center gap-1.5 rounded-xl bg-primary-500 text-sm font-bold text-white shadow-soft transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:bg-primary-600 hover:shadow-card-hover active:translate-y-0 active:scale-[0.98]"
+                >
+                  <MapPinned size={16} />
+                  활동 지역 넓히기
+                </Link>
+              }
             />
           ) : (
             <div className="space-y-3">
@@ -420,6 +465,23 @@ export default function SitterJobsPage() {
                   }
                 />
               ))}
+
+              {/* 목록 끝 — 더 넓게 찾아보도록 안내 */}
+              <div className="rounded-2xl border border-dashed border-primary-200 bg-primary-50/60 p-5 text-center">
+                <p className="mb-1 text-sm font-bold text-ink-900">
+                  찾으시는 일자리가 없으신가요?
+                </p>
+                <p className="mb-3 text-xs leading-relaxed text-ink-500">
+                  활동 지역을 넓히면 더 많은 돌봄 요청을 받아볼 수 있어요.
+                </p>
+                <Link
+                  href="/mypage/sitter/profile"
+                  className="mx-auto flex min-h-[48px] w-full max-w-[260px] items-center justify-center gap-1.5 rounded-xl bg-primary-500 text-sm font-bold text-white shadow-soft transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:bg-primary-600 hover:shadow-card-hover active:translate-y-0 active:scale-[0.98]"
+                >
+                  <MapPinned size={16} />
+                  활동 지역 넓히기
+                </Link>
+              </div>
             </div>
           )}
         </>
@@ -430,7 +492,8 @@ export default function SitterJobsPage() {
           {applied.length === 0 ? (
             <EmptyState
               text="아직 지원한 일자리가 없어요"
-              sub="새 일자리 탭에서 마음에 드는 돌봄에 지원해보세요."
+              sub="마음에 드는 돌봄에 지원하면 여기에서 진행 상황을 볼 수 있어요."
+              action={<BrowseJobsButton onClick={() => setTab("open")} />}
             />
           ) : (
             applied.map((a) => (
@@ -463,6 +526,7 @@ export default function SitterJobsPage() {
             <EmptyState
               text="아직 확정된 돌봄이 없어요"
               sub="보호자가 확정하면 이곳에서 일정과 확인서를 볼 수 있어요."
+              action={<BrowseJobsButton onClick={() => setTab("open")} />}
             />
           ) : (
             matched.map((a) => (
@@ -495,6 +559,7 @@ export default function SitterJobsPage() {
             <EmptyState
               text="완료된 돌봄이 없어요"
               sub="돌봄이 끝나 보호자가 완료 처리하면 여기에 기록으로 남아요."
+              action={<BrowseJobsButton onClick={() => setTab("open")} />}
             />
           ) : (
             done.map((a) => (
