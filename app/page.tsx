@@ -128,11 +128,9 @@ export default function HomePage() {
       </Reveal>
 
       <section className="mx-auto max-w-6xl px-4 py-12">
-        <Reveal className="mb-5 flex items-baseline justify-between">
+        <Reveal className="mb-5 flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
           <h2 className="text-xl font-bold text-ink-900">내 주변 시설</h2>
-          <span className="text-sm text-ink-300">
-            현재 위치 기준 · 위치 접근을 허용하면 더 정확해져요
-          </span>
+          <span className="text-sm text-ink-300">현재 위치에서 가까운 순</span>
         </Reveal>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {nearby.map(({ f, dist }, i) => (
@@ -145,7 +143,7 @@ export default function HomePage() {
 
       {recommended.length > 0 && (
         <section className="mx-auto max-w-6xl px-4 pb-12">
-          <Reveal className="mb-5 flex items-baseline justify-between">
+          <Reveal className="mb-5 flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
             <h2 className="text-xl font-bold text-ink-900">추천 시설</h2>
             <span className="text-sm text-ink-300">돌보다가 엄선한 시설</span>
           </Reveal>
@@ -160,7 +158,7 @@ export default function HomePage() {
       )}
 
       <section className="mx-auto max-w-6xl px-4 pb-12">
-        <Reveal className="mb-5 flex items-baseline justify-between">
+        <Reveal className="mb-5 flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
           <h2 className="text-xl font-bold text-ink-900">점수 높은 시설</h2>
           <span className="text-sm text-ink-300">평가등급이 높은 시설</span>
         </Reveal>
@@ -175,7 +173,7 @@ export default function HomePage() {
 
       {recentlyEstablished.length > 0 && (
         <section className="mx-auto max-w-6xl px-4 pb-12">
-          <Reveal className="mb-5 flex items-baseline justify-between">
+          <Reveal className="mb-5 flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
             <h2 className="text-xl font-bold text-ink-900">가장 최근 설립</h2>
             <span className="text-sm text-ink-300">설립연도 기준 최신 시설</span>
           </Reveal>

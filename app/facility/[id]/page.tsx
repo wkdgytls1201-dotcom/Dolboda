@@ -282,15 +282,16 @@ export default function FacilityDetailPage() {
             <DetailSection id="staff-grade" title="의사(간호인력) 등급" tooltip={TOOLTIPS.nurseGrade}>
               <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="rounded-2xl bg-mint-50 p-4">
-                  <p className="mb-2 text-xs font-medium text-ink-500">
-                    의사 인력 <span className="text-lg font-extrabold text-mint-700">{hospital.doctorGrade}등급</span>
+                  <p className="text-sm font-medium text-ink-500">의사 인력</p>
+                  <p className="mb-3 mt-0.5 text-2xl font-extrabold text-mint-700">
+                    {hospital.doctorGrade}등급
                   </p>
                   <GradeScaleBar grade={hospital.doctorGrade} levels={4} />
                 </div>
                 <div className="rounded-2xl bg-primary-50 p-4">
-                  <p className="mb-2 text-xs font-medium text-ink-500">
-                    간호 인력{" "}
-                    <span className="text-lg font-extrabold text-primary-700">{hospital.nurseGrade}등급</span>
+                  <p className="text-sm font-medium text-ink-500">간호 인력</p>
+                  <p className="mb-3 mt-0.5 text-2xl font-extrabold text-primary-700">
+                    {hospital.nurseGrade}등급
                   </p>
                   <GradeScaleBar grade={hospital.nurseGrade} levels={6} />
                 </div>
@@ -695,22 +696,23 @@ export default function FacilityDetailPage() {
           {facility.phone ? (
             <a
               href={`tel:${facility.phone}`}
-              className="flex shrink-0 items-center gap-1.5 rounded-xl border border-ink-100 px-4 py-2.5 text-sm font-semibold text-ink-700 transition-all duration-150 hover:bg-ink-100 active:scale-95"
+              aria-label="전화 문의"
+              className="flex shrink-0 items-center gap-1.5 rounded-xl border border-ink-100 px-3 py-2.5 text-sm font-semibold text-ink-700 transition-all duration-150 hover:bg-ink-100 active:scale-95 sm:px-4"
             >
               <Phone size={16} />
-              전화 문의
+              <span className="hidden sm:inline">전화 문의</span>
             </a>
           ) : (
-            <span className="flex shrink-0 items-center gap-1.5 rounded-xl border border-ink-100 px-4 py-2.5 text-sm font-semibold text-ink-300">
+            <span className="flex shrink-0 items-center gap-1.5 rounded-xl border border-ink-100 px-3 py-2.5 text-sm font-semibold text-ink-300 sm:px-4">
               <Phone size={16} />
-              연락처 미제공
+              <span className="hidden sm:inline">연락처 미제공</span>
             </span>
           )}
           <button
             type="button"
             disabled={!selected && !canAddMore}
             onClick={() => toggle(facility.id)}
-            className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-bold transition-all duration-150 active:scale-[0.97] ${
+            className={`flex-1 rounded-xl px-3 py-2.5 text-sm font-bold transition-all duration-150 active:scale-[0.97] sm:px-4 ${
               selected
                 ? "bg-primary-100 text-primary-700"
                 : "bg-white text-primary-700 border border-primary-300 hover:bg-primary-50"
@@ -721,7 +723,7 @@ export default function FacilityDetailPage() {
           <button
             type="button"
             onClick={() => setShowConsult(true)}
-            className="flex-1 rounded-xl bg-primary-500 px-4 py-2.5 text-sm font-bold text-white shadow-soft transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:bg-primary-600 hover:shadow-card-hover active:translate-y-0 active:scale-95"
+            className="flex-1 rounded-xl bg-primary-500 px-3 py-2.5 text-sm font-bold text-white shadow-soft transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:bg-primary-600 hover:shadow-card-hover active:translate-y-0 active:scale-95 sm:px-4"
           >
             상담 신청
           </button>
