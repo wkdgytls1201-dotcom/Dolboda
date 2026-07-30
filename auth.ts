@@ -6,6 +6,12 @@ import { prisma } from "@/lib/prisma";
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: "database" },
+  callbacks: {
+    session({ session, user }) {
+      session.user.id = user.id;
+      return session;
+    },
+  },
   providers: [
     Kakao({
       clientId: process.env.AUTH_KAKAO_ID,
@@ -15,7 +21,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // (Auth.js merge가 string↔object 타입 불일치 시 새 값으로 덮어씀) — url을 같이 명시해야 함
       authorization: {
         url: "https://kauth.kakao.com/oauth/authorize",
-        params: { scope: "profile_nickname talk_message" },
+        params: { scope: "profile_nickname account_email talk_message" },
       },
     }),
   ],

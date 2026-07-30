@@ -87,7 +87,12 @@ export function Header() {
             <div className="ml-2 flex items-center gap-2 border-l border-ink-100 pl-3">
               {user ? (
                 <>
-                  <span className="text-sm font-medium text-ink-700">{user.name}</span>
+                  <Link
+                    href="/account"
+                    className="text-sm font-medium text-ink-700 transition-colors duration-150 hover:text-primary-600"
+                  >
+                    {user.name}
+                  </Link>
                   <button
                     type="button"
                     onClick={() => signOut()}
@@ -166,7 +171,12 @@ export function Header() {
               <div className="mt-2 border-t border-ink-100 pt-3">
                 {user ? (
                   <div className="flex items-center justify-between px-1">
-                    <span className="text-sm font-medium text-ink-700">{user.name}</span>
+                    <Link
+                      href="/account"
+                      className="text-sm font-medium text-ink-700 transition-colors duration-150 hover:text-primary-600"
+                    >
+                      {user.name}
+                    </Link>
                     <button
                       type="button"
                       onClick={() => signOut()}
