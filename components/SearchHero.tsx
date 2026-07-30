@@ -43,7 +43,9 @@ export function SearchHero() {
           <span className="text-primary-500">어디에 모시겠어요?</span>
         </h1>
         <p className="mt-4 text-base text-ink-500 sm:text-lg">
-          평가등급부터 비급여비용, 인력현황까지 — 우리 지역 요양병원·요양시설을 한눈에
+          평가등급부터 비급여비용, 인력현황까지
+          <br className="sm:hidden" />
+          {" "}— 우리 지역 요양병원·요양시설을 한눈에
         </p>
       </div>
 

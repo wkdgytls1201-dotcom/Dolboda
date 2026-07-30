@@ -52,7 +52,9 @@ export function KakaoRoadview({
     <div
       ref={containerRef}
       style={{ height }}
-      className="w-full overflow-hidden rounded-2xl border border-ink-100 bg-ink-100/30"
+      // 순수 미리보기용이라 드래그/줌 조작을 막아둔다 — 안 그러면 모바일에서 손가락으로
+      // 페이지를 스크롤하려는 터치를 로드뷰가 가로채서 스크롤이 안 먹히는 것처럼 느껴진다.
+      className="pointer-events-none w-full overflow-hidden rounded-2xl border border-ink-100 bg-ink-100/30"
     />
   );
 }

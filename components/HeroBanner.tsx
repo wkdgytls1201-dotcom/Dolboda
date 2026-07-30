@@ -79,8 +79,11 @@ export function HeroBanner() {
   return (
     <div
       className="group relative"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
+      // 모바일 터치는 mouseenter만 발생하고 mouseleave가 안 와서 한 번 터치하면
+      // paused가 true로 눌어붙어 자동 넘김이 영영 안 되는 문제가 있었음 —
+      // 실제 마우스(hover 가능한 포인터)일 때만 정지시킨다.
+      onPointerEnter={(e) => e.pointerType === "mouse" && setPaused(true)}
+      onPointerLeave={(e) => e.pointerType === "mouse" && setPaused(false)}
     >
       <div
         ref={trackRef}

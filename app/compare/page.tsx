@@ -124,7 +124,7 @@ function CompareContent() {
   const { requestFacilityView } = useViewGate();
 
   const ids = idsParam ? idsParam.split(",").filter(Boolean) : selectedIds;
-  const { facilities: fetched } = useFacilitiesByIds(ids);
+  const { facilities: fetched, loading } = useFacilitiesByIds(ids);
   // ids 순서(비교함에 담은 순서)를 그대로 유지
   const facilities = ids
     .map((id) => fetched.find((f) => f.id === id))
@@ -134,6 +134,11 @@ function CompareContent() {
     facilities.some((f) => isHospital(f)) && facilities.some((f) => !isHospital(f));
 
   const emptySlots = Math.max(0, maxCompare - facilities.length);
+
+  // fetched가 아직 안 온 상태에서 "비교할 시설이 없어요"가 잠깐 잘못 뜨는 걸 막는다.
+  if (loading) {
+    return <main className="mx-auto max-w-6xl px-4 py-8" />;
+  }
 
   if (facilities.length === 0) {
     return (
@@ -155,7 +160,7 @@ function CompareContent() {
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
       <h1 className="mb-1 text-xl font-bold text-ink-900">시설 비교하기</h1>
-      <p className="mb-6 text-sm text-ink-500">
+      <p className="mb-6 indent-[-1rem] pl-4 text-sm text-ink-500">
         최대 {maxCompare}개까지 나란히 비교할 수 있어요. 더 나은 조건은 보라색으로 표시돼요.
       </p>
 

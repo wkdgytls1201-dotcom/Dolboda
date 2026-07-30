@@ -86,7 +86,13 @@ function FilterDropdown({
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full z-30 mt-2 w-64 rounded-2xl border border-ink-100 bg-white p-4 shadow-soft">
+        <div
+          // 모바일에서는 트리거 버튼 위치에 따라 296px짜리 패널이 화면 오른쪽으로
+          // 잘려나가는 문제가 있어서(예: "평가등급"의 "2등급 이상" 잘림), 좁은 화면에선
+          // 화면 기준 고정 위치(양옆 여백만 두고 중앙)로 띄우고, sm 이상에서만 원래대로
+          // 트리거 버튼 아래 붙는 팝오버로 되돌린다.
+          className="fixed inset-x-4 top-1/2 z-30 max-h-[70vh] -translate-y-1/2 overflow-y-auto rounded-2xl border border-ink-100 bg-white p-4 shadow-soft sm:absolute sm:inset-x-auto sm:left-0 sm:top-full sm:mt-2 sm:w-64 sm:max-h-none sm:translate-y-0"
+        >
           {children}
         </div>
       )}

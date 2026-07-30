@@ -59,6 +59,10 @@ export function KakaoMap({
         const map = new window.kakao.maps.Map(containerRef.current, { center, level: 4 });
         const marker = new window.kakao.maps.Marker({ position: center });
         marker.setMap(map);
+        // 작은 미리보기 지도라 드래그/줌을 막아야 모바일에서 손가락으로 지도를 스크롤하려다
+        // 지도가 그 터치를 가로채서 페이지 스크롤이 막히는 문제가 생기지 않는다.
+        map.setDraggable(false);
+        map.setZoomable(false);
       })
       .catch(() => !cancelled && setFailed(true));
     return () => {
