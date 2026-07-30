@@ -179,11 +179,13 @@ export function DomainRadar({
   max?: number;
   color?: string;
 }) {
-  const width = 380;
-  const height = 340;
+  // 가로는 라벨("환경 및 안전 94점")이 잘리지 않을 만큼 넓게, 세로는 여백을 줄여
+  // 좁은 화면에서도 도형이 최대한 크게 보이도록 잡은 값.
+  const width = 360;
+  const height = 250;
   const cx = width / 2;
   const cy = height / 2;
-  const r = 75;
+  const r = 68;
   const n = domains.length;
   const angleFor = (i: number) => -Math.PI / 2 + (i * 2 * Math.PI) / n;
 
@@ -200,7 +202,10 @@ export function DomainRadar({
 
   return (
     <div>
-      <svg viewBox={`0 0 ${width} ${height}`} className="mx-auto w-full max-w-[380px]">
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        className="mx-auto w-full max-w-[440px] overflow-visible"
+      >
         {rings.map((ringPct) => (
           <polygon
             key={ringPct}
@@ -236,11 +241,11 @@ export function DomainRadar({
         ))}
         {domains.map((d, i) => {
           const angle = angleFor(i);
-          const labelR = r + 60;
+          const labelR = r + 28;
           const cos = Math.cos(angle);
           const x = cx + labelR * cos;
           const y = cy + labelR * Math.sin(angle);
-          const anchor = cos > 0.3 ? "end" : cos < -0.3 ? "start" : "middle";
+          const anchor = cos > 0.3 ? "start" : cos < -0.3 ? "end" : "middle";
           return (
             <text
               key={i}
@@ -248,7 +253,7 @@ export function DomainRadar({
               y={y}
               textAnchor={anchor}
               dominantBaseline="middle"
-              fontSize={11}
+              fontSize={12}
               fill="#3A3452"
               fontWeight={600}
             >

@@ -158,18 +158,44 @@ model CareRequest {
   locationNote      String?
   startDate         DateTime
   endDate           DateTime
+  startTime         String?  // "09:00" 형식. 24시간 종일제면 비움
+  endTime           String?
+  roundTheClock     Boolean  @default(false) // 24시간 상주 돌봄
+
+  // 돌봄 받으실 분 — 시터가 업무 강도를 가늠하는 데 쓰는 최소 정보.
+  // 이름은 성(姓)만 받아 개인정보를 최소화한다.
+  recipientName     String?
+  recipientRelation String?  // 신청자와의 관계
+  recipientGender   String?
+  recipientAgeBand  String?  // 연령대(예: "70대")
+  recipientWeightBand String? // 체중대 — 이동·부축 난이도와 직결
 
   situation         String?
   mobilityLevel     String?
-  needsMealAssist   Boolean  @default(false)
+  mealAssistLevel   String?  // 식사 보조 수준(스스로 가능/부분 도움/전적 도움 …)
+  toiletAssistLevel String?  // 배변 보조 수준
+  needsMealAssist   Boolean  @default(false) // 구버전 호환용 요약 플래그
   needsToiletAssist Boolean  @default(false)
   conditions        String[]
   householdTasks    String[] // 가사돌봄일 때 체크리스트 (lib/householdTasks.ts)
   visitsPerWeek     Int?     // 가사돌봄/집에서처럼 방문 단위일 때(선택)
   visitHours        Int?     // 1회 방문 시간(선택)
 
+  // 병원 간병일 때만 쓰는 입원 관련 정보
+  hospitalEntry     String?  // 병원 출입 절차
+  roomType          String?  // 병실 종류
+  admissionReason   String?  // 입원 사유
+  surgeryPlan       String?  // 입원 중 수술 예정 여부
+
   sitterGenderPref  String   @default("무관")
+  specialRequests   String[] // 특별 요청(복수 선택)
   requestNote       String?
+
+  // 보호자가 직접 적는 희망 사례비. 우리가 계산하거나 중개하지 않고 그대로 전달만 한다.
+  budgetAmount      Int?
+  budgetUnit        String?  // "일" | "시간"
+
+  completedAt       DateTime?
 
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt

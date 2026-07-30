@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { List, Map as MapIcon } from "lucide-react";
+import { List, Map as MapIcon, Crosshair } from "lucide-react";
 import { FacilityCard } from "@/components/FacilityCard";
 import { CompareSelectBar } from "@/components/CompareSelectBar";
 import { FilterBar, FacilityFilters, EMPTY_FILTERS } from "@/components/FilterBar";
@@ -77,8 +77,8 @@ function SearchContent() {
     }
   }, [query, filters, sortKey]);
 
-  // 홈에서 위치를 허용했다면 그 좌표를 그대로 쓴다(서울 고정이던 문제 수정).
-  const { origin, hasLocation } = useUserOrigin();
+  // 홈에서 위치를 허용했다면 그 좌표를 그대로 쓰고, 아직 없으면 직접 요청할 수 있게 한다.
+  const { origin, hasLocation, locating, requestLocation } = useUserOrigin();
 
   const results = useMemo(() => {
     let list = facilities.map((f) => ({
@@ -203,10 +203,25 @@ function SearchContent() {
             (그중 {results.length}개 표시 · 검색어로 좁혀보세요)
           </span>
         )}
-        {sortKey === "distance" && !hasLocation && (
-          <span className="ml-1 text-ink-300">· 위치 정보가 없어 서울 기준으로 정렬했어요</span>
-        )}
       </p>
+
+      {sortKey === "distance" && !hasLocation && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-primary-50 px-4 py-3">
+          <p className="text-xs leading-relaxed text-ink-700">
+            지금은 <strong className="font-bold">서울시청 기준</strong>으로 거리를 계산하고 있어요.
+            내 위치를 켜면 가까운 시설부터 보여드려요.
+          </p>
+          <button
+            type="button"
+            onClick={requestLocation}
+            disabled={locating}
+            className="flex shrink-0 items-center gap-1 rounded-full bg-primary-500 px-3.5 py-1.5 text-xs font-bold text-white transition-colors duration-150 hover:bg-primary-600 disabled:opacity-60"
+          >
+            <Crosshair size={13} />
+            {locating ? "위치 확인 중..." : "내 위치로 정렬"}
+          </button>
+        </div>
+      )}
 
       {view === "map" ? (
         <KakaoMultiMap

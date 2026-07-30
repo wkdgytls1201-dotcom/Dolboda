@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { parseLocationType, sanitizeTasks, clampVisit } from "@/lib/careRequestValidation";
+import { parseLocationType, buildCareRequestData } from "@/lib/careRequestValidation";
 
 async function getOwnedRequest(id: string, userId: string) {
   const careRequest = await prisma.careRequest.findUnique({ where: { id } });
@@ -20,50 +20,39 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     return NextResponse.json({ error: "수정할 수 없어요." }, { status: 404 });
   }
 
-  const body = await req.json();
-  const {
-    locationType,
-    region,
-    locationNote,
-    startDate,
-    endDate,
-    situation,
-    mobilityLevel,
-    needsMealAssist,
-    needsToiletAssist,
-    conditions,
-    householdTasks,
-    visitsPerWeek,
-    visitHours,
-    sitterGenderPref,
-    requestNote,
-  } = body as Partial<{
+  const body = (await req.json()) as Record<string, unknown>;
+
+  // 돌봄이 끝났을 때 보호자가 완료 처리 — 시터의 "완료된 돌봄" 탭에 쌓인다.
+  if (body.action === "complete") {
+    const completed = await prisma.careRequest.update({
+      where: { id: params.id },
+      data: { status: "COMPLETED", completedAt: new Date() },
+    });
+    await prisma.careRequestApplication.updateMany({
+      where: { careRequestId: params.id, status: "매칭확정" },
+      data: { status: "돌봄완료" },
+    });
+    return NextResponse.json(completed);
+  }
+
+  const { locationType, region, startDate, endDate } = body as Partial<{
     locationType: string;
     region: string;
-    locationNote: string | null;
     startDate: string;
     endDate: string;
-    situation: string | null;
-    mobilityLevel: string | null;
-    needsMealAssist: boolean;
-    needsToiletAssist: boolean;
-    conditions: string[];
-    householdTasks: string[];
-    visitsPerWeek: number | null;
-    visitHours: number | null;
-    sitterGenderPref: string;
-    requestNote: string | null;
   }>;
 
   const parsedType = parseLocationType(locationType);
+  const fields = buildCareRequestData(body, true);
+
   // 수정 후의 유형 기준으로 유형별 필수값을 다시 검증한다.
   const nextType = parsedType ?? existing.locationType;
-  const nextSituation = situation !== undefined ? situation : existing.situation;
-  const nextMobility = mobilityLevel !== undefined ? mobilityLevel : existing.mobilityLevel;
+  const nextMobility =
+    "mobilityLevel" in fields ? (fields.mobilityLevel as string | null) : existing.mobilityLevel;
   const nextTasks =
-    householdTasks !== undefined ? sanitizeTasks(householdTasks) : existing.householdTasks;
-  if (nextType === "HOSPITAL" && (!nextSituation || !nextMobility)) {
-    return NextResponse.json({ error: "필수 항목이 누락됐어요." }, { status: 400 });
+    "householdTasks" in fields ? (fields.householdTasks as string[]) : existing.householdTasks;
+  if (nextType === "HOSPITAL" && !nextMobility) {
+    return NextResponse.json({ error: "거동 수준을 선택해주세요." }, { status: 400 });
   }
   if (nextType === "HOUSEKEEPING" && nextTasks.length === 0) {
     return NextResponse.json({ error: "필요한 집안일을 1개 이상 선택해주세요." }, { status: 400 });
@@ -72,22 +61,12 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const careRequest = await prisma.careRequest.update({
     where: { id: params.id },
     data: {
+      ...fields,
       ...(parsedType !== null && { locationType: parsedType }),
       ...(region !== undefined && { region }),
-      ...(locationNote !== undefined && { locationNote }),
       ...(startDate !== undefined && { startDate: new Date(startDate) }),
       ...(endDate !== undefined && { endDate: new Date(endDate) }),
-      ...(situation !== undefined && { situation }),
-      ...(mobilityLevel !== undefined && { mobilityLevel }),
-      ...(needsMealAssist !== undefined && { needsMealAssist }),
-      ...(needsToiletAssist !== undefined && { needsToiletAssist }),
-      ...(conditions !== undefined && { conditions }),
-      ...(householdTasks !== undefined && { householdTasks: nextTasks }),
-      ...(visitsPerWeek !== undefined && { visitsPerWeek: clampVisit(visitsPerWeek, 7) }),
-      ...(visitHours !== undefined && { visitHours: clampVisit(visitHours, 24) }),
-      ...(sitterGenderPref !== undefined && { sitterGenderPref }),
-      ...(requestNote !== undefined && { requestNote }),
-    },
+    } as never,
   });
 
   return NextResponse.json(careRequest);

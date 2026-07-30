@@ -6,13 +6,15 @@ import { useEffect, useState } from "react";
 import { Bell, LogOut, Menu, User, X } from "lucide-react";
 import { useCompare } from "@/lib/compareContext";
 import { useFavorites } from "@/lib/favoritesContext";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
+import { signOutAndClear } from "@/lib/signOutAndClear";
 import { AuthModal } from "./AuthModal";
 import { Logo } from "./Logo";
 
+// authOnly 항목은 로그인해야 쓸 수 있는 기능이라 비로그인 상태에선 노출하지 않는다.
 const NAV = [
   { href: "/search", label: "시설 찾기" },
-  { href: "/care-request", label: "돌봄 요청" },
+  { href: "/care-request", label: "돌봄 요청", authOnly: true },
   { href: "/compare", label: "비교하기" },
   { href: "/favorites", label: "관심시설" },
 ];
@@ -30,6 +32,8 @@ export function Header() {
   useEffect(() => {
     setMenuOpen(false);
   }, [pathname]);
+
+  const navItems = NAV.filter((item) => !item.authOnly || user);
 
   function badgeFor(href: string) {
     if (href === "/compare") return selectedIds.length;
@@ -50,7 +54,7 @@ export function Header() {
 
           {/* 데스크톱 내비게이션 */}
           <nav className="hidden items-center gap-1 sm:flex">
-            {NAV.map((item) => {
+            {navItems.map((item) => {
               const active = pathname?.startsWith(item.href);
               const badge = badgeFor(item.href);
               return (
@@ -101,7 +105,7 @@ export function Header() {
                   </Link>
                   <button
                     type="button"
-                    onClick={() => signOut()}
+                    onClick={signOutAndClear}
                     aria-label="로그아웃"
                     className="flex items-center gap-1 rounded-full px-2 py-1.5 text-xs font-medium text-ink-300 transition-colors duration-200 hover:bg-ink-100 hover:text-ink-700"
                   >
@@ -141,7 +145,7 @@ export function Header() {
         {menuOpen && (
           <div className="border-t border-ink-100 bg-white/95 px-4 py-3 backdrop-blur sm:hidden">
             <nav className="flex flex-col gap-1">
-              {NAV.map((item) => {
+              {navItems.map((item) => {
                 const active = pathname?.startsWith(item.href);
                 const badge = badgeFor(item.href);
                 return (
@@ -191,7 +195,7 @@ export function Header() {
                     </Link>
                     <button
                       type="button"
-                      onClick={() => signOut()}
+                      onClick={signOutAndClear}
                       className="flex w-full items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium text-ink-500 transition-colors duration-200 hover:bg-ink-100 hover:text-ink-700 active:scale-95"
                     >
                       <LogOut size={16} />

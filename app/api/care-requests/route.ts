@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { parseLocationType, sanitizeTasks, clampVisit } from "@/lib/careRequestValidation";
+import { parseLocationType, buildCareRequestData } from "@/lib/careRequestValidation";
 
 // 보호자 본인의 가장 최근 돌봄 요청 1건(진행 중이 아니어도 최근 것 하나) — 상세/관리 화면에서 사용
 export async function GET() {
@@ -43,51 +43,29 @@ export async function POST(req: Request) {
     );
   }
 
-  const body = await req.json();
-  const {
-    locationType,
-    region,
-    locationNote,
-    startDate,
-    endDate,
-    situation,
-    mobilityLevel,
-    needsMealAssist,
-    needsToiletAssist,
-    conditions,
-    householdTasks,
-    visitsPerWeek,
-    visitHours,
-    sitterGenderPref,
-    requestNote,
-  } = body as {
+  const body = (await req.json()) as Record<string, unknown>;
+  const { locationType, region, startDate, endDate } = body as {
     locationType?: string;
     region?: string;
-    locationNote?: string | null;
     startDate?: string;
     endDate?: string;
-    situation?: string | null;
-    mobilityLevel?: string | null;
-    needsMealAssist?: boolean;
-    needsToiletAssist?: boolean;
-    conditions?: string[];
-    householdTasks?: string[];
-    visitsPerWeek?: number | null;
-    visitHours?: number | null;
-    sitterGenderPref?: string;
-    requestNote?: string | null;
   };
 
   const type = parseLocationType(locationType) ?? "HOSPITAL";
   if (!region || !startDate || !endDate) {
     return NextResponse.json({ error: "필수 항목이 누락됐어요." }, { status: 400 });
   }
-  // 유형별 필수값 — 병원 간병은 상황·거동, 가사 돌봄은 집안일 1개 이상.
-  if (type === "HOSPITAL" && (!situation || !mobilityLevel)) {
-    return NextResponse.json({ error: "필수 항목이 누락됐어요." }, { status: 400 });
+  if (new Date(endDate) < new Date(startDate)) {
+    return NextResponse.json({ error: "종료일이 시작일보다 빨라요." }, { status: 400 });
   }
-  const tasks = sanitizeTasks(householdTasks);
-  if (type === "HOUSEKEEPING" && tasks.length === 0) {
+
+  const fields = buildCareRequestData(body, false);
+
+  // 유형별 필수값 — 병원 간병은 거동 수준, 가사 돌봄은 집안일 1개 이상.
+  if (type === "HOSPITAL" && !fields.mobilityLevel) {
+    return NextResponse.json({ error: "거동 수준을 선택해주세요." }, { status: 400 });
+  }
+  if (type === "HOUSEKEEPING" && (fields.householdTasks as string[]).length === 0) {
     return NextResponse.json({ error: "필요한 집안일을 1개 이상 선택해주세요." }, { status: 400 });
   }
 
@@ -99,23 +77,13 @@ export async function POST(req: Request) {
       },
     },
     data: {
+      ...fields,
       guardianId: session.user.id,
       locationType: type,
       region,
-      locationNote,
       startDate: new Date(startDate),
       endDate: new Date(endDate),
-      situation,
-      mobilityLevel,
-      needsMealAssist: needsMealAssist ?? false,
-      needsToiletAssist: needsToiletAssist ?? false,
-      conditions: conditions ?? [],
-      householdTasks: tasks,
-      visitsPerWeek: clampVisit(visitsPerWeek, 7),
-      visitHours: clampVisit(visitHours, 24),
-      sitterGenderPref: sitterGenderPref ?? "무관",
-      requestNote,
-    },
+    } as never,
   });
 
   return NextResponse.json(careRequest, { status: 201 });

@@ -4,26 +4,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { ChevronLeft, Printer } from "lucide-react";
-import { typeMeta, type LocationTypeValue } from "@/lib/careLocationTypes";
+import { typeMeta } from "@/lib/careLocationTypes";
+import { formatTimeRange, daysBetween } from "@/lib/careOptions";
+import type { CareRequestData } from "@/lib/careRequestTypes";
 
 interface ConfirmationData {
-  careRequest: {
-    locationType: LocationTypeValue;
-    region: string;
-    locationNote: string | null;
-    startDate: string;
-    endDate: string;
-    situation: string | null;
-    mobilityLevel: string | null;
-    needsMealAssist: boolean;
-    needsToiletAssist: boolean;
-    conditions: string[];
-    householdTasks: string[];
-    visitsPerWeek: number | null;
-    visitHours: number | null;
-    sitterGenderPref: string;
-    requestNote: string | null;
-  };
+  careRequest: CareRequestData;
   sitter: {
     nickname: string;
     experienceYears: number;
@@ -118,29 +104,50 @@ export default function CareConfirmationPage() {
   const guardianDisplay = maskName(data.guardianName ?? session?.user?.name ?? null);
   const today = new Date().toISOString().slice(0, 10);
 
+  const row = (label: string, value: string | null | undefined) =>
+    value ? [{ label, value }] : [];
+  const timeRange = formatTimeRange(cr.roundTheClock, cr.startTime, cr.endTime);
+  const days = daysBetween(cr.startDate, cr.endDate);
+  const recipientInfo = [cr.recipientGender, cr.recipientAgeBand, cr.recipientWeightBand]
+    .filter(Boolean)
+    .join(" · ");
+
   const rows: { label: string; value: string }[] = [
     { label: "돌봄 유형", value: meta.label },
     { label: "지역", value: cr.region },
-    ...(cr.locationNote ? [{ label: "장소", value: cr.locationNote }] : []),
-    { label: "기간", value: `${cr.startDate.slice(0, 10)} ~ ${cr.endDate.slice(0, 10)}` },
-    ...(cr.mobilityLevel ? [{ label: "거동 수준", value: cr.mobilityLevel }] : []),
-    ...(cr.locationType === "HOSPITAL"
-      ? [
-          { label: "식사 보조", value: cr.needsMealAssist ? "필요" : "필요 없음" },
-          { label: "배변 보조", value: cr.needsToiletAssist ? "필요" : "필요 없음" },
-        ]
-      : []),
-    ...(cr.householdTasks.length > 0
-      ? [{ label: "집안일", value: cr.householdTasks.join(", ") }]
-      : []),
-    ...(cr.visitsPerWeek != null ? [{ label: "방문 횟수", value: `주 ${cr.visitsPerWeek}회` }] : []),
-    ...(cr.visitHours != null ? [{ label: "1회 방문 시간", value: `${cr.visitHours}시간` }] : []),
-    ...(cr.conditions.length > 0
-      ? [{ label: "관리 필요 사항", value: cr.conditions.join(", ") }]
-      : []),
-    ...(cr.situation ? [{ label: "상황 설명", value: cr.situation }] : []),
+    ...row("장소", cr.locationNote),
+    {
+      label: "기간",
+      value: `${cr.startDate.slice(0, 10)} ~ ${cr.endDate.slice(0, 10)} (${days}일)`,
+    },
+    ...row("시간", timeRange),
+    ...row(
+      "방문",
+      cr.visitsPerWeek
+        ? `주 ${cr.visitsPerWeek}회${cr.visitHours ? ` · 1회 ${cr.visitHours}시간` : ""}`
+        : null
+    ),
+    ...row("돌봄 받으실 분", cr.recipientName),
+    ...row("대상자 정보", recipientInfo || null),
+    ...row("거동", cr.mobilityLevel),
+    ...row("식사", cr.mealAssistLevel),
+    ...row("배변", cr.toiletAssistLevel),
+    ...row("집안일", cr.householdTasks.length > 0 ? cr.householdTasks.join(", ") : null),
+    ...row("관리 필요 사항", cr.conditions.length > 0 ? cr.conditions.join(", ") : null),
+    ...row("병원 출입", cr.hospitalEntry),
+    ...row("병실", cr.roomType),
+    ...row("입원 사유", cr.admissionReason),
+    ...row("수술 예정", cr.surgeryPlan),
+    ...row("상황 설명", cr.situation),
     { label: "선호 성별", value: cr.sitterGenderPref },
-    ...(cr.requestNote ? [{ label: "전달 사항", value: cr.requestNote }] : []),
+    ...row("특별 요청", cr.specialRequests.length > 0 ? cr.specialRequests.join(", ") : null),
+    ...row(
+      "희망 사례비",
+      cr.budgetAmount
+        ? `${cr.budgetUnit === "시간" ? "시간당" : "하루"} ${cr.budgetAmount.toLocaleString()}원 (보호자 제시)`
+        : null
+    ),
+    ...row("전달 사항", cr.requestNote),
   ];
 
   return (

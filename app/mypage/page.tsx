@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
+import { signOutAndClear } from "@/lib/signOutAndClear";
 import { LogOut, User } from "lucide-react";
 import { MyPageShell } from "@/components/MyPageShell";
 
@@ -28,7 +29,7 @@ export default function MyPageAccountPage() {
     try {
       const res = await fetch("/api/account", { method: "DELETE" });
       if (!res.ok) throw new Error();
-      await signOut({ callbackUrl: "/" });
+      await signOutAndClear();
     } catch {
       setDeleting(false);
     }
@@ -76,7 +77,7 @@ export default function MyPageAccountPage() {
       <div className="mt-4">
         <button
           type="button"
-          onClick={() => signOut({ callbackUrl: "/" })}
+          onClick={signOutAndClear}
           className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-ink-100 px-4 py-3 text-sm font-semibold text-ink-700 transition-colors duration-150 hover:bg-ink-100"
         >
           <LogOut size={16} />

@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
-// 로그인한 모심시터 본인의 매칭확정 건 — 돌봄 확인서 페이지에서 시터 쪽 조회용.
+// 로그인한 모심시터 본인의 지원 내역 전체.
+// 일자리 관리의 "지원 현황 / 매칭된 돌봄 / 완료된 돌봄" 탭이 이 하나로 그려진다.
 export async function GET() {
   const session = await auth();
   if (!session?.user?.id) {
@@ -17,27 +18,38 @@ export async function GET() {
     return NextResponse.json({ error: "등록된 모심시터 프로필이 없어요." }, { status: 404 });
   }
 
-  const application = await prisma.careRequestApplication.findFirst({
-    where: { sitterProfileId: sitterProfile.id, status: "매칭확정" },
+  const applications = await prisma.careRequestApplication.findMany({
+    where: { sitterProfileId: sitterProfile.id },
     orderBy: { createdAt: "desc" },
-    include: {
-      careRequest: { include: { guardian: { select: { name: true } } } },
-    },
+    include: { careRequest: { include: { guardian: { select: { name: true } } } } },
   });
-  if (!application) {
-    return NextResponse.json({ error: "매칭확정된 돌봄이 없어요." }, { status: 404 });
-  }
+
+  const sitter = {
+    nickname: sitterProfile.nickname,
+    experienceYears: sitterProfile.experienceYears,
+    certifications: sitterProfile.certifications.map((c) => ({ id: c.id, name: c.name })),
+  };
+
+  // 확인서 페이지가 쓰는 단건(매칭확정) — 기존 응답 형태를 유지한다.
+  const confirmed = applications.find(
+    (a) => a.status === "매칭확정" && a.careRequest.status === "MATCHED"
+  );
 
   return NextResponse.json({
-    application: {
-      id: application.id,
-      status: application.status,
-      careRequest: application.careRequest,
-      sitterProfile: {
-        nickname: sitterProfile.nickname,
-        experienceYears: sitterProfile.experienceYears,
-        certifications: sitterProfile.certifications.map((c) => ({ id: c.id, name: c.name })),
-      },
-    },
+    items: applications.map((a) => ({
+      id: a.id,
+      status: a.status,
+      createdAt: a.createdAt,
+      careRequest: a.careRequest,
+    })),
+    sitter,
+    application: confirmed
+      ? {
+          id: confirmed.id,
+          status: confirmed.status,
+          careRequest: confirmed.careRequest,
+          sitterProfile: sitter,
+        }
+      : null,
   });
 }

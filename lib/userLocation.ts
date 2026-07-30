@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { DEFAULT_ORIGIN } from "./distance";
 
 export const LOCATION_CONSENT_KEY = "dolboda-location-consent";
@@ -39,9 +39,32 @@ export function readUserLocation(): Origin | null {
  * - 없더라도 이전에 위치 허용을 한 사용자면 다시 조용히 받아온다
  * - 둘 다 아니면 서울시청 기본값(hasLocation=false)
  */
-export function useUserOrigin(): { origin: Origin; hasLocation: boolean } {
+export function useUserOrigin(): {
+  origin: Origin;
+  hasLocation: boolean;
+  locating: boolean;
+  requestLocation: () => void;
+} {
   const [origin, setOrigin] = useState<Origin>(DEFAULT_ORIGIN);
   const [hasLocation, setHasLocation] = useState(false);
+  const [locating, setLocating] = useState(false);
+
+  const requestLocation = useCallback(() => {
+    if (!("geolocation" in navigator)) return;
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const next = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        saveUserLocation(next);
+        localStorage.setItem(LOCATION_CONSENT_KEY, "granted");
+        setOrigin(next);
+        setHasLocation(true);
+        setLocating(false);
+      },
+      () => setLocating(false),
+      { timeout: 8000 }
+    );
+  }, []);
 
   useEffect(() => {
     const saved = readUserLocation();
@@ -50,19 +73,8 @@ export function useUserOrigin(): { origin: Origin; hasLocation: boolean } {
       setHasLocation(true);
       return;
     }
-    const granted = localStorage.getItem(LOCATION_CONSENT_KEY) === "granted";
-    if (!granted || !("geolocation" in navigator)) return;
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const next = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        saveUserLocation(next);
-        setOrigin(next);
-        setHasLocation(true);
-      },
-      () => {},
-      { timeout: 8000 }
-    );
-  }, []);
+    if (localStorage.getItem(LOCATION_CONSENT_KEY) === "granted") requestLocation();
+  }, [requestLocation]);
 
-  return { origin, hasLocation };
+  return { origin, hasLocation, locating, requestLocation };
 }

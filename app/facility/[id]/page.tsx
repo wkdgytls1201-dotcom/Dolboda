@@ -230,23 +230,30 @@ export default function FacilityDetailPage() {
             </div>
           )}
 
-          {!isHospital(facility) && facility.evaluationDetail && (
-            <div className="mt-4 space-y-4">
-              <div>
-                <p className="mb-2 text-xs font-semibold text-ink-700">
-                  {facility.evaluationDetail.evaluatedAt} 평가 · 전체 평균 대비
-                </p>
-                <ScoreCompareBar
-                  score={facility.evaluationDetail.totalScore}
-                  average={facility.evaluationDetail.nationalAverage}
-                />
+          {!isHospital(facility) &&
+            (facility.evaluationDetail ? (
+              <div className="mt-4 space-y-5">
+                <div>
+                  <p className="mb-2 text-xs font-semibold text-ink-700">
+                    {facility.evaluationDetail.evaluatedAt} 평가 · 전체 평균 대비
+                  </p>
+                  <ScoreCompareBar
+                    score={facility.evaluationDetail.totalScore}
+                    average={facility.evaluationDetail.nationalAverage}
+                  />
+                </div>
+                <div>
+                  <p className="mb-2 text-xs font-semibold text-ink-700">영역별 점수</p>
+                  <DomainRadar domains={facility.evaluationDetail.domains} />
+                </div>
               </div>
-              <div>
-                <p className="mb-2 text-xs font-semibold text-ink-700">영역별 점수</p>
-                <DomainRadar domains={facility.evaluationDetail.domains} />
-              </div>
-            </div>
-          )}
+            ) : (
+              // 공개된 세부 평가 자료가 없는 시설 — 화면이 고장 난 것처럼 보이지 않게 이유를 밝힌다.
+              <p className="mt-4 rounded-xl bg-ink-100/40 p-3.5 text-xs leading-relaxed text-ink-500">
+                이 시설은 영역별 세부 점수(기관운영·환경·권리보장 등)가 아직 공개되지 않았어요.
+                국민건강보험공단 정기평가 자료가 공개되는 대로 등급과 함께 보여드릴게요.
+              </p>
+            ))}
         </DetailSection>
 
         {hospital && (
