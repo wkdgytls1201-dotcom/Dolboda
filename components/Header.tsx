@@ -12,6 +12,7 @@ import { Logo } from "./Logo";
 
 const NAV = [
   { href: "/search", label: "시설 찾기" },
+  { href: "/care-request", label: "돌봄 요청" },
   { href: "/compare", label: "비교하기" },
   { href: "/favorites", label: "관심시설" },
 ];

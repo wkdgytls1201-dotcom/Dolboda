@@ -97,6 +97,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
   sitterProfile SitterProfile?
+  careRequests  CareRequest[]
 }
 
 // 로그인한 보호자가 마이페이지에서 옵트인으로 추가하는 "모심시터" 프로필.
@@ -119,6 +120,7 @@ model SitterProfile {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   certifications    SitterCertification[]
+  applications      CareRequestApplication[]
 }
 
 model SitterCertification {
@@ -128,6 +130,54 @@ model SitterCertification {
   name            String
   issuedBy        String?
   createdAt       DateTime      @default(now())
+}
+
+enum CareRequestStatus {
+  OPEN // 등록됨, 지원 받는 중
+  MATCHED // 지원자 중 확정
+  CANCELLED // 보호자가 취소
+  COMPLETED // 돌봄 종료
+}
+
+// 보호자가 등록하는 돌봄 요청 — 활동지역이 겹치는 모심시터가 마이페이지 "일자리 관리"에서
+// 보고 지원할 수 있다. 결제/가격 산정 인프라가 없어 금액 관련 필드는 의도적으로 없음.
+model CareRequest {
+  id                String            @id @default(cuid())
+  guardianId        String
+  guardian          User              @relation(fields: [guardianId], references: [id], onDelete: Cascade)
+  status            CareRequestStatus @default(OPEN)
+
+  region            String // 시/도 — lib/regions.ts REGIONS 값 중 하나
+  locationNote      String?
+  startDate         DateTime
+  endDate           DateTime
+
+  situation         String
+  mobilityLevel     String
+  needsMealAssist   Boolean  @default(false)
+  needsToiletAssist Boolean  @default(false)
+  conditions        String[]
+
+  sitterGenderPref  String   @default("무관")
+  requestNote       String?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  applications      CareRequestApplication[]
+
+  @@index([status, region])
+}
+
+model CareRequestApplication {
+  id              String        @id @default(cuid())
+  careRequestId   String
+  careRequest     CareRequest   @relation(fields: [careRequestId], references: [id], onDelete: Cascade)
+  sitterProfileId String
+  sitterProfile   SitterProfile @relation(fields: [sitterProfileId], references: [id], onDelete: Cascade)
+  status          String        @default("지원완료")
+  createdAt       DateTime      @default(now())
+
+  @@unique([careRequestId, sitterProfileId])
 }
 
 model VerificationToken {
