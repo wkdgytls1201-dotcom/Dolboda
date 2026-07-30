@@ -11,7 +11,9 @@ export function HeroBanner() {
   const { requestFacilityView } = useViewGate();
   const { facilities, loading } = useFacilities();
   // 실사진 없는 실제 공공데이터 시설엔 스톡사진을 못 붙이므로 배너는 데모(mock) 시설만 사용
-  const SLIDES = facilities.filter((f) => f.grade === 1 && f.dataSource === "mock").slice(0, 5);
+  const SLIDES = facilities
+    .filter((f) => (f.grade === 1 || f.grade === 2) && f.dataSource === "mock")
+    .slice(0, 7);
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const trackRef = useRef<HTMLDivElement>(null);
