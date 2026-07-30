@@ -40,6 +40,8 @@ const config: Config = {
           300: "#FFD1AD",
           400: "#FFBB85",
           500: "#FFA35C",
+          600: "#E07E2E",
+          700: "#B15E13",
         },
         accent: {
           50: "#FFFBEB",

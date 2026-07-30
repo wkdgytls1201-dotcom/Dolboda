@@ -78,3 +78,29 @@ p {
 [id^="_al_"] {
   display: none !important;
 }
+
+/* 돌봄 확인서 인쇄 — .print-area만 보이게 하고 헤더/버튼 등 나머지는 전부 숨긴다.
+   브라우저의 "PDF로 저장"이 곧 확인서 저장 기능. */
+@media print {
+  body {
+    background: white;
+  }
+  body * {
+    visibility: hidden;
+  }
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+  .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}

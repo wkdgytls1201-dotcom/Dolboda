@@ -93,6 +93,8 @@ auth.ts                     NextAuth 설정 (scope: profile_nickname account_ema
 
 ## 6. 다음에 할 일 (승인된 계획, 순서대로)
 
+> **2026-07-30 업데이트: 아래 항목 전부 완료됨.** 돌봄 유형(병원/가사돌봄/집에서) 4단계 마법사, API 유형별 검증, 시터 카드 배지, 돌봄 확인서(`/care-request/confirmation`, window.print) 모두 구현·검증·배포 완료. 추가로 SEO 세팅(메타데이터/robots/sitemap/JSON-LD)도 완료. 아래 체크리스트는 기록용으로만 남김.
+
 계획 원문: `C:\Users\linea\.claude\plans\imperative-petting-sedgewick.md` (이 문서에도 요약함)
 
 - [x] **(완료)** `prisma/schema.prisma`: `CareLocationType` enum(HOSPITAL/HOUSEKEEPING/HOME) + `CareRequest`에 `locationType`(기본 HOSPITAL), `householdTasks String[]`, `visitsPerWeek Int?`, `visitHours Int?` 추가, `situation`/`mobilityLevel`을 옵셔널로 변경. **`db push` + `generate` 완료됨. 단, 개발서버 재시작 안 했으니 새 세션에서 서버 켜면 자동 해결.**
