@@ -60,7 +60,7 @@ export function SearchHero() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="지역, 시설명으로 검색 (예: 강남구, 서울행복요양병원)"
+            placeholder="지역, 시설명으로 검색"
             className="w-full bg-transparent px-1 py-2 text-sm text-ink-900 placeholder:text-ink-300 focus:outline-none sm:text-base"
           />
           <button

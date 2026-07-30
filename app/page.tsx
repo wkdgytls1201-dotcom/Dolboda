@@ -7,8 +7,8 @@ import { CompareSelectBar } from "@/components/CompareSelectBar";
 import { StatsStrip } from "@/components/StatsStrip";
 import { Reveal } from "@/components/Reveal";
 import { LocationConsentModal } from "@/components/LocationConsentModal";
-import { useFacilities, useFacilityStats } from "@/lib/useFacilities";
-import { DEFAULT_ORIGIN, haversineDistanceKm } from "@/lib/distance";
+import { useFacilities, useFacilityStats, useNearbyFacilities } from "@/lib/useFacilities";
+import { DEFAULT_ORIGIN } from "@/lib/distance";
 import { isHospital } from "@/lib/types";
 import { PROMOTED_FACILITY_IDS } from "@/lib/promotedFacilities";
 
@@ -74,13 +74,7 @@ export default function HomePage() {
     setShowLocationConsent(false);
   }
 
-  const nearby = useMemo(() => {
-    return facilities
-      .filter((f) => f.lat !== undefined && f.lng !== undefined)
-      .map((f) => ({ f, dist: haversineDistanceKm(origin.lat, origin.lng, f.lat!, f.lng!) }))
-      .sort((a, b) => a.dist - b.dist)
-      .slice(0, 6);
-  }, [facilities, origin]);
+  const { facilities: nearbyFacilities } = useNearbyFacilities(origin.lat, origin.lng);
 
   // 추천 시설: PROMOTED_FACILITY_IDS에 넣은 시설을 순서 그대로 맨 앞에 고정 노출하고,
   // 남는 자리는 평가등급 1등급 시설로 채운다. (나중에 프리미엄 상품 구매 시 이 배열만 수정하면 됨)
@@ -133,9 +127,9 @@ export default function HomePage() {
           <span className="text-sm text-ink-300">현재 위치에서 가까운 순</span>
         </Reveal>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {nearby.map(({ f, dist }, i) => (
+          {nearbyFacilities.map((f, i) => (
             <Reveal key={f.id} delay={i * 60}>
-              <FacilityCard facility={f} distanceKm={dist} />
+              <FacilityCard facility={f} distanceKm={f.distanceKm} />
             </Reveal>
           ))}
         </div>

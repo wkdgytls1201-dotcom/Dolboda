@@ -85,6 +85,35 @@ export function useFacilitiesByIds(ids: string[]) {
   return { facilities, loading };
 }
 
+// "내 주변 시설" — 좌표가 있는 전체 시설(2만여 건) 중 서버에서 진짜 거리순으로 골라온다.
+// /api/facilities의 200건 제한 목록으로 클라이언트에서 계산하면 그 200건이 우연히 몰려있는
+// 지역(예: 서울/경기) 기준으로만 결과가 나오는 문제가 있어 이 방식으로 분리했다.
+export function useNearbyFacilities(lat: number, lng: number, limit = 6) {
+  const [facilities, setFacilities] = useState<(Facility & { distanceKm: number })[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetch(`/api/facilities/nearby?lat=${lat}&lng=${lng}&limit=${limit}`)
+      .then((r) => r.json())
+      .then((data: { items: (Facility & { distanceKm: number })[] }) => {
+        if (!cancelled) {
+          setFacilities(data.items);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [lat, lng, limit]);
+
+  return { facilities, loading };
+}
+
 export interface FacilityStats {
   total: number;
   grade1Count: number;
