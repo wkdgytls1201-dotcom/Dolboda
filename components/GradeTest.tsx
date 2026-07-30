@@ -9,12 +9,14 @@ import {
   ClipboardList,
   RotateCcw,
   ArrowRight,
+  ExternalLink,
   Info,
 } from "lucide-react";
 import {
   TEST_AREAS,
   TOTAL_ITEMS,
   APPLY_STEPS,
+  PROGRAM_FACTS,
   optionsFor,
   calculateResult,
   type Answers,
@@ -77,8 +79,8 @@ export function GradeTest() {
   /* ---------------------------------- 소개 ---------------------------------- */
   if (phase === "intro") {
     return (
-      <main className="mx-auto max-w-lg px-4 pb-16 pt-6">
-        <div className="mb-6 text-center">
+      <main className="mx-auto max-w-lg px-4 pb-24 pt-8">
+        <div className="mb-8 text-center">
           <span className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-primary-50 px-3.5 py-1.5 text-xs font-bold text-primary-700">
             <Sparkles size={13} />
             3분이면 충분해요
@@ -94,7 +96,7 @@ export function GradeTest() {
           </p>
         </div>
 
-        <div className="mb-5 space-y-2.5">
+        <div className="mb-6 space-y-2.5">
           {TEST_AREAS.map((a, i) => (
             <div
               key={a.key}
@@ -112,7 +114,7 @@ export function GradeTest() {
           ))}
         </div>
 
-        <div className="mb-6 flex gap-2.5 rounded-2xl bg-ink-100/40 p-4">
+        <div className="mb-8 flex gap-2.5 rounded-2xl bg-ink-100/40 p-4">
           <Info size={16} className="mt-0.5 shrink-0 text-ink-300" />
           <p className="text-xs leading-relaxed text-ink-500">
             실제 등급은 공단 직원의 방문조사와 의사소견서를 바탕으로
@@ -136,8 +138,8 @@ export function GradeTest() {
   if (phase === "result" && result) {
     const tone = TONE_STYLES[result.band.tone];
     return (
-      <main className="mx-auto max-w-lg px-4 pb-20 pt-6">
-        <div className="mb-5 rounded-3xl border border-ink-100 bg-white p-6 text-center shadow-card">
+      <main className="mx-auto max-w-lg px-4 pb-24 pt-8">
+        <div className="mb-6 rounded-3xl border border-ink-100 bg-white p-7 text-center shadow-card sm:p-8">
           <p className="mb-2 text-xs font-bold text-ink-300">예상 결과</p>
           <h1 className="mb-2 text-2xl font-bold text-ink-900">{result.band.label}</h1>
           <p className="mb-4 text-sm leading-relaxed text-ink-500">{result.band.summary}</p>
@@ -155,7 +157,7 @@ export function GradeTest() {
           <p className="text-xs text-ink-300">도움 필요도 {result.score}점 / 100점 기준</p>
         </div>
 
-        <section className="mb-4 rounded-2xl border border-ink-100 bg-white p-5 shadow-card">
+        <section className="mb-6 rounded-2xl border border-ink-100 bg-white p-5 shadow-card sm:p-6">
           <h2 className="mb-3 text-sm font-bold text-ink-900">영역별로 살펴보면</h2>
           <div className="space-y-3">
             {result.areaScores.map((a) => (
@@ -184,7 +186,7 @@ export function GradeTest() {
           </p>
         </section>
 
-        <section className="mb-4 rounded-2xl border border-ink-100 bg-white p-5 shadow-card">
+        <section className="mb-6 rounded-2xl border border-ink-100 bg-white p-5 shadow-card sm:p-6">
           <h2 className="mb-2 text-sm font-bold text-ink-900">이런 서비스를 주로 이용해요</h2>
           <p className="mb-3 text-xs leading-relaxed text-ink-500">{result.band.detail}</p>
           <div className="flex flex-wrap gap-1.5">
@@ -196,7 +198,7 @@ export function GradeTest() {
           </div>
         </section>
 
-        <section className="mb-4 rounded-2xl border border-ink-100 bg-white p-5 shadow-card">
+        <section className="mb-6 rounded-2xl border border-ink-100 bg-white p-5 shadow-card sm:p-6">
           <h2 className="mb-3 text-sm font-bold text-ink-900">신청은 이렇게 진행돼요</h2>
           <ol className="space-y-3">
             {APPLY_STEPS.map((step, i) => (
@@ -217,13 +219,30 @@ export function GradeTest() {
             href="https://www.longtermcare.or.kr"
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-3 block rounded-xl border border-ink-100 py-2.5 text-center text-xs font-bold text-ink-500 transition-colors duration-150 hover:bg-ink-100"
+            className="mt-4 flex min-h-[56px] items-center gap-3 rounded-xl border border-ink-100 px-4 py-3 transition-colors duration-150 hover:bg-ink-100/60"
           >
-            노인장기요양보험 공식 홈페이지에서 신청하기
+            <ExternalLink size={16} className="shrink-0 text-ink-300" />
+            <span className="min-w-0 flex-1 text-left">
+              <span className="block text-sm font-bold text-ink-900">공식 홈페이지에서 신청</span>
+              <span className="block text-xs text-ink-300">노인장기요양보험 · 새 창에서 열려요</span>
+            </span>
+            <ArrowRight size={15} className="shrink-0 text-ink-300" />
           </a>
         </section>
 
-        <div className="mb-4 flex gap-2.5 rounded-2xl bg-accent-50 p-4">
+        <section className="mb-6 rounded-2xl border border-ink-100 bg-white p-5 shadow-card sm:p-6">
+          <h2 className="mb-4 text-sm font-bold text-ink-900">알아두면 좋아요</h2>
+          <dl className="space-y-4">
+            {PROGRAM_FACTS.map((f) => (
+              <div key={f.title}>
+                <dt className="mb-1 text-sm font-bold text-ink-900">{f.title}</dt>
+                <dd className="text-xs leading-relaxed text-ink-500">{f.desc}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+
+        <div className="mb-6 flex gap-2.5 rounded-2xl bg-accent-50 p-4">
           <Info size={16} className="mt-0.5 shrink-0 text-accent-600" />
           <p className="text-xs leading-relaxed text-ink-700">
             이 결과는 공단의 공식 판정이 아니에요. 실제 등급은 방문조사와 의사소견서를 거쳐
@@ -285,9 +304,9 @@ export function GradeTest() {
         </div>
       </div>
 
-      <p className="mb-4 text-sm leading-relaxed text-ink-500">{area.subtitle}</p>
+      <p className="mb-5 text-sm leading-relaxed text-ink-500">{area.subtitle}</p>
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {area.items.map((item, idx) => {
           const value = answers[item.id];
           return (
