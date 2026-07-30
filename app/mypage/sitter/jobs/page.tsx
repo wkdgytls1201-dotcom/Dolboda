@@ -15,6 +15,7 @@ import {
   MapPinned,
 } from "lucide-react";
 import { MyPageShell } from "@/components/MyPageShell";
+import { ApplyConfirmSheet } from "@/components/ApplyConfirmSheet";
 import { typeMeta, LOCATION_TYPES, type LocationTypeValue } from "@/lib/careLocationTypes";
 import { formatTimeRange, daysBetween } from "@/lib/careOptions";
 
@@ -233,6 +234,7 @@ export default function SitterJobsPage() {
   const [jobs, setJobs] = useState<JobRequest[]>([]);
   const [applications, setApplications] = useState<MyApplication[]>([]);
   const [applyingId, setApplyingId] = useState<string | null>(null);
+  const [confirmingJob, setConfirmingJob] = useState<JobRequest | null>(null);
   const [showFilters, setShowFilters] = useState(false);
 
   const [typeFilter, setTypeFilter] = useState<LocationTypeValue | "">("");
@@ -267,6 +269,7 @@ export default function SitterJobsPage() {
     loadApplications();
   }, [loadApplications]);
 
+  // 지원 버튼 → 확인 시트("내 프로필이 이렇게 보여요") → 확정 시에만 실제 POST
   async function handleApply(id: string) {
     setApplyingId(id);
     const res = await fetch("/api/care-request-applications", {
@@ -277,6 +280,7 @@ export default function SitterJobsPage() {
     if (res.ok || res.status === 409) {
       setJobs((prev) => prev.map((j) => (j.id === id ? { ...j, alreadyApplied: true } : j)));
       loadApplications();
+      setConfirmingJob(null);
     }
     setApplyingId(null);
   }
@@ -449,7 +453,7 @@ export default function SitterJobsPage() {
                     <button
                       type="button"
                       disabled={job.alreadyApplied || applyingId === job.id}
-                      onClick={() => handleApply(job.id)}
+                      onClick={() => setConfirmingJob(job)}
                       className={`min-h-[48px] w-full rounded-xl text-sm font-bold transition-all duration-150 active:scale-[0.98] ${
                         job.alreadyApplied
                           ? "cursor-not-allowed bg-ink-100 text-ink-300"
@@ -575,6 +579,14 @@ export default function SitterJobsPage() {
             ))
           )}
         </div>
+      )}
+      {confirmingJob && (
+        <ApplyConfirmSheet
+          job={confirmingJob}
+          applying={applyingId === confirmingJob.id}
+          onConfirm={() => handleApply(confirmingJob.id)}
+          onClose={() => setConfirmingJob(null)}
+        />
       )}
     </MyPageShell>
   );

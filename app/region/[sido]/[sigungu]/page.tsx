@@ -95,11 +95,11 @@ export default async function RegionSigunguPage({
       />
 
       <nav aria-label="현재 위치" className="mb-3 text-xs text-ink-300">
-        <Link href="/" className="hover:text-ink-500">
+        <Link href="/" className="inline-block py-2 hover:text-ink-500">
           홈
         </Link>
         <span className="mx-1">›</span>
-        <Link href={`/region/${encodeURIComponent(region.slug)}`} className="hover:text-ink-500">
+        <Link href={`/region/${encodeURIComponent(region.slug)}`} className="inline-block py-2 hover:text-ink-500">
           {region.label} 요양시설
         </Link>
         <span className="mx-1">›</span>
@@ -126,7 +126,7 @@ export default async function RegionSigunguPage({
                 href={`/region/${encodeURIComponent(region.slug)}/${encodeURIComponent(
                   sigungu
                 )}/${encodeURIComponent(t.slug)}`}
-                className="inline-flex items-center gap-1 rounded-full border border-ink-100 bg-white px-3 py-1.5 text-xs font-semibold text-ink-700 transition-colors duration-150 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700"
+                className="inline-flex min-h-[44px] items-center gap-1 rounded-full border border-ink-100 bg-white px-3.5 text-xs font-semibold text-ink-700 transition-colors duration-150 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700"
               >
                 {sigungu} {t.short}
                 <span className="font-normal text-ink-300">{summary.typeCounts[t.type]}</span>

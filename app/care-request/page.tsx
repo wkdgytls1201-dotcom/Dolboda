@@ -16,6 +16,7 @@ function CareRequestContent() {
   const presetType = parseLocationTypeParam(params.get("type"));
   const [current, setCurrent] = useState<CareRequestData | null | undefined>(undefined);
   const [editing, setEditing] = useState(false);
+  const [justCreated, setJustCreated] = useState(false);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -40,8 +41,15 @@ function CareRequestContent() {
     return (
       <CareRequestDetail
         careRequest={current}
-        onEdit={() => setEditing(true)}
-        onChange={setCurrent}
+        justCreated={justCreated}
+        onEdit={() => {
+          setJustCreated(false);
+          setEditing(true);
+        }}
+        onChange={(r) => {
+          setJustCreated(false);
+          setCurrent(r);
+        }}
       />
     );
   }
@@ -51,8 +59,11 @@ function CareRequestContent() {
       initial={editing ? current : null}
       presetType={editing ? null : presetType}
       onSaved={(saved) => {
+        // 새로 등록한 경우에만 축하 배너를 보여준다 (수정 완료는 제외)
+        setJustCreated(!editing);
         setCurrent(saved);
         setEditing(false);
+        window.scrollTo({ top: 0, behavior: "instant" });
       }}
       onCancelEdit={editing ? () => setEditing(false) : undefined}
     />

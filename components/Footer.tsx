@@ -15,7 +15,13 @@ export async function Footer() {
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-col items-center gap-3 text-center text-xs text-ink-300 sm:flex-row sm:justify-between sm:text-left">
           <p>&copy; {new Date().getFullYear()} 돌보다. 표시된 시설 정보는 공공데이터 기반으로 실제와 다를 수 있습니다.</p>
-          <div className="flex gap-4">
+          <div className="flex flex-wrap justify-center gap-x-4 gap-y-1">
+            <Link href="/services" className="transition-colors duration-150 hover:text-ink-700">
+              돌봄 서비스
+            </Link>
+            <Link href="/grade-test" className="transition-colors duration-150 hover:text-ink-700">
+              등급 테스트
+            </Link>
             <Link href="/terms" className="transition-colors duration-150 hover:text-ink-700">
               이용약관
             </Link>

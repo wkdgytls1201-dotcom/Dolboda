@@ -48,10 +48,13 @@ export function CareRequestDetail({
   careRequest,
   onEdit,
   onChange,
+  justCreated = false,
 }: {
   careRequest: CareRequestData;
   onEdit: () => void;
   onChange: (r: CareRequestData) => void;
+  /** 방금 등록을 마친 직후인지 — 축하 배너와 다음 단계 안내를 보여준다 */
+  justCreated?: boolean;
 }) {
   const [busy, setBusy] = useState<string | null>(null);
   const meta = typeMeta(careRequest.locationType);
@@ -108,6 +111,32 @@ export function CareRequestDetail({
 
   return (
     <main className="mx-auto max-w-xl px-4 py-8 pb-24">
+      {justCreated && isOpen && (
+        <div className="mb-6 overflow-hidden rounded-3xl border border-primary-100 bg-gradient-to-b from-primary-50 to-white p-6 text-center">
+          <span className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-primary-500 text-white shadow-soft">
+            <CheckCircle2 size={28} />
+          </span>
+          <h2 className="mb-1.5 text-lg font-bold text-ink-900">돌봄 요청이 올라갔어요</h2>
+          <p className="mb-4 text-sm leading-relaxed text-ink-500">
+            {careRequest.region}에서 활동하는 모심시터에게 지금 바로 보이기 시작해요.
+          </p>
+          <ul className="mx-auto max-w-[300px] space-y-2 text-left">
+            {[
+              "시터가 지원하면 이 화면에 지원자 목록이 떠요",
+              "프로필을 보고 마음에 드는 분을 확정하세요",
+              "확정 전까지 내용은 언제든 수정할 수 있어요",
+            ].map((t, i) => (
+              <li key={t} className="flex gap-2.5 text-xs leading-relaxed text-ink-700">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-100 text-[10px] font-bold text-primary-700">
+                  {i + 1}
+                </span>
+                {t}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="mb-5">
         <div className="mb-1 flex flex-wrap items-center gap-2">
           <h1 className="text-xl font-bold text-ink-900">내 돌봄 요청</h1>
