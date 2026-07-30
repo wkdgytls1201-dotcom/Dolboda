@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum FacilityType {
+  NURSING_HOSPITAL
+  NURSING_HOME
+  DAY_NIGHT_CARE
+  HOME_CARE
+  SILVER_TOWN
+}
+
+enum DataSource {
+  mock
+  public
+}
+
+enum GradeSource {
+  HIRA
+  NHIS
+}
+
+// lib/types.ts의 Facility와 1:1 대응. 타입별로 다른 세부 필드(NursingHospitalExtra /
+// NursingHomeExtra)는 컬럼을 나누지 않고 extra(jsonb)에 그대로 저장 — 기존 mockData.ts
+// 객체를 거의 그대로 넣고 뺄 수 있게 하기 위함.
+model Facility {
+  id             String       @id
+  name           String
+  facilityType   FacilityType
+  dataSource     DataSource
+  gradeSource    GradeSource
+  grade          Int?
+  address        String
+  lat            Float?
+  lng            Float?
+  phone          String?
+  establishedYear Int?
+  sourceUpdatedAt String
+  parking        Json?
+  extra          Json
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([facilityType])
+  @@index([dataSource])
+}
+
+// 상담 신청 접수함 — 관리자만 보는 목록으로, 접수 시 이메일도 함께 발송(lib/resend.ts)
+model ConsultRequest {
+  id           String   @id @default(cuid())
+  facilityId   String
+  facilityName String
+  name         String
+  phone        String
+  createdAt    DateTime @default(now())
+}
+
+// 아래 4개는 @auth/prisma-adapter(NextAuth) 표준 스키마 그대로
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}

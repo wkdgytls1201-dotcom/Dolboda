@@ -1,0 +1,58 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+import { MapPlaceholder } from "./MapPlaceholder";
+import { loadKakaoSdk } from "./KakaoMap";
+import { useRoadviewPano } from "@/lib/useRoadviewPano";
+
+// 실제 거리뷰 사진 — 스톡사진과 달리 그 좌표의 진짜 모습이라 시설-사진 오매칭 위험이 없다.
+// 상세페이지 "미리보기"용이라 촬영지점이 멀어도(fallback) 일단 보여준다.
+export function KakaoRoadview({
+  lat,
+  lng,
+  height = 220,
+}: {
+  lat?: number;
+  lng?: number;
+  height?: number;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const pano = useRoadviewPano(lat, lng);
+
+  useEffect(() => {
+    if (pano.status !== "good" && pano.status !== "fallback") return;
+    if (!containerRef.current || pano.panoId === null) return;
+    let cancelled = false;
+
+    loadKakaoSdk().then(() => {
+      if (cancelled || !containerRef.current) return;
+      const roadview = new window.kakao.maps.Roadview(containerRef.current);
+      window.kakao.maps.event.addListener(roadview, "init", () => {
+        roadview.setViewpoint({ pan: pano.pan, tilt: 0, zoom: -3 });
+      });
+      roadview.setPanoId(pano.panoId, new window.kakao.maps.LatLng(lat, lng));
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pano.status, pano.panoId, pano.pan, lat, lng]);
+
+  if (lat === undefined || lng === undefined) {
+    return <MapPlaceholder label="위치 정보가 없어요" />;
+  }
+  if (pano.status === "none") {
+    return <MapPlaceholder label="이 위치는 로드뷰 촬영 범위 밖이에요" />;
+  }
+  if (pano.status === "error") {
+    return <MapPlaceholder label="로드뷰를 불러올 수 없어요" />;
+  }
+
+  return (
+    <div
+      ref={containerRef}
+      style={{ height }}
+      className="w-full overflow-hidden rounded-2xl border border-ink-100 bg-ink-100/30"
+    />
+  );
+}

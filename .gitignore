@@ -1,0 +1,17 @@
+node_modules
+.next
+out
+.env*.local
+npm-debug.log*
+
+# Claude Code local tooling state (not app code)
+.claude/
+.agents/
+skills-lock.json
+
+# TS incremental build cache
+tsconfig.tsbuildinfo
+
+# 일회성 시딩 원본 데이터 — 이미 Supabase DB로 옮겨졌고 앱 런타임에서 안 씀 (30MB+라 repo에 안 올림)
+lib/realNhisData.json
+lib/realNhisDataV2.json

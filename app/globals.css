@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: "Pretendard Variable";
+  src: url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/woff2/PretendardVariable.woff2")
+    format("woff2-variations");
+  font-weight: 45 920;
+  font-display: swap;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-size: 18.5px;
+  color-scheme: light;
+}
+
+body {
+  color: #1b1730;
+  background-color: #fffbf3;
+  line-height: 1.65;
+}
+
+p {
+  line-height: 1.65;
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes float-slow {
+  0%,
+  100% {
+    transform: translateY(0) rotate(12deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(12deg);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.35s ease-out both;
+}
+
+.animate-float-slow {
+  animation: float-slow 5s ease-in-out infinite;
+}
+
+/* 카카오 로드뷰 기본 컨트롤(줌인/줌아웃/나침반/미니맵, 동서남북 방위 표시) 숨김
+   — 카드/미리보기는 순수 사진처럼만 보이게 함 */
+[id^="_box_util_"],
+[id^="_al_"] {
+  display: none !important;
+}
