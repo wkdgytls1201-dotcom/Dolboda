@@ -40,14 +40,17 @@ export const metadata: Metadata = {
     images: [{ url: "/logo.png", width: 512, height: 512, alt: SITE_NAME }],
   },
   robots: { index: true, follow: true },
-  // 서치콘솔 등록 후 발급받는 인증 코드 — Vercel 환경변수로 넣으면 자동 반영된다.
+  // 서치콘솔 소유 확인 코드 — 어차피 HTML에 공개되는 값이라 코드에 직접 둔다.
+  // (환경변수가 있으면 그 값이 우선)
   verification: {
     ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION && {
       google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
     }),
-    ...(process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION && {
-      other: { "naver-site-verification": process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION },
-    }),
+    other: {
+      "naver-site-verification":
+        process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION ??
+        "17ae401edac83b65f683811a2f470a9aacc4b299",
+    },
   },
 };
 
