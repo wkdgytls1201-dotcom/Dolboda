@@ -73,21 +73,23 @@ export default function MyPageAccountPage() {
         </dl>
       </div>
 
-      <div className="mt-4 flex flex-col gap-2">
+      <div className="mt-4">
         <button
           type="button"
           onClick={() => signOut({ callbackUrl: "/" })}
-          className="flex items-center justify-center gap-1.5 rounded-xl border border-ink-100 px-4 py-3 text-sm font-semibold text-ink-700 transition-colors duration-150 hover:bg-ink-100"
+          className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-ink-100 px-4 py-3 text-sm font-semibold text-ink-700 transition-colors duration-150 hover:bg-ink-100"
         >
           <LogOut size={16} />
           로그아웃
         </button>
+      </div>
 
+      <div className="mt-10 text-right">
         {!confirming ? (
           <button
             type="button"
             onClick={() => setConfirming(true)}
-            className="text-center text-xs text-ink-300 underline hover:text-ink-500"
+            className="text-[11px] text-ink-300 hover:text-ink-400"
           >
             회원탈퇴
           </button>
