@@ -1,18 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { CareRequestWizard } from "@/components/CareRequestWizard";
 import { CareRequestDetail } from "@/components/CareRequestDetail";
+import { CareRequestSignedOut } from "@/components/CareRequestSignedOut";
 import type { CareRequestData } from "@/lib/careRequestTypes";
+import { parseLocationTypeParam } from "@/lib/careLocationTypes";
 
-export default function CareRequestPage() {
+function CareRequestContent() {
   const { data: session, status } = useSession();
+  const params = useSearchParams();
+  // /services에서 "가사 돌봄 요청하기"처럼 유형을 정해서 들어오면 그 유형으로 시작한다.
+  const presetType = parseLocationTypeParam(params.get("type"));
   const [current, setCurrent] = useState<CareRequestData | null | undefined>(undefined);
   const [editing, setEditing] = useState(false);
 
   useEffect(() => {
-    if (status !== "authenticated") return;
+    if (status === "loading") return;
+    if (status !== "authenticated") {
+      // 로그인 전에도 화면이 그려져야 한다. 이 처리가 없으면 current가 undefined로 남아
+      // 페이지 전체가 빈 화면이 된다.
+      setCurrent(null);
+      return;
+    }
     fetch("/api/care-requests")
       .then((r) => (r.ok ? r.json() : null))
       .then(setCurrent);
@@ -20,14 +32,7 @@ export default function CareRequestPage() {
 
   if (status === "loading" || current === undefined) return null;
 
-  if (!session?.user) {
-    return (
-      <main className="mx-auto max-w-md px-4 py-16 text-center">
-        <h1 className="mb-2 text-xl font-bold text-ink-900">로그인이 필요해요</h1>
-        <p className="text-sm text-ink-500">돌봄 요청은 로그인 후 등록할 수 있어요.</p>
-      </main>
-    );
-  }
+  if (!session?.user) return <CareRequestSignedOut presetType={presetType} />;
 
   const isActive = current && (current.status === "OPEN" || current.status === "MATCHED");
 
@@ -44,11 +49,20 @@ export default function CareRequestPage() {
   return (
     <CareRequestWizard
       initial={editing ? current : null}
+      presetType={editing ? null : presetType}
       onSaved={(saved) => {
         setCurrent(saved);
         setEditing(false);
       }}
       onCancelEdit={editing ? () => setEditing(false) : undefined}
     />
+  );
+}
+
+export default function CareRequestPage() {
+  return (
+    <Suspense fallback={null}>
+      <CareRequestContent />
+    </Suspense>
   );
 }

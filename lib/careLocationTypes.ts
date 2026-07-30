@@ -40,3 +40,8 @@ export const LOCATION_TYPES: {
 export function typeMeta(value: LocationTypeValue) {
   return LOCATION_TYPES.find((t) => t.value === value) ?? LOCATION_TYPES[0];
 }
+
+/** URL 쿼리(?type=...)로 넘어온 값을 안전하게 해석한다 */
+export function parseLocationTypeParam(v: string | null): LocationTypeValue | null {
+  return LOCATION_TYPES.some((t) => t.value === v) ? (v as LocationTypeValue) : null;
+}

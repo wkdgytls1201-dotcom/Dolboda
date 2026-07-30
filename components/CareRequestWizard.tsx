@@ -50,16 +50,24 @@ const STEPS = [
 
 export function CareRequestWizard({
   initial,
+  presetType = null,
   onSaved,
   onCancelEdit,
 }: {
   initial: CareRequestData | null;
+  /** /services에서 유형을 정해 들어온 경우 그 단계를 건너뛴다 */
+  presetType?: LocationTypeValue | null;
   onSaved: (r: CareRequestData) => void;
   onCancelEdit?: () => void;
 }) {
-  const [step, setStep] = useState(0);
+  // 유형을 정해서 들어왔으면 1단계(유형 선택)를 건너뛰고 바로 2단계에서 시작한다.
+  const [step, setStep] = useState(!initial && presetType ? 1 : 0);
   const [form, setForm] = useState<CareRequestForm>(
-    initial ? formFromRequest(initial) : EMPTY_FORM
+    initial
+      ? formFromRequest(initial)
+      : presetType
+      ? { ...EMPTY_FORM, locationType: presetType }
+      : EMPTY_FORM
   );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);

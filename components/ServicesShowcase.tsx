@@ -98,7 +98,7 @@ function ServiceCard({ service, index }: { service: CareService; index: number }
 
             {service.action.kind === "request" ? (
               <Link
-                href="/care-request"
+                href={`/care-request?type=${service.action.locationType}`}
                 className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-2xl bg-primary-500 text-sm font-bold text-white shadow-soft transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:bg-primary-600 hover:shadow-card-hover active:translate-y-0 active:scale-[0.99]"
               >
                 {service.action.label}
@@ -131,9 +131,9 @@ export function ServicesShowcase() {
         ))}
       </div>
 
-      <section className="mt-10">
+      <section className="mt-14">
         <h2 className="mb-1 text-center text-xl font-bold text-ink-900">한눈에 비교하기</h2>
-        <p className="mb-5 text-center text-sm leading-relaxed text-ink-500">
+        <p className="mb-6 text-center text-sm leading-relaxed text-ink-500">
           가장 많이 헷갈리시는 부분만 모았어요.
         </p>
         <div className="-mx-4 overflow-x-auto px-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -184,17 +184,17 @@ export function ServicesShowcase() {
         </p>
       </section>
 
-      <section className="mt-10">
+      <section className="mt-14">
         <div className="mb-1 flex items-center justify-center gap-2">
           <h2 className="text-center text-xl font-bold text-ink-900">이렇게 올라와요</h2>
           <span className="rounded-full bg-ink-100 px-2 py-0.5 text-[11px] font-bold text-ink-500">
             예시
           </span>
         </div>
-        <p className="mb-5 text-center text-sm leading-relaxed text-ink-500">
+        <p className="mb-6 text-center text-sm leading-relaxed text-ink-500">
           아래는 실제 등록된 요청이 아니라 화면을 보여드리기 위한 예시예요.
         </p>
-        <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {SAMPLE_LISTINGS.map((s) => (
             <div
               key={s.place}
@@ -231,7 +231,7 @@ export function ServicesShowcase() {
         </div>
       </section>
 
-      <section className="mt-10">
+      <section className="mt-14">
         <h2 className="mb-1 text-center text-xl font-bold text-ink-900">어떻게 진행되나요</h2>
         <p className="mb-6 text-center text-sm text-ink-500">
           요청을 올리시면 시터가 지원하고, 보호자가 직접 고르시는 방식이에요.

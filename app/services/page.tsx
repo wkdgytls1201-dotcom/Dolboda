@@ -94,7 +94,7 @@ export default function ServicesPage() {
         <CareServicesHero />
       </div>
 
-      <div className="mb-8 text-center">
+      <div className="mb-10 text-center">
         <h1 className="mb-3 text-[26px] font-bold leading-tight text-ink-900">
           어떤 돌봄이 필요하세요?
         </h1>
@@ -106,7 +106,7 @@ export default function ServicesPage() {
 
       <ServicesShowcase />
 
-      <section className="mt-10 rounded-3xl border border-primary-100 bg-primary-50/60 p-6 text-center">
+      <section className="mt-14 rounded-3xl border border-primary-100 bg-primary-50/60 p-6 text-center">
         <h2 className="mb-2 text-lg font-bold text-ink-900">어떤 걸 골라야 할지 모르겠다면</h2>
         <p className="mb-5 text-sm leading-relaxed text-ink-500">
           장기요양등급을 먼저 확인해보세요. 등급에 따라 이용할 수 있는 서비스와
