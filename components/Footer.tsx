@@ -13,24 +13,6 @@ export async function Footer() {
   return (
     <footer className="border-t border-ink-100 bg-white/60 px-4 py-8">
       <div className="mx-auto max-w-6xl">
-        {regions.length > 0 && (
-          <nav aria-label="지역별 요양시설" className="mb-6 text-center sm:text-left">
-            <p className="mb-2 text-xs font-semibold text-ink-500">지역별 요양시설 찾기</p>
-            <ul className="flex flex-wrap justify-center gap-x-3 gap-y-1.5 sm:justify-start">
-              {regions.map((r) => (
-                <li key={r.slug}>
-                  <Link
-                    href={`/region/${encodeURIComponent(r.slug)}`}
-                    className="text-xs text-ink-300 transition-colors duration-150 hover:text-primary-600"
-                  >
-                    {r.label} 요양시설
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-        )}
-
         <div className="flex flex-col items-center gap-3 text-center text-xs text-ink-300 sm:flex-row sm:justify-between sm:text-left">
           <p>&copy; {new Date().getFullYear()} 돌보다. 표시된 시설 정보는 공공데이터 기반으로 실제와 다를 수 있습니다.</p>
           <div className="flex gap-4">
@@ -42,6 +24,28 @@ export async function Footer() {
             </Link>
           </div>
         </div>
+
+        {/* 검색엔진 크롤 경로용 지역 링크 — 서비스 동선에는 없는 SEO 전용 랜딩으로 연결.
+            숨김 처리하면 스팸 신호가 되므로, 보이되 최대한 존재감 없게 둔다. */}
+        {regions.length > 0 && (
+          <nav
+            aria-label="지역별 요양시설"
+            className="mt-4 border-t border-ink-100/60 pt-3 text-center sm:text-left"
+          >
+            <ul className="flex flex-wrap justify-center gap-x-2.5 gap-y-1 sm:justify-start">
+              {regions.map((r) => (
+                <li key={r.slug}>
+                  <Link
+                    href={`/region/${encodeURIComponent(r.slug)}`}
+                    className="text-[11px] text-ink-300/80 transition-colors duration-150 hover:text-ink-500"
+                  >
+                    {r.label} 요양시설
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        )}
       </div>
     </footer>
   );
