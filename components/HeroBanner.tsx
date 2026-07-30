@@ -9,7 +9,7 @@ import { useViewGate } from "@/lib/viewGateContext";
 
 export function HeroBanner() {
   const { requestFacilityView } = useViewGate();
-  const { facilities } = useFacilities();
+  const { facilities, loading } = useFacilities();
   // 실사진 없는 실제 공공데이터 시설엔 스톡사진을 못 붙이므로 배너는 데모(mock) 시설만 사용
   const SLIDES = facilities.filter((f) => f.grade === 1 && f.dataSource === "mock").slice(0, 5);
   const [index, setIndex] = useState(0);
@@ -38,6 +38,14 @@ export function HeroBanner() {
     }, 500);
     return () => clearTimeout(t);
   }, [index]);
+
+  // 데이터가 오기 전 배너가 잠깐 사라졌다가 나타나면 아래 검색창까지 같이 밀리는
+  // 레이아웃 흔들림이 생긴다 — 로딩 중엔 같은 크기의 스켈레톤으로 자리를 미리 잡아둔다.
+  if (loading) {
+    return (
+      <div className="relative mx-auto aspect-[5/4] w-[84%] animate-pulse rounded-3xl bg-ink-100/60 shadow-soft sm:aspect-[21/9] sm:w-[78%]" />
+    );
+  }
 
   if (SLIDES.length === 0) return null;
 
