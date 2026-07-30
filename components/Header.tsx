@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Bell, LogOut, Menu, X } from "lucide-react";
+import { Bell, LogOut, Menu, User, X } from "lucide-react";
 import { useCompare } from "@/lib/compareContext";
 import { useFavorites } from "@/lib/favoritesContext";
 import { useSession, signOut } from "next-auth/react";
@@ -89,9 +89,14 @@ export function Header() {
                 <>
                   <Link
                     href="/mypage"
-                    className="text-sm font-medium text-ink-700 transition-colors duration-150 hover:text-primary-600"
+                    className={`flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-semibold transition-all duration-200 ${
+                      pathname?.startsWith("/mypage") || pathname === "/account"
+                        ? "bg-primary-50 text-primary-700"
+                        : "text-ink-500 hover:-translate-y-0.5 hover:bg-royal-50 hover:text-royal-700"
+                    }`}
                   >
-                    {user.name}
+                    <User size={16} />
+                    마이페이지
                   </Link>
                   <button
                     type="button"
@@ -170,22 +175,28 @@ export function Header() {
 
               <div className="mt-2 border-t border-ink-100 pt-3">
                 {user ? (
-                  <div className="flex items-center justify-between px-1">
+                  <>
                     <Link
                       href="/mypage"
-                      className="text-sm font-medium text-ink-700 transition-colors duration-150 hover:text-primary-600"
+                      className={`mb-1 flex items-center gap-2 rounded-xl px-4 py-3 text-base font-semibold transition-colors duration-200 ${
+                        pathname?.startsWith("/mypage") || pathname === "/account"
+                          ? "bg-primary-50 text-primary-700"
+                          : "text-ink-700 hover:bg-ink-100"
+                      }`}
                     >
-                      {user.name}
+                      <User size={18} />
+                      마이페이지
+                      <span className="ml-auto text-xs font-normal text-ink-300">{user.name}</span>
                     </Link>
                     <button
                       type="button"
                       onClick={() => signOut()}
-                      className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium text-ink-500 transition-colors duration-200 hover:bg-ink-100 hover:text-ink-700 active:scale-95"
+                      className="flex w-full items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium text-ink-500 transition-colors duration-200 hover:bg-ink-100 hover:text-ink-700 active:scale-95"
                     >
                       <LogOut size={16} />
                       로그아웃
                     </button>
-                  </div>
+                  </>
                 ) : (
                   <button
                     type="button"
