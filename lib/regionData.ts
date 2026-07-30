@@ -63,6 +63,48 @@ export const getRegionSummary = cache(async (region: RegionSeo): Promise<RegionS
   };
 });
 
+export interface RegionIndexRow {
+  sidoSlug: string;
+  sigungu: string;
+  facilityType: FacilityType;
+  count: number;
+}
+
+/**
+ * (시/도, 시/군/구, 시설유형)별 시설 수 — 한 번의 집계 쿼리로 전체를 가져온다.
+ * sitemap이 지역·유형 페이지 수천 개를 만들 때 쿼리를 반복하지 않기 위한 인덱스.
+ */
+export const getRegionIndex = unstable_cache(
+  async (): Promise<RegionIndexRow[]> => {
+    const rows = await prisma.$queryRaw<
+      { sido: string; sigungu: string; facility_type: string; count: bigint }[]
+    >`
+      SELECT split_part(address, ' ', 1) AS sido,
+             split_part(address, ' ', 2) AS sigungu,
+             "facilityType"::text AS facility_type,
+             COUNT(*) AS count
+      FROM "Facility"
+      GROUP BY 1, 2, 3
+    `;
+
+    const out: RegionIndexRow[] = [];
+    for (const row of rows) {
+      if (!/^[가-힣]{1,10}(시|군|구)$/.test(row.sigungu)) continue;
+      const region = REGION_SEO.find((r) => r.prefixes.some((p) => row.sido.startsWith(p)));
+      if (!region) continue;
+      out.push({
+        sidoSlug: region.slug,
+        sigungu: row.sigungu,
+        facilityType: row.facility_type as FacilityType,
+        count: Number(row.count),
+      });
+    }
+    return out;
+  },
+  ["region-index"],
+  { revalidate: 86400 }
+);
+
 export interface SigunguSummary {
   total: number;
   typeCounts: Partial<Record<FacilityType, number>>;
@@ -94,13 +136,44 @@ export const getSigunguSummary = cache(
   }
 );
 
-// 등급 좋은 순 대표 시설 — sigungu를 주면 그 시/군/구로 좁힌다.
+// 지역+유형 조합(예: 김해시 방문요양) 요약
+export const getTypeSummary = cache(
+  async (
+    region: RegionSeo,
+    sigungu: string,
+    facilityType: FacilityType
+  ): Promise<{ total: number; subLocalities: string[] }> => {
+    const rows = await prisma.facility.findMany({
+      where: {
+        AND: [prefixWhere(region), { address: { contains: ` ${sigungu} ` } }, { facilityType }],
+      },
+      select: { address: true },
+    });
+    const subs = new Set<string>();
+    for (const row of rows) {
+      const sub = subLocalityOf(row.address);
+      if (sub) subs.add(sub);
+    }
+    return {
+      total: rows.length,
+      subLocalities: [...subs].sort((a, b) => a.localeCompare(b, "ko")),
+    };
+  }
+);
+
+// 등급 좋은 순 대표 시설 — sigungu/facilityType을 주면 그만큼 좁힌다.
 export const getTopFacilities = cache(
-  async (region: RegionSeo, sigungu: string | null, take: number) => {
+  async (
+    region: RegionSeo,
+    sigungu: string | null,
+    take: number,
+    facilityType?: FacilityType
+  ) => {
+    const conditions: object[] = [prefixWhere(region)];
+    if (sigungu) conditions.push({ address: { contains: ` ${sigungu} ` } });
+    if (facilityType) conditions.push({ facilityType });
     return prisma.facility.findMany({
-      where: sigungu
-        ? { AND: [prefixWhere(region), { address: { contains: ` ${sigungu} ` } }] }
-        : prefixWhere(region),
+      where: { AND: conditions },
       orderBy: [{ grade: { sort: "asc", nulls: "last" } }, { name: "asc" }],
       take,
       select: {

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { findRegionBySlug } from "@/lib/regionSeo";
 import { getSigunguSummary, getTopFacilities } from "@/lib/regionData";
+import { FACILITY_TYPE_SEO } from "@/lib/facilityTypeSeo";
 import {
   TypeCountChips,
   FacilityLinkList,
@@ -115,6 +116,25 @@ export default async function RegionSigunguPage({
       <div className="mb-4">
         <TypeCountChips typeCounts={summary.typeCounts} />
       </div>
+
+      <section className="mb-6">
+        <h2 className="mb-2 text-sm font-bold text-ink-900">서비스 종류별로 보기</h2>
+        <ul className="flex flex-wrap gap-2">
+          {FACILITY_TYPE_SEO.filter((t) => (summary.typeCounts[t.type] ?? 0) > 0).map((t) => (
+            <li key={t.slug}>
+              <Link
+                href={`/region/${encodeURIComponent(region.slug)}/${encodeURIComponent(
+                  sigungu
+                )}/${encodeURIComponent(t.slug)}`}
+                className="inline-flex items-center gap-1 rounded-full border border-ink-100 bg-white px-3 py-1.5 text-xs font-semibold text-ink-700 transition-colors duration-150 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700"
+              >
+                {sigungu} {t.short}
+                <span className="font-normal text-ink-300">{summary.typeCounts[t.type]}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
 
       {summary.subLocalities.length > 0 && (
         <p className="mb-6 rounded-xl bg-ink-100/40 p-3.5 text-xs leading-relaxed text-ink-500">
