@@ -72,7 +72,11 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
           모심시터
         </p>
         <nav className="mt-2 flex gap-1.5 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] sm:mt-0 sm:flex-col sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
-          {isSitter ? (
+          {isSitter === null ? (
+            // 이미 등록된 시터에게 "등록하기"가 잠깐 떴다 사라지는 걸 막기 위해
+            // 확인 끝나기 전(null)엔 아무것도 안 보여준다.
+            <div className="h-11 w-full animate-pulse rounded-xl bg-ink-100/60" aria-hidden />
+          ) : isSitter ? (
             sitterItems.map((item) => <NavLink key={item.href} item={item} />)
           ) : (
             <Link
