@@ -269,7 +269,7 @@ function SearchContent() {
           persistKey="dolboda-search-map-view"
         />
       ) : results.length === 0 && loading ? (
-        <PageLoader label="시설을 불러오는 중" />
+        <PageLoader label="시설을 불러오는 중" compact />
       ) : results.length === 0 ? (
         <div className="rounded-2xl bg-white p-12 text-center text-sm text-ink-300 shadow-card">
           조건에 맞는 시설이 없습니다. 필터를 조정해보세요.
