@@ -7,10 +7,16 @@ import { FacilityCard } from "@/components/FacilityCard";
 import { CompareSelectBar } from "@/components/CompareSelectBar";
 import { FilterBar, FacilityFilters, EMPTY_FILTERS } from "@/components/FilterBar";
 import { KakaoMultiMap } from "@/components/KakaoMap";
+import { NHIS_GRADE_LETTER } from "@/components/GradeBadge";
 import { useFacilities, useNearbyFacilities } from "@/lib/useFacilities";
 import { haversineDistanceKm } from "@/lib/distance";
 import { useUserOrigin } from "@/lib/userLocation";
-import { FacilityType, isHospital } from "@/lib/types";
+import { FACILITY_TYPE_LABEL, FacilityType, isHospital } from "@/lib/types";
+
+function gradeText(grade: number | null, gradeSource?: "HIRA" | "NHIS") {
+  if (grade === null) return "등급 제외";
+  return gradeSource === "NHIS" ? `${NHIS_GRADE_LETTER[grade - 1] ?? grade}등급` : `${grade}등급`;
+}
 
 type SortKey = "distance" | "grade" | "rating";
 
@@ -60,9 +66,10 @@ function SearchContent() {
   // 홈에서 위치를 허용했다면 그 좌표를 그대로 쓰고, 아직 없으면 직접 요청할 수 있게 한다.
   const { origin, hasLocation, locating, requestLocation } = useUserOrigin();
 
-  // 거리순인데 검색어가 없으면 서버에서 전국 기준 최근접을 계산해 받아온다.
+  // 거리순 또는 등급순인데 검색어가 없으면 서버에서 전국 기준 최근접을 계산해 받아온다.
   // (등록순 300건 안에서 거리를 재면 그 300건이 몰려있는 지역만 계속 나온다)
-  const useNearest = sortKey === "distance" && hasLocation && !query.trim();
+  // 등급순은 위치가 있으면 내 주변 100km 이내로 좁혀서 보여주므로 이 최근접 목록이 필요하다.
+  const useNearest = (sortKey === "distance" || sortKey === "grade") && hasLocation && !query.trim();
 
   const listQuery = useFacilities({
     q: query,
@@ -112,6 +119,10 @@ function SearchContent() {
     if (filters.maxDistanceKm !== null) {
       list = list.filter((x) => x.dist !== undefined && x.dist <= filters.maxDistanceKm!);
     }
+    // 등급순으로 볼 때 위치를 알고 있으면 너무 먼 시설까지 섞이지 않게 100km로 좁힌다.
+    if (sortKey === "grade" && hasLocation && !query.trim()) {
+      list = list.filter((x) => x.dist !== undefined && x.dist <= 100);
+    }
     if (filters.departments.length > 0) {
       list = list.filter(
         (x) =>
@@ -136,7 +147,9 @@ function SearchContent() {
       if (sortKey === "grade") {
         if (a.f.grade === null) return 1;
         if (b.f.grade === null) return -1;
-        return a.f.grade - b.f.grade;
+        const aScore = !isHospital(a.f) ? a.f.evaluationDetail?.totalScore ?? 0 : 0;
+        const bScore = !isHospital(b.f) ? b.f.evaluationDetail?.totalScore ?? 0 : 0;
+        return a.f.grade - b.f.grade || bScore - aScore;
       }
       // 평점순: 별도 이용자 평점 데이터가 없어 등급 우선 + 최근 설립순으로 대체
       if (a.f.grade === null && b.f.grade === null)
@@ -236,7 +249,14 @@ function SearchContent() {
 
       {view === "map" ? (
         <KakaoMultiMap
-          markers={results.map((x) => ({ lat: x.f.lat, lng: x.f.lng, label: x.f.name }))}
+          markers={results.map((x) => ({
+            lat: x.f.lat,
+            lng: x.f.lng,
+            label: x.f.name,
+            sublabel: `${FACILITY_TYPE_LABEL[x.f.facilityType]} · ${gradeText(x.f.grade, x.f.gradeSource)}`,
+            href: `/facility/${x.f.id}`,
+          }))}
+          center={origin}
         />
       ) : results.length === 0 ? (
         <div className="rounded-2xl bg-white p-12 text-center text-sm text-ink-300 shadow-card">

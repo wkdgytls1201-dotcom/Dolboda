@@ -82,8 +82,10 @@ export default function HomePage() {
     setShowLocationConsent(false);
   }
 
-  // 한 번에 넉넉히 받아 "내 주변 시설"(가까운 6곳)과 "최근 설립"(주변 후보 중 최신순)에 함께 쓴다.
-  const { facilities: nearbyPool } = useNearbyFacilities(origin.lat, origin.lng, 60);
+  // 한 번에 넉넉히 받아 "내 주변 시설"(가까운 6곳)·"최근 설립"(주변 후보 중 최신순)·
+  // "점수 높은 시설"(주변 100km 이내 등급순)에 함께 쓴다. 300건이면 100km 반경을
+  // 등급순으로 훑기에 충분하다(위치 미허용이면 origin이 서울시청 기본값이라 그 기준으로 온다).
+  const { facilities: nearbyPool } = useNearbyFacilities(origin.lat, origin.lng, 300);
   const nearbyFacilities = useMemo(() => nearbyPool.slice(0, 6), [nearbyPool]);
 
   // 추천 시설: PROMOTED_FACILITY_IDS에 넣은 시설을 순서 그대로 맨 앞에 고정 노출하고,
@@ -97,10 +99,11 @@ export default function HomePage() {
     return [...promoted, ...fallback].slice(0, 6);
   }, [facilities]);
 
-  // 점수 높은 시설: 평가등급이 좋은(숫자가 낮은) 순, 동점이면 정기평가 총점이 있는 경우 그걸로 비교
+  // 점수 높은 시설: 내 위치(또는 서울 기본값) 100km 이내로 좁힌 뒤 평가등급이 좋은(숫자가
+  // 낮은) 순, 동점이면 정기평가 총점 순으로 정렬한다. 먼 지역의 고득점 시설은 의미가 적다.
   const topScored = useMemo(() => {
-    return facilities
-      .filter((f) => f.grade !== null)
+    return nearbyPool
+      .filter((f) => f.grade !== null && f.distanceKm <= 100)
       .slice()
       .sort((a, b) => {
         if (a.grade !== b.grade) return (a.grade ?? 99) - (b.grade ?? 99);
@@ -109,33 +112,46 @@ export default function HomePage() {
         return bScore - aScore;
       })
       .slice(0, 6);
-  }, [facilities]);
+  }, [nearbyPool]);
 
-  // 최근 설립: 내 주변 시설 중에서 고른다(먼 곳의 신축 시설은 의미가 적으므로).
-  // 정렬 = 설립연도 최신순 → 같은 해면 평가등급 높은 순 → 그래도 같으면 가까운 순.
-  // 주변에 설립연도 정보가 있는 시설이 없으면 전국 목록으로 대체한다.
+  // 최근 설립: 설립연도 데이터는 요양병원(HIRA 소스)에만 있고 방문요양·요양원·주야간보호
+  // (NHIS 소스)엔 원본에 그 항목 자체가 없다. 그래서 요양병원을 설립연도 최신순으로 먼저
+  // 채우고, 남는 자리는 나머지 유형을 평가등급 높은 순(숫자가 작을수록 좋음)으로 채운다.
+  // 각각 내 주변 시설을 우선하고, 주변에 해당 유형이 없으면 전국 목록으로 대체한다.
   const recentlyEstablished = useMemo(() => {
-    const byRecency = (
-      a: { establishedYear?: number; grade: number | null },
-      b: { establishedYear?: number; grade: number | null }
-    ) => {
-      const yearDiff = (b.establishedYear ?? 0) - (a.establishedYear ?? 0);
-      if (yearDiff !== 0) return yearDiff;
-      // 등급은 숫자가 작을수록 좋고, 등급 없는 시설은 뒤로
-      return (a.grade ?? 99) - (b.grade ?? 99);
-    };
+    const SLOTS = 6;
+    const byRecency = (a: { establishedYear?: number }, b: { establishedYear?: number }) =>
+      (b.establishedYear ?? 0) - (a.establishedYear ?? 0);
+    const byGrade = (a: { grade: number | null }, b: { grade: number | null }) =>
+      (a.grade ?? 99) - (b.grade ?? 99);
 
-    const nearbyWithYear = nearbyPool.filter((f) => f.establishedYear !== undefined);
-    if (nearbyWithYear.length > 0) {
-      // nearbyPool은 이미 가까운 순이라 안정 정렬 덕분에 동점 시 거리순이 유지된다.
-      return nearbyWithYear.slice().sort(byRecency).slice(0, 6);
-    }
-
-    return facilities
-      .filter((f) => f.establishedYear !== undefined)
+    const nearbyHospitals = nearbyPool.filter(
+      (f) => f.facilityType === "NURSING_HOSPITAL" && f.establishedYear !== undefined
+    );
+    const hospitals = (
+      nearbyHospitals.length > 0
+        ? nearbyHospitals
+        : facilities.filter((f) => f.facilityType === "NURSING_HOSPITAL" && f.establishedYear !== undefined)
+    )
       .slice()
       .sort(byRecency)
-      .slice(0, 6);
+      .slice(0, SLOTS);
+
+    const remaining = SLOTS - hospitals.length;
+    if (remaining <= 0) return hospitals;
+
+    const otherTypes = new Set(["HOME_CARE", "NURSING_HOME", "DAY_NIGHT_CARE"]);
+    const nearbyOthers = nearbyPool.filter((f) => otherTypes.has(f.facilityType) && f.grade !== null);
+    const others = (
+      nearbyOthers.length > 0
+        ? nearbyOthers
+        : facilities.filter((f) => otherTypes.has(f.facilityType) && f.grade !== null)
+    )
+      .slice()
+      .sort(byGrade)
+      .slice(0, remaining);
+
+    return [...hospitals, ...others];
   }, [nearbyPool, facilities]);
 
   return (
@@ -182,7 +198,7 @@ export default function HomePage() {
       <section className="mx-auto max-w-6xl px-4 pb-12">
         <Reveal className="mb-5 flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
           <h2 className="text-xl font-bold text-ink-900">점수 높은 시설</h2>
-          <span className="text-sm text-ink-300">평가등급이 높은 시설</span>
+          <span className="text-sm text-ink-300">내 주변 100km 이내 · 평가등급이 높은 시설</span>
         </Reveal>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {topScored.map((f, i) => (
@@ -197,7 +213,7 @@ export default function HomePage() {
         <section className="mx-auto max-w-6xl px-4 pb-12">
           <Reveal className="mb-5 flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
             <h2 className="text-xl font-bold text-ink-900">가장 최근 설립</h2>
-            <span className="text-sm text-ink-300">설립연도 기준 최신 시설</span>
+            <span className="text-sm text-ink-300">요양병원은 설립연도순 · 그 외는 평가등급순</span>
           </Reveal>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {recentlyEstablished.map((f, i) => (
