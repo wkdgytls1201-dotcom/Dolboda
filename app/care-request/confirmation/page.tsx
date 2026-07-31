@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { ChevronLeft, Printer } from "lucide-react";
 import { typeMeta } from "@/lib/careLocationTypes";
 import { formatTimeRange, daysBetween } from "@/lib/careOptions";
+import { PageLoader } from "@/components/PageLoader";
 import type { CareRequestData } from "@/lib/careRequestTypes";
 
 interface ConfirmationData {
@@ -71,7 +72,7 @@ export default function CareConfirmationPage() {
 
   const { data: session } = useSession();
 
-  if (status === "loading" || data === undefined) return null;
+  if (status === "loading" || data === undefined) return <PageLoader />;
 
   if (status !== "authenticated") {
     return (

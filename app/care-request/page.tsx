@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { CareRequestWizard } from "@/components/CareRequestWizard";
 import { CareRequestDetail } from "@/components/CareRequestDetail";
 import { CareRequestSignedOut } from "@/components/CareRequestSignedOut";
+import { PageLoader } from "@/components/PageLoader";
 import type { CareRequestData } from "@/lib/careRequestTypes";
 import { parseLocationTypeParam } from "@/lib/careLocationTypes";
 
@@ -31,7 +32,7 @@ function CareRequestContent() {
       .then(setCurrent);
   }, [status]);
 
-  if (status === "loading" || current === undefined) return null;
+  if (status === "loading" || current === undefined) return <PageLoader />;
 
   if (!session?.user) return <CareRequestSignedOut presetType={presetType} />;
 

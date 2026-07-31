@@ -28,6 +28,7 @@ import { GradeBadge, TypeBadge } from "@/components/GradeBadge";
 import { DetailSection } from "@/components/DetailSection";
 import { KakaoMap } from "@/components/KakaoMap";
 import { KakaoRoadview } from "@/components/KakaoRoadview";
+import { PageLoader } from "@/components/PageLoader";
 import { ConsultModal } from "@/components/ConsultModal";
 import { FacilityCard } from "@/components/FacilityCard";
 import { useCompare } from "@/lib/compareContext";
@@ -85,7 +86,7 @@ export default function FacilityDetailPage() {
   }, [facility, user]);
 
   if (!facility) {
-    if (loading) return null;
+    if (loading) return <PageLoader />;
     return notFound();
   }
 

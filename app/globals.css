@@ -64,12 +64,30 @@ p {
   }
 }
 
+/* 페이지 로딩 중 로고가 숨쉬듯 은은하게 커졌다 작아짐 — transform/opacity만 써서
+   GPU에서 처리되니 저사양 기기에서도 렉 없이 가볍게 돈다. */
+@keyframes pulse-soft {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+
 .animate-slide-up {
   animation: slide-up 0.35s ease-out both;
 }
 
 .animate-float-slow {
   animation: float-slow 5s ease-in-out infinite;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 1.4s ease-in-out infinite;
 }
 
 /* 카카오 로드뷰 기본 컨트롤(줌인/줌아웃/나침반/미니맵, 동서남북 방위 표시) 숨김

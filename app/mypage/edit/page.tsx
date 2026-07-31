@@ -2,11 +2,12 @@
 
 import { useSession } from "next-auth/react";
 import { MyPageShell } from "@/components/MyPageShell";
+import { PageLoader } from "@/components/PageLoader";
 
 export default function MyPageEditPage() {
   const { data: session, status } = useSession();
 
-  if (status === "loading") return null;
+  if (status === "loading") return <PageLoader />;
 
   if (!session?.user) {
     return (

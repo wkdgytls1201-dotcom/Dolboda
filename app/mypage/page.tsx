@@ -5,13 +5,14 @@ import { useSession } from "next-auth/react";
 import { signOutAndClear } from "@/lib/signOutAndClear";
 import { LogOut, User } from "lucide-react";
 import { MyPageShell } from "@/components/MyPageShell";
+import { PageLoader } from "@/components/PageLoader";
 
 export default function MyPageAccountPage() {
   const { data: session, status } = useSession();
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  if (status === "loading") return null;
+  if (status === "loading") return <PageLoader />;
 
   if (!session?.user) {
     return (
