@@ -206,6 +206,36 @@ export const SAMPLE_LISTINGS: SampleListing[] = [
     target: "여성 · 80대 · 50~60kg",
     detail: "퇴원 후 자택 회복 · 복약 확인",
   },
+  {
+    type: "병원 간병",
+    badge: "bg-primary-50 text-primary-700",
+    place: "부산 해운대구 OO병원",
+    period: "8월 10일 ~ 8월 24일",
+    days: 15,
+    time: "24시간 상주",
+    target: "남성 · 70대 · 60~70kg",
+    detail: "뇌졸중 재활 중 · 거동 부축 필요",
+  },
+  {
+    type: "가사 돌봄",
+    badge: "bg-mint-100 text-mint-700",
+    place: "대구 수성구",
+    period: "8월 4일 ~ 8월 25일",
+    days: 22,
+    time: "주 2회 · 회당 4시간",
+    target: "여성 · 80대",
+    detail: "청소 · 장보기 · 반찬 준비",
+  },
+  {
+    type: "집에서 돌봄",
+    badge: "bg-peach-100 text-peach-700",
+    place: "인천 연수구",
+    period: "8월 7일 ~ 9월 5일",
+    days: 30,
+    time: "오후 1시 ~ 오후 7시",
+    target: "남성 · 90대 · 50~60kg",
+    detail: "치매 초기 · 말벗과 산책 동행",
+  },
 ];
 
 export const SERVICE_STEPS = [

@@ -223,20 +223,18 @@ function SearchContent() {
         </div>
       </div>
 
-      <p className="mb-4 text-sm text-ink-500">
-        {loading && facilities.length === 0 ? (
-          <span className="inline-block h-4 w-32 animate-pulse rounded bg-ink-100" aria-hidden />
-        ) : (
-          <>
-            총 <span className="font-bold text-ink-900">{total.toLocaleString()}</span>개 시설
-            {total > results.length && (
-              <span className="ml-1 text-ink-300">
-                (그중 {results.length}개 표시 · 검색어로 좁혀보세요)
-              </span>
-            )}
-          </>
-        )}
-      </p>
+      {/* 로딩 중엔 이 자리에 아무것도 안 띄운다 — 아래 결과 영역에 뜨는 로더로 충분하고,
+          여기 따로 스켈레톤 바를 놓으면 오히려 "뭔가 잘못됐나" 싶은 깜빡임으로 보인다. */}
+      {!(loading && facilities.length === 0) && (
+        <p className="mb-4 text-sm text-ink-500">
+          총 <span className="font-bold text-ink-900">{total.toLocaleString()}</span>개 시설
+          {total > results.length && (
+            <span className="ml-1 text-ink-300">
+              (그중 {results.length}개 표시 · 검색어로 좁혀보세요)
+            </span>
+          )}
+        </p>
+      )}
 
       {sortKey === "distance" && !hasLocation && (
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-primary-50 px-4 py-3">

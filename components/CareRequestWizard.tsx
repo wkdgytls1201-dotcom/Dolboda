@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronLeft, Check, HeartHandshake } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronLeft, Check, HeartHandshake, Building2 } from "lucide-react";
 import { REGIONS } from "@/lib/regions";
 import { HOUSEHOLD_TASKS } from "@/lib/householdTasks";
 import { LOCATION_TYPES, type LocationTypeValue } from "@/lib/careLocationTypes";
@@ -47,6 +47,95 @@ const STEPS = [
   "어떤 도움이 필요하세요",
   "마지막으로 확인해주세요",
 ];
+
+interface HospitalSuggestion {
+  id: string;
+  name: string;
+  address: string;
+}
+
+// 병원 간병일 때만 쓰는 자세한 장소 입력 — 타이핑하는 대로 등록된 요양병원을 찾아
+// 아래에 후보로 보여주고, 고르면 그 병원 이름으로 채워준다. 직접 입력도 그대로 가능.
+function HospitalLocationInput({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) {
+  const [suggestions, setSuggestions] = useState<HospitalSuggestion[]>([]);
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const q = value.trim();
+    if (q.length < 2) {
+      setSuggestions([]);
+      return;
+    }
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      fetch(
+        `/api/facilities?q=${encodeURIComponent(q)}&type=NURSING_HOSPITAL&limit=5&view=card`
+      )
+        .then((r) => r.json())
+        .then((data: { items: HospitalSuggestion[] }) => {
+          if (!cancelled) setSuggestions(data.items ?? []);
+        })
+        .catch(() => {
+          if (!cancelled) setSuggestions([]);
+        });
+    }, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [value]);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative" ref={containerRef}>
+      <TextInput
+        value={value}
+        onChange={(v) => {
+          onChange(v);
+          setOpen(true);
+        }}
+        placeholder={placeholder}
+      />
+      {open && suggestions.length > 0 && (
+        <div className="absolute inset-x-0 top-full z-20 mt-1.5 overflow-hidden rounded-xl border border-ink-100 bg-white shadow-soft">
+          {suggestions.map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              onClick={() => {
+                onChange(f.name);
+                setOpen(false);
+              }}
+              className="flex w-full items-start gap-2 px-3.5 py-2.5 text-left transition-colors duration-150 hover:bg-ink-100/60"
+            >
+              <Building2 size={14} className="mt-0.5 shrink-0 text-ink-300" />
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-semibold text-ink-900">{f.name}</span>
+                <span className="block truncate text-xs text-ink-300">{f.address}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function CareRequestWizard({
   initial,
@@ -289,14 +378,22 @@ export function CareRequestWizard({
           </div>
 
           <div>
-            <FieldLabel optional hint={isHospital ? "병원 이름과 병동을 적어주시면 좋아요" : undefined}>
+            <FieldLabel optional hint={isHospital ? "병원 이름을 적으면 등록된 병원을 찾아드려요" : undefined}>
               자세한 장소
             </FieldLabel>
-            <TextInput
-              value={form.locationNote}
-              onChange={(v) => set("locationNote", v)}
-              placeholder={isHospital ? "예: OO요양병원 5층 502호" : "예: 자택 (엘리베이터 있음)"}
-            />
+            {isHospital ? (
+              <HospitalLocationInput
+                value={form.locationNote}
+                onChange={(v) => set("locationNote", v)}
+                placeholder="예: OO요양병원 5층 502호"
+              />
+            ) : (
+              <TextInput
+                value={form.locationNote}
+                onChange={(v) => set("locationNote", v)}
+                placeholder="예: 자택 (엘리베이터 있음)"
+              />
+            )}
           </div>
 
           <div>

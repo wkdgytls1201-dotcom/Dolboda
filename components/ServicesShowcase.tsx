@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Check, Info, ChevronDown } from "lucide-react";
 import {
@@ -122,6 +122,75 @@ function ServiceCard({ service, index }: { service: CareService; index: number }
   );
 }
 
+// 예시 공고 카드를 자동으로 옆으로 넘겨준다. HeroBanner와 같은 패턴 —
+// 실제 마우스 hover에서만 멈추고(터치는 계속 넘어가야 하니), 마지막 카드 다음엔
+// 처음으로 부드럽게 되돌아간다.
+function SampleListingsRow() {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [paused, setPaused] = useState(false);
+
+  useEffect(() => {
+    if (paused) return;
+    const timer = setInterval(() => {
+      const track = trackRef.current;
+      if (!track) return;
+      const cards = Array.from(track.children) as HTMLElement[];
+      if (cards.length === 0) return;
+      const maxScroll = track.scrollWidth - track.clientWidth;
+      if (track.scrollLeft >= maxScroll - 4) {
+        track.scrollTo({ left: 0, behavior: "smooth" });
+        return;
+      }
+      const next = cards.find((c) => c.offsetLeft > track.scrollLeft + 4);
+      track.scrollTo({ left: next?.offsetLeft ?? 0, behavior: "smooth" });
+    }, 2800);
+    return () => clearInterval(timer);
+  }, [paused]);
+
+  return (
+    <div
+      ref={trackRef}
+      onPointerEnter={(e) => e.pointerType === "mouse" && setPaused(true)}
+      onPointerLeave={(e) => e.pointerType === "mouse" && setPaused(false)}
+      className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+    >
+      {SAMPLE_LISTINGS.map((s) => (
+        <div
+          key={s.place}
+          className="w-[270px] shrink-0 snap-start rounded-2xl border border-dashed border-ink-100 bg-white/70 p-4"
+        >
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${s.badge}`}>
+              {s.type}
+            </span>
+            <span className="text-[11px] font-bold text-ink-300">예시</span>
+          </div>
+          <p className="mb-2 truncate text-sm font-bold text-ink-900">{s.place}</p>
+          <dl className="space-y-1 text-xs">
+            <div className="flex gap-2">
+              <dt className="w-11 shrink-0 text-ink-300">기간</dt>
+              <dd className="font-medium text-ink-700">
+                {s.period} ({s.days}일)
+              </dd>
+            </div>
+            <div className="flex gap-2">
+              <dt className="w-11 shrink-0 text-ink-300">시간</dt>
+              <dd className="font-medium text-ink-700">{s.time}</dd>
+            </div>
+            <div className="flex gap-2">
+              <dt className="w-11 shrink-0 text-ink-300">대상</dt>
+              <dd className="font-medium text-ink-700">{s.target}</dd>
+            </div>
+          </dl>
+          <p className="mt-2 border-t border-ink-100 pt-2 text-xs leading-relaxed text-ink-500">
+            {s.detail}
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function ServicesShowcase() {
   return (
     <>
@@ -194,41 +263,7 @@ export function ServicesShowcase() {
         <p className="mb-6 text-center text-sm leading-relaxed text-ink-500">
           아래는 실제 등록된 요청이 아니라 화면을 보여드리기 위한 예시예요.
         </p>
-        <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {SAMPLE_LISTINGS.map((s) => (
-            <div
-              key={s.place}
-              className="w-[270px] shrink-0 snap-start rounded-2xl border border-dashed border-ink-100 bg-white/70 p-4"
-            >
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${s.badge}`}>
-                  {s.type}
-                </span>
-                <span className="text-[11px] font-bold text-ink-300">예시</span>
-              </div>
-              <p className="mb-2 truncate text-sm font-bold text-ink-900">{s.place}</p>
-              <dl className="space-y-1 text-xs">
-                <div className="flex gap-2">
-                  <dt className="w-11 shrink-0 text-ink-300">기간</dt>
-                  <dd className="font-medium text-ink-700">
-                    {s.period} ({s.days}일)
-                  </dd>
-                </div>
-                <div className="flex gap-2">
-                  <dt className="w-11 shrink-0 text-ink-300">시간</dt>
-                  <dd className="font-medium text-ink-700">{s.time}</dd>
-                </div>
-                <div className="flex gap-2">
-                  <dt className="w-11 shrink-0 text-ink-300">대상</dt>
-                  <dd className="font-medium text-ink-700">{s.target}</dd>
-                </div>
-              </dl>
-              <p className="mt-2 border-t border-ink-100 pt-2 text-xs leading-relaxed text-ink-500">
-                {s.detail}
-              </p>
-            </div>
-          ))}
-        </div>
+        <SampleListingsRow />
       </section>
 
       <section className="mt-14">
