@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { AuthModal } from "./AuthModal";
 import {
   ChevronLeft,
+  ChevronDown,
   Check,
   Sparkles,
   ClipboardList,
@@ -63,6 +64,15 @@ export function GradeTest() {
   const [phase, setPhase] = useState<Phase>(saved?.phase ?? "intro");
   const [areaIndex, setAreaIndex] = useState(saved?.areaIndex ?? 0);
   const [answers, setAnswers] = useState<Answers>(saved?.answers ?? {});
+
+  // 인트로에서 5개 영역 중 3개쯤에서 화면이 잘리면 아래에 더 있는지 모른다 —
+  // 스크롤 전까지만 "아래에 더 있어요" 힌트를 띄우고, 내리기 시작하면 치운다.
+  const [showScrollHint, setShowScrollHint] = useState(true);
+  useEffect(() => {
+    const onScroll = () => setShowScrollHint(window.scrollY < 40);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   // 단계가 바뀌면 항상 맨 위에서 시작한다.
   // - 클릭 핸들러 안에서 스크롤하면 아직 이전 화면 기준이라 위치가 어긋난다 →
@@ -181,6 +191,20 @@ export function GradeTest() {
           <ClipboardList size={18} />
           테스트 시작하기
         </button>
+
+        {/* 화면이 영역 카드 중간에서 잘렸을 때 아래에 더 있다는 걸 알려주는 힌트 —
+            스크롤을 시작하면 바로 사라진다 */}
+        {showScrollHint && (
+          <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 sm:hidden">
+            <div className="h-16 bg-gradient-to-t from-ivory-50 to-transparent" />
+            <div className="flex justify-center bg-ivory-50 pb-4">
+              <span className="flex animate-bounce items-center gap-1 rounded-full bg-ink-900/85 px-3.5 py-2 text-xs font-semibold text-white shadow-card backdrop-blur">
+                아래에 더 있어요
+                <ChevronDown size={14} />
+              </span>
+            </div>
+          </div>
+        )}
       </main>
     );
   }
