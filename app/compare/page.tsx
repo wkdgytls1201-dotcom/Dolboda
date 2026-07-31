@@ -9,6 +9,7 @@ import { Facility, FACILITY_TYPE_LABEL, isHospital } from "@/lib/types";
 import { GradeBadge, TypeBadge, NHIS_GRADE_LETTER } from "@/components/GradeBadge";
 import { useCompare } from "@/lib/compareContext";
 import { useViewGate } from "@/lib/viewGateContext";
+import { PageLoader } from "@/components/PageLoader";
 
 interface CompareRow {
   label: string;
@@ -148,7 +149,7 @@ function CompareContent() {
 
   // fetched가 아직 안 온 상태에서 "비교할 시설이 없어요"가 잠깐 잘못 뜨는 걸 막는다.
   if (loading) {
-    return <main className="mx-auto max-w-6xl px-4 py-8" />;
+    return <PageLoader />;
   }
 
   if (facilities.length === 0) {

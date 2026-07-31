@@ -43,7 +43,7 @@ export async function Footer() {
                 <li key={r.slug}>
                   <Link
                     href={`/region/${encodeURIComponent(r.slug)}`}
-                    className="text-[11px] text-ink-300/80 transition-colors duration-150 hover:text-ink-500"
+                    className="text-[10px] text-ink-300/50 transition-colors duration-150 hover:text-ink-500"
                   >
                     {r.label} 요양시설
                   </Link>

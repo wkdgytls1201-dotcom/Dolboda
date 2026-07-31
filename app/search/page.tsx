@@ -8,6 +8,7 @@ import { CompareSelectBar } from "@/components/CompareSelectBar";
 import { FilterBar, FacilityFilters, EMPTY_FILTERS } from "@/components/FilterBar";
 import { KakaoMultiMap } from "@/components/KakaoMap";
 import { NHIS_GRADE_LETTER } from "@/components/GradeBadge";
+import { PageLoader } from "@/components/PageLoader";
 import { useFacilities, useNearbyFacilities } from "@/lib/useFacilities";
 import { haversineDistanceKm } from "@/lib/distance";
 import { useUserOrigin } from "@/lib/userLocation";
@@ -85,6 +86,7 @@ function SearchContent() {
   });
 
   const facilities = useNearest ? nearestQuery.facilities : listQuery.facilities;
+  const loading = useNearest ? nearestQuery.loading : listQuery.loading;
   const total = useNearest ? nearestQuery.total : listQuery.total;
 
   useEffect(() => {
@@ -222,11 +224,17 @@ function SearchContent() {
       </div>
 
       <p className="mb-4 text-sm text-ink-500">
-        총 <span className="font-bold text-ink-900">{total.toLocaleString()}</span>개 시설
-        {total > results.length && (
-          <span className="ml-1 text-ink-300">
-            (그중 {results.length}개 표시 · 검색어로 좁혀보세요)
-          </span>
+        {loading && facilities.length === 0 ? (
+          <span className="inline-block h-4 w-32 animate-pulse rounded bg-ink-100" aria-hidden />
+        ) : (
+          <>
+            총 <span className="font-bold text-ink-900">{total.toLocaleString()}</span>개 시설
+            {total > results.length && (
+              <span className="ml-1 text-ink-300">
+                (그중 {results.length}개 표시 · 검색어로 좁혀보세요)
+              </span>
+            )}
+          </>
         )}
       </p>
 
@@ -260,6 +268,8 @@ function SearchContent() {
           center={origin}
           persistKey="dolboda-search-map-view"
         />
+      ) : results.length === 0 && loading ? (
+        <PageLoader label="시설을 불러오는 중" />
       ) : results.length === 0 ? (
         <div className="rounded-2xl bg-white p-12 text-center text-sm text-ink-300 shadow-card">
           조건에 맞는 시설이 없습니다. 필터를 조정해보세요.
