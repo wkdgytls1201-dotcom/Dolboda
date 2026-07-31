@@ -37,6 +37,14 @@ const AREA_ICON: Record<string, typeof Activity> = {
 };
 
 const TYPING_DELAY_MS = 550;
+const SAVE_KEY = "dolboda-grade-helper";
+
+interface SavedState {
+  answers: HelperAnswers;
+  entries: ChatEntry[];
+  result: HelperResult | null;
+  aiText: string | null;
+}
 
 function BotAvatar() {
   return (
@@ -74,7 +82,36 @@ export function GradeHelperChat() {
   const [aiText, setAiText] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [showApply, setShowApply] = useState(false);
+  // 복원이 끝나기 전에는 저장 effect가 돌지 않게 막는 플래그.
+  // ref로 하면 StrictMode 이중 실행 때 초기값이 저장분을 덮어써 복원이 깨진다 — 반드시 state로.
+  const [hydrated, setHydrated] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // 복지용구 보기처럼 외부 링크를 눌렀다 돌아오면 모바일 브라우저(특히 앱 웹뷰)가 탭을
+  // 통째로 새로고침하는 경우가 있어, 대화 상태를 sessionStorage에 저장해뒀다가 복원한다.
+  useEffect(() => {
+    const raw = sessionStorage.getItem(SAVE_KEY);
+    if (raw) {
+      try {
+        const saved = JSON.parse(raw) as SavedState;
+        if (Array.isArray(saved.entries) && saved.entries.length > 0) {
+          setAnswers(saved.answers ?? {});
+          setEntries(saved.entries);
+          setResult(saved.result ?? null);
+          setAiText(saved.aiText ?? null);
+        }
+      } catch {
+        // 저장값이 깨졌으면 그냥 처음부터 시작
+      }
+    }
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    const toSave: SavedState = { answers, entries, result, aiText };
+    sessionStorage.setItem(SAVE_KEY, JSON.stringify(toSave));
+  }, [hydrated, answers, entries, result, aiText]);
 
   const queue = visibleQuestions(answers);
   const current = result || typing ? null : queue.find((q) => answers[q.id] == null) ?? null;
@@ -147,6 +184,7 @@ export function GradeHelperChat() {
     setResult(null);
     setAiText(null);
     setShowApply(false);
+    sessionStorage.removeItem(SAVE_KEY);
   }
 
   return (

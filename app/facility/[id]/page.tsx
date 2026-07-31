@@ -68,7 +68,8 @@ const NURSE_GRADE_TABLE = [
 export default function FacilityDetailPage() {
   const params = useParams<{ id: string }>();
   const { facility, loading } = useFacility(params.id);
-  const { facilities } = useFacilities();
+  // "다른 시설도 확인해 보세요" 카드용 — 슬림 응답이면 충분
+  const { facilities } = useFacilities({ cardView: true });
   const { toggle, isSelected, canAddMore } = useCompare();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { data: session } = useSession();

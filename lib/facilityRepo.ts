@@ -55,5 +55,9 @@ export function toCardFacility(f: FacilityDTO): FacilityDTO {
     adminActions: Array.isArray(anyF.adminActions)
       ? (anyF.adminActions as unknown[]).slice(0, 1)
       : undefined,
+    // 홈 "점수 높은 시설"·검색 등급순 동점 비교가 총점만 쓰므로 domains 등 큰 덩어리는 뺀다
+    evaluationDetail: anyF.evaluationDetail
+      ? { totalScore: (anyF.evaluationDetail as { totalScore: number }).totalScore }
+      : undefined,
   } as unknown as FacilityDTO;
 }

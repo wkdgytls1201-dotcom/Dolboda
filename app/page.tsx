@@ -14,7 +14,8 @@ import { PROMOTED_FACILITY_IDS } from "@/lib/promotedFacilities";
 import { LOCATION_CONSENT_KEY, saveUserLocation, readUserLocation } from "@/lib/userLocation";
 
 export default function HomePage() {
-  const { facilities, total } = useFacilities();
+  // 홈 카드들은 슬림 응답이면 충분 — 전체 응답은 평가 세부점수까지 실려 두 배 넘게 무겁다
+  const { facilities, total } = useFacilities({ cardView: true });
   const { stats } = useFacilityStats();
   const [origin, setOrigin] = useState(DEFAULT_ORIGIN);
   const [showLocationConsent, setShowLocationConsent] = useState(false);
