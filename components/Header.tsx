@@ -137,31 +137,36 @@ export function Header() {
             </div>
           </nav>
 
-          {/* 마이페이지 화면에서만 — 여기까지 온 로그인 사용자에게 돌봄요청을 눈에 띄게 보여준다 */}
-          {user && pathname?.startsWith("/mypage") && (
-            <Link
-              href="/care-request"
-              className="mr-1 flex items-center rounded-full bg-royal-500 px-3 py-1.5 text-xs font-bold text-white shadow-royal transition-transform active:scale-95 sm:hidden"
-            >
-              돌봄 요청
-            </Link>
-          )}
-
-          {/* 모바일 햄버거 버튼 */}
-          <button
-            type="button"
-            onClick={() => setMenuOpen((o) => !o)}
-            aria-label={menuOpen ? "메뉴 닫기" : "메뉴 열기"}
-            aria-expanded={menuOpen}
-            className="relative flex h-10 w-10 items-center justify-center rounded-full text-ink-700 transition-colors duration-200 hover:bg-ink-100 active:scale-95 sm:hidden"
-          >
-            {menuOpen ? <X size={22} /> : <Menu size={22} />}
-            {!menuOpen && mobileBadgeCount > 0 && (
-              <span className="absolute right-1 top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-accent-300 px-1 text-[10px] font-bold text-ink-900">
-                {mobileBadgeCount}
-              </span>
+          {/* justify-between 아래서 데스크톱 nav가 display:none이 되면 모바일엔 로고·이 그룹
+              둘만 남아야 하는데, 묶지 않으면 돌봄요청 버튼이 셋째 아이템으로 화면 가운데에
+              떠버린다. 햄버거와 한 그룹으로 묶어서 항상 오른쪽 끝에 붙인다. */}
+          <div className="flex items-center gap-2 sm:hidden">
+            {/* 마이페이지 화면에서만 — 여기까지 온 로그인 사용자에게 돌봄요청을 눈에 띄게 보여준다 */}
+            {user && pathname?.startsWith("/mypage") && (
+              <Link
+                href="/care-request"
+                className="flex items-center rounded-full bg-royal-500 px-3 py-1.5 text-xs font-bold text-white shadow-royal transition-transform active:scale-95"
+              >
+                돌봄 요청
+              </Link>
             )}
-          </button>
+
+            {/* 모바일 햄버거 버튼 */}
+            <button
+              type="button"
+              onClick={() => setMenuOpen((o) => !o)}
+              aria-label={menuOpen ? "메뉴 닫기" : "메뉴 열기"}
+              aria-expanded={menuOpen}
+              className="relative flex h-10 w-10 items-center justify-center rounded-full text-ink-700 transition-colors duration-200 hover:bg-ink-100 active:scale-95"
+            >
+              {menuOpen ? <X size={22} /> : <Menu size={22} />}
+              {!menuOpen && mobileBadgeCount > 0 && (
+                <span className="absolute right-1 top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-accent-300 px-1 text-[10px] font-bold text-ink-900">
+                  {mobileBadgeCount}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* 모바일 드롭다운 메뉴 */}
@@ -213,8 +218,18 @@ export function Header() {
                 <Bell size={18} />
                 알림
               </Link>
-              {/* 마이페이지(로그인 포함)는 하단 탭바로 옮겨서 여기선 뺐다 —
-                  로그아웃은 마이페이지 화면 안에 이미 있음(app/mypage/page.tsx). */}
+              {/* 마이페이지 링크는 하단 탭바로 옮겼지만, 로그아웃은 몇 번 눌러야 닿는
+                  마이페이지 화면까지 안 가도 여기서 바로 되게 남겨둔다. */}
+              {user && (
+                <button
+                  type="button"
+                  onClick={signOutAndClear}
+                  className="mt-1 flex w-full items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium text-ink-500 transition-colors duration-200 hover:bg-ink-100 hover:text-ink-700 active:scale-95"
+                >
+                  <LogOut size={16} />
+                  로그아웃
+                </button>
+              )}
             </nav>
           </div>
         )}

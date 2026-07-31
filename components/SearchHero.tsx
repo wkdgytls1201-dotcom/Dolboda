@@ -52,9 +52,11 @@ export function SearchHero() {
       <div className="relative mx-auto mt-5 max-w-4xl px-0 sm:px-4">
         <HeroBanner />
 
+        {/* 모바일은 배너 아래로 살짝 띄우기만 한다 — 겹치게 하면 배너 하단 캡션(시설명·주소)이
+            가려진다. 데스크톱은 배너 세로폭이 넉넉해서 기존처럼 살짝 겹쳐도 안 가려진다. */}
         <form
           onSubmit={handleSubmit}
-          className="relative z-10 mx-auto -mt-6 flex max-w-xl items-center gap-2 rounded-2xl bg-white p-2 shadow-soft sm:-mt-7"
+          className="relative z-10 mx-auto mt-3 flex max-w-xl items-center gap-2 rounded-2xl bg-white p-2 shadow-soft sm:-mt-7"
         >
           <Search size={20} className="ml-2 shrink-0 text-ink-300" />
           <input
