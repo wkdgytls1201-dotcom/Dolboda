@@ -186,7 +186,9 @@ function CompareContent() {
         {facilities.map((f, idx) => (
           <div
             key={f.id}
-            className="w-72 shrink-0 rounded-2xl border border-ink-100 bg-white p-5 shadow-card-hover transition hover:-translate-y-0.5 hover:shadow-soft"
+            // 모바일은 카드 하나가 화면을 거의 꽉 채워서 옆으로 스와이프해야 하는 걸 모르고
+            // 넘어갈 수 있다. 다음 카드가 살짝 걸쳐 보이게 1.2~1.5장 정도 노출되는 너비로.
+            className="w-[72vw] shrink-0 rounded-2xl border border-ink-100 bg-white p-5 shadow-card-hover transition hover:-translate-y-0.5 hover:shadow-soft sm:w-72"
           >
             <div className="mb-3 flex items-center justify-between">
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-500 text-xs font-bold text-white">
@@ -270,7 +272,7 @@ function CompareContent() {
           <Link
             key={`empty-${i}`}
             href="/search"
-            className="flex w-72 shrink-0 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-ink-100 py-16 text-ink-300 hover:border-primary-300 hover:text-primary-500"
+            className="flex w-[72vw] shrink-0 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-ink-100 py-16 text-ink-300 hover:border-primary-300 hover:text-primary-500 sm:w-72"
           >
             <Plus size={28} />
             <span className="text-sm font-semibold">시설 추가하기</span>
