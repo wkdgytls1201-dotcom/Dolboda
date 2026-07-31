@@ -31,6 +31,8 @@ export default function SitterProfilePage() {
   const [certName, setCertName] = useState("");
   const [certIssuer, setCertIssuer] = useState("");
   const [saving, setSaving] = useState(false);
+  // photoUrl이 깨진 링크일 때 브라우저 기본 "깨진 이미지" 아이콘 대신 기본 아바타로 대체
+  const [photoFailed, setPhotoFailed] = useState(false);
 
   useEffect(() => {
     if (contextProfile === undefined) return; // 아직 로딩 중
@@ -43,6 +45,7 @@ export default function SitterProfilePage() {
       setBankName(contextProfile.bankName ?? "");
       setBankAccountNumber(contextProfile.bankAccountNumber ?? "");
       setBankAccountHolder(contextProfile.bankAccountHolder ?? "");
+      setPhotoFailed(false);
     }
   }, [contextProfile]);
 
@@ -141,11 +144,12 @@ export default function SitterProfilePage() {
           </div>
 
           <div className="mb-4 flex items-center gap-3">
-            {profile.photoUrl ? (
+            {profile.photoUrl && !photoFailed ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={profile.photoUrl}
                 alt=""
+                onError={() => setPhotoFailed(true)}
                 className="h-14 w-14 rounded-full object-cover"
               />
             ) : (
@@ -171,11 +175,12 @@ export default function SitterProfilePage() {
               />
               <textarea
                 value={intro}
-                onChange={(e) => setIntro(e.target.value)}
-                rows={2}
-                placeholder="한 줄 소개"
+                onChange={(e) => setIntro(e.target.value.slice(0, 1000))}
+                rows={7}
+                placeholder="자기소개 — 경력, 어르신을 대하는 마음가짐 등 나를 어필해보세요"
                 className="w-full resize-none rounded-xl border border-ink-100 px-3 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-100"
               />
+              <p className="text-right text-[11px] text-ink-300">{intro.length}/1000</p>
               <div className="flex items-center gap-2">
                 <input
                   type="number"
@@ -346,7 +351,9 @@ export default function SitterProfilePage() {
         {/* 정산 계좌 */}
         <section className="rounded-2xl border border-ink-100 bg-white p-5 shadow-card">
           <div className="mb-3 flex items-center justify-between">
-            <h3 className="font-bold text-ink-900">정산 계좌</h3>
+            <h3 className="font-bold text-ink-900">
+              정산 계좌 <span className="font-normal text-ink-300">(선택)</span>
+            </h3>
             {editSection !== "bank" && (
               <button
                 type="button"

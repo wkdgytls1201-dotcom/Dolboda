@@ -7,7 +7,7 @@ import { X, Plus, ChevronLeft, HeartHandshake } from "lucide-react";
 import { REGIONS } from "@/lib/regions";
 import { PageLoader } from "@/components/PageLoader";
 
-const STEP_TITLES = ["약관 동의", "기본 정보", "경력 · 자격", "활동 지역", "정산 계좌"];
+const STEP_TITLES = ["약관 동의", "기본 정보", "경력 · 자격", "활동 지역", "정산 계좌 (선택)"];
 const MAX_REGIONS = 10;
 const NATIONALITIES = ["내국인", "외국인"];
 
@@ -288,18 +288,18 @@ export default function SitterRegisterPage() {
           </div>
           <div>
             <label className="mb-1 block text-xs font-semibold text-ink-700">
-              한 줄 소개 <span className="font-normal text-ink-300">(선택)</span>
+              자기소개 <span className="font-normal text-ink-300">(선택)</span>
             </label>
             <p className="mb-2 text-[11px] leading-relaxed text-ink-300">
               보호자가 지원자를 고를 때 가장 오래 보는 곳이에요. 경험보다{" "}
               <strong className="text-ink-500">어르신을 어떻게 대하는지</strong>가 잘 드러나면
-              좋아요.
+              좋아요. 편하게 나를 어필해보세요.
             </p>
             <textarea
               value={intro}
-              onChange={(e) => setIntro(e.target.value.slice(0, 200))}
-              rows={3}
-              placeholder="예: 어머니를 5년 모신 마음으로, 서두르지 않고 어르신 속도에 맞춰 돌봐드려요."
+              onChange={(e) => setIntro(e.target.value.slice(0, 1000))}
+              rows={7}
+              placeholder="예: 어머니를 5년 모신 마음으로, 서두르지 않고 어르신 속도에 맞춰 돌봐드려요. 그동안 어떤 상황에서 어떻게 대응했는지 구체적으로 적어주시면 더 좋아요."
               className="w-full resize-none rounded-xl border border-ink-100 px-3.5 py-3 text-base leading-relaxed transition-colors duration-150 focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-100 sm:text-sm"
             />
             <div className="mt-1 flex items-center justify-between">
@@ -308,7 +308,7 @@ export default function SitterRegisterPage() {
                   ? "조금만 더 적으면 훨씬 좋아요"
                   : "이렇게 시작해보세요: 「10년째 ○○을 하며…」 「제 부모님을 모시듯…」"}
               </p>
-              <span className="shrink-0 text-[11px] text-ink-300">{intro.length}/200</span>
+              <span className="shrink-0 text-[11px] text-ink-300">{intro.length}/1000</span>
             </div>
           </div>
         </div>
