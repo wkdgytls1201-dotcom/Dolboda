@@ -15,6 +15,7 @@ import {
   MapPinned,
 } from "lucide-react";
 import { MyPageShell } from "@/components/MyPageShell";
+import { PageLoader } from "@/components/PageLoader";
 import { ApplyConfirmSheet } from "@/components/ApplyConfirmSheet";
 import { typeMeta, LOCATION_TYPES, type LocationTypeValue } from "@/lib/careLocationTypes";
 import { formatTimeRange, daysBetween } from "@/lib/careOptions";
@@ -291,7 +292,13 @@ export default function SitterJobsPage() {
     loadJobs();
   }
 
-  if (isSitter === null) return null;
+  if (isSitter === null) {
+    return (
+      <MyPageShell>
+        <PageLoader compact />
+      </MyPageShell>
+    );
+  }
 
   if (isSitter === false) {
     return (

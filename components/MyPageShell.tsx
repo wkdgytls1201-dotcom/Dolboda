@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { HeartHandshake, Settings, Briefcase, Wallet, Bell, ChevronRight } from "lucide-react";
+import { useSitterProfileContext } from "@/lib/sitterProfileContext";
 
 interface NavItem {
   href: string;
@@ -11,23 +11,12 @@ interface NavItem {
   icon: React.ReactNode;
 }
 
+// 시터 프로필 데이터(SitterProfileProvider)는 app/mypage/layout.tsx에서 한 번만
+// 불러와 여기와 하위 화면(프로필관리·정산관리 등)이 공유한다 — 예전엔 화면마다
+// /api/sitter-profile를 따로 불러서 페이지를 옮길 때마다 중복 요청이 나갔다.
 export function MyPageShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [isSitter, setIsSitter] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/sitter-profile")
-      .then((r) => {
-        if (!cancelled) setIsSitter(r.ok);
-      })
-      .catch(() => {
-        if (!cancelled) setIsSitter(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { isSitter } = useSitterProfileContext();
 
   const infoItems: NavItem[] = [
     { href: "/mypage", label: "계정 설정", icon: <Settings size={16} /> },

@@ -3,7 +3,6 @@ import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { MobileTabBar } from "@/components/MobileTabBar";
-import { GuestLoginBanner } from "@/components/GuestLoginBanner";
 import { CompareProvider } from "@/lib/compareContext";
 import { SessionProvider } from "next-auth/react";
 import { ViewGateProvider } from "@/lib/viewGateContext";
@@ -113,7 +112,6 @@ export default function RootLayout({
               <FavoritesProvider>
                 <AlertPreferencesProvider>
                   <Header />
-                  <GuestLoginBanner />
                   {children}
                   <Footer />
                   <MobileTabBar />

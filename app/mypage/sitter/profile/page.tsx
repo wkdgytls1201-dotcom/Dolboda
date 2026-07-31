@@ -5,32 +5,18 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { Pencil, Plus, X, User } from "lucide-react";
 import { MyPageShell } from "@/components/MyPageShell";
+import { PageLoader } from "@/components/PageLoader";
 import { REGIONS } from "@/lib/regions";
+import { useSitterProfileContext, SitterProfileData } from "@/lib/sitterProfileContext";
 
-interface Certification {
-  id: string;
-  name: string;
-  issuedBy: string | null;
-}
-
-interface SitterProfile {
-  id: string;
-  nickname: string;
-  photoUrl: string | null;
-  nationality: string;
-  intro: string | null;
-  experienceYears: number;
-  regions: string[];
-  bankName: string | null;
-  bankAccountNumber: string | null;
-  bankAccountHolder: string | null;
-  certifications: Certification[];
-}
+type SitterProfile = SitterProfileData;
 
 const MAX_REGIONS = 10;
 
 export default function SitterProfilePage() {
   const { data: session, status } = useSession();
+  // MyPageShell이 이미 한 번 불러온 데이터를 그대로 받아 쓴다 — 이 화면에서 또 fetch하지 않는다.
+  const { profile: contextProfile } = useSitterProfileContext();
   const [profile, setProfile] = useState<SitterProfile | null | undefined>(undefined);
   const [editSection, setEditSection] = useState<null | "basic" | "regions" | "bank">(null);
 
@@ -47,22 +33,18 @@ export default function SitterProfilePage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (status !== "authenticated") return;
-    fetch("/api/sitter-profile")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        setProfile(data);
-        if (data) {
-          setNickname(data.nickname);
-          setIntro(data.intro ?? "");
-          setExperienceYears(data.experienceYears);
-          setRegions(data.regions);
-          setBankName(data.bankName ?? "");
-          setBankAccountNumber(data.bankAccountNumber ?? "");
-          setBankAccountHolder(data.bankAccountHolder ?? "");
-        }
-      });
-  }, [status]);
+    if (contextProfile === undefined) return; // 아직 로딩 중
+    setProfile(contextProfile);
+    if (contextProfile) {
+      setNickname(contextProfile.nickname);
+      setIntro(contextProfile.intro ?? "");
+      setExperienceYears(contextProfile.experienceYears);
+      setRegions(contextProfile.regions);
+      setBankName(contextProfile.bankName ?? "");
+      setBankAccountNumber(contextProfile.bankAccountNumber ?? "");
+      setBankAccountHolder(contextProfile.bankAccountHolder ?? "");
+    }
+  }, [contextProfile]);
 
   async function patch(data: Record<string, unknown>) {
     setSaving(true);
@@ -104,7 +86,13 @@ export default function SitterProfilePage() {
     });
   }
 
-  if (status === "loading" || profile === undefined) return null;
+  if (status === "loading" || profile === undefined) {
+    return (
+      <MyPageShell>
+        <PageLoader compact />
+      </MyPageShell>
+    );
+  }
 
   if (!session?.user) {
     return (

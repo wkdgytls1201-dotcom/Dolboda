@@ -1,26 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Wallet } from "lucide-react";
 import { MyPageShell } from "@/components/MyPageShell";
-
-interface SitterProfile {
-  bankName: string | null;
-  bankAccountNumber: string | null;
-  bankAccountHolder: string | null;
-}
+import { PageLoader } from "@/components/PageLoader";
+import { useSitterProfileContext } from "@/lib/sitterProfileContext";
 
 export default function SitterSettlementsPage() {
-  const [profile, setProfile] = useState<SitterProfile | null | undefined>(undefined);
+  // MyPageShell이 이미 불러온 데이터를 그대로 쓴다 — 이 화면에서 또 fetch하지 않는다.
+  const { profile } = useSitterProfileContext();
 
-  useEffect(() => {
-    fetch("/api/sitter-profile")
-      .then((r) => (r.ok ? r.json() : null))
-      .then(setProfile);
-  }, []);
-
-  if (profile === undefined) return null;
+  if (profile === undefined) {
+    return (
+      <MyPageShell>
+        <PageLoader compact />
+      </MyPageShell>
+    );
+  }
 
   if (profile === null) {
     return (

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { X, Plus, ChevronLeft, HeartHandshake } from "lucide-react";
 import { REGIONS } from "@/lib/regions";
+import { PageLoader } from "@/components/PageLoader";
 
 const STEP_TITLES = ["약관 동의", "기본 정보", "경력 · 자격", "활동 지역", "정산 계좌"];
 const MAX_REGIONS = 10;
@@ -50,7 +51,7 @@ export default function SitterRegisterPage() {
   const [bankAccountNumber, setBankAccountNumber] = useState("");
   const [bankAccountHolder, setBankAccountHolder] = useState("");
 
-  if (status === "loading") return null;
+  if (status === "loading") return <PageLoader />;
 
   if (!session?.user) {
     return (
