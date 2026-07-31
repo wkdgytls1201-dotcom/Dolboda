@@ -48,6 +48,9 @@ export function toCardFacility(f: FacilityDTO): FacilityDTO {
     departments: Array.isArray(anyF.departments)
       ? (anyF.departments as { name: string }[]).map((d) => ({ name: d.name, doctorCount: 0 }))
       : undefined,
+    // 요양병원 카드에서 병상수 외에 눈에 띄는 정보(응급실·간호인력등급)로 쓰는 값들 — 전부 숫자/불리언이라 페이로드 부담 적음
+    emergencyRoom: anyF.emergencyRoom,
+    nurseGrade: anyF.nurseGrade,
     // 행정처분은 카드에서 배지 여부만 필요하므로 첫 건만 남겨 페이로드를 줄인다
     adminActions: Array.isArray(anyF.adminActions)
       ? (anyF.adminActions as unknown[]).slice(0, 1)

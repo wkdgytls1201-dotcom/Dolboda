@@ -29,7 +29,8 @@ export function FacilityCard({
 
   // 방문요양센터는 입소 시설이 아니라 정원 개념이 없다 — "정원 0명" 대신 서비스 성격을 알려준다
   const keyStat = isHospital(facility)
-    ? `병상 ${facility.facilityStatus.generalBeds + facility.facilityStatus.upgradeBeds}개`
+    ? `병상 ${facility.facilityStatus.generalBeds + facility.facilityStatus.upgradeBeds}개` +
+      (facility.departments?.length ? ` · 진료과 ${facility.departments.length}개` : "")
     : facility.facilityType === "HOME_CARE"
     ? "우리 집으로 방문 · 정원 제한 없음"
     : facility.currentOccupancy !== undefined
@@ -99,6 +100,17 @@ export function FacilityCard({
           {facility.adminActions && facility.adminActions.length > 0 && (
             <span className="rounded-full bg-accent-100 px-2 py-0.5 text-[11px] font-bold text-accent-600">
               행정처분 이력
+            </span>
+          )}
+          {isHospital(facility) &&
+            (facility.emergencyRoom?.day || facility.emergencyRoom?.night) && (
+              <span className="rounded-full bg-primary-100 px-2 py-0.5 text-[11px] font-bold text-primary-600">
+                응급실 운영
+              </span>
+            )}
+          {isHospital(facility) && facility.nurseGrade > 0 && facility.nurseGrade <= 2 && (
+            <span className="rounded-full bg-mint-100 px-2 py-0.5 text-[11px] font-bold text-mint-700">
+              간호인력 {facility.nurseGrade}등급
             </span>
           )}
           {facility.establishedYear !== undefined && (
