@@ -162,6 +162,17 @@ export function CareRequestWizard({
   const [error, setError] = useState<string | null>(null);
   const [duplicate, setDuplicate] = useState(false);
 
+  // 단계가 바뀌면 항상 맨 위에서 시작한다 (등급 테스트와 같은 패턴).
+  // - 화면이 다시 그려진 뒤(useEffect)에 옮겨야 이전 화면 기준으로 스크롤되지 않는다.
+  // - 전역 CSS의 scroll-behavior:smooth 때문에 behavior를 "instant"로 강제해야 한다.
+  // - 브라우저 스크롤 앵커링이 화면 높이 변경 후 위치를 되돌리므로 다음 프레임에 한 번 더 맞춘다.
+  useEffect(() => {
+    const toTop = () => window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
+    toTop();
+    const raf = requestAnimationFrame(toTop);
+    return () => cancelAnimationFrame(raf);
+  }, [step]);
+
   const set = <K extends keyof CareRequestForm>(key: K, value: CareRequestForm[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
 

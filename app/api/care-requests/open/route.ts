@@ -4,7 +4,10 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { parseLocationType } from "@/lib/careRequestValidation";
 
-// 로그인한 모심시터의 활동 가능 지역과 겹치는, 아직 열려있는 돌봄 요청 목록.
+// 아직 열려있는 돌봄 요청 목록. 원래는 시터의 활동 가능 지역과 겹치는 것만 보여줬는데,
+// 아직 등록된 돌봄 요청 자체가 많지 않아 지역을 좁게 등록한 시터에게는 화면이 통째로
+// 비어 보이는 문제가 있었다. 일단은 전국 단위로 보여주고, 요청이 충분히 쌓이면 다시
+// 지역 필터를 되살릴 것.
 // 정렬·필터는 서버에서 처리한다(시터가 조건에 맞는 일자리를 빨리 찾도록).
 export async function GET(req: Request) {
   const session = await auth();
@@ -28,7 +31,6 @@ export async function GET(req: Request) {
 
   const where: Prisma.CareRequestWhereInput = {
     status: "OPEN",
-    region: { in: sitterProfile.regions },
     ...(type && { locationType: type }),
     // "시작일이 지난 공고 제외" — 이미 시작한 돌봄은 사실상 마감된 것으로 본다.
     ...(hideClosed && { startDate: { gte: new Date() } }),

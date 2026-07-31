@@ -21,8 +21,11 @@ export function Switch({
       }`}
     >
       <span
-        className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ease-snappy ${
-          checked ? "translate-x-[22px]" : "translate-x-0.5"
+        // translate-x 계산값(px든 rem이든)으로 옮기던 방식은 켜졌을 때 손잡이가 오른쪽
+        // 끝을 넘어서거나 못 미치는 문제가 있었다. left/right를 직접 지정하면 같은
+        // 트랙 안에서 항상 대칭으로 맞아떨어지니 계산 오차가 생길 여지가 없다.
+        className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-all duration-200 ease-snappy ${
+          checked ? "right-0.5" : "left-0.5"
         }`}
       />
     </button>

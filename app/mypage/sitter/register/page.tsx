@@ -23,6 +23,7 @@ export default function SitterRegisterPage() {
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showAgreeModal, setShowAgreeModal] = useState(false);
 
   // 1. 약관 동의
   const [agreedTerms, setAgreedTerms] = useState(false);
@@ -467,8 +468,17 @@ export default function SitterRegisterPage() {
           ) : (
             <button
               type="button"
-              disabled={!canProceed()}
-              onClick={() => setStep((s) => s + 1)}
+              // 1단계(약관 동의)는 버튼을 눌러도 아무 반응이 없으면 "버튼이 없다"고
+              // 느끼기 쉬워서, 항상 눌리는 상태로 두고 대신 동의가 안 됐으면 팝업으로
+              // 안내한다. 그 외 단계는 기존처럼 조건 충족 전엔 비활성화한다.
+              disabled={step !== 0 && !canProceed()}
+              onClick={() => {
+                if (step === 0 && !requiredAgreed) {
+                  setShowAgreeModal(true);
+                  return;
+                }
+                setStep((s) => s + 1);
+              }}
               className="w-full rounded-xl bg-primary-500 py-3 text-sm font-bold text-white shadow-soft transition-all duration-200 ease-snappy hover:bg-primary-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-ink-100 disabled:text-ink-300"
             >
               다음
@@ -476,6 +486,47 @@ export default function SitterRegisterPage() {
           )}
         </div>
       </div>
+
+      {showAgreeModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 px-4"
+          onClick={() => setShowAgreeModal(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-card-hover"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="mb-1.5 text-base font-bold text-ink-900">약관에 동의하시겠어요?</h2>
+            <p className="mb-5 text-sm leading-relaxed text-ink-500">
+              모심시터 등록을 진행하려면 이용약관, 개인정보처리방침, 제3자 정보제공, 만 18세 이상
+              확인에 모두 동의해주셔야 해요.
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setShowAgreeModal(false)}
+                className="flex-1 rounded-xl border border-ink-100 py-2.5 text-sm font-semibold text-ink-500 transition-colors duration-150 hover:bg-ink-100/60"
+              >
+                다시 볼게요
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAgreedTerms(true);
+                  setAgreedPrivacy(true);
+                  setAgreedThirdParty(true);
+                  setAgreedAge(true);
+                  setShowAgreeModal(false);
+                  setStep((s) => s + 1);
+                }}
+                className="flex-1 rounded-xl bg-primary-500 py-2.5 text-sm font-bold text-white shadow-soft ring-2 ring-primary-300 transition-all duration-150 ease-snappy hover:-translate-y-0.5 hover:bg-primary-600 active:translate-y-0 active:scale-95"
+              >
+                동의하고 계속하기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
