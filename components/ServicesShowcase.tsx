@@ -96,6 +96,14 @@ function ServiceCard({ service, index }: { service: CareService; index: number }
               <p className="text-xs leading-relaxed text-ink-500">{service.note}</p>
             </div>
 
+            {/* 검색 유입용 독립 랜딩으로 가는 내부 링크 */}
+            <Link
+              href={`/services/${service.slug}`}
+              className="mb-2 flex min-h-[44px] w-full items-center justify-center gap-1 rounded-2xl text-xs font-semibold text-ink-400 transition-colors hover:bg-ink-100 hover:text-ink-700"
+            >
+              {service.label} 자세히 알아보기
+              <ChevronRight size={13} />
+            </Link>
             {service.action.kind === "request" ? (
               <Link
                 href={`/care-request?type=${service.action.locationType}`}

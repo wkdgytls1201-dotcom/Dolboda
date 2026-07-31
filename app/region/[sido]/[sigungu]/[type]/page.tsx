@@ -104,7 +104,7 @@ export default async function RegionTypePage({
           url: `${SITE_URL}/facility/${f.id}`,
         })),
       },
-      regionFaqJsonLd(),
+      regionFaqJsonLd({ regionName: sigungu, total: summary.total }),
     ],
   };
 
@@ -192,7 +192,7 @@ export default async function RegionTypePage({
         </ul>
       </section>
 
-      <RegionFaq />
+      <RegionFaq regionName={sigungu} total={summary.total} />
     </main>
   );
 }

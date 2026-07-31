@@ -70,29 +70,63 @@ export function FacilityLinkList({
   );
 }
 
-// 지역 페이지 공통 FAQ — 요양시설을 처음 알아보는 보호자용 기본 안내.
-// FAQPage JSON-LD와 내용을 일치시켜야 하므로 데이터로 정의한다.
-export const REGION_FAQ: { q: string; a: string }[] = [
-  {
-    q: "요양병원과 요양원은 무엇이 다른가요?",
-    a: "요양병원은 의사·간호사가 상주하는 의료기관으로 치료와 재활이 필요할 때 이용하며 건강보험이 적용돼요. 요양원은 요양보호사가 일상 돌봄을 제공하는 생활시설로, 노인장기요양보험의 장기요양등급 판정을 받아 이용해요.",
-  },
-  {
-    q: "평가등급은 어떤 의미인가요?",
-    a: "건강보험심사평가원(요양병원)과 국민건강보험공단(장기요양기관)이 주기적으로 시설 운영과 서비스 수준을 평가해 매기는 등급이에요. 1등급에 가까울수록 평가 결과가 좋다는 뜻이라, 시설을 비교할 때 중요한 기준이 돼요.",
-  },
-  {
-    q: "시설 비용은 어떻게 확인하나요?",
-    a: "시설마다 상급병실료 같은 비급여 항목과 인력 구성이 달라 총비용 차이가 커요. 돌보다 상세페이지에서 시설별 비급여 비용과 인력 현황을 먼저 비교한 뒤, 전화 상담으로 최종 확인하는 것을 권해요.",
-  },
-];
+// 지역 페이지 FAQ — 지역명·시설 수를 받아 페이지마다 다른 질문·답을 만든다.
+// 광역·시군구 페이지가 똑같은 FAQ를 반복하면 검색엔진이 중복 콘텐츠로 본다.
+// FAQPage JSON-LD와 화면 내용을 일치시켜야 하므로 같은 빌더를 공유한다.
+export interface RegionFaqContext {
+  /** "서울" 또는 "강남구"처럼 페이지가 다루는 지역 이름 */
+  regionName?: string;
+  /** 지역 내 전체 시설 수 — 있으면 지역 고유 질문이 추가된다 */
+  total?: number;
+  /** 유형별 시설 수 — 요양원 수 등 구체 숫자를 답에 넣는다 */
+  typeCounts?: Partial<Record<FacilityType, number>>;
+}
 
-export function RegionFaq() {
+export function buildRegionFaq(ctx: RegionFaqContext = {}): { q: string; a: string }[] {
+  const at = ctx.regionName ? `${ctx.regionName}에서 ` : "";
+  const faq: { q: string; a: string }[] = [];
+
+  if (ctx.regionName && ctx.total) {
+    const parts = ctx.typeCounts
+      ? (Object.entries(ctx.typeCounts) as [FacilityType, number][])
+          .filter(([, n]) => n > 0)
+          .map(([t, n]) => `${FACILITY_TYPE_LABEL[t]} ${n}곳`)
+          .join(", ")
+      : "";
+    faq.push({
+      q: `${ctx.regionName}에는 요양시설이 몇 곳 있나요?`,
+      a: `돌보다에 등록된 ${ctx.regionName} 요양시설은 총 ${ctx.total.toLocaleString()}곳이에요.${
+        parts ? ` ${parts}으로 구성돼 있어요.` : ""
+      } 공공데이터 기준이라 실제 운영 여부는 시설에 확인해 주세요.`,
+    });
+  }
+
+  faq.push(
+    {
+      q: `${at}요양병원과 요양원 중 어디를 알아봐야 하나요?`,
+      a: "치료·재활이 계속 필요하면 의사가 상주하는 요양병원(건강보험 적용), 식사·거동 같은 일상 돌봄이 주로 필요하면 요양원(장기요양등급 필요)이 맞아요. 돌보다의 '요양원과 요양병원 차이' 가이드에서 자세히 비교할 수 있어요.",
+    },
+    {
+      q: `${ctx.regionName ? `${ctx.regionName} ` : ""}시설의 평가등급은 어떻게 확인하나요?`,
+      a: `${
+        ctx.regionName ? `${ctx.regionName} 시설 목록에서 ` : "시설 목록에서 "
+      }각 시설의 평가등급이 함께 표시돼요. 요양병원은 건강보험심사평가원, 요양원·주야간보호·방문요양은 국민건강보험공단이 매기는 공식 등급으로, 1등급(A등급)에 가까울수록 평가 결과가 좋다는 뜻이에요.`,
+    },
+    {
+      q: "시설 비용은 어떻게 비교하나요?",
+      a: "급여 수가는 전국 공통이라 시설마다 달라지는 건 식재료비·상급병실료 같은 비급여예요. 돌보다 상세페이지에서 시설별 비급여와 월 실부담 시뮬레이터로 비교한 뒤, 전화 상담으로 최종 확인하는 것을 권해요.",
+    }
+  );
+  return faq;
+}
+
+export function RegionFaq(ctx: RegionFaqContext = {}) {
+  const faq = buildRegionFaq(ctx);
   return (
     <section className="rounded-2xl border border-ink-100 bg-white p-5 shadow-card">
       <h2 className="mb-3 font-bold text-ink-900">자주 묻는 질문</h2>
       <dl className="space-y-4">
-        {REGION_FAQ.map((item) => (
+        {faq.map((item) => (
           <div key={item.q}>
             <dt className="mb-1 text-sm font-semibold text-ink-900">{item.q}</dt>
             <dd className="text-sm leading-relaxed text-ink-500">{item.a}</dd>
@@ -103,10 +137,10 @@ export function RegionFaq() {
   );
 }
 
-export function regionFaqJsonLd() {
+export function regionFaqJsonLd(ctx: RegionFaqContext = {}) {
   return {
     "@type": "FAQPage",
-    mainEntity: REGION_FAQ.map((item) => ({
+    mainEntity: buildRegionFaq(ctx).map((item) => ({
       "@type": "Question",
       name: item.q,
       acceptedAnswer: { "@type": "Answer", text: item.a },

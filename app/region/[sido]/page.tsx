@@ -82,7 +82,7 @@ export default async function RegionSidoPage({ params }: { params: { sido: strin
           url: `${SITE_URL}/facility/${f.id}`,
         })),
       },
-      regionFaqJsonLd(),
+      regionFaqJsonLd({ regionName: region.label, total: summary.total, typeCounts: summary.typeCounts }),
     ],
   };
 
@@ -146,7 +146,7 @@ export default async function RegionSidoPage({ params }: { params: { sido: strin
       </section>
 
       <GuideLinkStrip />
-      <RegionFaq />
+      <RegionFaq regionName={region.label} total={summary.total} typeCounts={summary.typeCounts} />
     </main>
   );
 }

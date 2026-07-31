@@ -101,7 +101,7 @@ export default async function RegionSigunguPage({
           url: `${SITE_URL}/facility/${f.id}`,
         })),
       },
-      regionFaqJsonLd(),
+      regionFaqJsonLd({ regionName: sigungu, total: summary.total, typeCounts: summary.typeCounts }),
     ],
   };
 
@@ -172,7 +172,7 @@ export default async function RegionSigunguPage({
       </section>
 
       <GuideLinkStrip />
-      <RegionFaq />
+      <RegionFaq regionName={sigungu} total={summary.total} typeCounts={summary.typeCounts} />
     </main>
   );
 }
