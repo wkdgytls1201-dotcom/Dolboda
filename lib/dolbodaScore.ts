@@ -226,11 +226,34 @@ function nhisAreas(
   }
 
   const km = extras?.nearestHospitalKm;
+  // 공단 상세정보를 매핑한 시설은 실제 인력 수가 있다. 정원 대비 간호인력 비율로 대응력을 본다.
+  const nurseCount = f.staffDetail.medical.nurses + f.staffDetail.medical.nursingAssistants;
+  const hasStaffData = (f.staffTotal ?? 0) > 0;
+  const perNurse = nurseCount > 0 && f.capacity > 0 ? f.capacity / nurseCount : null;
   const medical: ScoreSignal[] = [
     {
       label: "간호인력 배치",
-      score: null,
-      note: "이 시설 유형의 인력현황은 공공데이터에 아직 공개되지 않았어요",
+      score: !hasStaffData
+        ? null
+        : nurseCount === 0
+        ? 30
+        : perNurse == null
+        ? 70 // 재가처럼 정원 개념이 없으면 배치 사실만으로 중간 이상
+        : perNurse <= 15
+        ? 100
+        : perNurse <= 25
+        ? 85
+        : perNurse <= 40
+        ? 65
+        : 45,
+      weight: 3,
+      note: !hasStaffData
+        ? "이 시설의 인력현황은 공공데이터에 아직 공개되지 않았어요"
+        : nurseCount === 0
+        ? "간호사·간호조무사 배치 없음"
+        : perNurse == null
+        ? `간호인력 ${nurseCount}명`
+        : `간호인력 ${nurseCount}명 · 1명당 정원 ${Math.round(perNurse)}명`,
     },
     {
       label: "인근 요양병원 접근성",
@@ -241,11 +264,66 @@ function nhisAreas(
     },
   ];
 
+  // 요양보호사 1명이 몇 분을 돌보는지 — 법정 기준은 요양원 2.1:1, 낮을수록 여유가 있다
+  const careWorkers = f.careWorkerDetail?.total ?? 0;
+  const perCareWorker = careWorkers > 0 && f.capacity > 0 ? f.capacity / careWorkers : null;
+  // 프로그램 종류 수 — 인지·신체활동이 다양할수록 하루가 단조롭지 않다
+  const programCategories = new Set((f.programs ?? []).map((p) => p.category ?? "기타")).size;
+  // 2년 이상 근속 비율 — 익숙한 분이 계속 돌봐주는지
+  const tenureTotal = (f.tenure ?? []).reduce((s, t) => s + t.total, 0);
+  const tenureOver2y = (f.tenure ?? []).reduce((s, t) => s + t.over2y, 0);
+  const tenureRate = tenureTotal > 0 ? (tenureOver2y / tenureTotal) * 100 : null;
+
   const care: ScoreSignal[] = [
     { label: "공단 정기평가 등급(돌봄 과정 반영)", score: gradeToScore(f.grade), weight: 2 },
     { label: "급여제공 과정 점수", score: findDomain(f, "급여제공과정"), weight: 2 },
     { label: "급여제공 결과 점수", score: findDomain(f, "급여제공결과"), weight: 2 },
     { label: "기관운영 점수", score: findDomain(f, "기관운영") },
+    {
+      label: "요양보호사 배치",
+      score:
+        perCareWorker == null
+          ? null
+          : perCareWorker <= 2.1
+          ? 100
+          : perCareWorker <= 2.5
+          ? 85
+          : perCareWorker <= 3
+          ? 70
+          : 50,
+      weight: 3,
+      note: perCareWorker == null ? undefined : `1명당 어르신 ${perCareWorker.toFixed(1)}명`,
+    },
+    {
+      label: "프로그램 다양성",
+      score:
+        programCategories === 0
+          ? null
+          : programCategories >= 4
+          ? 100
+          : programCategories >= 3
+          ? 85
+          : programCategories >= 2
+          ? 70
+          : 55,
+      weight: 2,
+      note: programCategories > 0 ? `${programCategories}개 분야 운영` : undefined,
+    },
+    {
+      label: "직원 근속 안정성",
+      score:
+        tenureRate == null
+          ? null
+          : tenureRate >= 60
+          ? 100
+          : tenureRate >= 40
+          ? 85
+          : tenureRate >= 20
+          ? 65
+          : 45,
+      weight: 2,
+      note: tenureRate == null ? undefined : `2년 이상 ${Math.round(tenureRate)}%`,
+    },
   ];
 
   const environment: ScoreSignal[] = [
@@ -266,10 +344,63 @@ function nhisAreas(
     },
   ];
 
+  // 침실 구성 — 1·2인실이 있으면 사생활이 보장된다. 공단 시설현황을 매핑한 시설만 값이 있다.
+  const rooms = f.facilityRooms?.bedrooms;
+  const roomTotal = rooms
+    ? rooms.single + rooms.double + rooms.triple + rooms.quad + rooms.special
+    : 0;
+  if (roomTotal > 0) {
+    const privateRate = ((rooms!.single + rooms!.double) / roomTotal) * 100;
+    environment.push({
+      label: "1·2인실 비중",
+      score: privateRate >= 50 ? 100 : privateRate >= 25 ? 85 : privateRate > 0 ? 65 : 45,
+      weight: 2,
+      note: `전체 ${roomTotal}실 중 ${Math.round(privateRate)}%`,
+    });
+    environment.push({
+      label: "프로그램실·재활실",
+      score:
+        (f.programRoomCount ?? 0) > 0 && f.facilityRooms.medical.rehabRoom > 0
+          ? 100
+          : (f.programRoomCount ?? 0) > 0 || f.facilityRooms.medical.rehabRoom > 0
+          ? 75
+          : 40,
+    });
+  }
+  if (f.hasDementiaUnit) {
+    environment.push({
+      label: "치매전담실 운영",
+      score: 100,
+      note: "치매 어르신 전용 생활공간이 있어요",
+    });
+  }
+
   const transparency: ScoreSignal[] = [
     { label: "평가등급 공개", score: f.grade != null ? 100 : 30, weight: 2 },
     { label: "연락처 공개", score: f.phone ? 100 : 30 },
   ];
+  if (f.institutionInfo) {
+    transparency.push({
+      label: "운영정보 공개",
+      score:
+        [
+          f.institutionInfo.homepage,
+          f.institutionInfo.operatingHours,
+          f.institutionInfo.transport,
+          f.institutionInfo.parkingInfo,
+        ].filter(Boolean).length >= 3
+          ? 100
+          : 70,
+      note: f.institutionInfo.homepage ? "홈페이지·운영시간 공개" : "운영시간 등 공개",
+    });
+    // 배상책임보험은 사고가 났을 때 보호자가 실제로 보호받는지와 직결된다
+    transparency.push({
+      label: "배상책임보험",
+      score: f.institutionInfo.liabilityInsurance ? 100 : 40,
+      weight: 2,
+      note: f.institutionInfo.liabilityInsurance ? "가입" : "미가입",
+    });
+  }
 
   const availability: ScoreSignal[] = hasCapacity
     ? [

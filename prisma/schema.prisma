@@ -50,6 +50,31 @@ model Facility {
   @@index([dataSource])
 }
 
+// 장기요양기관 업체 마스터 — 공단 "전국 장기요양기관 상세정보" 파일(11개 시트)을 병합한 원본.
+// 한 기관(instCode)이 방문요양·방문목욕·주야간보호처럼 급여종류별로 여러 행을 가진다.
+// Facility.extra를 채우는 소스이자, 나중에 업체 가입·프리미엄 노출과 연결할 기준 데이터.
+// data(jsonb) 구조: { basic, capacity, staff, staffHomecare, tenure, rooms, dementiaUnits,
+//                    nonCoveredFees, programs } — scripts/import-institutions.mjs 참고
+model Institution {
+  id          String @id // `${instCode}-${serviceCode}`
+  instCode    String // 공단 기관번호 (장기요양기관기호)
+  name        String
+  sido        String
+  serviceCode String // 급여종류코드 (A03 등)
+  serviceName String // 급여종류 (노인요양시설 등)
+  address     String
+  phone       String?
+  data        Json
+  sourceDate  String // 파일의 최종변경일
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([instCode])
+  @@index([name])
+  @@index([serviceCode])
+}
+
 // 상담 신청 접수함 — 관리자만 보는 목록으로, 접수 시 이메일도 함께 발송(lib/resend.ts)
 model ConsultRequest {
   id           String   @id @default(cuid())

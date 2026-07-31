@@ -83,6 +83,29 @@ export interface CareProgram {
   targetCount: number;
   frequency: string;
   location: string;
+  category?: string; // 인지기능향상·신체활동 등 (공단 상세정보에서 채움)
+}
+
+// 공단 "장기요양기관 상세정보"에서만 오는 값들 — scripts/map-institutions-to-facilities.mjs 참고
+export interface InstitutionInfo {
+  homepage?: string;
+  email?: string;
+  transport?: string; // 교통편 안내
+  operatingHours?: string;
+  parkingInfo?: string;
+  designatedAt?: string; // 지정일자
+  liabilityInsurance?: boolean; // 손해배상책임보험
+  professionalLiabilityInsurance?: boolean; // 전문인배상책임보험
+  integratedHomeCare?: boolean; // 통합재가급여 제공
+}
+
+// 직종별 근속 분포 — 오래 일한 직원이 많을수록 돌봄이 안정적이라는 신호
+export interface TenureStat {
+  role: string;
+  total: number;
+  over2y: number;
+  y1to2: number;
+  under1y: number;
 }
 
 // 요양원 / 주야간보호 / 방문요양 (국민건강보험공단 NHIS 데이터 구조)
@@ -110,6 +133,17 @@ export interface NursingHomeExtra {
   nonCoveredFees: MealCostItem[];
   evaluationDetail?: EvaluationDetail;
   programs: CareProgram[];
+
+  // --- 아래는 공단 상세정보(Institution)에서 매핑해 채우는 값들. 매칭 안 된 시설은 없다. ---
+  instCode?: string; // 공단 기관번호 — 다음 갱신 때 이름 대신 이걸로 붙인다
+  staffTotal?: number;
+  careWorkerDetail?: { level1: number; level2: number; provisional: number; total: number };
+  programRoomCount?: number;
+  availableSlots?: number; // 이용 가능 인원 (정원-현원과 다를 수 있는 공단 집계값)
+  tenure?: TenureStat[];
+  institutionInfo?: InstitutionInfo;
+  otherServices?: string[]; // 같은 기관이 함께 제공하는 다른 급여 (방문목욕·복지용구 등)
+  hasDementiaUnit?: boolean; // 치매전담실 보유
 }
 
 // 행정처분(위반사실 공표) 이력 — scripts/import-admin-actions.mjs 로 채운다
