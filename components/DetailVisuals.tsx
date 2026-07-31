@@ -2,6 +2,13 @@ import { Activity, ScanLine, Scan, Waves, Stethoscope, Users, LucideIcon } from 
 
 // 5단계/6단계 등급을 척도 위 위치로 보여주는 게이지. 숫자만 나열하지 않고
 // 전체 등급 범위 중 이 시설이 어디에 있는지 한눈에 보여주기 위한 용도.
+// 등급 척도 색 — 1등급(좋음)은 민트, 마지막 등급(주의)은 코랄로 자연스럽게 이어지는 신호등 팔레트
+const SCALE_COLORS: Record<number, string[]> = {
+  4: ["bg-mint-500", "bg-mint-300", "bg-accent-400", "bg-primary-500"],
+  5: ["bg-mint-500", "bg-mint-300", "bg-accent-300", "bg-accent-500", "bg-primary-500"],
+  6: ["bg-mint-500", "bg-mint-400", "bg-mint-300", "bg-accent-300", "bg-accent-500", "bg-primary-500"],
+};
+
 export function GradeScaleBar({
   grade,
   levels,
@@ -13,21 +20,36 @@ export function GradeScaleBar({
     return <p className="text-sm text-ink-300">등급 제외 시설이에요.</p>;
   }
 
+  const colors = SCALE_COLORS[levels] ?? SCALE_COLORS[5];
+
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-end gap-1">
       {Array.from({ length: levels }).map((_, i) => {
         const level = i + 1;
         const isCurrent = level === grade;
         return (
-          <div key={level} className="flex flex-1 flex-col items-center gap-1.5">
+          <div key={level} className="flex flex-1 flex-col items-center">
+            {/* 현재 등급 위에만 말풍선 배지 — 다른 칸은 같은 높이의 빈 공간으로 정렬 유지 */}
+            <div className="mb-1.5 flex h-7 items-end justify-center">
+              {isCurrent && (
+                <div className="flex flex-col items-center">
+                  <span className="whitespace-nowrap rounded-full bg-ink-900 px-2.5 py-1 text-[11px] font-bold leading-none text-white shadow-card">
+                    {level}등급
+                  </span>
+                  <span className="-mt-px h-0 w-0 border-x-4 border-t-4 border-x-transparent border-t-ink-900" />
+                </div>
+              )}
+            </div>
             <div
-              className={`h-2.5 w-full rounded-full transition ${
-                isCurrent ? "bg-primary-600" : level < grade ? "bg-primary-200" : "bg-ink-100"
-              }`}
+              className={`w-full transition-all ${
+                isCurrent
+                  ? `h-3.5 rounded-lg ${colors[i]} ring-2 ring-white shadow-card`
+                  : `h-2 rounded-md ${colors[i]} opacity-30`
+              } ${i === 0 ? "rounded-l-full" : ""} ${i === levels - 1 ? "rounded-r-full" : ""}`}
             />
             <span
-              className={`text-[11px] ${
-                isCurrent ? "font-bold text-primary-700" : "text-ink-300"
+              className={`mt-1.5 text-[11px] ${
+                isCurrent ? "font-bold text-ink-900" : "text-ink-300"
               }`}
             >
               {level}

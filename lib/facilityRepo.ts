@@ -48,5 +48,9 @@ export function toCardFacility(f: FacilityDTO): FacilityDTO {
     departments: Array.isArray(anyF.departments)
       ? (anyF.departments as { name: string }[]).map((d) => ({ name: d.name, doctorCount: 0 }))
       : undefined,
+    // 행정처분은 카드에서 배지 여부만 필요하므로 첫 건만 남겨 페이로드를 줄인다
+    adminActions: Array.isArray(anyF.adminActions)
+      ? (anyF.adminActions as unknown[]).slice(0, 1)
+      : undefined,
   } as unknown as FacilityDTO;
 }

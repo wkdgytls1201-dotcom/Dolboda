@@ -1,8 +1,7 @@
 // 2026년 기준 장기요양보험 본인부담금 계산 상수.
-// 월 한도액(1·2등급, 인지지원등급)과 본인부담률은 공개된 2026년 고시자료로 검증함.
-// 3~5등급 한도액도 2026년 고시자료 기준으로 갱신함(요양24 등 공개 요약 기준).
-// 시설급여 1일 수가는 등급별 고시금액이 매년/분기 갱신되므로 실제 서비스 적용 전
-// 국민건강보험공단 장기요양보험 홈페이지의 최신 고시금액으로 반드시 재확인할 것 (현재는 공개된 요약치 기준 근사값).
+// 월 한도액·본인부담률·시설급여/주야간보호/방문요양 수가 전부 2026년 고시 공개자료로
+// 대조 확인함 (2026-07-31). 고시는 해마다 개정되므로 연초마다 이 파일의 금액을 재확인할 것.
+// 확인 출처: 보건복지부 고시 요약(장기요양급여 제공기준 및 급여비용 산정방법), 공개 수가표.
 
 export type LtciGrade = 1 | 2 | 3 | 4 | 5 | "cognitive";
 export type ServiceType = "home" | "facility";
@@ -27,13 +26,13 @@ export const HOME_CARE_MONTHLY_LIMIT: Record<LtciGrade, number> = {
   cognitive: 676320,
 };
 
-// 시설급여 1일 수가(원) — 2026년 고시 요약치 기준 근사값, 실제 계약 전 고시금액 재확인 필요
+// 시설급여(노인요양시설) 1일 수가(원) — 2026년 고시 기준 (2026-07-31 공개자료 대조 확인)
 export const FACILITY_CARE_DAILY_RATE: Partial<Record<LtciGrade, number>> = {
-  1: 84000,
-  2: 78000,
-  3: 72000,
-  4: 72000,
-  5: 72000,
+  1: 93070,
+  2: 86340,
+  3: 81540,
+  4: 81540,
+  5: 81540,
 };
 
 // 본인부담률 — 일반 15%(재가)/20%(시설), 40%감경 9%/12%, 60%감경 6%/8%, 기초생활수급자 0%
@@ -50,6 +49,63 @@ export const COPAY_TIER_LABEL: Record<CopayTier, string> = {
   reducedHeavy: "감경 60%",
   basic: "기초생활수급자",
 };
+
+// 주야간보호 1일 수가(원) — 등급·이용시간대별, 2026년 고시 기준 (2026-07-31 공개자료 대조 확인)
+export type DayNightBand = "3to6" | "6to8" | "8to10" | "10to13";
+
+export const DAY_NIGHT_BAND_LABEL: Record<DayNightBand, string> = {
+  "3to6": "3~6시간",
+  "6to8": "6~8시간",
+  "8to10": "8~10시간",
+  "10to13": "10시간 이상",
+};
+
+export const DAY_NIGHT_DAILY_RATE: Record<DayNightBand, Record<LtciGrade, number>> = {
+  "3to6": { 1: 41820, 2: 38720, 3: 35740, 4: 34120, 5: 32490, cognitive: 32490 },
+  "6to8": { 1: 56060, 2: 51930, 3: 47940, 4: 46300, 5: 44650, cognitive: 44650 },
+  "8to10": { 1: 69730, 2: 64590, 3: 59640, 4: 58010, 5: 56360, cognitive: 56360 },
+  "10to13": { 1: 76820, 2: 71160, 3: 65750, 4: 64090, 5: 62460, cognitive: 56360 },
+};
+
+// 방문요양 1회 방문 수가(원) — 방문시간별, 2026년 고시 기준 (2026-07-31 공개자료 대조 확인)
+export const HOME_VISIT_RATE: Record<number, number> = {
+  30: 17450,
+  60: 25320,
+  90: 34120,
+  120: 43430,
+  150: 50640,
+  180: 57020,
+  210: 63530,
+  240: 70080,
+};
+
+export const HOME_VISIT_MINUTES = [60, 90, 120, 180, 240] as const;
+
+export function calcDayNightCopay(
+  grade: LtciGrade,
+  tier: CopayTier,
+  daysPerMonth: number,
+  band: DayNightBand,
+  dailyMealCost: number
+) {
+  const dailyRate = DAY_NIGHT_DAILY_RATE[band][grade];
+  const usageAmount = dailyRate * daysPerMonth;
+  const base = calcHomeCareCopay(grade, tier, usageAmount);
+  const mealCost = dailyMealCost * daysPerMonth;
+  return { ...base, dailyRate, usageAmount, mealCost, copay: base.copay + mealCost };
+}
+
+export function calcHomeVisitCopay(
+  grade: LtciGrade,
+  tier: CopayTier,
+  visitsPerMonth: number,
+  minutes: number
+) {
+  const visitRate = HOME_VISIT_RATE[minutes] ?? 0;
+  const usageAmount = visitRate * visitsPerMonth;
+  const base = calcHomeCareCopay(grade, tier, usageAmount);
+  return { ...base, visitRate, usageAmount };
+}
 
 export function calcHomeCareCopay(grade: LtciGrade, tier: CopayTier, usageAmount: number) {
   const limit = HOME_CARE_MONTHLY_LIMIT[grade];

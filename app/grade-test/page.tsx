@@ -84,6 +84,14 @@ export default function GradeTestPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      <div className="mx-auto max-w-xl px-4 pt-4">
+        <a
+          href="/grade-helper"
+          className="flex min-h-[44px] items-center justify-center rounded-xl bg-royal-50 px-4 py-2.5 text-sm font-semibold text-royal-600 transition hover:bg-royal-100"
+        >
+          시간이 없으세요? AI 도우미와 1분 만에 확인하기 →
+        </a>
+      </div>
       <GradeTest />
 
       {/* 검색엔진·AI가 읽는 정적 설명 (테스트는 클라이언트에서만 그려지므로 별도로 둔다) */}

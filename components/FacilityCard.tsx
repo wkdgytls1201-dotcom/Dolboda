@@ -27,8 +27,11 @@ export function FacilityCard({
   const order = selected ? selectedIds.indexOf(facility.id) + 1 : null;
   const disabled = !selected && !canAddMore;
 
+  // 방문요양센터는 입소 시설이 아니라 정원 개념이 없다 — "정원 0명" 대신 서비스 성격을 알려준다
   const keyStat = isHospital(facility)
     ? `병상 ${facility.facilityStatus.generalBeds + facility.facilityStatus.upgradeBeds}개`
+    : facility.facilityType === "HOME_CARE"
+    ? "우리 집으로 방문 · 정원 제한 없음"
     : facility.currentOccupancy !== undefined
     ? `정원 ${facility.capacity}명 · 현원 ${facility.currentOccupancy}명`
     : `정원 ${facility.capacity}명`;
@@ -93,6 +96,11 @@ export function FacilityCard({
             label={FACILITY_TYPE_LABEL[facility.facilityType]}
           />
           <GradeBadge grade={facility.grade} gradeSource={facility.gradeSource} />
+          {facility.adminActions && facility.adminActions.length > 0 && (
+            <span className="rounded-full bg-accent-100 px-2 py-0.5 text-[11px] font-bold text-accent-600">
+              행정처분 이력
+            </span>
+          )}
           {facility.establishedYear !== undefined && (
             <span className="text-xs text-ink-300">
               설립 {new Date().getFullYear() - facility.establishedYear}년차

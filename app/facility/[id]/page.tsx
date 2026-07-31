@@ -17,6 +17,7 @@ import {
   Sparkles,
   ChevronLeft,
   ChevronRight,
+  AlertTriangle,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useFavorites } from "@/lib/favoritesContext";
@@ -44,6 +45,9 @@ import {
   StatTileGrid,
 } from "@/components/DetailVisuals";
 import { CopayCalculator } from "@/components/CopayCalculator";
+import { HospitalCostEstimator } from "@/components/HospitalCostEstimator";
+import { DolbodaScoreCard } from "@/components/DolbodaScoreCard";
+import { calcDolbodaScore } from "@/lib/dolbodaScore";
 
 const DOCTOR_GRADE_TABLE = [
   { grade: 1, desc: "35명 이하 (전문의 비율 50% 이상)" },
@@ -71,6 +75,24 @@ export default function FacilityDetailPage() {
   const user = session?.user;
   const [showConsult, setShowConsult] = useState(false);
   const relatedTrackRef = useRef<HTMLDivElement>(null);
+  // 돌보다 AI기반 안심지수의 "인근 요양병원 접근성" 신호용 — 좌표가 있는 재가·입소 시설만 1건 조회
+  const [nearestHospitalKm, setNearestHospitalKm] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!facility || isHospital(facility) || facility.lat == null || facility.lng == null) return;
+    let cancelled = false;
+    fetch(
+      `/api/facilities/nearby?lat=${facility.lat}&lng=${facility.lng}&type=NURSING_HOSPITAL&limit=1&view=card`
+    )
+      .then((r) => r.json())
+      .then((d) => {
+        if (!cancelled) setNearestHospitalKm(d.items?.[0]?.distanceKm ?? null);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [facility]);
 
   function scrollRelated(direction: "left" | "right") {
     const track = relatedTrackRef.current;
@@ -196,6 +218,34 @@ export default function FacilityDetailPage() {
         {/* 사진 갤러리 — 사진이 2장 이상이면 옆으로 넘겨볼 수 있고, 그 외엔 기존 썸네일 그대로 */}
         <FacilityPhotoGallery facility={facility} />
 
+        {/* 행정처분 이력 경고 — 공표 데이터가 있는 시설만 */}
+        {facility.adminActions && facility.adminActions.length > 0 && (
+          <div className="mt-6 rounded-2xl border border-accent-300 bg-accent-50 p-5">
+            <p className="mb-2 flex items-center gap-1.5 text-sm font-bold text-accent-600">
+              <AlertTriangle size={16} />
+              행정처분(위반사실 공표) 이력이 있는 시설이에요
+            </p>
+            <ul className="space-y-1.5">
+              {facility.adminActions.map((a, i) => (
+                <li key={i} className="text-xs leading-relaxed text-ink-700">
+                  <span className="font-semibold">{a.type}</span>
+                  {a.date && <span className="text-ink-500"> · {a.date}</span>}
+                  {a.reason && <span className="text-ink-500"> — {a.reason}</span>}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2.5 text-[11px] leading-relaxed text-ink-500">
+              공단·지자체가 공표한 자료 기준이에요. 처분 이후 개선됐을 수 있으니, 방문 상담 때
+              직접 확인해 보세요.
+            </p>
+          </div>
+        )}
+
+        {/* 돌보다 AI기반 안심지수 */}
+        <DetailSection id="dolboda-score" title="돌보다 AI기반 안심지수">
+          <DolbodaScoreCard score={calcDolbodaScore(facility, { nearestHospitalKm })} />
+        </DetailSection>
+
         {/* 평가정보 */}
         <DetailSection
           id="grade"
@@ -275,10 +325,13 @@ export default function FacilityDetailPage() {
                 ))}
               </div>
               <p className="mt-4 text-xs leading-relaxed text-ink-300">
-                요양병원 비용은 건강보험이 적용돼요.
-                <br />
-                장기요양보험 본인부담금 계산기는 요양원·주야간보호·방문요양 페이지에서 확인할 수 있어요.
+                요양병원 비용은 건강보험이 적용돼요. 아래 시뮬레이터로 간병비·상급병실료 같은
+                비급여 실부담을 가늠해 보세요.
               </p>
+            </DetailSection>
+
+            <DetailSection id="copay" title="월 실부담 시뮬레이터">
+              <HospitalCostEstimator fees={hospital.nonCoveredFees} />
             </DetailSection>
 
             {/* 의사(간호인력) 등급 — 값이 없는 시설은 0등급처럼 보이지 않게 안내로 대체 */}
@@ -415,15 +468,33 @@ export default function FacilityDetailPage() {
 
         {!isHospital(facility) && (
           <>
-            <DetailSection id="workforce" title="정원 현황" tooltip={TOOLTIPS.capacity}>
-              {facility.capacity > 0 ? (
+            <DetailSection
+              id="workforce"
+              title={facility.facilityType === "HOME_CARE" ? "이용 방식" : "정원 현황"}
+              tooltip={facility.facilityType === "HOME_CARE" ? undefined : TOOLTIPS.capacity}
+            >
+              {facility.facilityType === "HOME_CARE" ? (
+                // 방문요양은 입소 시설이 아니라 정원·현원이 의미가 없다 — 대신 서비스 성격을 안내한다
+                <div className="space-y-2.5 rounded-2xl bg-mint-50/60 p-4">
+                  {[
+                    ["집으로 방문해요", "요양보호사가 어르신 댁으로 찾아가 일상생활을 도와드려요."],
+                    ["정원 제한이 없어요", "입소 시설이 아니라서 자리가 차거나 대기하는 개념이 없어요. 전화 상담 후 방문 일정을 조율해요."],
+                    ["재가급여로 이용해요", "장기요양등급이 있으면 월 한도 내에서 본인부담금만 내고 이용할 수 있어요. 아래 시뮬레이터로 계산해 보세요."],
+                  ].map(([title, desc]) => (
+                    <div key={title}>
+                      <p className="text-sm font-semibold text-ink-900">{title}</p>
+                      <p className="mt-0.5 text-xs leading-relaxed text-ink-500">{desc}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : facility.capacity > 0 ? (
                 <CapacityMeter
                   capacity={facility.capacity}
                   occupancy={facility.currentOccupancy}
                   waitlistCount={facility.waitlistCount}
                 />
               ) : (
-                <p className="text-sm text-ink-300">방문요양 서비스는 정원 개념이 없어요.</p>
+                <p className="text-sm text-ink-300">이 시설 유형은 정원 정보가 공개되지 않았어요.</p>
               )}
               {facility.roomTypes.length > 0 && (
                 <div className="mt-4 flex flex-wrap gap-2">
@@ -462,6 +533,17 @@ export default function FacilityDetailPage() {
             )}
 
             <DetailSection id="workforce-detail" title="인력 현황">
+              {/* 전 항목이 0이면 미확보 데이터다 — 0명으로 단정 표시하지 않고 이유를 밝힌다 */}
+              {[
+                ...Object.values(facility.staffDetail.administrative),
+                ...Object.values(facility.staffDetail.socialCare),
+                ...Object.values(facility.staffDetail.medical),
+              ].every((v) => v === 0) ? (
+                <p className="rounded-2xl bg-ink-100/40 p-4 text-sm leading-relaxed text-ink-500">
+                  이 시설의 인력현황은 공공데이터에 아직 공개되지 않았어요. 상담하실 때
+                  요양보호사·간호인력 배치를 직접 확인해 보시는 것을 권해요.
+                </p>
+              ) : (
               <div className="space-y-5">
                 <div>
                   <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-ink-300">
@@ -525,6 +607,7 @@ export default function FacilityDetailPage() {
                   />
                 </div>
               </div>
+              )}
             </DetailSection>
 
             {(Object.values(facility.facilityRooms.bedrooms).some((v) => v > 0) ||
@@ -620,7 +703,7 @@ export default function FacilityDetailPage() {
               </DetailSection>
             )}
 
-            <DetailSection id="copay" title="본인부담금 계산기">
+            <DetailSection id="copay" title="월 실부담 시뮬레이터">
               <CopayCalculator
                 facilityType={facility.facilityType}
                 defaultMonthlyMealCost={

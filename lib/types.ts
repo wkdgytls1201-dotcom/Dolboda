@@ -109,6 +109,13 @@ export interface NursingHomeExtra {
   programs: CareProgram[];
 }
 
+// 행정처분(위반사실 공표) 이력 — scripts/import-admin-actions.mjs 로 채운다
+export interface AdminAction {
+  type: string; // 처분 내용 (업무정지, 지정취소, 경고 등)
+  reason: string; // 위반 내용
+  date: string; // 처분일 또는 공표일
+}
+
 export interface FacilityBase {
   id: string;
   name: string;
@@ -131,6 +138,7 @@ export interface FacilityBase {
     spots: number;
     isFree: boolean;
   };
+  adminActions?: AdminAction[];
 }
 
 export type Facility =
