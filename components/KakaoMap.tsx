@@ -95,15 +95,25 @@ export function KakaoMap({
 }
 
 // 여러 시설을 한 지도에 표시. 검색결과 지도 보기에서 사용.
+interface SavedMapView {
+  lat: number;
+  lng: number;
+  level: number;
+}
+
 export function KakaoMultiMap({
   markers,
   height = 480,
   center,
+  persistKey,
 }: {
   markers: MapMarker[];
   height?: number;
   /** 내 위치(또는 기본 위치) — 지정하면 첫 마커 대신 이 좌표를 지도 중심 기준으로 쓴다 */
   center?: { lat: number; lng: number };
+  /** 지정하면 사용자가 확대/이동한 위치를 sessionStorage에 기억해뒀다가 다음에 그대로 복원한다
+   *  (시설 상세 갔다 뒤로가기했을 때 지도가 처음 위치로 리셋되지 않게) */
+  persistKey?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
@@ -116,13 +126,34 @@ export function KakaoMultiMap({
     loadKakaoSdk()
       .then(() => {
         if (cancelled || !containerRef.current) return;
-        const initialCenter = center ?? valid[0];
+
+        let savedView: SavedMapView | null = null;
+        if (persistKey) {
+          try {
+            savedView = JSON.parse(sessionStorage.getItem(persistKey) ?? "null");
+          } catch {
+            savedView = null;
+          }
+        }
+
+        const initialCenter = savedView ?? center ?? valid[0];
         const bounds = new window.kakao.maps.LatLngBounds();
         const map = new window.kakao.maps.Map(containerRef.current, {
           center: new window.kakao.maps.LatLng(initialCenter.lat, initialCenter.lng),
-          level: 6,
+          level: savedView?.level ?? 6,
         });
         mapRef.current = map;
+
+        if (persistKey) {
+          const save = () => {
+            const c = map.getCenter();
+            sessionStorage.setItem(
+              persistKey,
+              JSON.stringify({ lat: c.getLat(), lng: c.getLng(), level: map.getLevel() })
+            );
+          };
+          window.kakao.maps.event.addListener(map, "idle", save);
+        }
         // 내 위치도 함께 시야에 들어오게 bounds에 포함시킨다 — 그래야 시설들이 위치와
         // 동떨어진 지역에 흩어져 있어도 지도가 엉뚱한 곳만 확대해 보여주지 않는다.
         if (center) {
@@ -162,7 +193,9 @@ export function KakaoMultiMap({
             infoWindow.open(map, marker);
           });
         });
-        if (valid.length > 1 || center) map.setBounds(bounds);
+        // 저장된 위치를 복원한 경우엔 사용자가 직접 맞춘 확대/이동이니 자동으로 다시
+        // 맞추지 않는다. 처음 여는 경우에만 마커가 다 보이게 자동으로 맞춘다.
+        if (!savedView && (valid.length > 1 || center)) map.setBounds(bounds);
       })
       .catch(() => !cancelled && setFailed(true));
     return () => {

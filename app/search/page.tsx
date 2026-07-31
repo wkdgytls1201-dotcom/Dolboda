@@ -33,6 +33,7 @@ interface PersistedSearchState {
   query: string;
   filters: FacilityFilters;
   sortKey: SortKey;
+  view: "list" | "map";
 }
 
 function readPersistedState(): PersistedSearchState | null {
@@ -57,7 +58,7 @@ function SearchContent() {
   const restored = typeof window !== "undefined" && !fromUrl ? readPersistedState() : null;
 
   const [query, setQuery] = useState(restored?.query ?? initialQuery);
-  const [view, setView] = useState<"list" | "map">("list");
+  const [view, setView] = useState<"list" | "map">(restored?.view ?? "list");
   const [sortKey, setSortKey] = useState<SortKey>(restored?.sortKey ?? "distance");
   const [filters, setFilters] = useState<FacilityFilters>(
     restored?.filters ?? { ...EMPTY_FILTERS, types: initialType ? [initialType] : [] }
@@ -90,12 +91,12 @@ function SearchContent() {
     try {
       sessionStorage.setItem(
         SEARCH_STATE_KEY,
-        JSON.stringify({ query, filters, sortKey } satisfies PersistedSearchState)
+        JSON.stringify({ query, filters, sortKey, view } satisfies PersistedSearchState)
       );
     } catch {
       // 저장 실패해도 검색 자체에는 지장 없음
     }
-  }, [query, filters, sortKey]);
+  }, [query, filters, sortKey, view]);
 
   const results = useMemo(() => {
     let list = facilities.map((f) => ({
@@ -257,6 +258,7 @@ function SearchContent() {
             href: `/facility/${x.f.id}`,
           }))}
           center={origin}
+          persistKey="dolboda-search-map-view"
         />
       ) : results.length === 0 ? (
         <div className="rounded-2xl bg-white p-12 text-center text-sm text-ink-300 shadow-card">

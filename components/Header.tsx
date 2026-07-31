@@ -137,6 +137,16 @@ export function Header() {
             </div>
           </nav>
 
+          {/* 마이페이지 화면에서만 — 여기까지 온 로그인 사용자에게 돌봄요청을 눈에 띄게 보여준다 */}
+          {user && pathname?.startsWith("/mypage") && (
+            <Link
+              href="/care-request"
+              className="mr-1 flex items-center rounded-full bg-royal-500 px-3 py-1.5 text-xs font-bold text-white shadow-royal transition-transform active:scale-95 sm:hidden"
+            >
+              돌봄 요청
+            </Link>
+          )}
+
           {/* 모바일 햄버거 버튼 */}
           <button
             type="button"
