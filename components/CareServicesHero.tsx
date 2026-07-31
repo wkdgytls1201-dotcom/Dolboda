@@ -1,66 +1,57 @@
 // 서비스 소개 페이지 상단 일러스트. 외부 이미지 없이 SVG로 그려 로딩이 즉시 끝나고
-// 어느 화면 크기에서도 또렷하게 보인다. 브랜드 색(코랄·민트·피치·보라)을 그대로 쓴다.
-// 이전엔 집·병원·방문돌봄 3장면을 가로로 넓게 펼친 파노라마였는데, 화면을 너무 많이
-// 차지해서 손으로 하트를 감싸는 단순한 상징으로 바꾸고 세로 높이도 줄였다.
+// 어느 화면 크기에서도 또렷하게 보인다.
+// 손으로 하트를 감싸는 구상적인 그림 대신, 로고(4장 클로버 + 은은한 빛번짐)와 같은 언어로
+// 두 개의 부드러운 블롭이 겹쳐 서로를 감싸고, 중심에 로고와 같은 흰 점이 빛나는 추상적인 모습으로 표현했다.
 export function CareServicesHero() {
   return (
     <svg
       viewBox="0 0 400 150"
       className="mx-auto w-full max-w-[320px]"
       role="img"
-      aria-label="두 손으로 하트를 감싸 돌보는 모습을 나타낸 일러스트"
+      aria-label="서로 겹쳐 감싸는 두 개의 부드러운 형태로 돌봄을 표현한 일러스트"
     >
       <defs>
         <linearGradient id="csh-bg" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#FFF7E9" />
+          <stop offset="0%" stopColor="#FFF3E9" />
           <stop offset="100%" stopColor="#FFFBF3" />
         </linearGradient>
-        <linearGradient id="csh-heart" x1="0" y1="0" x2="1" y2="1">
+        <radialGradient id="csh-glow" cx="50%" cy="45%" r="60%">
+          <stop offset="0%" stopColor="#FFD1AD" stopOpacity="0.55" />
+          <stop offset="100%" stopColor="#FFD1AD" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id="csh-blob-a" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#FF9F8C" />
           <stop offset="100%" stopColor="#EB4632" />
+        </linearGradient>
+        <linearGradient id="csh-blob-b" x1="0" y1="1" x2="1" y2="0">
+          <stop offset="0%" stopColor="#9C60D0" />
+          <stop offset="100%" stopColor="#7C42BD" />
         </linearGradient>
       </defs>
 
       <rect width="400" height="150" fill="url(#csh-bg)" rx="24" />
+      <circle cx="200" cy="72" r="95" fill="url(#csh-glow)" />
 
-      {/* 뒤쪽 물결 — 온기를 은은하게 표현 */}
-      <path d="M0 118 Q 100 96 200 112 T 400 104 L400 150 L0 150Z" fill="#D2FBF1" opacity="0.7" />
+      {/* 떠 있는 작은 점들 — 로고 배경의 은은한 빛 입자를 옮겨온 것 */}
+      <circle cx="90" cy="38" r="4" fill="#FFCC29" opacity="0.8" />
+      <circle cx="316" cy="112" r="5" fill="#2DD4BF" opacity="0.75" />
+      <circle cx="330" cy="42" r="3" fill="#EB4632" opacity="0.55" />
 
-      {/* 떠 있는 작은 하트 두 개 — 좌우 균형 */}
+      {/* 서로 겹쳐 감싸는 두 블롭 — 보호자와 돌보다 매니저가 함께 돌보는 모습을 추상적으로 표현 */}
       <path
-        d="M84 44c0-5 4-8 8-8 3 0 6 2 7 4 1-2 4-4 7-4 4 0 8 3 8 8 0 8-11 15-15 17-4-2-15-9-15-17z"
-        fill="#FFD84D"
-        opacity="0.9"
+        d="M143 100 C 95 100 68 68 78 38 C 86 14 118 4 146 14 C 168 22 176 44 172 62 C 190 58 205 70 203 90 C 201 110 178 122 158 116 C 152 111 147 106 143 100 Z"
+        fill="url(#csh-blob-a)"
+        opacity="0.94"
       />
       <path
-        d="M282 40c0-4 3-7 6-7 3 0 5 1 6 3 1-2 3-3 6-3 3 0 6 3 6 7 0 7-9 12-12 14-3-2-12-7-12-14z"
-        fill="#2DD4BF"
-        opacity="0.9"
+        d="M257 108 C 305 112 328 82 320 52 C 314 28 284 16 256 24 C 234 30 224 52 227 70 C 210 64 194 76 195 96 C 196 116 218 130 240 125 C 246 120 252 114 257 108 Z"
+        fill="url(#csh-blob-b)"
+        opacity="0.92"
       />
 
-      {/* 가운데: 두 손이 하트를 감싸는 모습 */}
-      <g>
-        <path
-          d="M200 46c-14-14-38-14-50 0-12 13-11 32 4 46l46 40 46-40c15-14 16-33 4-46-12-14-36-14-50 0z"
-          fill="url(#csh-heart)"
-        />
-        {/* 왼손 */}
-        <path
-          d="M118 118c-16 4-34 2-46-8-9-8-13-19-10-28 3-8 12-12 20-9 4 1 7 4 9 7"
-          fill="none"
-          stroke="#3A3452"
-          strokeWidth="7"
-          strokeLinecap="round"
-        />
-        {/* 오른손 */}
-        <path
-          d="M282 118c16 4 34 2 46-8 9-8 13-19 10-28-3-8-12-12-20-9-4 1-7 4-9 7"
-          fill="none"
-          stroke="#3A3452"
-          strokeWidth="7"
-          strokeLinecap="round"
-        />
-      </g>
+      {/* 두 블롭이 맞닿는 중심의 흰 점 — 로고 중심점과 같은 자리 */}
+      <circle cx="200" cy="75" r="9" fill="#FFFFFF" />
+      <circle cx="200" cy="75" r="9" fill="none" stroke="#FFFFFF" strokeOpacity="0.5" strokeWidth="6" />
     </svg>
   );
 }

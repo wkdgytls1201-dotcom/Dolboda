@@ -64,12 +64,44 @@ p {
   }
 }
 
+@keyframes message-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes typing-dot {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
 .animate-slide-up {
   animation: slide-up 0.35s ease-out both;
 }
 
 .animate-float-slow {
   animation: float-slow 5s ease-in-out infinite;
+}
+
+.animate-message-in {
+  animation: message-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-typing-dot {
+  animation: typing-dot 1.2s ease-in-out infinite;
 }
 
 /* 카카오 로드뷰 기본 컨트롤(줌인/줌아웃/나침반/미니맵, 동서남북 방위 표시) 숨김

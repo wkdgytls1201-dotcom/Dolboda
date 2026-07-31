@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Clover } from "lucide-react";
 import { CareServicesHero } from "@/components/CareServicesHero";
 import { ServicesShowcase } from "@/components/ServicesShowcase";
 import { CARE_SERVICES, SERVICE_STEPS } from "@/lib/careServices";
@@ -94,9 +94,24 @@ export default function ServicesPage() {
         <CareServicesHero />
       </div>
 
-      <div className="mb-10 text-center">
+      <div className="relative mb-10 text-center">
+        {/* 로고와 같은 코랄·피치 은은한 빛번짐 — 다른 화면의 진한 보라 배너와는 다른 톤 */}
+        <div
+          className="pointer-events-none absolute left-1/2 top-0 -z-10 h-32 w-52 -translate-x-1/2 rounded-full bg-gradient-to-br from-primary-200/60 via-peach-200/50 to-transparent blur-2xl"
+          aria-hidden
+        />
+
+        <span className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-primary-100 to-peach-100 px-3 py-1.5 text-xs font-bold text-primary-600">
+          <Clover size={13} className="text-primary-500" />
+          믿고 맡기는 돌봄
+        </span>
+
         <h1 className="mb-3 text-[26px] font-bold leading-tight text-ink-900">
-          어떤 돌봄이 필요하세요?
+          어떤{" "}
+          <span className="bg-gradient-to-r from-primary-500 to-peach-500 bg-clip-text text-transparent">
+            돌봄
+          </span>
+          이 필요하세요?
         </h1>
         <p className="text-sm leading-relaxed text-ink-500">
           병원에서, 집에서, 정기 방문으로 — 상황에 따라 필요한 돌봄이 달라요.

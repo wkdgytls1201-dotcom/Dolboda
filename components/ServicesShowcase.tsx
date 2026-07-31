@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Check, Info, ChevronDown } from "lucide-react";
+import { ArrowRight, Check, Info, ChevronDown, ChevronRight } from "lucide-react";
 import {
   CARE_SERVICES,
   SERVICE_STEPS,
@@ -148,12 +148,15 @@ function SampleListingsRow() {
   }, [paused]);
 
   return (
-    <div
-      ref={trackRef}
-      onPointerEnter={(e) => e.pointerType === "mouse" && setPaused(true)}
-      onPointerLeave={(e) => e.pointerType === "mouse" && setPaused(false)}
-      className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-    >
+    <div className="relative">
+      {/* 오른쪽에 더 볼 카드가 있다는 걸 알려주는 흐림 처리 */}
+      <div className="pointer-events-none absolute right-0 top-0 z-10 h-[calc(100%-0.75rem)] w-10 bg-gradient-to-l from-ivory-50 to-transparent" />
+      <div
+        ref={trackRef}
+        onPointerEnter={(e) => e.pointerType === "mouse" && setPaused(true)}
+        onPointerLeave={(e) => e.pointerType === "mouse" && setPaused(false)}
+        className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
       {SAMPLE_LISTINGS.map((s) => (
         <div
           key={s.place}
@@ -187,6 +190,7 @@ function SampleListingsRow() {
           </p>
         </div>
       ))}
+      </div>
     </div>
   );
 }
@@ -205,8 +209,11 @@ export function ServicesShowcase() {
         <p className="mb-6 text-center text-sm leading-relaxed text-ink-500">
           가장 많이 헷갈리시는 부분만 모았어요.
         </p>
-        <div className="-mx-4 overflow-x-auto px-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <table className="w-full min-w-[560px] border-collapse overflow-hidden rounded-2xl bg-white text-sm shadow-card">
+        <div className="relative">
+          {/* 오른쪽에 더 볼 게 있다는 걸 알려주는 흐림 처리 — 스크롤바를 숨겼으니 이게 유일한 힌트 */}
+          <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-8 bg-gradient-to-l from-ivory-50 to-transparent" />
+          <div className="-mx-4 overflow-x-auto px-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <table className="w-full min-w-[560px] border-collapse overflow-hidden rounded-2xl bg-white text-sm shadow-card">
             <thead>
               <tr>
                 <th className="w-[128px] border-b border-ink-100 bg-ink-100/40 p-3 text-left text-xs font-bold text-ink-500">
@@ -246,10 +253,12 @@ export function ServicesShowcase() {
                 </tr>
               ))}
             </tbody>
-          </table>
+            </table>
+          </div>
         </div>
-        <p className="mt-2 text-center text-[11px] text-ink-300">
+        <p className="mt-2 flex items-center justify-center gap-1 text-center text-[11px] text-ink-300">
           표가 잘리면 옆으로 밀어서 보실 수 있어요
+          <ChevronRight size={12} className="animate-pulse" />
         </p>
       </section>
 
@@ -260,8 +269,12 @@ export function ServicesShowcase() {
             예시
           </span>
         </div>
-        <p className="mb-6 text-center text-sm leading-relaxed text-ink-500">
+        <p className="mb-1 text-center text-sm leading-relaxed text-ink-500">
           아래는 실제 등록된 요청이 아니라 화면을 보여드리기 위한 예시예요.
+        </p>
+        <p className="mb-6 flex items-center justify-center gap-1 text-center text-[11px] text-ink-300">
+          옆으로 밀어서 더 보실 수 있어요
+          <ChevronRight size={12} className="animate-pulse" />
         </p>
         <SampleListingsRow />
       </section>

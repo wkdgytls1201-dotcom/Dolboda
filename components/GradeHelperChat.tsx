@@ -2,7 +2,18 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Bot, ClipboardList, RotateCcw, Search, ShoppingBag } from "lucide-react";
+import Image from "next/image";
+import {
+  Activity,
+  Brain,
+  ClipboardList,
+  Heart,
+  RotateCcw,
+  Search,
+  ShoppingBag,
+  Stethoscope,
+  Waves,
+} from "lucide-react";
 import {
   HELPER_QUESTIONS,
   HelperAnswers,
@@ -17,11 +28,48 @@ interface ChatEntry {
   text: string;
 }
 
+const AREA_ICON: Record<string, typeof Activity> = {
+  physical: Activity,
+  cognitive: Brain,
+  behavior: Heart,
+  nursing: Stethoscope,
+  rehab: Waves,
+};
+
+const TYPING_DELAY_MS = 550;
+
+function BotAvatar() {
+  return (
+    <span className="mt-1 flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white shadow-card ring-1 ring-royal-100">
+      <Image src="/logo.png" alt="돌보다" width={32} height={32} className="object-contain" />
+    </span>
+  );
+}
+
+function TypingBubble() {
+  return (
+    <div className="flex animate-message-in items-center gap-2.5">
+      <BotAvatar />
+      <div className="flex items-center gap-1 rounded-2xl rounded-tl-md bg-white px-4 py-3.5 shadow-card">
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            className="h-1.5 w-1.5 animate-typing-dot rounded-full bg-royal-300"
+            style={{ animationDelay: `${i * 0.15}s` }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function GradeHelperChat() {
   const [answers, setAnswers] = useState<HelperAnswers>({});
   const [entries, setEntries] = useState<ChatEntry[]>([
     { role: "bot", text: HELPER_QUESTIONS[0].ask },
   ]);
+  const [typing, setTyping] = useState(false);
+  const [pendingSelection, setPendingSelection] = useState<string | null>(null);
   const [result, setResult] = useState<HelperResult | null>(null);
   const [aiText, setAiText] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
@@ -29,33 +77,46 @@ export function GradeHelperChat() {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const queue = visibleQuestions(answers);
-  const current = result ? null : queue.find((q) => answers[q.id] == null) ?? null;
+  const current = result || typing ? null : queue.find((q) => answers[q.id] == null) ?? null;
   const answeredCount = queue.filter((q) => answers[q.id] != null).length;
+  const progressPct = queue.length > 0 ? Math.round((answeredCount / queue.length) * 100) : 0;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }, [entries.length, result, showApply]);
+  }, [entries.length, result, showApply, typing]);
 
   function pick(optionLabel: string, score: number) {
-    if (!current) return;
-    const nextAnswers = { ...answers, [current.id]: score };
-    const nextEntries: ChatEntry[] = [...entries, { role: "user", text: optionLabel }];
+    if (!current || pendingSelection) return;
+    // 고른 버튼이 잠깐 선택된 채로 보였다가 다음으로 넘어가야 눌렀다는 게 느껴진다
+    setPendingSelection(optionLabel);
 
-    // 대상 아님 → 즉시 종료
-    if (current.id === "eligible" && score === -1) {
-      finish(nextAnswers, nextEntries);
-      return;
-    }
+    setTimeout(() => {
+      const nextAnswers = { ...answers, [current.id]: score };
+      const nextEntries: ChatEntry[] = [...entries, { role: "user", text: optionLabel }];
+      setPendingSelection(null);
 
-    const nextQueue = visibleQuestions(nextAnswers);
-    const nextQuestion = nextQueue.find((q) => nextAnswers[q.id] == null);
-    if (nextQuestion) {
-      nextEntries.push({ role: "bot", text: nextQuestion.ask });
+      if (current.id === "eligible" && score === -1) {
+        setEntries(nextEntries);
+        finish(nextAnswers, nextEntries);
+        return;
+      }
+
+      const nextQueue = visibleQuestions(nextAnswers);
+      const nextQuestion = nextQueue.find((q) => nextAnswers[q.id] == null);
       setAnswers(nextAnswers);
       setEntries(nextEntries);
-    } else {
-      finish(nextAnswers, nextEntries);
-    }
+
+      if (nextQuestion) {
+        // 봇이 바로 답하지 않고 "타이핑 중" 텀을 둬야 실제 대화처럼 느껴진다
+        setTyping(true);
+        setTimeout(() => {
+          setTyping(false);
+          setEntries((prev) => [...prev, { role: "bot", text: nextQuestion.ask }]);
+        }, TYPING_DELAY_MS);
+      } else {
+        finish(nextAnswers, nextEntries);
+      }
+    }, 320);
   }
 
   function finish(finalAnswers: HelperAnswers, finalEntries: ChatEntry[]) {
@@ -81,6 +142,8 @@ export function GradeHelperChat() {
   function restart() {
     setAnswers({});
     setEntries([{ role: "bot", text: HELPER_QUESTIONS[0].ask }]);
+    setTyping(false);
+    setPendingSelection(null);
     setResult(null);
     setAiText(null);
     setShowApply(false);
@@ -89,52 +152,67 @@ export function GradeHelperChat() {
   return (
     <div className="mx-auto max-w-xl">
       {!result && (
-        <div className="mb-4 flex items-center justify-between text-xs text-ink-300">
-          <span>버튼만 눌러서 답하면 돼요</span>
-          <span className="font-semibold text-ink-500">
-            {answeredCount}/{queue.length}
-          </span>
+        <div className="mb-4">
+          <div className="mb-1.5 flex items-center justify-between text-xs">
+            <span className="text-ink-300">버튼만 눌러서 답하면 돼요</span>
+            <span className="font-bold text-royal-600">{progressPct}%</span>
+          </div>
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-white">
+            <div
+              className="h-1.5 rounded-full bg-gradient-to-r from-royal-500 to-primary-500 transition-all duration-500 ease-out"
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
         </div>
       )}
 
       <div className="space-y-3">
         {entries.map((e, i) =>
           e.role === "bot" ? (
-            <div key={i} className="flex items-start gap-2.5">
-              <span className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-royal-100">
-                <Bot size={16} className="text-royal-600" />
-              </span>
+            <div key={i} className="flex animate-message-in items-start gap-2.5">
+              <BotAvatar />
               <p className="max-w-[85%] whitespace-pre-line rounded-2xl rounded-tl-md bg-white px-4 py-3 text-sm leading-relaxed text-ink-900 shadow-card">
                 {e.text}
               </p>
             </div>
           ) : (
-            <div key={i} className="flex justify-end">
-              <p className="max-w-[85%] rounded-2xl rounded-tr-md bg-royal-500 px-4 py-3 text-sm leading-relaxed text-white">
+            <div key={i} className="flex animate-message-in justify-end">
+              <p className="max-w-[85%] rounded-2xl rounded-tr-md bg-royal-500 px-4 py-3 text-sm font-semibold leading-relaxed text-white shadow-card">
                 {e.text}
               </p>
             </div>
           )
         )}
+        {typing && <TypingBubble />}
       </div>
 
       {current && (
         <div className="mt-4 flex flex-col gap-2">
-          {current.options.map((o) => (
-            <button
-              key={o.label}
-              type="button"
-              onClick={() => pick(o.label, o.score)}
-              className="min-h-[48px] rounded-xl border border-royal-200 bg-white px-4 py-3 text-left text-sm font-semibold text-ink-900 transition hover:border-royal-400 hover:bg-royal-50"
-            >
-              {o.label}
-            </button>
-          ))}
+          {current.options.map((o) => {
+            const selected = pendingSelection === o.label;
+            return (
+              <button
+                key={o.label}
+                type="button"
+                disabled={!!pendingSelection}
+                onClick={() => pick(o.label, o.score)}
+                className={`min-h-[48px] rounded-xl border px-4 py-3 text-center text-sm font-semibold transition-all duration-200 active:scale-[0.98] ${
+                  selected
+                    ? "border-royal-500 bg-royal-500 text-white"
+                    : pendingSelection
+                    ? "border-ink-100 bg-white text-ink-300"
+                    : "border-royal-200 bg-white text-ink-900 hover:border-royal-400 hover:bg-royal-50"
+                }`}
+              >
+                {o.label}
+              </button>
+            );
+          })}
         </div>
       )}
 
       {result && (
-        <div className="mt-5 space-y-4">
+        <div className="mt-5 animate-message-in space-y-4">
           <div className="rounded-2xl bg-white p-5 shadow-card">
             {result.ineligible ? (
               <p className="text-base font-bold text-ink-900">
@@ -153,21 +231,31 @@ export function GradeHelperChat() {
             )}
 
             {!result.ineligible && result.areaPercents.length > 0 && (
-              <div className="mt-4 space-y-2">
-                {result.areaPercents.map((a) => (
-                  <div key={a.area}>
-                    <div className="mb-0.5 flex justify-between text-xs">
-                      <span className="text-ink-500">{a.label}</span>
-                      <span className="font-semibold text-ink-700">도움 필요 {a.percent}%</span>
+              <div className="mt-4 space-y-2.5">
+                {result.areaPercents.map((a) => {
+                  const Icon = AREA_ICON[a.area] ?? Activity;
+                  return (
+                    <div key={a.area} className="flex items-center gap-2.5">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-royal-50 text-royal-600">
+                        <Icon size={14} />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-0.5 flex justify-between text-xs">
+                          <span className="text-ink-500">{a.label}</span>
+                          <span className="font-semibold text-ink-700">
+                            도움 필요 {a.percent}%
+                          </span>
+                        </div>
+                        <div className="h-1.5 w-full rounded-full bg-ink-100">
+                          <div
+                            className="h-1.5 rounded-full bg-gradient-to-r from-royal-400 to-primary-400 transition-all duration-700"
+                            style={{ width: `${a.percent}%` }}
+                          />
+                        </div>
+                      </div>
                     </div>
-                    <div className="h-1.5 w-full rounded-full bg-ink-100">
-                      <div
-                        className="h-1.5 rounded-full bg-royal-400"
-                        style={{ width: `${a.percent}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 
@@ -217,7 +305,7 @@ export function GradeHelperChat() {
           )}
 
           {showApply && (
-            <div className="rounded-2xl bg-white p-5 shadow-card">
+            <div className="animate-message-in rounded-2xl bg-white p-5 shadow-card">
               <p className="mb-3 text-sm font-bold text-ink-900">등급 신청은 이렇게 진행돼요</p>
               <ol className="space-y-3">
                 {APPLY_STEPS.map((step, i) => (

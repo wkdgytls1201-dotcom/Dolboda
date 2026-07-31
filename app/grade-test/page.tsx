@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Sparkles, ArrowRight } from "lucide-react";
 import { GradeTest } from "@/components/GradeTest";
 import { TEST_AREAS, TOTAL_ITEMS, APPLY_STEPS } from "@/lib/gradeTest";
 import { SITE_URL } from "@/lib/siteConfig";
@@ -87,9 +88,30 @@ export default function GradeTestPage() {
       <div className="mx-auto max-w-xl px-4 pt-4">
         <a
           href="/grade-helper"
-          className="flex min-h-[44px] items-center justify-center rounded-xl bg-royal-50 px-4 py-2.5 text-sm font-semibold text-royal-600 transition hover:bg-royal-100"
+          className="group relative flex min-h-[64px] items-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-royal-600 via-royal-500 to-primary-500 px-4 py-3.5 shadow-royal transition-all hover:-translate-y-0.5 hover:shadow-royal-hover"
         >
-          시간이 없으세요? AI 도우미와 1분 만에 확인하기 →
+          <span className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-white/10" />
+          <span className="absolute -bottom-8 right-10 h-16 w-16 rounded-full bg-white/10" />
+
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/20 backdrop-blur">
+            <Sparkles size={18} className="text-white" />
+          </span>
+
+          <span className="min-w-0 flex-1">
+            <span className="flex items-center gap-1.5 text-[13px] font-bold text-white">
+              시간 없으면 AI 도우미로 1분 컷
+              <span className="rounded-full bg-white/25 px-1.5 py-0.5 text-[10px] font-extrabold">
+                NEW
+              </span>
+            </span>
+            <span className="mt-0.5 block text-[11px] text-white/80">
+              버튼 13번만 눌러도 예상 등급이 나와요
+            </span>
+          </span>
+
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-royal-600 transition-transform group-hover:translate-x-0.5">
+            <ArrowRight size={16} />
+          </span>
         </a>
       </div>
       <GradeTest />
