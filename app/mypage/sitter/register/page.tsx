@@ -297,7 +297,7 @@ export default function SitterRegisterPage() {
             </p>
             <textarea
               value={intro}
-              onChange={(e) => setIntro(e.target.value.slice(0, 1000))}
+              onChange={(e) => setIntro(e.target.value.slice(0, 200))}
               rows={7}
               placeholder="예: 어머니를 5년 모신 마음으로, 서두르지 않고 어르신 속도에 맞춰 돌봐드려요. 그동안 어떤 상황에서 어떻게 대응했는지 구체적으로 적어주시면 더 좋아요."
               className="w-full resize-none rounded-xl border border-ink-100 px-3.5 py-3 text-base leading-relaxed transition-colors duration-150 focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-100 sm:text-sm"
@@ -308,7 +308,7 @@ export default function SitterRegisterPage() {
                   ? "조금만 더 적으면 훨씬 좋아요"
                   : "이렇게 시작해보세요: 「10년째 ○○을 하며…」 「제 부모님을 모시듯…」"}
               </p>
-              <span className="shrink-0 text-[11px] text-ink-300">{intro.length}/1000</span>
+              <span className="shrink-0 text-[11px] text-ink-300">{intro.length}/200</span>
             </div>
           </div>
         </div>

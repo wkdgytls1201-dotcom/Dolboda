@@ -230,17 +230,20 @@ export function KakaoMultiMap({
 
   return (
     <div className="relative">
+      {/* 모바일은 480px 고정이면 지도 아래쪽이 화면 밖으로 넘어가 "내 위치" 버튼이 안 보인다.
+          화면 높이에 맞춰 줄이고(58vh), 데스크톱에서는 기존 height 값을 그대로 쓴다. */}
       <div
         ref={containerRef}
-        style={{ height }}
-        className="w-full overflow-hidden rounded-2xl border border-ink-100"
+        style={{ "--map-h": `${height}px` } as React.CSSProperties}
+        className="h-[52vh] w-full overflow-hidden rounded-2xl border border-ink-100 sm:h-[var(--map-h)]"
       />
       {center && (
         <button
           type="button"
           onClick={goToMyLocation}
           aria-label="내 위치로 이동"
-          className="absolute bottom-3 right-3 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white text-ink-500 shadow-card transition-transform active:scale-95"
+          // 모바일은 하단 고정 탭바(64px)가 지도 아래쪽을 덮으므로 버튼을 그 위로 띄운다.
+          className="absolute bottom-20 right-3 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white text-ink-500 shadow-card transition-transform active:scale-95 sm:bottom-3"
         >
           <Crosshair size={18} />
         </button>

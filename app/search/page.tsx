@@ -223,6 +223,25 @@ function SearchContent() {
         </div>
       </div>
 
+      {/* 지도 보기일 때는 이 안내들을 지도 아래로 내린다 — 위에 쌓아두면 모바일에서
+          지도가 화면 한참 아래에서 시작해 "내 위치" 버튼이 한 화면에 안 들어온다.
+          목록 보기에서는 원래대로 결과 위에 둔다(내용은 그대로, 순서만 바뀜). */}
+      {view === "map" && (
+        <div className="mb-4">
+          <KakaoMultiMap
+            markers={results.map((x) => ({
+              lat: x.f.lat,
+              lng: x.f.lng,
+              label: x.f.name,
+              sublabel: `${FACILITY_TYPE_LABEL[x.f.facilityType]} · ${gradeText(x.f.grade, x.f.gradeSource)}`,
+              href: `/facility/${x.f.id}`,
+            }))}
+            center={origin}
+            persistKey="dolboda-search-map-view"
+          />
+        </div>
+      )}
+
       {/* 로딩 중엔 이 자리에 아무것도 안 띄운다 — 아래 결과 영역에 뜨는 로더로 충분하고,
           여기 따로 스켈레톤 바를 놓으면 오히려 "뭔가 잘못됐나" 싶은 깜빡임으로 보인다. */}
       {!(loading && facilities.length === 0) && (
@@ -254,19 +273,7 @@ function SearchContent() {
         </div>
       )}
 
-      {view === "map" ? (
-        <KakaoMultiMap
-          markers={results.map((x) => ({
-            lat: x.f.lat,
-            lng: x.f.lng,
-            label: x.f.name,
-            sublabel: `${FACILITY_TYPE_LABEL[x.f.facilityType]} · ${gradeText(x.f.grade, x.f.gradeSource)}`,
-            href: `/facility/${x.f.id}`,
-          }))}
-          center={origin}
-          persistKey="dolboda-search-map-view"
-        />
-      ) : results.length === 0 && loading ? (
+      {view === "map" ? null : results.length === 0 && loading ? (
         <PageLoader label="시설을 불러오는 중" compact />
       ) : results.length === 0 ? (
         <div className="rounded-2xl bg-white p-12 text-center text-sm text-ink-300 shadow-card">

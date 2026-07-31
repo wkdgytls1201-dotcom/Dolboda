@@ -175,12 +175,12 @@ export default function SitterProfilePage() {
               />
               <textarea
                 value={intro}
-                onChange={(e) => setIntro(e.target.value.slice(0, 1000))}
+                onChange={(e) => setIntro(e.target.value.slice(0, 200))}
                 rows={7}
                 placeholder="자기소개 — 경력, 어르신을 대하는 마음가짐 등 나를 어필해보세요"
                 className="w-full resize-none rounded-xl border border-ink-100 px-3 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-100"
               />
-              <p className="text-right text-[11px] text-ink-300">{intro.length}/1000</p>
+              <p className="text-right text-[11px] text-ink-300">{intro.length}/200</p>
               <div className="flex items-center gap-2">
                 <input
                   type="number"
