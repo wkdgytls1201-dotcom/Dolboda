@@ -38,9 +38,9 @@ export function GradeBadge({
 
   const isTop = grade === 1;
   const style = isTop
-    ? "bg-gradient-to-r from-accent-400 to-accent-300 text-ink-900 ring-2 ring-accent-300/70 shadow-sm"
+    ? "bg-primary-500 text-white shadow-sm"
     : grade === 2
-    ? "bg-primary-500 text-white"
+    ? "bg-accent-400 text-ink-900"
     : grade === 3
     ? "bg-mint-500 text-white"
     : "bg-ink-100 text-ink-500";

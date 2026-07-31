@@ -2,11 +2,12 @@ import { Activity, ScanLine, Scan, Waves, Stethoscope, Users, LucideIcon } from 
 
 // 5단계/6단계 등급을 척도 위 위치로 보여주는 게이지. 숫자만 나열하지 않고
 // 전체 등급 범위 중 이 시설이 어디에 있는지 한눈에 보여주기 위한 용도.
-// 등급 척도 색 — 1등급(좋음)은 민트, 마지막 등급(주의)은 코랄로 자연스럽게 이어지는 신호등 팔레트
+// 등급 척도 색 — GradeBadge(위쪽 동그란 배지)와 같은 팔레트를 써서 같은 등급이면 항상 같은 색으로 보이게 한다.
+// GradeBadge 기준: 1등급 코랄(primary), 2등급 골드, 3등급 민트, 4등급 이후 회색.
 const SCALE_COLORS: Record<number, string[]> = {
-  4: ["bg-mint-500", "bg-mint-300", "bg-accent-400", "bg-primary-500"],
-  5: ["bg-mint-500", "bg-mint-300", "bg-accent-300", "bg-accent-500", "bg-primary-500"],
-  6: ["bg-mint-500", "bg-mint-400", "bg-mint-300", "bg-accent-300", "bg-accent-500", "bg-primary-500"],
+  4: ["bg-primary-500", "bg-accent-400", "bg-mint-500", "bg-ink-300"],
+  5: ["bg-primary-500", "bg-accent-400", "bg-mint-500", "bg-ink-300", "bg-ink-300"],
+  6: ["bg-primary-500", "bg-accent-400", "bg-mint-500", "bg-ink-300", "bg-ink-300", "bg-ink-300"],
 };
 
 export function GradeScaleBar({
