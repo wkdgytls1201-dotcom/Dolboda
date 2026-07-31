@@ -2,17 +2,23 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { DEMO_FACILITIES } from "@/lib/mockData";
-import { FACILITY_TYPE_LABEL } from "@/lib/types";
+import { FACILITY_TYPE_LABEL, type FacilityType } from "@/lib/types";
 import { facilityPhotoFor } from "@/lib/stockPhotos";
 import { useViewGate } from "@/lib/viewGateContext";
 
-// 배너에 쓰는 데모 시설은 코드 안에 있는 고정 데이터라 서버를 기다릴 필요가 없다.
-// 예전엔 시설 200건을 통째로 받아온 뒤 그중 7개를 골라서, 새로고침하면 배너가
-// 한참 뒤에야 떴다. 모듈 로드 시점에 한 번만 계산해서 첫 페인트에 바로 보이게 한다.
-const SLIDES = DEMO_FACILITIES.filter((f) => f.grade === 1 || f.grade === 2).slice(0, 7);
+export interface HeroSlide {
+  id: string;
+  name: string;
+  address: string;
+  facilityType: FacilityType;
+  grade: number | null;
+}
 
-export function HeroBanner() {
+// 슬라이드는 서버(app/page.tsx)에서 실제 1등급 시설로 골라 넘겨준다.
+// 예전엔 코드 안의 데모 시설(서울행복요양병원 등)을 썼는데, 실재하지 않는 시설이
+// 메인에 뜨는 건 신뢰 문제라 실데이터로 바꿨다. 서버에서 넘어오므로 첫 페인트에 바로 보인다.
+export function HeroBanner({ slides }: { slides: HeroSlide[] }) {
+  const SLIDES = slides;
   const { requestFacilityView } = useViewGate();
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);

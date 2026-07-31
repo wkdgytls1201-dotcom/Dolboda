@@ -17,6 +17,7 @@ const getFacility = cache((id: string) =>
       lat: true,
       lng: true,
       phone: true,
+      dataSource: true,
     },
   })
 );
@@ -33,6 +34,11 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const facility = await getFacility(params.id);
   if (!facility) return {};
+
+  // 데모 시설은 실재하지 않으니 색인 금지 — 검색결과에 나오면 신뢰 문제가 된다
+  if (facility.dataSource === "mock") {
+    return { robots: { index: false, follow: false } };
+  }
 
   const typeLabel = FACILITY_TYPE_LABEL[facility.facilityType as FacilityType] ?? "요양시설";
   const region = regionOf(facility.address);

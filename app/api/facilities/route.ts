@@ -23,7 +23,9 @@ export async function GET(req: Request) {
     return NextResponse.json({ items: rows.map(rowToFacility), total: rows.length });
   }
 
-  const where: Prisma.FacilityWhereInput = {};
+  // 데모용 시설(dataSource=mock 10건)은 공개 목록에 섞이면 안 된다 — 실제로 없는 시설이
+  // 검색·추천에 노출되면 신뢰 문제가 되고, 상세 URL이 색인되면 SEO에도 해가 된다.
+  const where: Prisma.FacilityWhereInput = { dataSource: { not: "mock" } };
   if (q) {
     where.OR = [
       { name: { contains: q, mode: "insensitive" } },

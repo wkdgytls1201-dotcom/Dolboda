@@ -9,6 +9,20 @@ import { SITE_URL } from "@/lib/siteConfig";
 
 export const revalidate = 86400;
 
+// 시군구 페이지와 같은 이유(스트리밍 시 푸터가 본문보다 먼저 나오는 문제)로 빌드 때 사전 생성
+export async function generateStaticParams() {
+  const { getRegionIndex } = await import("@/lib/regionData");
+  const { findTypeSeoByType } = await import("@/lib/facilityTypeSeo");
+  const index = await getRegionIndex();
+  const params: { sido: string; sigungu: string; type: string }[] = [];
+  for (const row of index) {
+    const typeSeo = findTypeSeoByType(row.facilityType);
+    if (!typeSeo) continue;
+    params.push({ sido: row.sidoSlug, sigungu: row.sigungu, type: typeSeo.slug });
+  }
+  return params;
+}
+
 function resolveParams(params: { sido: string; sigungu: string; type: string }) {
   const region = findRegionBySlug(decodeURIComponent(params.sido));
   const sigungu = decodeURIComponent(params.sigungu);

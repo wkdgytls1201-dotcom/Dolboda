@@ -32,7 +32,7 @@ export async function GET(req: Request) {
         ))
       ) AS "distanceKm"
     FROM "Facility"
-    WHERE lat IS NOT NULL AND lng IS NOT NULL ${typeFilter}
+    WHERE lat IS NOT NULL AND lng IS NOT NULL AND "dataSource" != 'mock' ${typeFilter}
     ORDER BY "distanceKm" ASC
     LIMIT ${limit}
   `;

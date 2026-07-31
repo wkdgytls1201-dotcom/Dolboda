@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Search } from "lucide-react";
 import { FACILITY_TYPE_LABEL, FacilityType } from "@/lib/types";
-import { HeroBanner } from "./HeroBanner";
+import { HeroBanner, type HeroSlide } from "./HeroBanner";
 import { InfoTooltip } from "./InfoTooltip";
 import { TOOLTIPS } from "@/lib/tooltips";
 
@@ -16,7 +16,7 @@ const CHIPS: FacilityType[] = [
   "SILVER_TOWN",
 ];
 
-export function SearchHero() {
+export function SearchHero({ heroSlides }: { heroSlides: HeroSlide[] }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
 
@@ -50,7 +50,7 @@ export function SearchHero() {
       </div>
 
       <div className="relative mx-auto mt-5 max-w-4xl px-0 sm:px-4">
-        <HeroBanner />
+        <HeroBanner slides={heroSlides} />
 
         {/* 모바일은 배너 아래로 살짝 띄우기만 한다 — 겹치게 하면 배너 하단 캡션(시설명·주소)이
             가려진다. 데스크톱은 배너 세로폭이 넉넉해서 기존처럼 살짝 겹쳐도 안 가려진다. */}

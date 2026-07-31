@@ -14,6 +14,23 @@ import { SITE_URL } from "@/lib/siteConfig";
 
 export const revalidate = 86400;
 
+// 빌드 때 182개 시군구 페이지를 미리 생성한다. 동적 렌더(스트리밍)로 두면 검색봇이 읽는
+// HTML에서 푸터가 본문보다 먼저 나와(out-of-order streaming) 문서 구조가 이상하게 읽힌다 —
+// 사전 생성된 페이지는 header→main→footer 순서의 온전한 HTML로 서빙된다.
+export async function generateStaticParams() {
+  const { getRegionIndex } = await import("@/lib/regionData");
+  const index = await getRegionIndex();
+  const seen = new Set<string>();
+  const params: { sido: string; sigungu: string }[] = [];
+  for (const row of index) {
+    const key = `${row.sidoSlug}|${row.sigungu}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    params.push({ sido: row.sidoSlug, sigungu: row.sigungu });
+  }
+  return params;
+}
+
 function resolveParams(params: { sido: string; sigungu: string }) {
   const region = findRegionBySlug(decodeURIComponent(params.sido));
   const sigungu = decodeURIComponent(params.sigungu);

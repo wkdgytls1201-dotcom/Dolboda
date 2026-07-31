@@ -52,7 +52,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   }
 
+  // 데모 시설(mock)은 실재하지 않으므로 색인 대상에서 뺀다
   const facilities = await prisma.facility.findMany({
+    where: { dataSource: { not: "mock" } },
     select: { id: true, updatedAt: true },
     orderBy: { id: "asc" },
   });

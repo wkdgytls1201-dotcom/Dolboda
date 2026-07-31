@@ -129,9 +129,11 @@ export default function FacilityDetailClient({
       );
     }
     if (facility.waitlistCount === 0) highlightTags.push("대기자 없음");
+    if (facility.hasDementiaUnit) highlightTags.push("치매전담실 운영");
     if (facility.staffDetail.medical.nurses > 0) highlightTags.push("간호 인력 배치");
     if (facility.facilityRooms.medical.rehabRoom > 0) highlightTags.push("재활·훈련실 있음");
     if (facility.programs.length > 0) highlightTags.push("프로그램 운영 중");
+    if (facility.institutionInfo?.liabilityInsurance) highlightTags.push("배상책임보험 가입");
   }
 
   // 공단 프로그램 데이터는 같은 이름이 여러 번 들어있는 경우가 있어 이름 기준으로 한 번만 남기고,
@@ -618,11 +620,19 @@ export default function FacilityDetailClient({
                   ))}
                 </div>
               ) : facility.capacity > 0 ? (
-                <CapacityMeter
-                  capacity={facility.capacity}
-                  occupancy={facility.currentOccupancy}
-                  waitlistCount={facility.waitlistCount}
-                />
+                <>
+                  <CapacityMeter
+                    capacity={facility.capacity}
+                    occupancy={facility.currentOccupancy}
+                    waitlistCount={facility.waitlistCount}
+                  />
+                  {/* 공단이 집계한 "이용 가능 인원" — 정원-현원 계산과 다를 수 있는 공식 값 */}
+                  {(facility.availableSlots ?? 0) > 0 && (
+                    <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-mint-50 px-3 py-1.5 text-sm font-bold text-mint-700">
+                      지금 {facility.availableSlots}자리 이용 가능 (공단 집계)
+                    </p>
+                  )}
+                </>
               ) : (
                 <p className="text-sm text-ink-300">이 시설 유형은 정원 정보가 공개되지 않았어요.</p>
               )}
