@@ -28,7 +28,7 @@ export const HELPER_QUESTIONS: HelperQuestion[] = [
   {
     id: "eligible",
     area: "screen",
-    ask: "안녕하세요, 돌보다 AI등급 도우미예요. 몇 가지만 여쭤보고 예상 등급 범위를 알려드릴게요.\n\n어떤 분의 등급이 궁금하세요?",
+    ask: "안녕하세요 👋 돌보다 AI등급 도우미예요. 몇 가지만 여쭤보고 예상 등급 범위를 알려드릴게요.\n\n어떤 분의 등급이 궁금하세요?",
     options: [
       { label: "만 65세 이상이세요", score: 0 },
       { label: "65세 미만이지만 치매·뇌혈관질환 등이 있으세요", score: 0 },
@@ -38,7 +38,7 @@ export const HELPER_QUESTIONS: HelperQuestion[] = [
   {
     id: "meal",
     area: "physical",
-    ask: "식사는 어떻게 하고 계세요?",
+    ask: "🍚 식사는 어떻게 하고 계세요?",
     options: [
       { label: "혼자 드실 수 있어요", score: 0 },
       { label: "차려드리거나 조금 도와드려요", score: 1 },
@@ -48,7 +48,7 @@ export const HELPER_QUESTIONS: HelperQuestion[] = [
   {
     id: "dress",
     area: "physical",
-    ask: "옷 갈아입기나 세수·양치는요?",
+    ask: "🧼 옷 갈아입기나 세수·양치는요?",
     options: [
       { label: "혼자 하실 수 있어요", score: 0 },
       { label: "옆에서 거들어드려요", score: 1 },
@@ -58,7 +58,7 @@ export const HELPER_QUESTIONS: HelperQuestion[] = [
   {
     id: "bath",
     area: "physical",
-    ask: "목욕은 어떠세요?",
+    ask: "🛁 목욕은 어떠세요?",
     options: [
       { label: "혼자 하실 수 있어요", score: 0 },
       { label: "일부만 도와드려요", score: 1 },
@@ -68,7 +68,7 @@ export const HELPER_QUESTIONS: HelperQuestion[] = [
   {
     id: "toilet",
     area: "physical",
-    ask: "화장실 사용과 대소변은요?",
+    ask: "🚻 화장실 사용과 대소변은요?",
     options: [
       { label: "혼자 하실 수 있어요", score: 0 },
       { label: "부축하거나 뒤처리를 도와드려요", score: 1 },
@@ -78,7 +78,7 @@ export const HELPER_QUESTIONS: HelperQuestion[] = [
   {
     id: "walk",
     area: "physical",
-    ask: "걷기나 방 밖으로 나가는 건 어떠세요?",
+    ask: "🚶 걷기나 방 밖으로 나가는 건 어떠세요?",
     options: [
       { label: "혼자 다니실 수 있어요", score: 0 },
       { label: "지팡이·보행기나 부축이 필요해요", score: 1 },
@@ -88,7 +88,7 @@ export const HELPER_QUESTIONS: HelperQuestion[] = [
   {
     id: "posture",
     area: "physical",
-    ask: "눕고 일어나거나 앉는 자세 바꾸기는요?",
+    ask: "🛏️ 눕고 일어나거나 앉는 자세 바꾸기는요?",
     options: [
       { label: "혼자 하실 수 있어요", score: 0 },
       { label: "조금 도와드리면 돼요", score: 1 },
@@ -98,7 +98,7 @@ export const HELPER_QUESTIONS: HelperQuestion[] = [
   {
     id: "memory",
     area: "cognitive",
-    ask: "기억력은 어떠세요? 오늘 날짜나 방금 있었던 일 같은 것들요.",
+    ask: "🧠 기억력은 어떠세요? 오늘 날짜나 방금 있었던 일 같은 것들요.",
     options: [
       { label: "괜찮으세요", score: 0 },
       { label: "가끔 헷갈려 하세요", score: 1 },
@@ -108,7 +108,7 @@ export const HELPER_QUESTIONS: HelperQuestion[] = [
   {
     id: "judgement",
     area: "cognitive",
-    ask: "대화나 상황 판단은요?",
+    ask: "💬 대화나 상황 판단은요?",
     options: [
       { label: "잘 통해요", score: 0 },
       { label: "가끔 어긋나요", score: 1 },
@@ -118,7 +118,7 @@ export const HELPER_QUESTIONS: HelperQuestion[] = [
   {
     id: "behavior",
     area: "behavior",
-    ask: "혹시 돌보기 힘든 행동이 있으세요? 배회, 화내기, 도움 거부 같은 것들요.",
+    ask: "😥 혹시 돌보기 힘든 행동이 있으세요? 배회, 화내기, 도움 거부 같은 것들요.",
     showIf: (a) => (a.memory ?? 0) + (a.judgement ?? 0) > 0,
     options: [
       { label: "없어요", score: 0 },
@@ -129,7 +129,7 @@ export const HELPER_QUESTIONS: HelperQuestion[] = [
   {
     id: "nursing",
     area: "nursing",
-    ask: "받고 계신 의료 처치가 있나요? 콧줄(경관영양), 가래 흡인, 욕창 치료, 소변줄, 산소 치료 같은 것들요.",
+    ask: "💉 받고 계신 의료 처치가 있나요? 콧줄(경관영양), 가래 흡인, 욕창 치료, 소변줄, 산소 치료 같은 것들요.",
     options: [
       { label: "없어요", score: 0 },
       { label: "한 가지 있어요", score: 1 },
@@ -139,7 +139,7 @@ export const HELPER_QUESTIONS: HelperQuestion[] = [
   {
     id: "rehab",
     area: "rehab",
-    ask: "팔다리 마비나 관절이 굳은 곳이 있으세요?",
+    ask: "🦵 팔다리 마비나 관절이 굳은 곳이 있으세요?",
     options: [
       { label: "없어요", score: 0 },
       { label: "한쪽에 있거나 조금 불편하세요", score: 1 },
@@ -149,7 +149,7 @@ export const HELPER_QUESTIONS: HelperQuestion[] = [
   {
     id: "careTime",
     area: "physical",
-    ask: "하루 중 돌봄이 필요한 시간은 어느 정도인가요?",
+    ask: "⏰ 하루 중 돌봄이 필요한 시간은 어느 정도인가요?",
     options: [
       { label: "잠깐씩만 봐드리면 돼요", score: 0 },
       { label: "낮 시간 대부분 곁에 있어야 해요", score: 1 },
@@ -159,7 +159,7 @@ export const HELPER_QUESTIONS: HelperQuestion[] = [
   {
     id: "dementia",
     area: "screen",
-    ask: "마지막 질문이에요. 치매 진단을 받으신 적이 있나요?",
+    ask: "🏁 마지막 질문이에요. 치매 진단을 받으신 적이 있나요?",
     options: [
       { label: "진단을 받으셨어요", score: 2 },
       { label: "의심되지만 검사는 아직이에요", score: 1 },
