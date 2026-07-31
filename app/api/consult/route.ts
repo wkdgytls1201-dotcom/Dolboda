@@ -27,7 +27,8 @@ export async function POST(req: Request) {
         to: CONSULT_NOTIFY_EMAIL,
         subject: `[상담신청] ${facilityName}`,
         text: `시설: ${facilityName} (${facilityId})\n이름: ${name}\n연락처: ${phone}\n접수시각: ${request.createdAt.toLocaleString(
-          "ko-KR"
+          "ko-KR",
+          { timeZone: "Asia/Seoul" }
         )}`,
       });
     } catch (err) {
