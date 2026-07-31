@@ -48,7 +48,7 @@ export function CareRequestSignedOut({ presetType }: { presetType: LocationTypeV
           알려주시면 시터가 찾아와요
         </h1>
         <p className="text-sm leading-relaxed text-ink-500">
-          몇 가지만 고르면 요청이 등록되고, 활동 지역이 맞는 모심시터가 지원합니다.
+          몇 가지만 고르면 요청이 등록되고, 활동 지역이 맞는 돌보다 매니저가 지원합니다.
         </p>
       </div>
 

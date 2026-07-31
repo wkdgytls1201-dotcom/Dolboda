@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     where: { userId: session.user.id },
   });
   if (!sitterProfile) {
-    return NextResponse.json({ error: "등록된 모심시터 프로필이 없어요." }, { status: 404 });
+    return NextResponse.json({ error: "등록된 돌보다 매니저 프로필이 없어요." }, { status: 404 });
   }
 
   const { careRequestId } = (await req.json()) as { careRequestId?: string };

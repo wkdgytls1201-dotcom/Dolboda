@@ -58,7 +58,7 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
         </nav>
 
         <p className="mb-1.5 mt-4 hidden px-1 text-xs font-semibold text-ink-300 sm:block">
-          모심시터
+          돌보다 매니저
         </p>
         <nav className="mt-2 flex gap-1.5 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] sm:mt-0 sm:flex-col sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
           {isSitter === null ? (
@@ -73,7 +73,7 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
               className="flex shrink-0 items-center gap-2 rounded-xl border border-dashed border-primary-300 bg-primary-50 px-3.5 py-2.5 text-sm font-semibold text-primary-600 transition-colors duration-150 hover:bg-primary-100 sm:w-full"
             >
               <HeartHandshake size={16} />
-              모심시터 등록하기
+              돌보다 매니저 등록하기
             </Link>
           )}
         </nav>

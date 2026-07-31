@@ -102,7 +102,7 @@ export default function MyPageAccountPage() {
             <p className="mb-1 text-sm font-bold text-ink-900">잠깐만요, 탈퇴하시면</p>
             <ul className="mx-auto mb-4 max-w-[280px] space-y-1 text-left text-xs leading-relaxed text-ink-500">
               <li>· 관심시설과 비교함 기록이 모두 삭제돼요</li>
-              <li>· 모심시터 프로필과 지원 내역이 사라져요</li>
+              <li>· 돌보다 매니저 프로필과 지원 내역이 사라져요</li>
               <li>· 진행 중인 돌봄 요청도 함께 취소돼요</li>
               <li>· 삭제된 정보는 되돌릴 수 없어요</li>
             </ul>

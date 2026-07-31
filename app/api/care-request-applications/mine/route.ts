@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
-// 로그인한 모심시터 본인의 지원 내역 전체.
+// 로그인한 돌보다 매니저 본인의 지원 내역 전체.
 // 일자리 관리의 "지원 현황 / 매칭된 돌봄 / 완료된 돌봄" 탭이 이 하나로 그려진다.
 export async function GET() {
   const session = await auth();
@@ -15,7 +15,7 @@ export async function GET() {
     include: { certifications: true },
   });
   if (!sitterProfile) {
-    return NextResponse.json({ error: "등록된 모심시터 프로필이 없어요." }, { status: 404 });
+    return NextResponse.json({ error: "등록된 돌보다 매니저 프로필이 없어요." }, { status: 404 });
   }
 
   const applications = await prisma.careRequestApplication.findMany({

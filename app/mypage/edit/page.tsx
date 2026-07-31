@@ -25,7 +25,7 @@ export default function MyPageEditPage() {
         로그인 시 자동으로 반영돼요.
       </p>
       <div className="rounded-2xl border border-ink-100 bg-ink-100/30 p-5 text-sm text-ink-500">
-        아직 돌보다 안에서 직접 수정할 수 있는 정보는 없어요. 모심시터로 등록하셨다면 프로필
+        아직 돌보다 안에서 직접 수정할 수 있는 정보는 없어요. 돌보다 매니저로 등록하셨다면 프로필
         정보는{" "}
         <a href="/mypage/sitter/profile" className="font-semibold text-primary-600 underline">
           프로필 관리

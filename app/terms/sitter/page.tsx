@@ -1,14 +1,14 @@
 import { LegalPage } from "@/components/LegalPage";
 
-export const metadata = { title: "모심시터 이용약관 — 돌보다" };
+export const metadata = { title: "돌보다 매니저 이용약관 — 돌보다" };
 
 export default function SitterTermsPage() {
   return (
-    <LegalPage title="모심시터 이용약관" updatedAt="2026-07-30">
+    <LegalPage title="돌보다 매니저 이용약관" updatedAt="2026-07-30">
       <p>
         본 약관은 돌보다(이하 &quot;회사&quot;)가 제공하는 요양시설 정보 서비스 내
-        &quot;모심시터&quot; 활동(이하 &quot;시터 서비스&quot;)의 이용과 관련하여 회사와
-        모심시터로 등록한 회원(이하 &quot;시터&quot;) 간의 권리, 의무 및 책임사항을
+        &quot;돌보다 매니저&quot; 활동(이하 &quot;시터 서비스&quot;)의 이용과 관련하여 회사와
+        돌보다 매니저로 등록한 회원(이하 &quot;시터&quot;) 간의 권리, 의무 및 책임사항을
         정합니다. 일반 이용약관에서 정하지 않은 사항은 이 약관을 우선 적용합니다.
       </p>
 

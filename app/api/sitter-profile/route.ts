@@ -14,7 +14,7 @@ export async function GET() {
   });
 
   if (!profile) {
-    return NextResponse.json({ error: "등록된 모심시터 프로필이 없어요." }, { status: 404 });
+    return NextResponse.json({ error: "등록된 돌보다 매니저 프로필이 없어요." }, { status: 404 });
   }
 
   return NextResponse.json(profile);
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
 
   const existing = await prisma.sitterProfile.findUnique({ where: { userId: session.user.id } });
   if (existing) {
-    return NextResponse.json({ error: "이미 등록된 모심시터 프로필이 있어요." }, { status: 409 });
+    return NextResponse.json({ error: "이미 등록된 돌보다 매니저 프로필이 있어요." }, { status: 409 });
   }
 
   const body = await req.json();
@@ -94,7 +94,7 @@ export async function PATCH(req: Request) {
 
   const existing = await prisma.sitterProfile.findUnique({ where: { userId: session.user.id } });
   if (!existing) {
-    return NextResponse.json({ error: "등록된 모심시터 프로필이 없어요." }, { status: 404 });
+    return NextResponse.json({ error: "등록된 돌보다 매니저 프로필이 없어요." }, { status: 404 });
   }
 
   const body = await req.json();

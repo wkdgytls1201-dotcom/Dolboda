@@ -181,7 +181,7 @@ export default function CareConfirmationPage() {
         <p className="mb-5 text-xs text-ink-300">발급일 {today} · 돌보다</p>
 
         <p className="mb-6 rounded-xl bg-ink-100/40 p-3.5 text-xs leading-relaxed text-ink-500">
-          이 문서는 법적 효력이 있는 계약서가 아니에요. 보호자와 모심시터가 서로 확인한 돌봄
+          이 문서는 법적 효력이 있는 계약서가 아니에요. 보호자와 돌보다 매니저가 서로 확인한 돌봄
           내용을 한 장으로 정리한 확인용 요약본이에요.
         </p>
 
@@ -193,7 +193,7 @@ export default function CareConfirmationPage() {
               <dd className="font-medium text-ink-900">{guardianDisplay}</dd>
             </div>
             <div className="flex justify-between px-3.5 py-2.5">
-              <dt className="text-ink-500">모심시터</dt>
+              <dt className="text-ink-500">돌보다 매니저</dt>
               <dd className="font-medium text-ink-900">
                 {data.sitter.nickname} · 경력 {data.sitter.experienceYears}년
               </dd>
@@ -222,7 +222,7 @@ export default function CareConfirmationPage() {
         </section>
 
         <p className="text-xs leading-relaxed text-ink-300">
-          비용 등 세부 조건은 보호자와 모심시터가 직접 협의해 정해요. 돌보다는 두 분을
+          비용 등 세부 조건은 보호자와 돌보다 매니저가 직접 협의해 정해요. 돌보다는 두 분을
           연결해드리는 역할만 하며, 돌봄 과정에서 의료행위(석션, 튜브 관리 등)는 제공되지
           않아요.
         </p>

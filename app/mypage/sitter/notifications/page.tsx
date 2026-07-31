@@ -31,7 +31,7 @@ export default function SitterNotificationsPage() {
     <MyPageShell>
       <h2 className="mb-1 text-xl font-bold text-ink-900">알림 설정</h2>
       <p className="mb-6 text-sm text-ink-500">
-        모심시터 활동과 관련된 알림을 받을지 선택해요. (실제 발송 인프라는 준비 중이에요)
+        돌보다 매니저 활동과 관련된 알림을 받을지 선택해요. (실제 발송 인프라는 준비 중이에요)
       </p>
 
       <div className="divide-y divide-ink-100 rounded-2xl border border-ink-100 bg-white">

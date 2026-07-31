@@ -118,7 +118,7 @@ export function CareRequestDetail({
           </span>
           <h2 className="mb-1.5 text-lg font-bold text-ink-900">돌봄 요청이 올라갔어요</h2>
           <p className="mb-4 text-sm leading-relaxed text-ink-500">
-            {careRequest.region}에서 활동하는 모심시터에게 지금 바로 보이기 시작해요.
+            {careRequest.region}에서 활동하는 돌보다 매니저에게 지금 바로 보이기 시작해요.
           </p>
           <ul className="mx-auto max-w-[300px] space-y-2 text-left">
             {[
@@ -239,11 +239,11 @@ export function CareRequestDetail({
           )}
           <p className="mt-3 rounded-xl bg-ink-100/40 p-3 text-xs leading-relaxed text-ink-500">
             사례비는 돌보다가 정하거나 중개하지 않아요. 매칭이 확정된 뒤 두 분이 직접 정하시면
-            돼요. 모심시터는 의료행위(석션, 경관영양 등)를 제공할 수 없어요.
+            돼요. 돌보다 매니저는 의료행위(석션, 경관영양 등)를 제공할 수 없어요.
           </p>
         </Section>
 
-        <Section title={`지원한 모심시터 ${careRequest.applications.length}명`}>
+        <Section title={`지원한 돌보다 매니저 ${careRequest.applications.length}명`}>
           {careRequest.applications.length === 0 ? (
             <p className="py-2 text-sm text-ink-300">
               아직 지원한 시터가 없어요. 보통 하루 이내에 지원이 들어와요.

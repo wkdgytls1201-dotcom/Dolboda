@@ -10,7 +10,7 @@ export async function POST(req: Request) {
 
   const profile = await prisma.sitterProfile.findUnique({ where: { userId: session.user.id } });
   if (!profile) {
-    return NextResponse.json({ error: "등록된 모심시터 프로필이 없어요." }, { status: 404 });
+    return NextResponse.json({ error: "등록된 돌보다 매니저 프로필이 없어요." }, { status: 404 });
   }
 
   const { name, issuedBy } = (await req.json()) as { name?: string; issuedBy?: string };

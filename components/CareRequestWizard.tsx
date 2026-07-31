@@ -630,7 +630,7 @@ export function CareRequestWizard({
               {(MEDICAL_ONLY_OPTIONS.includes(form.mealAssistLevel) ||
                 MEDICAL_ONLY_OPTIONS.includes(form.toiletAssistLevel)) && (
                 <NoticeBox>
-                  콧줄·위루관 주입, 소변줄 교체, 석션 같은 의료행위는 의료법에 따라 모심시터가
+                  콧줄·위루관 주입, 소변줄 교체, 석션 같은 의료행위는 의료법에 따라 돌보다 매니저가
                   해드릴 수 없어요. 관리가 필요한 상태라는 정보로만 전달되고, 실제 처치는 의료진이
                   맡아야 해요.
                 </NoticeBox>
@@ -728,7 +728,7 @@ export function CareRequestWizard({
           <div className="rounded-2xl bg-ink-100/40 p-4">
             <p className="mb-2 text-xs font-bold text-ink-900">등록 전에 알아두세요</p>
             <ul className="space-y-1.5 text-xs leading-relaxed text-ink-500">
-              <li>· 돌보다는 보호자와 모심시터를 연결해드리는 역할만 해요.</li>
+              <li>· 돌보다는 보호자와 돌보다 매니저를 연결해드리는 역할만 해요.</li>
               <li>· 사례비 결제와 정산은 두 분이 직접 진행하셔야 해요.</li>
               <li>· 석션·경관영양 같은 의료행위는 요청하실 수 없어요.</li>
               <li>· 요청은 한 번에 한 건만 등록할 수 있어요.</li>

@@ -304,12 +304,12 @@ export default function SitterJobsPage() {
     return (
       <MyPageShell>
         <div className="rounded-2xl border border-dashed border-primary-200 bg-primary-50 p-8 text-center">
-          <p className="mb-3 text-sm text-ink-700">아직 모심시터로 등록하지 않으셨어요.</p>
+          <p className="mb-3 text-sm text-ink-700">아직 돌보다 매니저로 등록하지 않으셨어요.</p>
           <Link
             href="/mypage/sitter/register"
             className="inline-block rounded-xl bg-primary-500 px-5 py-2.5 text-sm font-bold text-white hover:bg-primary-600"
           >
-            모심시터 등록하기
+            돌보다 매니저 등록하기
           </Link>
         </div>
       </MyPageShell>

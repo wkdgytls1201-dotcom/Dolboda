@@ -32,7 +32,7 @@ interface SitterProfileContextValue {
 
 const SitterProfileContext = createContext<SitterProfileContextValue | null>(null);
 
-// 마이페이지의 모심시터 관련 화면들(사이드바·프로필관리·정산관리)이 각자
+// 마이페이지의 돌보다 매니저 관련 화면들(사이드바·프로필관리·정산관리)이 각자
 // /api/sitter-profile를 따로 불러서 화면 전환마다 같은 요청이 중복으로 나가던 걸
 // 여기서 한 번만 불러 공유한다.
 export function SitterProfileProvider({ children }: { children: React.ReactNode }) {

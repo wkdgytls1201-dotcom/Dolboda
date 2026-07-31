@@ -36,7 +36,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   return NextResponse.json(updatedApplication);
 }
 
-// 모심시터 본인이 지원을 취소
+// 돌보다 매니저 본인이 지원을 취소
 export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
   const session = await auth();
   if (!session?.user?.id) {

@@ -1,12 +1,12 @@
 import { LegalPage } from "@/components/LegalPage";
 
-export const metadata = { title: "모심시터 개인정보 수집·이용 동의 — 돌보다" };
+export const metadata = { title: "돌보다 매니저 개인정보 수집·이용 동의 — 돌보다" };
 
 export default function SitterPrivacyPage() {
   return (
-    <LegalPage title="모심시터 개인정보 수집·이용 동의" updatedAt="2026-07-30">
+    <LegalPage title="돌보다 매니저 개인정보 수집·이용 동의" updatedAt="2026-07-30">
       <p>
-        돌보다는 &quot;모심시터&quot; 프로필 등록 시 일반 회원가입(카카오 로그인)보다
+        돌보다는 &quot;돌보다 매니저&quot; 프로필 등록 시 일반 회원가입(카카오 로그인)보다
         더 많은 개인정보를 추가로 수집합니다. 이 페이지는 그 항목과 목적을
         구체적으로 안내합니다. 일반 개인정보처리방침에서 정하지 않은 사항은 이
         페이지를 우선 적용합니다.

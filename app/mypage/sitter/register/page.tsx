@@ -58,7 +58,7 @@ export default function SitterRegisterPage() {
     return (
       <main className="mx-auto max-w-md px-4 py-16 text-center">
         <h1 className="mb-2 text-xl font-bold text-ink-900">로그인이 필요해요</h1>
-        <p className="text-sm text-ink-500">모심시터 등록은 로그인 후 진행할 수 있어요.</p>
+        <p className="text-sm text-ink-500">돌보다 매니저 등록은 로그인 후 진행할 수 있어요.</p>
       </main>
     );
   }
@@ -159,7 +159,7 @@ export default function SitterRegisterPage() {
           <div className="flex items-start gap-3 rounded-2xl bg-primary-50 p-4">
             <HeartHandshake size={22} className="mt-0.5 shrink-0 text-primary-600" />
             <p className="text-sm leading-relaxed text-ink-700">
-              모심시터로 등록하면 프로필이 만들어지고, 앞으로 요양시설·업체가 올리는 돌봄
+              돌보다 매니저로 등록하면 프로필이 만들어지고, 앞으로 요양시설·업체가 올리는 돌봄
               일자리와 연결될 수 있어요.
             </p>
           </div>
@@ -193,7 +193,7 @@ export default function SitterRegisterPage() {
             <span className="flex-1 text-ink-700">
               (필수)&nbsp;
               <a href="/terms/sitter" target="_blank" className="font-semibold underline">
-                모심시터 이용약관
+                돌보다 매니저 이용약관
               </a>
               에 동의해요
             </span>
@@ -498,7 +498,7 @@ export default function SitterRegisterPage() {
           >
             <h2 className="mb-1.5 text-base font-bold text-ink-900">약관에 동의하시겠어요?</h2>
             <p className="mb-5 text-sm leading-relaxed text-ink-500">
-              모심시터 등록을 진행하려면 이용약관, 개인정보처리방침, 제3자 정보제공, 만 18세 이상
+              돌보다 매니저 등록을 진행하려면 이용약관, 개인정보처리방침, 제3자 정보제공, 만 18세 이상
               확인에 모두 동의해주셔야 해요.
             </p>
             <div className="flex gap-2">
