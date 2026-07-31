@@ -75,18 +75,21 @@ export default function FacilityDetailPage() {
   const user = session?.user;
   const [showConsult, setShowConsult] = useState(false);
   const relatedTrackRef = useRef<HTMLDivElement>(null);
-  // 돌보다 AI기반 안심지수의 "인근 요양병원 접근성" 신호용 — 좌표가 있는 재가·입소 시설만 1건 조회
-  const [nearestHospitalKm, setNearestHospitalKm] = useState<number | null>(null);
+  // 돌보다 AI기반 안심지수 맥락(지역 평균·인근 요양병원 거리) — 시설당 1회 조회
+  const [scoreContext, setScoreContext] = useState<{
+    regionName: string | null;
+    regionAverage: number | null;
+    regionCount: number;
+    nearestHospitalKm: number | null;
+  } | null>(null);
 
   useEffect(() => {
-    if (!facility || isHospital(facility) || facility.lat == null || facility.lng == null) return;
+    if (!facility) return;
     let cancelled = false;
-    fetch(
-      `/api/facilities/nearby?lat=${facility.lat}&lng=${facility.lng}&type=NURSING_HOSPITAL&limit=1&view=card`
-    )
+    fetch(`/api/facilities/score-context?id=${encodeURIComponent(facility.id)}`)
       .then((r) => r.json())
       .then((d) => {
-        if (!cancelled) setNearestHospitalKm(d.items?.[0]?.distanceKm ?? null);
+        if (!cancelled && !d.error) setScoreContext(d);
       })
       .catch(() => {});
     return () => {
@@ -243,7 +246,20 @@ export default function FacilityDetailPage() {
 
         {/* 돌보다 AI기반 안심지수 */}
         <DetailSection id="dolboda-score" title="돌보다 AI기반 안심지수">
-          <DolbodaScoreCard score={calcDolbodaScore(facility, { nearestHospitalKm })} />
+          <DolbodaScoreCard
+            score={calcDolbodaScore(facility, {
+              nearestHospitalKm: scoreContext?.nearestHospitalKm ?? null,
+            })}
+            regionContext={
+              scoreContext?.regionAverage != null && scoreContext.regionName
+                ? {
+                    name: scoreContext.regionName,
+                    average: scoreContext.regionAverage,
+                    count: scoreContext.regionCount,
+                  }
+                : null
+            }
+          />
         </DetailSection>
 
         {/* 평가정보 */}
@@ -284,13 +300,30 @@ export default function FacilityDetailPage() {
           {!isHospital(facility) &&
             (facility.evaluationDetail ? (
               <div className="mt-4 space-y-5">
+                {/* 지역 평균이 있으면 그걸 먼저 — 보호자에겐 전국보다 우리 동네 비교가 와닿는다 */}
+                {facility.evaluationDetail.regionAverage != null && (
+                  <div>
+                    <p className="mb-2 text-xs font-semibold text-ink-700">
+                      {facility.evaluationDetail.evaluatedAt} ·{" "}
+                      {facility.evaluationDetail.regionName} 평균 대비
+                    </p>
+                    <ScoreCompareBar
+                      score={facility.evaluationDetail.totalScore}
+                      average={facility.evaluationDetail.regionAverage}
+                      averageLabel={`${facility.evaluationDetail.regionName} 평균`}
+                    />
+                  </div>
+                )}
                 <div>
                   <p className="mb-2 text-xs font-semibold text-ink-700">
-                    {facility.evaluationDetail.evaluatedAt} 평가 · 전체 평균 대비
+                    {facility.evaluationDetail.regionAverage != null
+                      ? "전국 평균 대비"
+                      : `${facility.evaluationDetail.evaluatedAt} · 전국 평균 대비`}
                   </p>
                   <ScoreCompareBar
                     score={facility.evaluationDetail.totalScore}
                     average={facility.evaluationDetail.nationalAverage}
+                    averageLabel="전국 평균"
                   />
                 </div>
                 <div>

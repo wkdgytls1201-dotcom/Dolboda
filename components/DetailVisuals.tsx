@@ -151,10 +151,12 @@ export function CapacityMeter({
 export function ScoreCompareBar({
   score,
   average,
+  averageLabel = "전체 평균",
   max = 100,
 }: {
   score: number;
   average: number;
+  averageLabel?: string;
   max?: number;
 }) {
   const scorePct = Math.min(100, (score / max) * 100);
@@ -171,12 +173,14 @@ export function ScoreCompareBar({
         <div
           className="absolute top-1/2 h-6 w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent-400 shadow-[0_0_0_1.5px_rgba(27,23,48,0.55)]"
           style={{ left: `${avgPct}%` }}
-          title={`전체 평균 ${average}점`}
+          title={`${averageLabel} ${average}점`}
         />
       </div>
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-sm">
         <span className="font-bold text-primary-700">이 시설 {score}점</span>
-        <span className="text-ink-300">전체 평균 {average}점</span>
+        <span className="text-ink-300">
+          {averageLabel} {average}점
+        </span>
         <span
           className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
             better ? "bg-mint-100 text-mint-700" : "bg-ink-100 text-ink-500"

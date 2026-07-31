@@ -33,7 +33,14 @@ function ScoreRing({ total }: { total: number }) {
   );
 }
 
-export function DolbodaScoreCard({ score }: { score: DolbodaScore }) {
+export function DolbodaScoreCard({
+  score,
+  regionContext,
+}: {
+  score: DolbodaScore;
+  /** 같은 시군구·같은 유형 시설들의 안심지수 평균 (서버에서 동일 산식으로 계산) */
+  regionContext?: { name: string; average: number; count: number } | null;
+}) {
   const [open, setOpen] = useState(false);
 
   if (score.total == null) {
@@ -66,6 +73,26 @@ export function DolbodaScoreCard({ score }: { score: DolbodaScore }) {
             </p>
           </div>
         </div>
+
+        {/* 같은 지역 평균 대비 — 보호자가 가장 궁금해하는 "우리 동네에서 어느 정도?"를 한 줄로 */}
+        {regionContext && (
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-xl bg-white/15 px-3 py-2 text-center text-[11px] text-white/90 backdrop-blur sm:justify-start sm:text-left">
+            <span>
+              {regionContext.name} 같은 유형 {regionContext.count}곳 평균{" "}
+              <b className="font-extrabold">{regionContext.average}점</b>
+            </span>
+            <span
+              className={`rounded-full px-2 py-0.5 font-extrabold ${
+                score.total >= regionContext.average
+                  ? "bg-white text-royal-600"
+                  : "bg-white/25 text-white"
+              }`}
+            >
+              이 시설 {score.total >= regionContext.average ? "+" : ""}
+              {score.total - regionContext.average}점
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="p-4 sm:p-5">
@@ -103,10 +130,15 @@ export function DolbodaScoreCard({ score }: { score: DolbodaScore }) {
         <button
           type="button"
           onClick={() => setOpen(!open)}
-          className="mt-4 flex min-h-[44px] w-full items-center justify-center gap-1 rounded-xl bg-ink-100/40 text-xs font-semibold text-ink-500 transition hover:bg-ink-100/70 hover:text-ink-700"
+          className={`mt-4 flex min-h-[48px] w-full items-center justify-center gap-1.5 rounded-xl text-sm font-bold transition-all ${
+            open
+              ? "bg-ink-100/60 text-ink-700"
+              : "bg-gradient-to-r from-royal-500 to-primary-500 text-white shadow-royal hover:-translate-y-0.5 hover:shadow-royal-hover"
+          }`}
         >
+          <Sparkles size={15} className={open ? "text-royal-500" : ""} />
           어떻게 계산했나요? {open ? "접기" : "전체 근거 보기"}
-          <ChevronDown size={14} className={`transition-transform ${open ? "rotate-180" : ""}`} />
+          <ChevronDown size={15} className={`transition-transform ${open ? "rotate-180" : ""}`} />
         </button>
 
         {open && (

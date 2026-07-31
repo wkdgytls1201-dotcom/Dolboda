@@ -15,7 +15,7 @@ import pg from "pg";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const SOURCE_DIR = "C:/Users/linea/Desktop/장기요양 평가결과";
+const SOURCE_DIR = "C:/Users/linea/Desktop/장기요양기관 평가 결과";
 const WRITE = process.argv.includes("--write");
 
 // 평가 5개 영역 — 컬럼명이 파일마다 조금씩 달라 키워드로 찾는다.
@@ -92,9 +92,20 @@ console.log(`\n총 ${rows.length}행 · 컬럼: ${headers.join(" | ")}\n`);
 
 const nameCol = findColumn(headers, ["기관명"]) ?? findColumn(headers, ["기관"]);
 const addrCol = findColumn(headers, ["주소"]) ?? findColumn(headers, ["소재지"]);
+// 2026-06 공단 파일에는 주소 대신 관할시도/시군구 컬럼이 있다 — 동명이인 구분에 사용
+const sigunguCol = findColumn(headers, ["관할시군구"]) ?? findColumn(headers, ["시군구"]);
 const totalCol = findColumn(headers, ["총점"]);
-const yearCol = findColumn(headers, ["평가연도"]) ?? findColumn(headers, ["연도"]);
+const yearCol =
+  findColumn(headers, ["평가구분"]) ?? findColumn(headers, ["평가연도"]) ?? findColumn(headers, ["연도"]);
 const domainCols = DOMAIN_RULES.map((d) => ({ ...d, col: findColumn(headers, d.keywords) }));
+// 2025년 개편 지표(4개 영역) — 구지표 점수가 없는 행은 이걸로 채운다
+const DOMAIN_RULES_2025 = [
+  { name: "기관운영", keywords: ["기관운영(2025)"] },
+  { name: "수급자 존중", keywords: ["수급자존중(2025)"] },
+  { name: "서비스 제공", keywords: ["서비스제공(2025)"] },
+  { name: "서비스 결과", keywords: ["서비스결과(2025)"] },
+];
+const domainCols2025 = DOMAIN_RULES_2025.map((d) => ({ ...d, col: findColumn(headers, d.keywords) }));
 
 if (!nameCol || domainCols.every((d) => !d.col)) {
   console.error("[중단] 기관명 또는 영역별 점수 컬럼을 찾지 못했습니다.");
@@ -102,8 +113,10 @@ if (!nameCol || domainCols.every((d) => !d.col)) {
   process.exit(1);
 }
 console.log(
-  `매핑 → 기관명: ${nameCol} / 주소: ${addrCol ?? "없음"} / 총점: ${totalCol ?? "없음"}\n` +
-    domainCols.map((d) => `  ${d.name}: ${d.col ?? "없음"}`).join("\n")
+  `매핑 → 기관명: ${nameCol} / 주소: ${addrCol ?? "없음"} / 시군구: ${sigunguCol ?? "없음"} / 총점: ${totalCol ?? "없음"}\n` +
+    domainCols.map((d) => `  ${d.name}: ${d.col ?? "없음"}`).join("\n") +
+    "\n" +
+    domainCols2025.map((d) => `  [2025] ${d.name}: ${d.col ?? "없음"}`).join("\n")
 );
 
 const env = loadEnv();
@@ -126,18 +139,34 @@ const num = (v) => {
   return Number.isFinite(n) && n > 0 ? n : null;
 };
 
-const updates = [];
+// "2021년 정기평가" 같은 문자열에서 연도를 뽑아 최신 평가만 남기는 기준으로 쓴다
+function yearOf(row) {
+  const m = yearCol ? String(row[yearCol]).match(/(20\d{2})/) : null;
+  return m ? Number(m[1]) : 0;
+}
+
+const byId = new Map(); // 시설당 최신 평가 1건만
 let unmatched = 0;
 let ambiguous = 0;
 
 for (const row of rows) {
-  const domains = domainCols
+  // 구지표(5영역) 우선, 없으면 2025 신지표(4영역)
+  let domains = domainCols
     .map((d) => ({ name: d.name, score: d.col ? num(row[d.col]) : null }))
     .filter((d) => d.score !== null);
-  if (domains.length < 3) continue; // 점수가 거의 없는 행은 건너뛴다
+  if (domains.length < 3) {
+    domains = domainCols2025
+      .map((d) => ({ name: d.name, score: d.col ? num(row[d.col]) : null }))
+      .filter((d) => d.score !== null);
+    if (domains.length < 3) continue; // 점수가 거의 없는 행은 건너뛴다
+  }
 
   const n = normName(row[nameCol]);
-  const sg = addrCol ? sigunguOf(row[addrCol]) : "";
+  const sg = addrCol
+    ? sigunguOf(row[addrCol])
+    : sigunguCol
+    ? String(row[sigunguCol]).trim().split(/\s+/)[0]
+    : "";
   let id = byNameSigungu.get(`${n}|${sg}`);
   if (!id) {
     const candidates = byName.get(n);
@@ -152,23 +181,42 @@ for (const row of rows) {
     id = candidates[0];
   }
 
-  updates.push({
+  const record = {
     id,
     domains,
     totalScore: totalCol ? num(row[totalCol]) : null,
-    year: yearCol ? String(row[yearCol]).trim() : "",
-  });
+    year: yearOf(row),
+    yearLabel: yearCol ? String(row[yearCol]).trim() : "",
+    sigungu: sg,
+  };
+  const prev = byId.get(id);
+  if (!prev || record.year > prev.year) byId.set(id, record);
 }
 
-// 전체 평균은 실제 수집된 총점으로 계산한다(임의의 값을 만들지 않는다).
+const updates = [...byId.values()];
+
+// 전체/지역 평균은 실제 수집된 총점으로 계산한다(임의의 값을 만들지 않는다).
 const totals = updates.map((u) => u.totalScore).filter((t) => t !== null);
 const nationalAverage =
   totals.length > 0 ? Math.round((totals.reduce((a, b) => a + b, 0) / totals.length) * 10) / 10 : null;
 
-console.log(
-  `\n매칭 결과: 반영 대상 ${updates.length}건 / 이름 못 찾음 ${unmatched}건 / 동명이인 모호 ${ambiguous}건`
+// 같은 시군구 시설들의 평균 — 상세페이지 "우리 지역 평균 대비" 막대용
+const regionTotals = new Map();
+for (const u of updates) {
+  if (u.totalScore === null || !u.sigungu) continue;
+  const slot = regionTotals.get(u.sigungu) ?? { sum: 0, count: 0 };
+  slot.sum += u.totalScore;
+  slot.count += 1;
+  regionTotals.set(u.sigungu, slot);
+}
+const regionAverage = new Map(
+  [...regionTotals.entries()].map(([sg, v]) => [sg, Math.round((v.sum / v.count) * 10) / 10])
 );
-console.log(`전체 평균 총점: ${nationalAverage ?? "총점 컬럼 없어 계산 불가"}`);
+
+console.log(
+  `\n매칭 결과: 반영 대상 ${updates.length}건(시설당 최신 평가만) / 이름 못 찾음 ${unmatched}건 / 동명이인 모호 ${ambiguous}건`
+);
+console.log(`전체 평균 총점: ${nationalAverage ?? "총점 컬럼 없어 계산 불가"} / 지역 평균 산출: ${regionAverage.size}개 시군구`);
 
 if (!WRITE) {
   console.log("\n미리보기 모드입니다. 실제로 반영하려면 --write 를 붙여 다시 실행하세요.");
@@ -182,8 +230,12 @@ for (const u of updates) {
   const detail = {
     domains: u.domains,
     totalScore: u.totalScore ?? Math.round((u.domains.reduce((a, d) => a + d.score, 0) / u.domains.length) * 10) / 10,
-    evaluatedAt: u.year || "최근 정기평가",
+    evaluatedAt: u.yearLabel || "최근 정기평가",
     nationalAverage: nationalAverage ?? 0,
+    // 같은 시군구 평균 — "우리 지역 평균 대비" 표시용 (시군구 시설이 3곳 미만이면 생략)
+    ...(u.sigungu && regionAverage.has(u.sigungu) && regionTotals.get(u.sigungu).count >= 3
+      ? { regionAverage: regionAverage.get(u.sigungu), regionName: u.sigungu }
+      : {}),
   };
   await client.query(
     `UPDATE "Facility" SET extra = jsonb_set(extra, '{evaluationDetail}', $1::jsonb, true) WHERE id = $2`,

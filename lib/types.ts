@@ -72,6 +72,9 @@ export interface EvaluationDetail {
   evaluatedAt: string;
   totalScore: number;
   nationalAverage: number;
+  /** 같은 시군구 평균 — import-evaluations.mjs가 시군구당 3곳 이상일 때만 채움 */
+  regionAverage?: number;
+  regionName?: string;
   domains: EvaluationDomainScore[];
 }
 
