@@ -38,9 +38,13 @@ export function Header() {
 
   const navItems = NAV.filter((item) => !item.authOnly || user);
   // 모바일은 하단 탭바(홈·시설찾기·등급테스트·마이페이지)가 따로 있어서 햄버거에서 겹치는
-  // 항목은 뺀다. 데스크톱은 탭바가 없으니 navItems를 그대로 쓴다.
+  // 항목은 뺀다. 로그인 상태면 돌봄 서비스도 상단 버튼으로 빠지니 같이 뺀다.
+  // 데스크톱은 탭바가 없으니 navItems를 그대로 쓴다.
   const mobileNavItems = navItems.filter(
-    (item) => item.href !== "/search" && item.href !== "/grade-test"
+    (item) =>
+      item.href !== "/search" &&
+      item.href !== "/grade-test" &&
+      !(item.href === "/services" && user)
   );
 
   function badgeFor(href: string) {
@@ -148,6 +152,16 @@ export function Header() {
                 className="flex items-center rounded-full bg-royal-500 px-3 py-1.5 text-xs font-bold text-white shadow-royal transition-transform active:scale-95"
               >
                 돌봄 요청
+              </Link>
+            )}
+            {/* 마이페이지가 아닌 다른 화면에서는 로그인 사용자에게 돌봄 서비스를 대신 보여준다
+                (햄버거 안에 있던 걸 여기로 옮긴 것 — 로그인 전엔 그대로 햄버거 안에 남아있음) */}
+            {user && !pathname?.startsWith("/mypage") && (
+              <Link
+                href="/services"
+                className="flex items-center rounded-full bg-primary-500 px-3 py-1.5 text-xs font-bold text-white shadow-soft transition-transform active:scale-95"
+              >
+                돌봄 서비스
               </Link>
             )}
 
