@@ -61,7 +61,7 @@ export function Header() {
       <header className="sticky top-0 z-40 border-b border-ink-100 bg-white/80 backdrop-blur">
         <div className="mx-auto flex h-12 max-w-6xl items-center justify-between px-4 sm:h-16">
           <Link href="/" className="flex items-center transition hover:opacity-80" aria-label="돌보다 홈">
-            <Logo className="h-9 w-9 sm:h-14 sm:w-14" />
+            <Logo className="h-10 w-10 sm:h-16 sm:w-16" />
           </Link>
 
           {/* 데스크톱 내비게이션 */}
