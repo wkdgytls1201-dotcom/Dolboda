@@ -13,7 +13,8 @@ export function CompareSelectBar() {
   if (selectedIds.length === 0) return null;
 
   return (
-    <div className="animate-slide-up fixed inset-x-0 bottom-0 z-40 border-t border-ink-100 bg-white/95 px-4 py-3 shadow-[0_-8px_24px_rgba(27,23,48,0.08)] backdrop-blur">
+    // 모바일 하단 탭바 위에 겹치지 않게 탭바 높이(64px+safe area)만큼 띄운다.
+    <div className="animate-slide-up fixed inset-x-0 z-40 border-t border-ink-100 bg-white/95 px-4 py-3 shadow-[0_-8px_24px_rgba(27,23,48,0.08)] backdrop-blur [bottom:calc(64px+env(safe-area-inset-bottom))] sm:bottom-0">
       <div className="mx-auto flex max-w-6xl items-center gap-3">
         <div className="flex flex-1 items-center gap-2 overflow-x-auto">
           {selectedIds.map((id, idx) => {

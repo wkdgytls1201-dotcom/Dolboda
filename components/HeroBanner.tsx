@@ -93,8 +93,9 @@ export function HeroBanner() {
               i === index ? "scale-100 opacity-100" : "scale-[0.94] cursor-pointer opacity-50"
             }`}
           >
-            {/* 첫 장만 즉시 받고 나머지는 지연 로드. 화면 폭에 맞는 크기를 고르게 해서
-                모바일에서 1200px 원본을 통째로 받지 않도록 한다. */}
+            {/* 전부 즉시 로드한다. loading="lazy"였을 때는 가로 스크롤 캐러셀이라 브라우저가
+                "화면 밖"으로 잘못 판단해서 자동으로 넘어가도 사진이 안 뜨는 문제가 있었다.
+                화면 폭에 맞는 작은 크기(모바일 480px)라 7장 다 받아도 용량 부담은 적다. */}
             <img
               src={facilityPhotoFor(f.id, 800)}
               srcSet={`${facilityPhotoFor(f.id, 480)} 480w, ${facilityPhotoFor(
@@ -103,7 +104,7 @@ export function HeroBanner() {
               )} 800w, ${facilityPhotoFor(f.id, 1200)} 1200w`}
               sizes="(max-width: 640px) 84vw, 78vw"
               alt=""
-              loading={i === 0 ? "eager" : "lazy"}
+              loading="eager"
               fetchPriority={i === 0 ? "high" : "low"}
               decoding="async"
               className="absolute inset-0 h-full w-full bg-ink-100 object-cover"

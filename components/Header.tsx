@@ -37,6 +37,11 @@ export function Header() {
   }, [pathname]);
 
   const navItems = NAV.filter((item) => !item.authOnly || user);
+  // 모바일은 하단 탭바(홈·시설찾기·등급테스트·마이페이지)가 따로 있어서 햄버거에서 겹치는
+  // 항목은 뺀다. 데스크톱은 탭바가 없으니 navItems를 그대로 쓴다.
+  const mobileNavItems = navItems.filter(
+    (item) => item.href !== "/search" && item.href !== "/grade-test"
+  );
 
   function badgeFor(href: string) {
     if (href === "/compare") return selectedIds.length;
@@ -153,7 +158,7 @@ export function Header() {
         {menuOpen && (
           <div className="border-t border-ink-100 bg-white/95 px-4 py-3 backdrop-blur sm:hidden">
             <nav className="flex flex-col gap-1">
-              {navItems.map((item) => {
+              {mobileNavItems.map((item) => {
                 const active = pathname?.startsWith(item.href);
                 const badge = badgeFor(item.href);
                 return (
@@ -198,44 +203,8 @@ export function Header() {
                 <Bell size={18} />
                 알림
               </Link>
-
-              <div className="mt-2 border-t border-ink-100 pt-3">
-                {user ? (
-                  <>
-                    <Link
-                      href="/mypage"
-                      className={`mb-1 flex items-center gap-2 rounded-xl px-4 py-3 text-base font-semibold transition-colors duration-200 ${
-                        pathname?.startsWith("/mypage") || pathname === "/account"
-                          ? "bg-primary-50 text-primary-700"
-                          : "text-ink-700 hover:bg-ink-100"
-                      }`}
-                    >
-                      <User size={18} />
-                      마이페이지
-                      <span className="ml-auto text-xs font-normal text-ink-300">{user.name}</span>
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={signOutAndClear}
-                      className="flex w-full items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium text-ink-500 transition-colors duration-200 hover:bg-ink-100 hover:text-ink-700 active:scale-95"
-                    >
-                      <LogOut size={16} />
-                      로그아웃
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      setShowAuth(true);
-                    }}
-                    className="w-full rounded-xl bg-primary-500 px-4 py-2.5 text-sm font-bold text-white shadow-soft transition-all duration-200 ease-snappy hover:bg-primary-600 active:scale-95"
-                  >
-                    로그인
-                  </button>
-                )}
-              </div>
+              {/* 마이페이지(로그인 포함)는 하단 탭바로 옮겨서 여기선 뺐다 —
+                  로그아웃은 마이페이지 화면 안에 이미 있음(app/mypage/page.tsx). */}
             </nav>
           </div>
         )}
