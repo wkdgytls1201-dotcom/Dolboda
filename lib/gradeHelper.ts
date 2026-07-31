@@ -28,7 +28,7 @@ export const HELPER_QUESTIONS: HelperQuestion[] = [
   {
     id: "eligible",
     area: "screen",
-    ask: "안녕하세요, 돌보다 등급 도우미예요. 몇 가지만 여쭤보고 예상 등급 범위를 알려드릴게요.\n\n어떤 분의 등급이 궁금하세요?",
+    ask: "안녕하세요, 돌보다 AI등급 도우미예요. 몇 가지만 여쭤보고 예상 등급 범위를 알려드릴게요.\n\n어떤 분의 등급이 궁금하세요?",
     options: [
       { label: "만 65세 이상이세요", score: 0 },
       { label: "65세 미만이지만 치매·뇌혈관질환 등이 있으세요", score: 0 },

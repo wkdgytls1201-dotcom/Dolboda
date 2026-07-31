@@ -40,8 +40,8 @@ const TYPING_DELAY_MS = 550;
 
 function BotAvatar() {
   return (
-    <span className="mt-1 flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white shadow-card ring-1 ring-royal-100">
-      <Image src="/logo.png" alt="돌보다" width={32} height={32} className="object-contain" />
+    <span className="mt-1 flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-white shadow-card ring-1 ring-royal-100">
+      <Image src="/logo.png" alt="돌보다" width={44} height={44} className="object-contain" />
     </span>
   );
 }
