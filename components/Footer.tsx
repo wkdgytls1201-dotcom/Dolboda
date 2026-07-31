@@ -22,6 +22,9 @@ export async function Footer() {
             <Link href="/grade-test" className="transition-colors duration-150 hover:text-ink-700">
               등급 테스트
             </Link>
+            <Link href="/guide" className="transition-colors duration-150 hover:text-ink-700">
+              요양 가이드
+            </Link>
             <Link href="/terms" className="transition-colors duration-150 hover:text-ink-700">
               이용약관
             </Link>

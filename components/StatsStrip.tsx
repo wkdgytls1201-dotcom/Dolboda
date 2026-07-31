@@ -3,14 +3,17 @@
 import { useEffect, useRef, useState } from "react";
 import { InfoTooltip } from "./InfoTooltip";
 
-function CountUp({ target, durationMs = 1200 }: { target: number; durationMs?: number }) {
+function CountUp({ target, durationMs = 900 }: { target: number; durationMs?: number }) {
   const ref = useRef<HTMLSpanElement>(null);
-  const [value, setValue] = useState(0);
+  // 초기값을 0이 아니라 target으로 — 서버 HTML과 검색봇, JS가 늦게 뜨는 기기에서도
+  // "0곳"이 아니라 실제 숫자가 보인다. 애니메이션은 화면에 들어온 순간에만 잠깐 돈다.
+  const [value, setValue] = useState(target);
   const [started, setStarted] = useState(false);
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    // threshold를 낮게 — 카드가 살짝만 걸쳐도 바로 시작해서 "멈춰있는 0" 구간을 없앤다
     const obs = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -18,7 +21,7 @@ function CountUp({ target, durationMs = 1200 }: { target: number; durationMs?: n
           obs.disconnect();
         }
       },
-      { threshold: 0.5 }
+      { threshold: 0.1 }
     );
     obs.observe(el);
     return () => obs.disconnect();

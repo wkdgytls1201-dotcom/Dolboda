@@ -113,3 +113,32 @@ export function regionFaqJsonLd() {
     })),
   };
 }
+
+// 지역 페이지 → 가이드 콘텐츠 내부 링크. 지역 검색어로 들어온 보호자를 질문형 콘텐츠로,
+// 가이드를 읽은 보호자를 다시 지역 검색으로 순환시키는 SEO 구조의 절반이다.
+const GUIDE_LINKS = [
+  { slug: "nursing-home-vs-hospital", label: "요양원과 요양병원, 뭐가 다른가요?" },
+  { slug: "nursing-home-cost", label: "요양원 한 달 비용은 얼마나 들까요?" },
+  { slug: "checklist", label: "좋은 요양원 고르는 체크리스트" },
+  { slug: "grade-application", label: "장기요양등급 신청 방법" },
+];
+
+export function GuideLinkStrip() {
+  return (
+    <section className="mt-10">
+      <h2 className="mb-3 text-base font-bold text-ink-900">시설 고르기 전에 읽어보세요</h2>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {GUIDE_LINKS.map((g) => (
+          <Link
+            key={g.slug}
+            href={`/guide/${g.slug}`}
+            className="flex items-center justify-between rounded-2xl border border-ink-100 bg-white px-4 py-3.5 text-sm font-semibold text-ink-700 transition-colors hover:bg-ink-100"
+          >
+            {g.label}
+            <ChevronRight size={16} className="shrink-0 text-ink-300" />
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}

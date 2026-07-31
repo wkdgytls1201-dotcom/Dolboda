@@ -30,6 +30,7 @@ import { DetailSection } from "@/components/DetailSection";
 import { KakaoMap } from "@/components/KakaoMap";
 import { KakaoRoadview } from "@/components/KakaoRoadview";
 import { ConsultModal } from "@/components/ConsultModal";
+import { DataSourceNote } from "@/components/DataSourceNote";
 import { FacilityCard } from "@/components/FacilityCard";
 import { useCompare } from "@/lib/compareContext";
 import { haversineDistanceKm } from "@/lib/distance";
@@ -81,6 +82,8 @@ export default function FacilityDetailClient({
   const [showConsult, setShowConsult] = useState(false);
   // 의사·간호인력 등급 기준표 접기/펼치기
   const [showGradeCriteria, setShowGradeCriteria] = useState(false);
+  // 프로그램 운영 아코디언 — null이면 첫 번째 종류만 열림, "__none__"이면 전부 접힘
+  const [openProgramCategory, setOpenProgramCategory] = useState<string | null>(null);
   const relatedTrackRef = useRef<HTMLDivElement>(null);
   // 돌보다 AI기반 안심지수 맥락(지역 평균·인근 요양병원 거리) — 시설당 1회 조회
   const [scoreContext, setScoreContext] = useState<{
@@ -843,48 +846,51 @@ export default function FacilityDetailClient({
             {programGroups.length > 0 && (
               <DetailSection id="programs" title="프로그램 운영">
                 <p className="mb-3 text-xs leading-relaxed text-ink-500">
-                  이 시설이 공단에 신고한 프로그램이에요. 인지·신체활동 프로그램이 다양할수록
-                  하루가 단조롭지 않아요.
+                  이 시설이 공단에 신고한 프로그램이에요. 종류를 누르면 세부 목록이 열려요.
                 </p>
-                <div className="space-y-4">
-                  {programGroups.map(([category, list]) => (
-                    <div key={category}>
-                      <p className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-primary-50 px-2.5 py-1 text-[11px] font-bold text-primary-700">
-                        <Sparkles size={11} />
-                        {category}
-                        <span className="font-semibold text-primary-500">{list.length}개</span>
-                      </p>
-                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                        {list.map((p) => (
-                          <div key={p.name} className="rounded-xl bg-ink-100/40 px-3.5 py-3">
-                            <p className="text-sm font-bold text-ink-900">{p.name}</p>
-                            <p className="mt-0.5 text-xs leading-relaxed text-ink-500">
-                              {p.frequency}
-                              {p.targetCount > 0 && ` · 대상 ${p.targetCount}명`}
-                              {p.location && ` · ${p.location}`}
-                            </p>
+                {/* 종류별 아코디언 — 프로그램이 수십 개인 시설은 다 펼치면 화면이 한없이
+                    길어져서, 첫 번째 종류만 열어두고 나머지는 접어둔다 */}
+                <div className="space-y-2">
+                  {programGroups.map(([category, list], gi) => {
+                    const open = openProgramCategory === null ? gi === 0 : openProgramCategory === category;
+                    return (
+                      <div key={category} className="overflow-hidden rounded-2xl border border-ink-100 bg-white">
+                        <button
+                          type="button"
+                          onClick={() => setOpenProgramCategory(open ? "__none__" : category)}
+                          aria-expanded={open}
+                          className="flex min-h-[52px] w-full items-center justify-between gap-2 px-4 py-3 text-left"
+                        >
+                          <span className="flex items-center gap-1.5 text-sm font-bold text-ink-900">
+                            <Sparkles size={14} className="text-primary-500" />
+                            {category}
+                            <span className="rounded-full bg-primary-50 px-2 py-0.5 text-[11px] font-bold text-primary-600">
+                              {list.length}개
+                            </span>
+                          </span>
+                          <ChevronDown
+                            size={16}
+                            className={`shrink-0 text-ink-300 transition-transform ${open ? "rotate-180" : ""}`}
+                          />
+                        </button>
+                        {open && (
+                          <div className="grid grid-cols-1 gap-2 border-t border-ink-100 p-3 sm:grid-cols-2">
+                            {list.map((p) => (
+                              <div key={p.name} className="rounded-xl bg-ink-100/40 px-3.5 py-3">
+                                <p className="text-sm font-bold text-ink-900">{p.name}</p>
+                                <p className="mt-0.5 text-xs leading-relaxed text-ink-500">
+                                  {p.frequency}
+                                  {p.targetCount > 0 && ` · 대상 ${p.targetCount}명`}
+                                  {p.location && ` · ${p.location}`}
+                                </p>
+                              </div>
+                            ))}
                           </div>
-                        ))}
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
-              </DetailSection>
-            )}
-
-            {/* 기관 운영 정보 — 공단 상세정보에서만 오는 값들 */}
-            {institutionInfoItems.length > 0 && (
-              <DetailSection id="institution-info" title="운영 정보">
-                <dl className="divide-y divide-ink-100 rounded-2xl border border-ink-100">
-                  {institutionInfoItems.map(({ label, value }) => (
-                    <div key={label} className="flex gap-3 px-4 py-3">
-                      <dt className="w-20 shrink-0 text-xs font-semibold text-ink-300">{label}</dt>
-                      <dd className="min-w-0 flex-1 text-sm leading-relaxed text-ink-700">
-                        {value}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
               </DetailSection>
             )}
 
@@ -932,6 +938,23 @@ export default function FacilityDetailClient({
                 }
               />
             </DetailSection>
+
+            {/* 기관 운영 정보 — 시뮬레이터 아래·위치 위에 두어 방문 계획(오시는 길·주차)과
+                이어지게 한다 */}
+            {institutionInfoItems.length > 0 && (
+              <DetailSection id="institution-info" title="운영 정보">
+                <dl className="divide-y divide-ink-100 rounded-2xl border border-ink-100">
+                  {institutionInfoItems.map(({ label, value }) => (
+                    <div key={label} className="flex gap-3 px-4 py-3">
+                      <dt className="w-20 shrink-0 text-xs font-semibold text-ink-300">{label}</dt>
+                      <dd className="min-w-0 flex-1 text-sm leading-relaxed text-ink-700">
+                        {value}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </DetailSection>
+            )}
           </>
         )}
 
@@ -956,13 +979,6 @@ export default function FacilityDetailClient({
               주차 {facility.parking.spots}대 · {facility.parking.isFree ? "무료" : "유료"}
             </p>
           )}
-        </DetailSection>
-
-        {/* 이야기 */}
-        <DetailSection id="story" title="이 시설 이야기">
-          <div className="rounded-2xl bg-ink-100/30 p-8 text-center text-sm text-ink-300">
-            아직 등록된 이야기가 없어요.
-          </div>
         </DetailSection>
 
         {relatedFacilities.length > 0 && (
@@ -1004,6 +1020,8 @@ export default function FacilityDetailClient({
             </div>
           </DetailSection>
         )}
+
+        <DataSourceNote updatedAt={facility.updatedAt} />
       </div>
 
       {/* 하단 고정 CTA */}

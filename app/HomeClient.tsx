@@ -33,7 +33,9 @@ export default function HomeClient({
   // (홈에 표시되는 facilities 배열은 200건 제한이 있어 그걸로 계산하면 숫자가 틀어짐)
   const homeStats = useMemo(
     () => [
-      { label: "등록된 시설", value: total, suffix: "곳" },
+      // total은 목록 API 응답이 와야 채워져서 첫 화면에 0이 잠깐 보였다 —
+      // 서버에서 미리 집계한 stats.total로 시작하고, 목록이 오면 그 값을 쓴다
+      { label: "등록된 시설", value: total || stats.total, suffix: "곳" },
       {
         label: "1등급 시설",
         value: stats?.grade1Count ?? 0,

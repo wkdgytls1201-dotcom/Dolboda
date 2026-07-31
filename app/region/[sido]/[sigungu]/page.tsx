@@ -8,6 +8,7 @@ import {
   TypeCountChips,
   FacilityLinkList,
   RegionFaq,
+  GuideLinkStrip,
   regionFaqJsonLd,
 } from "@/components/RegionSeoParts";
 import { SITE_URL } from "@/lib/siteConfig";
@@ -170,6 +171,7 @@ export default async function RegionSigunguPage({
         </Link>
       </section>
 
+      <GuideLinkStrip />
       <RegionFaq />
     </main>
   );
