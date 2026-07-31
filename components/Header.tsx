@@ -182,9 +182,26 @@ export function Header() {
               onClick={() => setMenuOpen((o) => !o)}
               aria-label={menuOpen ? "메뉴 닫기" : "메뉴 열기"}
               aria-expanded={menuOpen}
-              className="relative flex h-10 w-10 items-center justify-center rounded-full text-ink-700 transition-colors duration-200 hover:bg-ink-100 active:scale-95"
+              className={`relative flex h-10 w-10 items-center justify-center rounded-full transition-colors duration-300 active:scale-95 ${
+                menuOpen ? "bg-primary-500 text-white shadow-soft" : "text-ink-700 hover:bg-ink-100"
+              }`}
             >
-              {menuOpen ? <X size={22} /> : <Menu size={22} />}
+              {/* 두 아이콘을 겹쳐두고 회전+투명도로 교차 — 햄버거가 돌면서 X로 바뀌는 느낌.
+                  열림 상태에선 코랄 배경 + 흰 X라 "누르면 닫힌다"가 한눈에 보인다 */}
+              <span className="relative block h-[22px] w-[22px]" aria-hidden>
+                <Menu
+                  size={22}
+                  className={`absolute inset-0 transition-all duration-300 ease-snappy ${
+                    menuOpen ? "rotate-90 scale-50 opacity-0" : "rotate-0 scale-100 opacity-100"
+                  }`}
+                />
+                <X
+                  size={22}
+                  className={`absolute inset-0 transition-all duration-300 ease-snappy ${
+                    menuOpen ? "rotate-0 scale-100 opacity-100" : "-rotate-90 scale-50 opacity-0"
+                  }`}
+                />
+              </span>
               {!menuOpen && mobileBadgeCount > 0 && (
                 <span className="absolute right-1 top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-accent-300 px-1 text-[10px] font-bold text-ink-900">
                   {mobileBadgeCount}
