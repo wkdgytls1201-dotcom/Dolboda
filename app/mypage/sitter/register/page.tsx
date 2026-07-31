@@ -360,13 +360,13 @@ export default function SitterRegisterPage() {
                 value={certName}
                 onChange={(e) => setCertName(e.target.value)}
                 placeholder="예: 요양보호사 1급"
-                className="flex-1 rounded-xl border border-ink-100 px-3 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-100"
+                className="min-w-0 flex-1 rounded-xl border border-ink-100 px-3 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-100"
               />
               <input
                 value={certIssuer}
                 onChange={(e) => setCertIssuer(e.target.value)}
                 placeholder="발급기관(선택)"
-                className="w-28 rounded-xl border border-ink-100 px-3 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-100"
+                className="w-28 shrink-0 rounded-xl border border-ink-100 px-3 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-100"
               />
               <button
                 type="button"

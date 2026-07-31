@@ -17,6 +17,7 @@ import {
   Sparkles,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   AlertTriangle,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
@@ -75,6 +76,8 @@ export default function FacilityDetailPage() {
   const { data: session } = useSession();
   const user = session?.user;
   const [showConsult, setShowConsult] = useState(false);
+  // 의사·간호인력 등급 기준표 접기/펼치기
+  const [showGradeCriteria, setShowGradeCriteria] = useState(false);
   const relatedTrackRef = useRef<HTMLDivElement>(null);
   // 돌보다 AI기반 안심지수 맥락(지역 평균·인근 요양병원 거리) — 시설당 1회 조회
   const [scoreContext, setScoreContext] = useState<{
@@ -368,64 +371,115 @@ export default function FacilityDetailPage() {
               <HospitalCostEstimator fees={hospital.nonCoveredFees} />
             </DetailSection>
 
-            {/* 의사(간호인력) 등급 — 값이 없는 시설은 0등급처럼 보이지 않게 안내로 대체 */}
-            <DetailSection id="staff-grade" title="의사(간호인력) 등급" tooltip={TOOLTIPS.nurseGrade}>
-              <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="rounded-2xl bg-mint-50 p-4">
-                  <p className="text-sm font-medium text-ink-500">의사 인력</p>
+            {/* 의사·간호인력 등급 — 값이 없는 시설은 0등급처럼 보이지 않게 안내로 대체.
+                전체 기준표를 다 펼쳐두면 지저분해서, 이 시설 등급의 의미만 한 줄로 보여주고
+                기준표 전체는 접어둔다. */}
+            <DetailSection id="staff-grade" title="의사·간호인력 등급" tooltip={TOOLTIPS.nurseGrade}>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="rounded-2xl bg-mint-50/70 p-4">
+                  <div className="mb-3 flex items-baseline justify-between">
+                    <p className="text-sm font-semibold text-ink-700">의사 인력</p>
+                    {hospital.doctorGrade > 0 && (
+                      <p className="text-xl font-extrabold text-mint-700">
+                        {hospital.doctorGrade}
+                        <span className="text-sm font-bold">등급</span>
+                      </p>
+                    )}
+                  </div>
                   {hospital.doctorGrade > 0 ? (
                     <>
-                      <p className="mb-3 mt-0.5 text-2xl font-extrabold text-mint-700">
-                        {hospital.doctorGrade}등급
-                      </p>
                       <GradeScaleBar grade={hospital.doctorGrade} levels={4} />
+                      <p className="mt-3 rounded-xl bg-white/70 px-3 py-2 text-xs leading-relaxed text-ink-500">
+                        의사 1명이 환자{" "}
+                        <b className="text-ink-900">
+                          {DOCTOR_GRADE_TABLE.find((r) => r.grade === hospital.doctorGrade)?.desc}
+                        </b>
+                        를 돌봐요
+                      </p>
                     </>
                   ) : (
-                    <p className="mt-1.5 text-sm text-ink-300">아직 공개된 등급이 없어요</p>
+                    <p className="text-sm text-ink-300">아직 공개된 등급이 없어요</p>
                   )}
                 </div>
-                <div className="rounded-2xl bg-primary-50 p-4">
-                  <p className="text-sm font-medium text-ink-500">간호 인력</p>
+                <div className="rounded-2xl bg-primary-50/70 p-4">
+                  <div className="mb-3 flex items-baseline justify-between">
+                    <p className="text-sm font-semibold text-ink-700">간호 인력</p>
+                    {hospital.nurseGrade > 0 && (
+                      <p className="text-xl font-extrabold text-primary-700">
+                        {hospital.nurseGrade}
+                        <span className="text-sm font-bold">등급</span>
+                      </p>
+                    )}
+                  </div>
                   {hospital.nurseGrade > 0 ? (
                     <>
-                      <p className="mb-3 mt-0.5 text-2xl font-extrabold text-primary-700">
-                        {hospital.nurseGrade}등급
-                      </p>
                       <GradeScaleBar grade={hospital.nurseGrade} levels={6} />
+                      <p className="mt-3 rounded-xl bg-white/70 px-3 py-2 text-xs leading-relaxed text-ink-500">
+                        간호사 1명이 환자{" "}
+                        <b className="text-ink-900">
+                          {NURSE_GRADE_TABLE.find((r) => r.grade === hospital.nurseGrade)?.desc}
+                        </b>
+                        을 돌봐요
+                      </p>
                     </>
                   ) : (
-                    <p className="mt-1.5 text-sm text-ink-300">아직 공개된 등급이 없어요</p>
+                    <p className="text-sm text-ink-300">아직 공개된 등급이 없어요</p>
                   )}
                 </div>
               </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                  <p className="mb-2 text-xs font-semibold text-ink-300">
-                    의사 1명이 돌보는 환자수
-                  </p>
-                  <ul className="space-y-1 text-sm text-ink-500">
-                    {DOCTOR_GRADE_TABLE.map((row) => (
-                      <li key={row.grade}>
-                        <span className="font-semibold text-ink-900">{row.grade}등급</span>{" "}
-                        {row.desc}
-                      </li>
-                    ))}
-                  </ul>
+
+              <button
+                type="button"
+                onClick={() => setShowGradeCriteria((v) => !v)}
+                className="mt-3 flex min-h-[44px] w-full items-center justify-center gap-1 rounded-xl bg-ink-100/40 text-xs font-semibold text-ink-500 transition hover:bg-ink-100/70 hover:text-ink-700"
+              >
+                등급 기준 전체 {showGradeCriteria ? "접기" : "보기"}
+                <ChevronDown
+                  size={14}
+                  className={`transition-transform ${showGradeCriteria ? "rotate-180" : ""}`}
+                />
+              </button>
+
+              {showGradeCriteria && (
+                <div className="mt-3 grid grid-cols-1 gap-4 rounded-2xl border border-ink-100 p-4 sm:grid-cols-2">
+                  <div>
+                    <p className="mb-2 text-xs font-bold text-ink-700">의사 1명이 돌보는 환자수</p>
+                    <ul className="space-y-1">
+                      {DOCTOR_GRADE_TABLE.map((row) => (
+                        <li
+                          key={row.grade}
+                          className={`flex items-baseline gap-2 rounded-lg px-2 py-1 text-xs ${
+                            row.grade === hospital.doctorGrade
+                              ? "bg-mint-50 font-bold text-ink-900"
+                              : "text-ink-500"
+                          }`}
+                        >
+                          <span className="w-9 shrink-0 font-semibold">{row.grade}등급</span>
+                          {row.desc}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="mb-2 text-xs font-bold text-ink-700">간호사 1명이 돌보는 환자수</p>
+                    <ul className="space-y-1">
+                      {NURSE_GRADE_TABLE.map((row) => (
+                        <li
+                          key={row.grade}
+                          className={`flex items-baseline gap-2 rounded-lg px-2 py-1 text-xs ${
+                            row.grade === hospital.nurseGrade
+                              ? "bg-primary-50 font-bold text-ink-900"
+                              : "text-ink-500"
+                          }`}
+                        >
+                          <span className="w-9 shrink-0 font-semibold">{row.grade}등급</span>
+                          {row.desc}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
-                <div>
-                  <p className="mb-2 text-xs font-semibold text-ink-300">
-                    간호사 1명이 돌보는 환자수
-                  </p>
-                  <ul className="space-y-1 text-sm text-ink-500">
-                    {NURSE_GRADE_TABLE.map((row) => (
-                      <li key={row.grade}>
-                        <span className="font-semibold text-ink-900">{row.grade}등급</span>{" "}
-                        {row.desc}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
+              )}
             </DetailSection>
 
             {/* 인력현황 */}

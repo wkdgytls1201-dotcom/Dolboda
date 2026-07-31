@@ -3,13 +3,32 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Bell, LogOut, Menu, User, X } from "lucide-react";
+import {
+  Bell,
+  GitCompareArrows,
+  Heart,
+  HeartHandshake,
+  LogOut,
+  Menu,
+  Sparkles,
+  User,
+  X,
+} from "lucide-react";
 import { useCompare } from "@/lib/compareContext";
 import { useFavorites } from "@/lib/favoritesContext";
 import { useSession } from "next-auth/react";
 import { signOutAndClear } from "@/lib/signOutAndClear";
 import { AuthModal } from "./AuthModal";
 import { Logo } from "./Logo";
+
+// 모바일 햄버거 메뉴에서 항목 오른쪽에 붙는 아이콘 칩
+const MOBILE_MENU_ICONS: Record<string, typeof Bell> = {
+  "/grade-test": Sparkles,
+  "/services": HeartHandshake,
+  "/compare": GitCompareArrows,
+  "/favorites": Heart,
+  "/care-request": HeartHandshake,
+};
 
 // authOnly 항목은 로그인해야 쓸 수 있는 기능이라 비로그인 상태에선 노출하지 않는다.
 const NAV = [
@@ -60,8 +79,18 @@ export function Header() {
     <>
       <header className="sticky top-0 z-40 border-b border-ink-100 bg-white/80 backdrop-blur">
         <div className="mx-auto flex h-12 max-w-6xl items-center justify-between px-4 sm:h-16">
-          <Link href="/" className="flex items-center transition hover:opacity-80" aria-label="돌보다 홈">
-            <Logo className="h-10 w-10 sm:h-16 sm:w-16" />
+          <Link
+            href="/"
+            className="flex items-center gap-1 transition hover:opacity-80"
+            aria-label="돌보다 홈"
+          >
+            <Logo className="h-10 w-10 sm:h-16 sm:w-16" priority />
+            {/* 워드마크 — 웹폰트를 새로 얹으면 한글 폰트만 수백 KB라, 시스템 폰트에
+                자간·굵기로만 다듬고 색은 사이트 메인 코랄로 맞춰 가볍게 처리.
+                글자 높이는 로고의 꽃 부분과 비슷해 보이는 크기 */}
+            <span className="text-base font-extrabold leading-none tracking-tight text-primary-500 sm:text-xl">
+              돌보다
+            </span>
           </Link>
 
           {/* 데스크톱 내비게이션 */}
@@ -183,18 +212,20 @@ export function Header() {
           </div>
         </div>
 
-        {/* 모바일 드롭다운 메뉴 */}
+        {/* 모바일 드롭다운 메뉴 — 오른쪽 정렬(엄지 닿는 쪽) + 항목별 아이콘 칩으로
+            리스트가 밋밋해 보이지 않게. 로그아웃은 구분선 아래에 옅게 분리한다. */}
         {menuOpen && (
           <div className="border-t border-ink-100 bg-white/95 px-4 py-3 backdrop-blur sm:hidden">
-            <nav className="flex flex-col gap-1">
+            <nav className="flex flex-col gap-1.5">
               {mobileNavItems.map((item) => {
                 const active = pathname?.startsWith(item.href);
                 const badge = badgeFor(item.href);
+                const Icon = MOBILE_MENU_ICONS[item.href];
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex items-center justify-between rounded-xl px-4 py-3 text-base font-semibold transition-colors duration-200 ${
+                    className={`flex min-h-[52px] items-center justify-end gap-3 rounded-2xl px-4 py-3 text-right text-base font-semibold transition-colors duration-200 ${
                       active
                         ? item.highlight
                           ? "bg-royal-500 text-white"
@@ -204,17 +235,30 @@ export function Header() {
                         : "text-ink-700 hover:bg-ink-100"
                     }`}
                   >
-                    <span className="flex items-center gap-1.5">
-                      {item.label}
-                      {item.highlight && !active && (
-                        <span className="rounded-full bg-royal-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                          NEW
-                        </span>
-                      )}
-                    </span>
+                    {item.highlight && !active && (
+                      <span className="rounded-full bg-royal-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                        NEW
+                      </span>
+                    )}
                     {badge > 0 && (
                       <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-accent-300 px-1.5 text-xs font-bold text-ink-900">
                         {badge}
+                      </span>
+                    )}
+                    {item.label}
+                    {Icon && (
+                      <span
+                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
+                          active
+                            ? item.highlight
+                              ? "bg-white/20 text-white"
+                              : "bg-white text-primary-600"
+                            : item.highlight
+                            ? "bg-white text-royal-600"
+                            : "bg-ink-100/60 text-ink-500"
+                        }`}
+                      >
+                        <Icon size={17} />
                       </span>
                     )}
                   </Link>
@@ -223,24 +267,33 @@ export function Header() {
 
               <Link
                 href="/notifications"
-                className={`flex items-center gap-2 rounded-xl px-4 py-3 text-base font-semibold transition-colors duration-200 ${
+                className={`flex min-h-[52px] items-center justify-end gap-3 rounded-2xl px-4 py-3 text-base font-semibold transition-colors duration-200 ${
                   pathname?.startsWith("/notifications")
                     ? "bg-primary-50 text-primary-700"
                     : "text-ink-700 hover:bg-ink-100"
                 }`}
               >
-                <Bell size={18} />
                 알림
+                <span
+                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
+                    pathname?.startsWith("/notifications")
+                      ? "bg-white text-primary-600"
+                      : "bg-ink-100/60 text-ink-500"
+                  }`}
+                >
+                  <Bell size={17} />
+                </span>
               </Link>
+
               {/* 마이페이지 링크는 하단 탭바로 옮겼지만, 로그아웃은 몇 번 눌러야 닿는
                   마이페이지 화면까지 안 가도 여기서 바로 되게 남겨둔다. */}
               {user && (
                 <button
                   type="button"
                   onClick={signOutAndClear}
-                  className="mt-1 flex w-full items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium text-ink-500 transition-colors duration-200 hover:bg-ink-100 hover:text-ink-700 active:scale-95"
+                  className="mt-1.5 flex w-full items-center justify-end gap-1.5 rounded-xl border-t border-ink-100 px-4 pb-1 pt-3 text-sm font-medium text-ink-400 transition-colors duration-200 hover:text-ink-700 active:scale-95"
                 >
-                  <LogOut size={16} />
+                  <LogOut size={15} />
                   로그아웃
                 </button>
               )}

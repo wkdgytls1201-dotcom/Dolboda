@@ -100,6 +100,8 @@ export default function RootLayout({
         {/* 히어로 배너 사진 도메인에 미리 연결해 첫 이미지 로딩을 앞당긴다 */}
         <link rel="preconnect" href="https://images.unsplash.com" />
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
+        {/* 헤더 로고(20KB)는 모든 화면 첫인상이라 HTML 파싱 즉시 내려받게 한다 */}
+        <link rel="preload" as="image" href="/logo.png" fetchPriority="high" />
       </head>
       <body className="font-sans">
         <script

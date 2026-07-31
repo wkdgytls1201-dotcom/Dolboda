@@ -11,7 +11,7 @@ import { AuthModal } from "./AuthModal";
 // 이미 자체 하단 CTA 바가 있는 화면(돌봄요청 마법사·등급테스트 진행·시설상세)에서는 탭바를
 // 숨긴다 — 두 바가 겹치면 더 헷갈리고, 그 화면들은 어차피 몰입해서 끝까지 진행하는 흐름이라
 // 중간에 다른 탭으로 새는 걸 유도할 필요도 적다.
-const HIDDEN_PREFIXES = ["/facility/", "/grade-test", "/care-request"];
+const HIDDEN_PREFIXES = ["/facility/", "/grade-test", "/grade-helper", "/care-request"];
 
 const TABS = [
   { href: "/", label: "홈", icon: Home },

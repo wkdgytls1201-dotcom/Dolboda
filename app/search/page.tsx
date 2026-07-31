@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { List, Map as MapIcon, Crosshair } from "lucide-react";
 import { FacilityCard } from "@/components/FacilityCard";
@@ -165,6 +165,32 @@ function SearchContent() {
     return list;
   }, [facilities, query, filters, sortKey, origin]);
 
+  // 300장을 한 번에 그리면 첫 화면이 늦다 — 처음엔 30장만 그리고, 스크롤이 아래에
+  // 가까워지면 30장씩 이어서 그린다(데이터는 이미 받아둔 것이라 추가 요청 없음).
+  const PAGE_SIZE = 30;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [query, filters, sortKey, facilities]);
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((c) => Math.min(c + PAGE_SIZE, results.length));
+        }
+      },
+      // 바닥에 닿기 600px 전에 미리 그려서 스크롤이 끊기지 않게
+      { rootMargin: "600px" }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [results.length]);
+
   return (
     <main className="mx-auto max-w-6xl px-4 py-8 pb-28">
       <form
@@ -280,11 +306,18 @@ function SearchContent() {
           조건에 맞는 시설이 없습니다. 필터를 조정해보세요.
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {results.map(({ f, dist }) => (
-            <FacilityCard key={f.id} facility={f} distanceKm={dist} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {results.slice(0, visibleCount).map(({ f, dist }) => (
+              <FacilityCard key={f.id} facility={f} distanceKm={dist} />
+            ))}
+          </div>
+          {visibleCount < results.length && (
+            <div ref={sentinelRef} className="flex justify-center py-6">
+              <PageLoader compact />
+            </div>
+          )}
+        </>
       )}
 
       <CompareSelectBar />
