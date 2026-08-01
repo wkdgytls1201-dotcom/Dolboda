@@ -18,6 +18,8 @@ interface NavItem {
   href: string;
   label: string;
   icon: React.ReactNode;
+  /** 모바일 그리드 카드에서 라벨 아래 보여줄 한 줄 설명 */
+  hint?: string;
 }
 
 // 시터 프로필 데이터(SitterProfileProvider)는 app/mypage/layout.tsx에서 한 번만
@@ -32,14 +34,42 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
     { href: "/mypage/edit", label: "정보 수정", icon: <ChevronRight size={16} /> },
   ];
 
+  // 자주 쓰는 순서대로 — 일자리 확인이 매니저의 주 목적이라 맨 앞에 둔다
   const sitterItems: NavItem[] = [
-    { href: "/mypage/sitter/profile", label: "프로필 관리", icon: <HeartHandshake size={16} /> },
-    { href: "/mypage/sitter/jobs", label: "일자리 관리", icon: <Briefcase size={16} /> },
-    { href: "/mypage/sitter/workplaces", label: "일하기 좋은 시설", icon: <Building2 size={16} /> },
-    { href: "/mypage/sitter/tips", label: "매니저 가이드", icon: <BookOpen size={16} /> },
-    { href: "/mypage/sitter/settlements", label: "정산 관리", icon: <Wallet size={16} /> },
-    { href: "/mypage/sitter/notifications", label: "알림 설정", icon: <Bell size={16} /> },
+    { href: "/mypage/sitter/jobs", label: "일자리 관리", icon: <Briefcase size={18} />, hint: "지원·매칭 현황" },
+    { href: "/mypage/sitter/profile", label: "프로필 관리", icon: <HeartHandshake size={18} />, hint: "보호자에게 보이는 내 정보" },
+    { href: "/mypage/sitter/workplaces", label: "일하기 좋은 시설", icon: <Building2 size={18} />, hint: "근무환경 지수 순" },
+    { href: "/mypage/sitter/tips", label: "매니저 가이드", icon: <BookOpen size={18} />, hint: "지원 성공률 높이기" },
+    { href: "/mypage/sitter/settlements", label: "정산 관리", icon: <Wallet size={18} />, hint: "계좌 등록" },
+    { href: "/mypage/sitter/notifications", label: "알림 설정", icon: <Bell size={18} />, hint: "받을 알림 고르기" },
   ];
+
+  // 모바일에서는 가로 스크롤 대신 2열 그리드 — 예전엔 메뉴 폭이 975px인데 화면이 338px이라
+  // 6개 중 2개만 보이고 나머지는 밀어야 나와서, 있는 줄도 모르고 지나쳤다.
+  function NavCard({ item }: { item: NavItem }) {
+    const active = pathname === item.href;
+    return (
+      <Link
+        href={item.href}
+        // 높이를 고정해야 카드가 들쭉날쭉하지 않다(설명 길이가 제각각이라 자동 높이로 두면 어긋난다)
+        className={`flex h-[112px] flex-col rounded-2xl px-3.5 py-3 transition-colors duration-150 ${
+          active ? "bg-primary-50 ring-1 ring-primary-200" : "bg-white shadow-card"
+        }`}
+      >
+        <span className={`mb-1.5 ${active ? "text-primary-600" : "text-ink-400"}`}>{item.icon}</span>
+        <span
+          className={`text-sm font-bold leading-tight ${active ? "text-primary-700" : "text-ink-900"}`}
+        >
+          {item.label}
+        </span>
+        {item.hint && (
+          <span className="mt-auto line-clamp-2 text-[11px] leading-tight text-ink-400">
+            {item.hint}
+          </span>
+        )}
+      </Link>
+    );
+  }
 
   function NavLink({ item }: { item: NavItem }) {
     const active = pathname === item.href;
@@ -68,26 +98,37 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
 
-        <p className="mb-1.5 mt-4 hidden px-1 text-xs font-semibold text-ink-300 sm:block">
+        <p className="mb-2 mt-5 px-1 text-xs font-bold text-ink-400 sm:mb-1.5 sm:mt-4 sm:font-semibold sm:text-ink-300">
           돌보다 매니저
         </p>
-        <nav className="mt-2 flex gap-1.5 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] sm:mt-0 sm:flex-col sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
-          {isSitter === null ? (
-            // 이미 등록된 시터에게 "등록하기"가 잠깐 떴다 사라지는 걸 막기 위해
-            // 확인 끝나기 전(null)엔 아무것도 안 보여준다.
-            <div className="h-11 w-full animate-pulse rounded-xl bg-ink-100/60" aria-hidden />
-          ) : isSitter ? (
-            sitterItems.map((item) => <NavLink key={item.href} item={item} />)
-          ) : (
-            <Link
-              href="/mypage/sitter/register"
-              className="flex shrink-0 items-center gap-2 rounded-xl border border-dashed border-primary-300 bg-primary-50 px-3.5 py-2.5 text-sm font-semibold text-primary-600 transition-colors duration-150 hover:bg-primary-100 sm:w-full"
-            >
-              <HeartHandshake size={16} />
-              돌보다 매니저 등록하기
-            </Link>
-          )}
-        </nav>
+        {isSitter === null ? (
+          // 이미 등록된 시터에게 "등록하기"가 잠깐 떴다 사라지는 걸 막기 위해
+          // 확인 끝나기 전(null)엔 아무것도 안 보여준다.
+          <div className="h-20 w-full animate-pulse rounded-2xl bg-ink-100/60" aria-hidden />
+        ) : isSitter ? (
+          <>
+            {/* 모바일: 2열 그리드 — 6개가 한 화면에 다 보인다 */}
+            <nav className="grid grid-cols-2 gap-2 sm:hidden">
+              {sitterItems.map((item) => (
+                <NavCard key={item.href} item={item} />
+              ))}
+            </nav>
+            {/* 데스크톱: 기존 사이드바 목록 유지 */}
+            <nav className="hidden sm:flex sm:flex-col sm:gap-1.5">
+              {sitterItems.map((item) => (
+                <NavLink key={item.href} item={item} />
+              ))}
+            </nav>
+          </>
+        ) : (
+          <Link
+            href="/mypage/sitter/register"
+            className="flex min-h-[56px] items-center justify-center gap-2 rounded-2xl border border-dashed border-primary-300 bg-primary-50 px-3.5 text-sm font-bold text-primary-600 transition-colors duration-150 hover:bg-primary-100 sm:w-full"
+          >
+            <HeartHandshake size={18} />
+            돌보다 매니저 등록하기
+          </Link>
+        )}
       </aside>
 
       <div className="flex-1">{children}</div>
