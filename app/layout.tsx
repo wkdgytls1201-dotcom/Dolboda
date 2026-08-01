@@ -7,6 +7,7 @@ import { CompareProvider } from "@/lib/compareContext";
 import { SessionProvider } from "next-auth/react";
 import { ViewGateProvider } from "@/lib/viewGateContext";
 import { FavoritesProvider } from "@/lib/favoritesContext";
+import { CareProfileProvider } from "@/lib/careProfileContext";
 import { AlertPreferencesProvider } from "@/lib/alertPreferencesContext";
 import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from "@/lib/siteConfig";
 import { jsonLdHtml } from "@/lib/jsonLd";
@@ -131,18 +132,23 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: jsonLdHtml(SITE_JSONLD) }}
         />
         <SessionProvider>
-          <ViewGateProvider>
-            <CompareProvider>
-              <FavoritesProvider>
-                <AlertPreferencesProvider>
-                  <Header />
-                  {children}
-                  <Footer />
-                  <MobileTabBar />
-                </AlertPreferencesProvider>
-              </FavoritesProvider>
-            </CompareProvider>
-          </ViewGateProvider>
+          {/* 세션(전체 페이지 로드)당 한 번만 어르신 돌봄 프로필을 받아 여기서 공유한다.
+              이전엔 시설 상세·상담 모달·돌봄요청 마법사가 각자 훅으로 따로 불러서,
+              시설 상세만 28,000여 페이지라 페이지를 옮길 때마다 같은 데이터를 또 받았다. */}
+          <CareProfileProvider>
+            <ViewGateProvider>
+              <CompareProvider>
+                <FavoritesProvider>
+                  <AlertPreferencesProvider>
+                    <Header />
+                    {children}
+                    <Footer />
+                    <MobileTabBar />
+                  </AlertPreferencesProvider>
+                </FavoritesProvider>
+              </CompareProvider>
+            </ViewGateProvider>
+          </CareProfileProvider>
         </SessionProvider>
       </body>
     </html>

@@ -19,21 +19,7 @@ import {
 } from "@/lib/careOptions";
 import { GRADE_BANDS } from "@/lib/gradeTest";
 import { ltcGuideFor } from "@/lib/ltcGuide";
-
-interface CareProfileData {
-  id: string;
-  relation: string;
-  gender: string | null;
-  ageBand: string | null;
-  weightBand: string | null;
-  mobilityLevel: string | null;
-  mealAssistLevel: string | null;
-  toiletAssistLevel: string | null;
-  conditions: string[];
-  ltcGrade: string | null;
-  estimatedBand: string | null;
-  estimatedAt: string | null;
-}
+import { useCareProfiles, type CareProfileSummary } from "@/lib/careProfileContext";
 
 const EMPTY = {
   relation: "",
@@ -48,7 +34,7 @@ const EMPTY = {
 };
 type FormState = typeof EMPTY;
 
-function formFrom(p: CareProfileData): FormState {
+function formFrom(p: CareProfileSummary): FormState {
   return {
     relation: p.relation,
     gender: p.gender ?? "",
@@ -81,7 +67,10 @@ function CareProfileContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const [items, setItems] = useState<CareProfileData[] | null>(null);
+  // 목록은 루트에 마운트된 CareProfileProvider가 세션당 한 번만 받아온 것을 공유한다
+  // (app/layout.tsx 참고) — 이 페이지가 따로 fetch하지 않는다.
+  const { profiles: items, loaded, add, replace: replaceProfile, remove: removeFromContext } =
+    useCareProfiles();
   // null = 목록 보기, "new" = 새로 만들기, 그 외 = 해당 id 수정
   const [editing, setEditing] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY);
@@ -91,23 +80,12 @@ function CareProfileContent() {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   useEffect(() => {
-    let cancelled = false;
-    fetch("/api/care-profile")
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((d) => {
-        if (cancelled) return;
-        setItems(d.items ?? []);
-        // 테스트에서 넘어왔는데 프로필이 하나도 없으면 바로 만들기 화면으로
-        if (pendingEstimate && (d.items ?? []).length === 0) setEditing("new");
-      })
-      .catch(() => {
-        if (!cancelled) setError("정보를 불러오지 못했어요.");
-      });
-    return () => {
-      cancelled = true;
-    };
+    // 테스트에서 넘어왔는데(pendingEstimate) 프로필이 하나도 없으면 바로 만들기 화면으로.
+    // loaded가 이미 true인 채로 이 페이지에 들어왔어도(다른 화면에서 먼저 받아둔 경우)
+    // 마운트 시 한 번은 실행되니 그 경우도 그대로 커버된다.
+    if (loaded && pendingEstimate && items.length === 0) setEditing("new");
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loaded]);
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
@@ -119,7 +97,7 @@ function CareProfileContent() {
     setEditing("new");
   }
 
-  function startEdit(p: CareProfileData) {
+  function startEdit(p: CareProfileSummary) {
     setForm(formFrom(p));
     setError(null);
     setEditing(p.id);
@@ -150,10 +128,8 @@ function CareProfileContent() {
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(data?.error ?? "");
-      setItems((prev) => {
-        const list = prev ?? [];
-        return isNew ? [...list, data] : list.map((p) => (p.id === data.id ? data : p));
-      });
+      if (isNew) add(data);
+      else replaceProfile(data);
       if (pendingEstimate) setPendingEstimate(null);
       setEditing(null);
     } catch (e) {
@@ -170,7 +146,7 @@ function CareProfileContent() {
       method: "DELETE",
     });
     if (res.ok) {
-      setItems((prev) => (prev ?? []).filter((p) => p.id !== id));
+      removeFromContext(id);
       setConfirmDelete(null);
       setEditing(null);
     }
@@ -393,12 +369,9 @@ function CareProfileContent() {
         모시는 어르신의 상태를 저장해두면 돌봄 요청을 올릴 때 자동으로 채워져요.
       </p>
 
-      {error && !items && (
-        <p className="rounded-2xl bg-ink-100/40 p-4 text-sm text-ink-500">{error}</p>
-      )}
-      {!error && items === null && <PageLoader compact />}
+      {!loaded && <PageLoader compact />}
 
-      {items && items.length === 0 && (
+      {loaded && items.length === 0 && (
         <div className="rounded-2xl border border-dashed border-primary-200 bg-primary-50/60 p-8 text-center">
           <p className="mb-1 text-[15px] font-bold text-ink-900">아직 저장된 프로필이 없어요</p>
           <p className="mb-4 text-[13px] leading-relaxed text-ink-500">
@@ -415,7 +388,7 @@ function CareProfileContent() {
         </div>
       )}
 
-      {items && items.length > 0 && (
+      {items.length > 0 && (
         <>
           <div className="space-y-3">
             {items.map((p) => {

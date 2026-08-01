@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { X, CheckCircle2 } from "lucide-react";
-import { useCareProfiles } from "@/lib/useCareProfiles";
+import { useCareProfiles } from "@/lib/careProfileContext";
 
 export function ConsultModal({
   facilityId,

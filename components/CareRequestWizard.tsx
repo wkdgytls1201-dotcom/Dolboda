@@ -40,7 +40,7 @@ import {
   NoticeBox,
 } from "./CareFormFields";
 import { DateRangeCalendar } from "./DateRangeCalendar";
-import { useCareProfiles, type CareProfileSummary } from "@/lib/useCareProfiles";
+import { useCareProfiles, type CareProfileSummary } from "@/lib/careProfileContext";
 
 const STEPS = [
   "어떤 돌봄이 필요하세요",

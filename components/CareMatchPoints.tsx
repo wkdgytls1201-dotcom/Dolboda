@@ -5,7 +5,7 @@ import Link from "next/link";
 import { HeartHandshake, Check, Minus } from "lucide-react";
 import type { Facility } from "@/lib/types";
 import { isHospital } from "@/lib/types";
-import { useCareProfiles, type CareProfileSummary } from "@/lib/useCareProfiles";
+import { useCareProfiles, type CareProfileSummary } from "@/lib/careProfileContext";
 import { gradeFacilityFit } from "@/lib/ltcGuide";
 
 // 시설 상세의 "우리 어르신 기준 체크포인트".

@@ -15,7 +15,7 @@ import {
 import { useSitterProfileContext } from "@/lib/sitterProfileContext";
 import { sitterProgress, sitterLevel } from "@/lib/sitterProgress";
 import { useFavorites } from "@/lib/favoritesContext";
-import { useCareProfiles, type CareProfileSummary } from "@/lib/useCareProfiles";
+import { useCareProfiles, type CareProfileSummary } from "@/lib/careProfileContext";
 import { ltcGuideFor } from "@/lib/ltcGuide";
 
 interface GuardianRequest {
