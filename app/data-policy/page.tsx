@@ -6,35 +6,24 @@ import { SITE_URL } from "@/lib/siteConfig";
 export const metadata: Metadata = {
   title: "데이터 출처와 안심지수 계산 방식",
   description:
-    "돌보다가 사용하는 공공데이터의 출처와 갱신 주기, 돌보다 AI기반 안심지수가 보는 영역과 반영 비중, 데이터가 없을 때의 처리 원칙, 오류 정정 요청 방법을 안내합니다.",
+    "돌보다가 어느 공공기관 자료를 쓰는지, 돌보다 AI기반 안심지수가 무엇을 보는지, 데이터가 없을 때의 처리 원칙과 오류 정정 요청 방법을 안내합니다.",
   alternates: { canonical: "/data-policy" },
 };
 
+// 어느 기관 자료를 쓰는지만 밝힌다. 세부 데이터셋 이름까지 나열하면
+// 읽는 사람에게 도움이 안 되고 우리가 무엇을 어떻게 조합하는지만 드러난다.
 const SOURCES = [
   {
-    name: "국민건강보험공단 장기요양기관 내역",
-    covers: "요양원·주야간보호·방문요양 기본정보, 정원·현원·대기자",
-    cycle: "분기 단위 공개 → 갱신 시 반영",
+    name: "국민건강보험공단",
+    covers: "요양원·주야간보호·방문요양의 기본정보, 정원·인력, 평가등급, 프로그램, 비급여 비용",
   },
   {
-    name: "국민건강보험공단 장기요양기관 상세정보",
-    covers: "인력현황·근속현황·시설현황·프로그램 운영·비급여비용·치매전담실",
-    cycle: "연 단위 공개 → 갱신 시 반영",
+    name: "건강보험심사평가원",
+    covers: "요양병원의 기본정보, 적정성 평가등급, 의사·간호 인력등급, 진료과목",
   },
   {
-    name: "국민건강보험공단 장기요양기관 평가 결과",
-    covers: "평가등급(A~E)과 영역별 세부점수",
-    cycle: "정기평가 주기(약 2~3년)",
-  },
-  {
-    name: "건강보험심사평가원 병원정보서비스",
-    covers: "요양병원 기본정보·적정성 평가등급·의사/간호 인력등급·진료과목·의료장비",
-    cycle: "월 단위 API 조회",
-  },
-  {
-    name: "보건복지부 장기요양급여 비용 고시",
-    covers: "월 한도액, 급여 수가, 본인부담률 (시뮬레이터 계산 기준)",
-    cycle: "연 1회 개정 → 개정 시 반영",
+    name: "보건복지부 고시",
+    covers: "장기요양급여 월 한도액과 본인부담률 (실부담 시뮬레이터 계산 기준)",
   },
 ];
 
@@ -69,19 +58,21 @@ export default function DataPolicyPage() {
       </p>
 
       <section className="mb-10">
-        <h2 className="mb-4 text-lg font-bold text-ink-900">1. 데이터 출처와 갱신 주기</h2>
+        <h2 className="mb-4 text-lg font-bold text-ink-900">1. 데이터 출처</h2>
         <div className="space-y-2.5">
           {SOURCES.map((s) => (
             <div key={s.name} className="rounded-2xl bg-white p-4 shadow-card">
               <p className="mb-1 text-[15px] font-bold text-ink-900">{s.name}</p>
               <p className="text-[14px] leading-relaxed text-ink-500">{s.covers}</p>
-              <p className="mt-1.5 text-[12px] font-semibold text-primary-600">{s.cycle}</p>
             </div>
           ))}
         </div>
+        <p className="mt-3 text-[14px] leading-relaxed text-ink-500">
+          공공기관이 자료를 새로 공개할 때마다 반영합니다.
+        </p>
         <p className="mt-3 rounded-2xl bg-ink-100/40 p-4 text-[13px] leading-relaxed text-ink-500">
           공공데이터는 기관이 제출한 시점의 값이라 실제 현황과 차이가 있을 수 있습니다. 시설별
-          상세페이지 하단에 해당 시설 데이터의 기준일을 표시합니다.
+          상세페이지 하단에 해당 시설 데이터의 기준일을 표시하니 함께 확인해 주세요.
         </p>
       </section>
 

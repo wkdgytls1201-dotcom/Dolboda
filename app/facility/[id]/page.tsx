@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { rowToFacility, toCardFacility } from "@/lib/facilityRepo";
+import { compareFacilities, rankByIntent } from "@/lib/similarity";
 import FacilityDetailClient from "./FacilityDetailClient";
 
 // 서버에서 시설을 조회해 클라이언트 컴포넌트에 넘긴다.
@@ -13,20 +14,32 @@ export default async function FacilityDetailPage({ params }: { params: { id: str
 
   const facility = rowToFacility(row);
 
-  // "다른 시설도 확인해 보세요" — 같은 시군구 시설을 서버에서 함께 내려준다.
-  // 내부 링크가 초기 HTML에 들어가야 크롤러가 인접 시설 페이지까지 타고 갈 수 있다.
+  // "이 시설과 비슷한 곳" 첫 화면분을 서버에서 미리 계산해 넘긴다.
+  // 클라이언트에서만 불러오면 (1) 인접 시설 링크가 초기 HTML에 없어 크롤러가 타고 갈 수 없고
+  // (2) 첫 진입 때 스켈레톤이 한 번 깜빡인다. 탭을 바꿀 때만 추가로 조회한다.
   const sigungu = row.address.trim().split(/\s+/)[1] ?? "";
   const relatedRows = sigungu
     ? await prisma.facility.findMany({
-        where: { address: { contains: sigungu }, id: { not: row.id } },
-        take: 24,
+        where: {
+          address: { contains: sigungu },
+          id: { not: row.id },
+          facilityType: row.facilityType,
+          dataSource: { not: "mock" },
+        },
+        take: 60,
       })
     : [];
 
-  return (
-    <FacilityDetailClient
-      facility={facility}
-      relatedPool={relatedRows.map((r) => toCardFacility(rowToFacility(r)))}
-    />
-  );
+  const scored = relatedRows.map((r) => compareFacilities(facility, rowToFacility(r)));
+  const initialSimilar = rankByIntent(facility, scored, "similar")
+    .slice(0, 12)
+    .map((s) => ({
+      facility: toCardFacility(s.facility),
+      distanceKm: s.distanceKm,
+      similarity: s.similarity,
+      reasons: s.reasons,
+      deltas: s.deltas,
+    }));
+
+  return <FacilityDetailClient facility={facility} initialSimilar={initialSimilar} />;
 }

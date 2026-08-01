@@ -10,7 +10,7 @@ import { formatDistance } from "@/lib/distance";
 import { INTENT_META, type SimilarIntent, type SimilarDelta } from "@/lib/similarity";
 import { FacilityThumbnail } from "./FacilityThumbnail";
 
-interface SimilarItem {
+export interface SimilarItem {
   facility: Facility;
   distanceKm?: number;
   similarity: number;
@@ -22,11 +22,20 @@ interface SimilarItem {
 // 그래서 단순 목록이 아니라 의도별 탭으로 나누고, 현재 시설 대비 차이를 배지로 보여준다.
 const INTENTS: SimilarIntent[] = ["similar", "better", "available", "cheaper", "closer"];
 
-export function SimilarFacilities({ facilityId }: { facilityId: string }) {
+export function SimilarFacilities({
+  facilityId,
+  initialItems = [],
+}: {
+  facilityId: string;
+  /** 서버에서 계산해 넘어온 "비슷한 곳" — 첫 화면은 이걸 그대로 써서 스켈레톤을 건너뛴다 */
+  initialItems?: SimilarItem[];
+}) {
   const [intent, setIntent] = useState<SimilarIntent>("similar");
-  const [items, setItems] = useState<SimilarItem[] | null>(null);
+  const [items, setItems] = useState<SimilarItem[] | null>(initialItems);
   // 의도별 결과를 캐시해 탭을 오갈 때 매번 다시 부르지 않게 한다
-  const [cache, setCache] = useState<Partial<Record<SimilarIntent, SimilarItem[]>>>({});
+  const [cache, setCache] = useState<Partial<Record<SimilarIntent, SimilarItem[]>>>({
+    similar: initialItems,
+  });
 
   useEffect(() => {
     const cached = cache[intent];

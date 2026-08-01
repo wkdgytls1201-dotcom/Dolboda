@@ -31,10 +31,8 @@ import { KakaoMap } from "@/components/KakaoMap";
 import { KakaoRoadview } from "@/components/KakaoRoadview";
 import { ConsultModal } from "@/components/ConsultModal";
 import { DataSourceNote } from "@/components/DataSourceNote";
-import { FacilityCard } from "@/components/FacilityCard";
-import { SimilarFacilities } from "@/components/SimilarFacilities";
+import { SimilarFacilities, type SimilarItem } from "@/components/SimilarFacilities";
 import { useCompare } from "@/lib/compareContext";
-import { haversineDistanceKm } from "@/lib/distance";
 import { InfoTooltip } from "@/components/InfoTooltip";
 import { TOOLTIPS } from "@/lib/tooltips";
 import {
@@ -73,12 +71,12 @@ const NURSE_GRADE_TABLE = [
 // 검색봇이 읽는 초기 HTML이 비어버려서 28,000여 개 상세페이지가 SEO 자산이 되지 못한다.
 export default function FacilityDetailClient({
   facility,
-  relatedPool,
+  initialSimilar,
 }: {
   facility: Facility;
-  relatedPool: Facility[];
+  /** 서버에서 미리 계산한 "비슷한 곳" 첫 화면분 — 초기 HTML에 링크가 실려야 크롤러가 탄다 */
+  initialSimilar: SimilarItem[];
 }) {
-  const facilities = relatedPool;
   const { toggle, isSelected, canAddMore } = useCompare();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { data: session } = useSession();
@@ -88,7 +86,6 @@ export default function FacilityDetailClient({
   const [showGradeCriteria, setShowGradeCriteria] = useState(false);
   // 프로그램 운영 아코디언 — null이면 첫 번째 종류만 열림, "__none__"이면 전부 접힘
   const [openProgramCategory, setOpenProgramCategory] = useState<string | null>(null);
-  const relatedTrackRef = useRef<HTMLDivElement>(null);
   // 돌보다 AI기반 안심지수 맥락(지역 평균·인근 요양병원 거리) — 시설당 1회 조회
   const [scoreContext, setScoreContext] = useState<{
     regionName: string | null;
@@ -109,13 +106,6 @@ export default function FacilityDetailClient({
       cancelled = true;
     };
   }, [facility.id]);
-
-  function scrollRelated(direction: "left" | "right") {
-    const track = relatedTrackRef.current;
-    if (!track) return;
-    const cardWidth = track.firstElementChild?.clientWidth ?? 288;
-    track.scrollBy({ left: direction === "left" ? -(cardWidth + 16) : cardWidth + 16, behavior: "smooth" });
-  }
 
   // 카드/배너 클릭 시점에 이미 게이트를 통과했지만, 직접 URL로 들어온 경우를 대비해 조회 기록만 남긴다.
   useEffect(() => {
@@ -186,24 +176,6 @@ export default function FacilityDetailClient({
   }
 
   const tenureRows = (nhis?.tenure ?? []).filter((t) => t.total > 0).slice(0, 5);
-
-  const relatedFacilities = facilities.filter((f) => f.id !== facility.id)
-    .map((f) => ({
-      f,
-      dist:
-        facility.lat !== undefined &&
-        facility.lng !== undefined &&
-        f.lat !== undefined &&
-        f.lng !== undefined
-          ? haversineDistanceKm(facility.lat, facility.lng, f.lat, f.lng)
-          : undefined,
-      sameType: f.facilityType === facility.facilityType,
-    }))
-    .sort((a, b) => {
-      if (a.sameType !== b.sameType) return a.sameType ? -1 : 1;
-      return (a.dist ?? Infinity) - (b.dist ?? Infinity);
-    })
-    .slice(0, 6);
 
   return (
     <main className="pb-28">
@@ -1035,13 +1007,13 @@ export default function FacilityDetailClient({
           )}
         </DetailSection>
 
-        {relatedFacilities.length > 0 && (
+        {initialSimilar.length > 0 && (
           <DetailSection id="related" title="이 시설과 비슷한 곳">
             <p className="mb-3 text-xs leading-relaxed text-ink-500">
               규모·프로그램 구성·평가등급·비용대를 비교해 비슷한 시설을 찾았어요. 이 시설과
               무엇이 다른지 함께 보여드려요.
             </p>
-            <SimilarFacilities facilityId={facility.id} />
+            <SimilarFacilities facilityId={facility.id} initialItems={initialSimilar} />
           </DetailSection>
         )}
 
