@@ -11,6 +11,16 @@ const SCALE_COLORS: Record<number, string[]> = {
   6: ["bg-primary-500", "bg-accent-400", "bg-mint-500", "bg-ink-300", "bg-ink-300", "bg-ink-300"],
 };
 
+// 척도 막대와 같은 팔레트의 글자색 — 숫자와 막대 색이 따로 놀면 무슨 뜻인지 읽히지 않는다.
+// (1등급 코랄이면 숫자도 코랄, 2등급 골드면 숫자도 골드)
+export function gradeTextClass(grade: number): string {
+  return (
+    ["text-primary-600", "text-accent-500", "text-mint-600", "text-ink-500", "text-ink-500", "text-ink-500"][
+      grade - 1
+    ] ?? "text-ink-500"
+  );
+}
+
 export function GradeScaleBar({
   grade,
   levels,

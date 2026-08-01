@@ -63,36 +63,60 @@ export function DolbodaScoreCard({
         <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-center sm:gap-5 sm:text-left">
           <ScoreRing total={score.total} />
           <div className="min-w-0">
-            <span className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur">
-              <Sparkles size={11} />
+            <span className="inline-flex items-center gap-1 rounded-full bg-white/20 px-3 py-1.5 text-xs font-bold text-white backdrop-blur">
+              <Sparkles size={12} />
               돌보다 AI기반 안심지수
             </span>
-            <p className="mt-2 text-xl font-extrabold text-white">{level.label}</p>
-            <p className="mt-1 text-[11px] leading-relaxed text-white/70">
-              돌보다가 자체 설계한 6개 영역 지표 · 공공데이터 {score.coverage}% 확보 기준
-            </p>
+            <p className="mt-2 text-2xl font-extrabold text-white">{level.label}</p>
           </div>
         </div>
 
-        {/* 같은 지역 평균 대비 — 보호자가 가장 궁금해하는 "우리 동네에서 어느 정도?"를 한 줄로 */}
+        {/* 같은 지역 평균 대비 — 보호자가 가장 궁금해하는 "우리 동네에서 어느 정도?".
+            숫자가 작으면 그냥 지나쳐서, 평균과 차이를 크게 보여준다 */}
         {regionContext && (
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-xl bg-white/15 px-3 py-2 text-center text-[11px] text-white/90 backdrop-blur sm:justify-start sm:text-left">
-            <span>
-              {regionContext.name} 같은 유형 {regionContext.count}곳 평균{" "}
-              <b className="font-extrabold">{regionContext.average}점</b>
-            </span>
-            <span
-              className={`rounded-full px-2 py-0.5 font-extrabold ${
-                score.total >= regionContext.average
-                  ? "bg-white text-royal-600"
-                  : "bg-white/25 text-white"
-              }`}
-            >
-              이 시설 {score.total >= regionContext.average ? "+" : ""}
-              {score.total - regionContext.average}점
-            </span>
+          <div className="mt-4 rounded-2xl bg-white/15 px-4 py-3 backdrop-blur">
+            <p className="mb-1.5 text-center text-xs text-white/80 sm:text-left">
+              {regionContext.name} 같은 유형 {regionContext.count}곳과 비교하면
+            </p>
+            <div className="flex items-center justify-center gap-3 sm:justify-start">
+              <span className="text-center sm:text-left">
+                <span className="block text-[11px] text-white/70">지역 평균</span>
+                <span className="text-xl font-bold text-white/90">{regionContext.average}점</span>
+              </span>
+              <span className="text-lg text-white/40" aria-hidden>
+                →
+              </span>
+              <span
+                className={`rounded-xl px-3 py-1.5 text-center ${
+                  score.total >= regionContext.average ? "bg-white" : "bg-white/25"
+                }`}
+              >
+                <span
+                  className={`block text-[11px] font-semibold ${
+                    score.total >= regionContext.average ? "text-royal-500" : "text-white/80"
+                  }`}
+                >
+                  이 시설
+                </span>
+                <span
+                  className={`text-xl font-extrabold ${
+                    score.total >= regionContext.average ? "text-royal-600" : "text-white"
+                  }`}
+                >
+                  {score.total >= regionContext.average ? "+" : ""}
+                  {score.total - regionContext.average}점
+                </span>
+              </span>
+            </div>
           </div>
         )}
+
+        {/* 설계 근거는 히어로 바로 아래에 — 점수만 보고 넘어가지 않게 */}
+        <p className="mt-3 text-center text-xs leading-relaxed text-white/75 sm:text-left">
+          돌보다가 자체 설계한 6개 영역 지표
+          <span className="mx-1.5 text-white/40">·</span>
+          공공데이터 {score.coverage}% 확보 기준
+        </p>
       </div>
 
       <div className="p-4 sm:p-5">

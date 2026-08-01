@@ -38,6 +38,7 @@ import { haversineDistanceKm } from "@/lib/distance";
 import { InfoTooltip } from "@/components/InfoTooltip";
 import { TOOLTIPS } from "@/lib/tooltips";
 import {
+  gradeTextClass,
   CapacityMeter,
   DomainRadar,
   EquipmentGrid,
@@ -426,20 +427,20 @@ export default function FacilityDetailClient({
                 기준표 전체는 접어둔다. */}
             <DetailSection id="staff-grade" title="의사·간호인력 등급" tooltip={TOOLTIPS.nurseGrade}>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="rounded-2xl bg-mint-50/70 p-4">
+                <div className="rounded-2xl bg-ink-100/30 p-4">
                   <div className="mb-3 flex items-baseline justify-between">
-                    <p className="text-sm font-semibold text-ink-700">의사 인력</p>
+                    <p className="text-[15px] font-semibold text-ink-700">의사 인력</p>
                     {hospital.doctorGrade > 0 && (
-                      <p className="text-xl font-extrabold text-mint-700">
+                      <p className={`text-2xl font-extrabold ${gradeTextClass(hospital.doctorGrade)}`}>
                         {hospital.doctorGrade}
-                        <span className="text-sm font-bold">등급</span>
+                        <span className="text-[15px] font-bold">등급</span>
                       </p>
                     )}
                   </div>
                   {hospital.doctorGrade > 0 ? (
                     <>
                       <GradeScaleBar grade={hospital.doctorGrade} levels={4} />
-                      <p className="mt-3 rounded-xl bg-white/70 px-3 py-2 text-xs leading-relaxed text-ink-500">
+                      <p className="mt-3 rounded-xl bg-white px-3 py-2.5 text-sm leading-relaxed text-ink-600">
                         의사 1명이 환자{" "}
                         <b className="text-ink-900">
                           {DOCTOR_GRADE_TABLE.find((r) => r.grade === hospital.doctorGrade)?.desc}
@@ -448,23 +449,23 @@ export default function FacilityDetailClient({
                       </p>
                     </>
                   ) : (
-                    <p className="text-sm text-ink-300">아직 공개된 등급이 없어요</p>
+                    <p className="text-[15px] text-ink-400">아직 공개된 등급이 없어요</p>
                   )}
                 </div>
-                <div className="rounded-2xl bg-primary-50/70 p-4">
+                <div className="rounded-2xl bg-ink-100/30 p-4">
                   <div className="mb-3 flex items-baseline justify-between">
-                    <p className="text-sm font-semibold text-ink-700">간호 인력</p>
+                    <p className="text-[15px] font-semibold text-ink-700">간호 인력</p>
                     {hospital.nurseGrade > 0 && (
-                      <p className="text-xl font-extrabold text-primary-700">
+                      <p className={`text-2xl font-extrabold ${gradeTextClass(hospital.nurseGrade)}`}>
                         {hospital.nurseGrade}
-                        <span className="text-sm font-bold">등급</span>
+                        <span className="text-[15px] font-bold">등급</span>
                       </p>
                     )}
                   </div>
                   {hospital.nurseGrade > 0 ? (
                     <>
                       <GradeScaleBar grade={hospital.nurseGrade} levels={6} />
-                      <p className="mt-3 rounded-xl bg-white/70 px-3 py-2 text-xs leading-relaxed text-ink-500">
+                      <p className="mt-3 rounded-xl bg-white px-3 py-2.5 text-sm leading-relaxed text-ink-600">
                         간호사 1명이 환자{" "}
                         <b className="text-ink-900">
                           {NURSE_GRADE_TABLE.find((r) => r.grade === hospital.nurseGrade)?.desc}
@@ -473,7 +474,7 @@ export default function FacilityDetailClient({
                       </p>
                     </>
                   ) : (
-                    <p className="text-sm text-ink-300">아직 공개된 등급이 없어요</p>
+                    <p className="text-[15px] text-ink-400">아직 공개된 등급이 없어요</p>
                   )}
                 </div>
               </div>

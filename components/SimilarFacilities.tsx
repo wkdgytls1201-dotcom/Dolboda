@@ -20,7 +20,7 @@ interface SimilarItem {
 
 // 보호자가 대안을 찾는 순간에는 이유가 있다 — "자리가 없네", "너무 머네", "비싸네".
 // 그래서 단순 목록이 아니라 의도별 탭으로 나누고, 현재 시설 대비 차이를 배지로 보여준다.
-const INTENTS: SimilarIntent[] = ["similar", "closer", "available", "cheaper", "better"];
+const INTENTS: SimilarIntent[] = ["similar", "better", "available", "cheaper", "closer"];
 
 export function SimilarFacilities({ facilityId }: { facilityId: string }) {
   const [intent, setIntent] = useState<SimilarIntent>("similar");
