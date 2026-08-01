@@ -268,7 +268,12 @@ function SearchContent() {
 
       {/* top 값은 헤더 높이와 같아야 한다 (모바일 h-12 / 데스크톱 sm:h-16) */}
       <div className="sticky z-20 mb-6 flex flex-col gap-2 rounded-2xl bg-white/90 p-2.5 shadow-card backdrop-blur [top:calc(3rem+var(--safe-top))] sm:flex-row sm:items-start sm:justify-between sm:gap-3 sm:p-3 sm:[top:calc(4rem+var(--safe-top))]">
-        <FilterBar filters={filters} onChange={setFilters} facilities={facilities} />
+        <FilterBar
+          filters={filters}
+          onChange={setFilters}
+          facilities={facilities}
+          resultCount={results.length}
+        />
 
         <div className="flex shrink-0 items-center gap-2">
           <div className="flex flex-1 overflow-hidden rounded-xl border border-ink-100 sm:flex-none">
