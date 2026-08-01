@@ -29,8 +29,10 @@ function pointsFor(profile: CareProfileSummary, f: Facility): Point[] {
   // 장기요양등급으로 이 유형의 시설을 이용할 수 있는지 — 확실한 조합만 말한다
   const fit = gradeFacilityFit(profile.ltcGrade, f.facilityType);
   if (fit) {
+    // "등급"은 받침(ㅂ)이 있어 "으로"가 맞다("1등급으로 이용") — 여기 오는 값은
+    // 전부 "N등급"·"인지지원등급" 형태라(gradeFacilityFit이 그 외엔 null을 준다) 예외가 없다.
     points.push({
-      label: `${profile.ltcGrade}로 이용`,
+      label: `${profile.ltcGrade}으로 이용`,
       ok: fit.ok,
       detail: fit.note,
     });
@@ -100,7 +102,7 @@ export function CareMatchPoints({ facility }: { facility: Facility }) {
   if (points.length === 0) return null;
 
   return (
-    <section className="mb-6 rounded-2xl border border-primary-100 bg-primary-50/40 p-4 sm:p-5">
+    <section className="animate-fade-up mb-6 rounded-2xl border border-primary-100 bg-primary-50/40 p-4 sm:p-5">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h3 className="flex items-center gap-2 text-[15px] font-bold text-ink-900">
           <HeartHandshake size={16} className="text-primary-500" />
@@ -113,10 +115,10 @@ export function CareMatchPoints({ facility }: { facility: Facility }) {
                 key={p.id}
                 type="button"
                 onClick={() => setActiveId(p.id)}
-                className={`flex min-h-[40px] items-center rounded-full px-3.5 text-[12px] font-bold transition-colors ${
+                className={`flex min-h-[40px] items-center rounded-full px-3.5 text-[12px] font-bold transition-all duration-200 ease-snappy active:scale-95 ${
                   p.id === active.id
                     ? "bg-primary-500 text-white"
-                    : "bg-white text-ink-500 shadow-card"
+                    : "bg-white text-ink-500 shadow-card hover:-translate-y-0.5"
                 }`}
               >
                 {p.relation}
@@ -126,15 +128,25 @@ export function CareMatchPoints({ facility }: { facility: Facility }) {
         )}
       </div>
 
-      <ul className="space-y-2">
-        {points.map((pt) => (
-          <li key={pt.label} className="flex items-start gap-2.5">
+      {/* 어르신을 바꾸면 체크리스트 내용이 통째로 바뀌므로, key로 강제 리마운트해
+          한 줄씩 순서대로(stagger) 다시 나타나게 한다 — 그냥 값만 바뀌면 눈에 띄지 않는다 */}
+      <ul key={active.id} className="space-y-2">
+        {points.map((pt, i) => (
+          <li
+            key={pt.label}
+            className="animate-fade-up flex items-start gap-2.5"
+            style={{ animationDelay: `${i * 60}ms` }}
+          >
             <span
-              className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
+              className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition-colors duration-300 ${
                 pt.ok ? "bg-mint-100 text-mint-700" : "bg-ink-100/60 text-ink-300"
               }`}
             >
-              {pt.ok ? <Check size={12} /> : <Minus size={12} />}
+              {pt.ok ? (
+                <Check size={12} className="animate-pop" style={{ animationDelay: `${i * 60 + 120}ms` }} />
+              ) : (
+                <Minus size={12} />
+              )}
             </span>
             <span className="text-[13px] leading-relaxed text-ink-700">
               <strong className="font-bold">{pt.label}</strong>
@@ -146,7 +158,10 @@ export function CareMatchPoints({ facility }: { facility: Facility }) {
 
       <p className="mt-3 text-[12px] leading-relaxed text-ink-400">
         저장하신 돌봄 프로필과 공공데이터를 맞춰본 참고 정보예요.{" "}
-        <Link href="/mypage/care-profile" className="font-semibold text-ink-500 underline">
+        <Link
+          href="/mypage/care-profile"
+          className="font-semibold text-ink-500 underline transition-colors hover:text-primary-600"
+        >
           프로필 수정
         </Link>
       </p>

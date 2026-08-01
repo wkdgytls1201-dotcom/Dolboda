@@ -44,12 +44,14 @@ export function ChipSelect({
         const on = value === opt;
         return (
           <button
-            key={opt}
+            // opt-on 조합으로 키를 걸어서, 선택 상태가 "막 바뀐" 버튼만 다시 마운트되게 한다
+            // (매번 전체가 아니라 방금 눌린 것만 살짝 튀어 보임 — 별점 선택과 같은 방식)
+            key={`${opt}-${on}`}
             type="button"
             onClick={() => onChange(on ? "" : opt)}
             className={`min-h-[48px] rounded-xl border px-3.5 py-3 text-left text-sm font-semibold leading-snug transition-all duration-150 active:scale-[0.98] ${
               on
-                ? "border-primary-500 bg-primary-50 text-primary-700 shadow-soft"
+                ? "animate-pop border-primary-500 bg-primary-50 text-primary-700 shadow-soft"
                 : "border-ink-100 bg-white text-ink-700 hover:border-primary-200 hover:bg-primary-50/40"
             }`}
           >
@@ -79,12 +81,12 @@ export function ChipMultiSelect({
         const on = values.includes(opt);
         return (
           <button
-            key={opt}
+            key={`${opt}-${on}`}
             type="button"
             onClick={() => onToggle(opt)}
             className={`flex min-h-[48px] items-center justify-between gap-1.5 rounded-xl border px-3.5 py-3 text-left text-sm font-semibold leading-snug transition-all duration-150 active:scale-[0.98] ${
               on
-                ? "border-primary-500 bg-primary-50 text-primary-700 shadow-soft"
+                ? "animate-pop border-primary-500 bg-primary-50 text-primary-700 shadow-soft"
                 : "border-ink-100 bg-white text-ink-700 hover:border-primary-200 hover:bg-primary-50/40"
             }`}
           >

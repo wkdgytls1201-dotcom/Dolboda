@@ -50,9 +50,11 @@ export function ApplyConfirmSheet({
         type="button"
         aria-label="닫기"
         onClick={onClose}
-        className="absolute inset-0 bg-ink-900/50 backdrop-blur-[2px]"
+        className="animate-overlay-in absolute inset-0 bg-ink-900/50 backdrop-blur-[2px]"
       />
-      <div className="relative w-full max-w-md rounded-t-3xl bg-white p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-card-hover sm:rounded-3xl sm:p-6">
+      {/* 모바일에서는 진짜 바텀시트라 아래에서 올라오는 slide-up이 자연스럽고,
+          데스크톱(sm:)에서는 중앙에 뜨는 카드라 같은 애니메이션이어도 위화감이 없다 */}
+      <div className="animate-slide-up relative w-full max-w-md rounded-t-3xl bg-white p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-card-hover sm:rounded-3xl sm:p-6">
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
             <h2 className="text-lg font-bold text-ink-900">이 돌봄에 지원할까요?</h2>

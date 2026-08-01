@@ -89,8 +89,8 @@ export function AuthModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-ink-900/40 px-4 py-8">
-      <div className="my-auto max-h-[85vh] w-full max-w-sm overflow-y-auto rounded-2xl bg-white p-6 shadow-soft">
+    <div className="animate-overlay-in fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-ink-900/40 px-4 py-8">
+      <div className="animate-modal-in my-auto max-h-[85vh] w-full max-w-sm overflow-y-auto rounded-2xl bg-white p-6 shadow-soft">
         <div className="mb-2 flex items-center justify-between">
           <h3 className="text-lg font-bold text-ink-900">로그인</h3>
           <button

@@ -10,9 +10,9 @@ export function LocationConsentModal({
   onSkip: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 px-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-soft">
-        <span className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary-50 text-primary-600">
+    <div className="animate-overlay-in fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 px-4">
+      <div className="animate-modal-in w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-soft">
+        <span className="animate-pop mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary-50 text-primary-600">
           <MapPin size={26} />
         </span>
         <h3 className="mb-2 text-lg font-bold text-ink-900">

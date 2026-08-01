@@ -495,11 +495,11 @@ export default function SitterRegisterPage() {
 
       {showAgreeModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 px-4"
+          className="animate-overlay-in fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 px-4"
           onClick={() => setShowAgreeModal(false)}
         >
           <div
-            className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-card-hover"
+            className="animate-modal-in w-full max-w-sm rounded-2xl bg-white p-5 shadow-card-hover"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="mb-1.5 text-base font-bold text-ink-900">약관에 동의하시겠어요?</h2>

@@ -113,7 +113,8 @@ export function MyPageDashboard() {
       <Link
         key="request"
         href="/care-request"
-        className="block rounded-2xl bg-gradient-to-br from-royal-500 to-royal-600 p-5 text-white shadow-royal transition-transform hover:-translate-y-0.5 sm:p-6"
+        className="animate-fade-up block rounded-2xl bg-gradient-to-br from-royal-500 to-royal-600 p-5 text-white shadow-royal transition-transform hover:-translate-y-0.5 sm:p-6"
+        style={{ animationDelay: `${cards.length * 70}ms` }}
       >
         <p className="mb-1.5 flex items-center gap-1.5 text-[13px] font-bold text-white/80">
           <HeartHandshake size={14} />
@@ -155,7 +156,11 @@ export function MyPageDashboard() {
     // 프로필 완성도 — 100%면 숨기고, 미완성일 때만 다음 할 일을 보여준다
     if (progress.percent < 100) {
       cards.push(
-        <div key="progress" className="rounded-2xl bg-white p-5 shadow-card sm:p-6">
+        <div
+          key="progress"
+          className="animate-fade-up rounded-2xl bg-white p-5 shadow-card sm:p-6"
+          style={{ animationDelay: `${cards.length * 70}ms` }}
+        >
           <div className="mb-2.5 flex items-center justify-between">
             <p className="text-[15px] font-bold text-ink-900">프로필 완성도</p>
             <p className="text-base font-extrabold text-primary-600">{progress.percent}%</p>
@@ -197,13 +202,18 @@ export function MyPageDashboard() {
     }
 
     cards.push(
-      <div key="activity" className="rounded-2xl bg-white p-5 shadow-card sm:p-6">
+      <div
+        key="activity"
+        className="animate-fade-up rounded-2xl bg-white p-5 shadow-card sm:p-6"
+        style={{ animationDelay: `${cards.length * 70}ms` }}
+      >
         <div className="mb-3.5 flex flex-wrap items-center justify-between gap-2">
           <p className="flex items-center gap-2.5 text-[15px] font-bold text-ink-900">
-            {/* 레벨 이모지를 칩으로 감싸 "내 등급"이라는 느낌을 준다 — 숫자 나열보다 먼저 눈에 온다 */}
+            {/* 레벨 이모지를 칩으로 감싸 "내 등급"이라는 느낌을 준다 — 숫자 나열보다 먼저 눈에 온다.
+                pop으로 살짝 통통 튀며 등장 — 배지·성취감을 주는 자리라 잘 어울린다 */}
             <span
               aria-hidden
-              className="flex h-9 w-9 items-center justify-center rounded-xl bg-ivory-100 text-lg"
+              className="animate-pop flex h-9 w-9 items-center justify-center rounded-xl bg-ivory-100 text-lg"
             >
               {level.emoji}
             </span>
@@ -212,7 +222,7 @@ export function MyPageDashboard() {
           {openJobs !== null && openJobs > 0 && (
             <Link
               href="/mypage/sitter/jobs"
-              className="flex items-center gap-1.5 rounded-full bg-royal-50 px-3 py-1.5 text-[13px] font-bold text-royal-600 transition-colors hover:bg-royal-100"
+              className="animate-pop flex items-center gap-1.5 rounded-full bg-royal-50 px-3 py-1.5 text-[13px] font-bold text-royal-600 transition-colors hover:bg-royal-100"
             >
               <Briefcase size={13} />새 일자리 {openJobs}건
             </Link>
@@ -240,10 +250,11 @@ export function MyPageDashboard() {
       <Link
         key="tips"
         href="/mypage/sitter/tips"
-        className="flex items-center justify-between gap-3 rounded-2xl border border-royal-100 bg-royal-50/60 p-4 transition-colors hover:bg-royal-50 sm:p-5"
+        className="animate-fade-up group flex items-center justify-between gap-3 rounded-2xl border border-royal-100 bg-royal-50/60 p-4 transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:bg-royal-50 hover:shadow-card-hover sm:p-5"
+        style={{ animationDelay: `${cards.length * 70}ms` }}
       >
         <span className="flex items-center gap-3">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-royal-500 shadow-soft">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-royal-500 shadow-soft transition-transform duration-200 group-hover:scale-110">
             <BookOpen size={18} />
           </span>
           <span>
@@ -253,7 +264,10 @@ export function MyPageDashboard() {
             </span>
           </span>
         </span>
-        <ChevronRight size={18} className="shrink-0 text-ink-300" />
+        <ChevronRight
+          size={18}
+          className="shrink-0 text-ink-300 transition-transform duration-200 group-hover:translate-x-0.5"
+        />
       </Link>
     );
   }
@@ -268,7 +282,11 @@ export function MyPageDashboard() {
       const cta = profileCta(p);
       const summary = [p.ageBand, p.mobilityLevel].filter(Boolean).join(" · ");
       cards.push(
-        <div key="care-profile" className="rounded-2xl bg-white p-5 shadow-card sm:p-6">
+        <div
+          key="care-profile"
+          className="animate-fade-up rounded-2xl bg-white p-5 shadow-card sm:p-6"
+          style={{ animationDelay: `${cards.length * 70}ms` }}
+        >
           <div className="mb-2.5 flex items-center justify-between gap-2">
             <p className="flex items-center gap-2 text-[15px] font-bold text-ink-900">
               <HeartHandshake size={16} className="text-primary-500" />
@@ -276,7 +294,7 @@ export function MyPageDashboard() {
             </p>
             <Link
               href="/mypage/care-profile"
-              className="text-[12px] font-semibold text-ink-300 hover:text-ink-500"
+              className="text-[12px] font-semibold text-ink-300 transition-colors hover:text-ink-500"
             >
               관리
             </Link>
@@ -284,10 +302,11 @@ export function MyPageDashboard() {
           {summary && <p className="mb-3 text-[13px] text-ink-500">{summary}</p>}
           {p.conditions.length > 0 && (
             <div className="mb-3.5 flex flex-wrap gap-1.5">
-              {p.conditions.slice(0, 4).map((c) => (
+              {p.conditions.slice(0, 4).map((c, i) => (
                 <span
                   key={c}
-                  className="rounded-full bg-ivory-100 px-2.5 py-1 text-[12px] font-medium text-ink-500"
+                  className="animate-fade-up rounded-full bg-ivory-100 px-2.5 py-1 text-[12px] font-medium text-ink-500"
+                  style={{ animationDelay: `${i * 50 + 100}ms` }}
                 >
                   {c}
                 </span>
@@ -296,10 +315,13 @@ export function MyPageDashboard() {
           )}
           <Link
             href={cta.href}
-            className="flex min-h-[48px] items-center justify-between gap-2 rounded-xl bg-primary-50 px-4 text-[13px] font-semibold text-primary-700 transition-colors hover:bg-primary-100"
+            className="group flex min-h-[48px] items-center justify-between gap-2 rounded-xl bg-primary-50 px-4 text-[13px] font-semibold text-primary-700 transition-all duration-200 ease-snappy hover:bg-primary-100 active:scale-[0.98]"
           >
             {cta.label}
-            <ArrowRight size={14} className="shrink-0" />
+            <ArrowRight
+              size={14}
+              className="shrink-0 transition-transform duration-200 group-hover:translate-x-0.5"
+            />
           </Link>
         </div>
       );
@@ -308,10 +330,11 @@ export function MyPageDashboard() {
         <Link
           key="care-profile-empty"
           href="/mypage/care-profile"
-          className="flex items-center justify-between gap-3 rounded-2xl border border-dashed border-primary-200 bg-primary-50/50 p-4 transition-colors hover:bg-primary-50"
+          className="animate-fade-up group flex items-center justify-between gap-3 rounded-2xl border border-dashed border-primary-200 bg-primary-50/50 p-4 transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:border-primary-300 hover:bg-primary-50"
+          style={{ animationDelay: `${cards.length * 70}ms` }}
         >
           <span className="flex items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-primary-500 shadow-soft">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-primary-500 shadow-soft transition-transform duration-200 group-hover:scale-110">
               <HeartHandshake size={17} />
             </span>
             <span>
@@ -323,7 +346,10 @@ export function MyPageDashboard() {
               </span>
             </span>
           </span>
-          <ChevronRight size={16} className="shrink-0 text-ink-300" />
+          <ChevronRight
+            size={16}
+            className="shrink-0 text-ink-300 transition-transform duration-200 group-hover:translate-x-0.5"
+          />
         </Link>
       );
     }
@@ -333,7 +359,11 @@ export function MyPageDashboard() {
   // 같은 이유로 isSitter === false만 확정 조건으로 쓴다(위 주석 참고)
   if (request === null && isSitter === false) {
     cards.push(
-      <div key="start" className="rounded-2xl bg-white p-5 shadow-card sm:p-6">
+      <div
+        key="start"
+        className="animate-fade-up rounded-2xl bg-white p-5 shadow-card sm:p-6"
+        style={{ animationDelay: `${cards.length * 70}ms` }}
+      >
         <p className="mb-1.5 text-[15px] font-bold text-ink-900">
           아직 진행 중인 돌봄 요청이 없어요
         </p>
@@ -344,7 +374,7 @@ export function MyPageDashboard() {
         <div className="flex flex-wrap gap-2">
           <Link
             href="/care-request"
-            className="flex min-h-[44px] items-center gap-1.5 rounded-xl bg-royal-500 px-4 text-sm font-bold text-white shadow-royal transition-transform hover:-translate-y-0.5"
+            className="flex min-h-[44px] items-center gap-1.5 rounded-xl bg-royal-500 px-4 text-sm font-bold text-white shadow-royal transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:shadow-royal-hover active:translate-y-0 active:scale-[0.98]"
           >
             돌봄 요청하기
             <ArrowRight size={14} />
@@ -352,7 +382,7 @@ export function MyPageDashboard() {
           {favoriteIds.length > 0 && (
             <Link
               href="/favorites"
-              className="flex min-h-[44px] items-center gap-1.5 rounded-xl border border-ink-100 bg-white px-4 text-sm font-bold text-ink-700 transition-colors hover:bg-ink-100"
+              className="flex min-h-[44px] items-center gap-1.5 rounded-xl border border-ink-100 bg-white px-4 text-sm font-bold text-ink-700 transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:bg-ink-100 active:translate-y-0 active:scale-[0.98]"
             >
               <Heart size={14} className="text-accent-500" />
               관심시설 {favoriteIds.length}곳

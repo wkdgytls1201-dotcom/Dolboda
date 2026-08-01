@@ -54,8 +54,8 @@ export function ConsultModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-ink-900/40 px-4 py-8">
-      <div className="my-auto max-h-[85vh] w-full max-w-sm overflow-y-auto rounded-2xl bg-white p-6 shadow-soft">
+    <div className="animate-overlay-in fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-ink-900/40 px-4 py-8">
+      <div className="animate-modal-in my-auto max-h-[85vh] w-full max-w-sm overflow-y-auto rounded-2xl bg-white p-6 shadow-soft">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-lg font-bold text-ink-900">상담 신청</h3>
           <button
@@ -70,7 +70,7 @@ export function ConsultModal({
 
         {submitted ? (
           <div className="flex flex-col items-center gap-3 py-6 text-center">
-            <CheckCircle2 size={40} className="text-mint-500" />
+            <CheckCircle2 size={40} className="animate-pop text-mint-500" />
             <p className="font-semibold text-ink-900">신청이 접수되었습니다</p>
             <p className="text-sm text-ink-500">{facilityName} 상담 담당자가 곧 연락드릴게요.</p>
             <button
@@ -111,7 +111,11 @@ export function ConsultModal({
             </div>
             {/* 어르신 정보 함께 전달 — 민감정보라 기본 꺼짐(옵트인). 프로필이 있을 때만 노출 */}
             {profiles.length > 0 && (
-              <div className="rounded-xl bg-ivory-100 p-3">
+              <div
+                className={`rounded-xl p-3 transition-colors duration-200 ${
+                  shareProfileId !== null ? "bg-primary-50" : "bg-ivory-100"
+                }`}
+              >
                 <label className="flex cursor-pointer items-start gap-2.5">
                   <input
                     type="checkbox"
@@ -130,7 +134,7 @@ export function ConsultModal({
                   </span>
                 </label>
                 {shareProfileId !== null && profiles.length > 1 && (
-                  <div className="mt-2 flex flex-wrap gap-1.5 pl-6">
+                  <div className="animate-fade-up mt-2 flex flex-wrap gap-1.5 pl-6">
                     {profiles.map((p) => (
                       <button
                         key={p.id}

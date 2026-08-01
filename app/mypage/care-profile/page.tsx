@@ -157,7 +157,9 @@ function CareProfileContent() {
     const isNew = editing === "new";
     return (
       <MyPageShell>
-        <h2 className="mb-2 text-xl font-bold text-ink-900">
+        {/* editing 값이 바뀔 때마다(목록↔새로 만들기↔다른 프로필 수정) key로 리마운트해
+            매번 살짝 떠오르며 들어오게 한다 — 화면이 툭 끊겨 바뀌지 않게 */}
+        <h2 key={editing} className="animate-fade-up mb-2 text-xl font-bold text-ink-900">
           {isNew ? "돌봄 프로필 만들기" : "돌봄 프로필 수정"}
         </h2>
         <p className="mb-5 text-sm leading-relaxed text-ink-500">
@@ -172,7 +174,10 @@ function CareProfileContent() {
           </NoticeBox>
         )}
 
-        <div className="mt-4 space-y-5 rounded-2xl border border-ink-100 bg-white p-4 sm:p-5">
+        <div
+          className="animate-fade-up mt-4 space-y-5 rounded-2xl border border-ink-100 bg-white p-4 sm:p-5"
+          style={{ animationDelay: "60ms" }}
+        >
           <div>
             <FieldLabel hint="이름은 받지 않아요 — 호칭으로만 구분해요">
               어르신과의 관계
@@ -277,7 +282,11 @@ function CareProfileContent() {
         </div>
 
         {isNew && (
-          <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-2xl border border-ink-100 bg-white p-4">
+          <label
+            className={`mt-4 flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition-colors duration-200 ${
+              consent ? "border-primary-200 bg-primary-50/50" : "border-ink-100 bg-white"
+            }`}
+          >
             <input
               type="checkbox"
               checked={consent}
@@ -295,7 +304,10 @@ function CareProfileContent() {
         )}
 
         {error && (
-          <p role="alert" className="mt-3 rounded-xl bg-primary-50 px-4 py-3 text-[13px] font-semibold text-primary-700">
+          <p
+            role="alert"
+            className="animate-fade-up mt-3 rounded-xl bg-primary-50 px-4 py-3 text-[13px] font-semibold text-primary-700"
+          >
             {error}
           </p>
         )}
@@ -304,7 +316,7 @@ function CareProfileContent() {
           <button
             type="button"
             onClick={() => setEditing(null)}
-            className="min-h-[52px] flex-1 rounded-xl border border-ink-100 bg-white text-sm font-bold text-ink-500"
+            className="min-h-[52px] flex-1 rounded-xl border border-ink-100 bg-white text-sm font-bold text-ink-500 transition-all duration-200 ease-snappy hover:bg-ink-100/60 active:scale-[0.98]"
           >
             취소
           </button>
@@ -312,7 +324,7 @@ function CareProfileContent() {
             type="button"
             onClick={save}
             disabled={saving}
-            className="min-h-[52px] flex-[2] rounded-xl bg-primary-500 text-sm font-bold text-white shadow-soft transition-colors hover:bg-primary-600 disabled:opacity-60"
+            className="min-h-[52px] flex-[2] rounded-xl bg-primary-500 text-sm font-bold text-white shadow-soft transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:bg-primary-600 hover:shadow-card-hover active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-60"
           >
             {saving ? "저장 중..." : "저장하기"}
           </button>
@@ -391,7 +403,7 @@ function CareProfileContent() {
       {items.length > 0 && (
         <>
           <div className="space-y-3">
-            {items.map((p) => {
+            {items.map((p, i) => {
               const summary = [p.ageBand, p.gender, p.mobilityLevel].filter(Boolean).join(" · ");
               const estimate = estimatedLabel(p.estimatedBand);
               return (
@@ -399,7 +411,8 @@ function CareProfileContent() {
                   key={p.id}
                   type="button"
                   onClick={() => startEdit(p)}
-                  className="block w-full rounded-2xl bg-white p-5 text-left shadow-card transition-transform hover:-translate-y-0.5 active:scale-[0.99]"
+                  className="animate-fade-up block w-full rounded-2xl bg-white p-5 text-left shadow-card transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:shadow-card-hover active:translate-y-0 active:scale-[0.99]"
+                  style={{ animationDelay: `${i * 70}ms` }}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">

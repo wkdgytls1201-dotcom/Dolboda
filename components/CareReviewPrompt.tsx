@@ -61,8 +61,10 @@ export function CareReviewPrompt({
 
   return (
     <main className="mx-auto max-w-xl px-4 py-8 pb-24">
-      <div className="mb-6 rounded-3xl border border-mint-200 bg-gradient-to-b from-mint-50 to-white p-6 text-center">
-        <span className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-mint-500 text-white shadow-soft">
+      <div className="animate-fade-up mb-6 rounded-3xl border border-mint-200 bg-gradient-to-b from-mint-50 to-white p-6 text-center">
+        {/* 이 화면에 딱 한 번만 뜨는 순간이라 통통 튀는 pop을 여기 쓴다 —
+            체크마크가 "완료됐다"는 걸 시각적으로도 확인해준다 */}
+        <span className="animate-pop mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-mint-500 text-white shadow-soft">
           <CheckCircle2 size={28} />
         </span>
         <h1 className="mb-1.5 text-lg font-bold text-ink-900">돌봄이 잘 마무리됐어요</h1>
@@ -74,7 +76,10 @@ export function CareReviewPrompt({
       </div>
 
       {sitter && !careRequest.review && (
-        <section className="mb-4 rounded-2xl border border-ink-100 bg-white p-5 shadow-card">
+        <section
+          className="animate-fade-up mb-4 rounded-2xl border border-ink-100 bg-white p-5 shadow-card"
+          style={{ animationDelay: "80ms" }}
+        >
           <p className="mb-3 text-[15px] font-bold text-ink-900">
             {sitter.nickname} 매니저, 어떠셨어요?
           </p>
@@ -85,11 +90,16 @@ export function CareReviewPrompt({
                 type="button"
                 onClick={() => setRating(n)}
                 aria-label={`별점 ${n}점`}
-                className="p-1.5 transition-transform active:scale-90"
+                className="p-1.5 transition-transform duration-150 ease-snappy hover:scale-110 active:scale-90"
               >
                 <Star
                   size={32}
-                  className={n <= rating ? "text-accent-400" : "text-ink-100"}
+                  // 방금 선택한 별까지만 pop — 이전에 이미 켜져 있던 별은 다시 튀지 않게
+                  // key를 rating에 걸어 그 순간의 별들만 다시 그려지게 한다
+                  key={`${n}-${n <= rating}`}
+                  className={`transition-colors duration-200 ${
+                    n <= rating ? "animate-pop text-accent-400" : "text-ink-100"
+                  }`}
                   fill={n <= rating ? "currentColor" : "none"}
                 />
               </button>
@@ -100,11 +110,14 @@ export function CareReviewPrompt({
             onChange={(e) => setComment(e.target.value.slice(0, 200))}
             rows={3}
             placeholder="(선택) 어떤 점이 좋았는지 적어주세요 — 매니저 프로필에 표시돼요"
-            className="mb-1 w-full rounded-xl border border-ink-100 px-3.5 py-3 text-sm leading-relaxed focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-100"
+            className="mb-1 w-full rounded-xl border border-ink-100 px-3.5 py-3 text-sm leading-relaxed transition-shadow duration-150 focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-100"
           />
           <p className="mb-3 text-right text-[12px] text-ink-300">{comment.length}/200</p>
           {error && (
-            <p role="alert" className="mb-3 rounded-xl bg-primary-50 px-4 py-2.5 text-[13px] font-semibold text-primary-700">
+            <p
+              role="alert"
+              className="animate-fade-up mb-3 rounded-xl bg-primary-50 px-4 py-2.5 text-[13px] font-semibold text-primary-700"
+            >
               {error}
             </p>
           )}
@@ -112,7 +125,7 @@ export function CareReviewPrompt({
             type="button"
             onClick={submit}
             disabled={saving}
-            className="min-h-[50px] w-full rounded-xl bg-primary-500 text-sm font-bold text-white shadow-soft transition-colors hover:bg-primary-600 disabled:opacity-60"
+            className="min-h-[50px] w-full rounded-xl bg-primary-500 text-sm font-bold text-white shadow-soft transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:bg-primary-600 hover:shadow-card-hover active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-60"
           >
             {saving ? "저장 중..." : "후기 남기기"}
           </button>
@@ -120,8 +133,8 @@ export function CareReviewPrompt({
       )}
 
       {careRequest.review && (
-        <section className="mb-4 rounded-2xl border border-ink-100 bg-white p-5 text-center shadow-card">
-          <p className="text-sm font-bold text-ink-900">후기가 저장됐어요. 감사해요! 🙏</p>
+        <section className="animate-pop mb-4 rounded-2xl border border-mint-200 bg-mint-50/60 p-5 text-center shadow-card">
+          <p className="text-sm font-bold text-mint-700">후기가 저장됐어요. 감사해요! 🙏</p>
         </section>
       )}
 
@@ -129,15 +142,17 @@ export function CareReviewPrompt({
         <button
           type="button"
           onClick={onReuse}
-          className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl border border-royal-200 bg-royal-50 text-sm font-bold text-royal-700 transition-colors hover:bg-royal-100"
+          className="animate-fade-up group flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl border border-royal-200 bg-royal-50 text-sm font-bold text-royal-700 transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:bg-royal-100 hover:shadow-card-hover active:translate-y-0 active:scale-[0.98]"
+          style={{ animationDelay: "160ms" }}
         >
-          <RotateCcw size={16} />
+          <RotateCcw size={16} className="transition-transform duration-300 group-hover:-rotate-180" />
           같은 조건으로 다시 요청하기
         </button>
         <button
           type="button"
           onClick={onNewRequest}
-          className="min-h-[52px] w-full rounded-xl border border-ink-100 bg-white text-sm font-semibold text-ink-500 transition-colors hover:bg-ink-100/60"
+          className="animate-fade-up min-h-[52px] w-full rounded-xl border border-ink-100 bg-white text-sm font-semibold text-ink-500 transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:bg-ink-100/60 active:translate-y-0 active:scale-[0.98]"
+          style={{ animationDelay: "220ms" }}
         >
           새로운 조건으로 요청하기
         </button>
