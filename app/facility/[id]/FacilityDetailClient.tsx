@@ -32,6 +32,7 @@ import { KakaoRoadview } from "@/components/KakaoRoadview";
 import { ConsultModal } from "@/components/ConsultModal";
 import { DataSourceNote } from "@/components/DataSourceNote";
 import { FacilityCard } from "@/components/FacilityCard";
+import { SimilarFacilities } from "@/components/SimilarFacilities";
 import { useCompare } from "@/lib/compareContext";
 import { haversineDistanceKm } from "@/lib/distance";
 import { InfoTooltip } from "@/components/InfoTooltip";
@@ -1022,42 +1023,12 @@ export default function FacilityDetailClient({
         </DetailSection>
 
         {relatedFacilities.length > 0 && (
-          <DetailSection id="related" title="다른 시설도 확인해 보세요">
-            {/* 가로 스크롤 컨테이너는 위아래도 잘라내므로 py-2/-my-2로 여백을 만들어
-                1등급 카드의 노란 테두리(ring-2)와 hover 시 떠오르는 효과가 잘리지 않게 한다. */}
-            <div className="group relative">
-              <div
-                ref={relatedTrackRef}
-                className="-mx-4 -my-2 flex snap-x gap-4 overflow-x-auto px-4 py-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-              >
-                {relatedFacilities.map(({ f, dist }) => (
-                  <div key={f.id} className="w-72 shrink-0 snap-start">
-                    <FacilityCard facility={f} distanceKm={dist} />
-                  </div>
-                ))}
-              </div>
-
-              {relatedFacilities.length > 3 && (
-                <>
-                  <button
-                    type="button"
-                    aria-label="이전 시설"
-                    onClick={() => scrollRelated("left")}
-                    className="absolute left-0 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-ink-100 bg-white text-ink-700 opacity-0 shadow-card transition-all duration-200 ease-snappy hover:scale-110 hover:bg-ink-100 active:scale-95 group-hover:opacity-100"
-                  >
-                    <ChevronLeft size={18} />
-                  </button>
-                  <button
-                    type="button"
-                    aria-label="다음 시설"
-                    onClick={() => scrollRelated("right")}
-                    className="absolute right-0 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-ink-100 bg-white text-ink-700 opacity-0 shadow-card transition-all duration-200 ease-snappy hover:scale-110 hover:bg-ink-100 active:scale-95 group-hover:opacity-100"
-                  >
-                    <ChevronRight size={18} />
-                  </button>
-                </>
-              )}
-            </div>
+          <DetailSection id="related" title="이 시설과 비슷한 곳">
+            <p className="mb-3 text-xs leading-relaxed text-ink-500">
+              규모·프로그램 구성·평가등급·비용대를 비교해 비슷한 시설을 찾았어요. 이 시설과
+              무엇이 다른지 함께 보여드려요.
+            </p>
+            <SimilarFacilities facilityId={facility.id} />
           </DetailSection>
         )}
 
