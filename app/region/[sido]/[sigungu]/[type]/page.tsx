@@ -3,8 +3,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { findRegionBySlug } from "@/lib/regionSeo";
 import { findTypeSeoBySlug, FACILITY_TYPE_SEO } from "@/lib/facilityTypeSeo";
-import { getTypeSummary, getTopFacilities } from "@/lib/regionData";
-import { FacilityLinkList, RegionFaq, regionFaqJsonLd } from "@/components/RegionSeoParts";
+import { getTypeSummary, getTopFacilities, getRegionStats } from "@/lib/regionData";
+import {
+  FacilityLinkList,
+  RegionFaq,
+  RegionPagination,
+  RegionStatStrip,
+  regionFaqJsonLd,
+} from "@/components/RegionSeoParts";
 import { SITE_URL } from "@/lib/siteConfig";
 
 export const revalidate = 86400;
@@ -33,15 +39,19 @@ function resolveParams(params: { sido: string; sigungu: string; type: string }) 
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: { sido: string; sigungu: string; type: string };
+  searchParams?: { page?: string };
 }): Promise<Metadata> {
   const { region, sigungu, typeSeo } = resolveParams(params);
   if (!region || !sigungu || !typeSeo) return {};
   const summary = await getTypeSummary(region, sigungu, typeSeo.type);
   if (summary.total === 0) return {};
 
-  const title = `${sigungu} ${typeSeo.short} ${summary.total}곳 비교 — ${typeSeo.label} 찾기`;
+  const page = Math.max(1, Number(searchParams?.page ?? 1) || 1);
+  const pageSuffix = page > 1 ? ` (${page}페이지)` : "";
+  const title = `${sigungu} ${typeSeo.short} ${summary.total}곳 비교 — ${typeSeo.label} 찾기${pageSuffix}`;
   const subNames = summary.subLocalities.slice(0, 12).join(", ");
   const description = `${region.full} ${sigungu} ${typeSeo.label} ${summary.total}곳의 평가등급과 위치, 연락처를 한눈에 비교하세요. ${typeSeo.keywords
     .slice(0, 3)
@@ -54,15 +64,20 @@ export async function generateMetadata({
   return {
     title,
     description,
-    alternates: { canonical: path },
+    // 페이지별 self-canonical — 2페이지를 1페이지로 몰면 뒤쪽 시설이 색인되지 않는다
+    alternates: { canonical: page > 1 ? `${path}?page=${page}` : path },
     openGraph: { title, description, url: `${SITE_URL}${path}`, type: "website" },
   };
 }
 
+const PER_PAGE = 24;
+
 export default async function RegionTypePage({
   params,
+  searchParams,
 }: {
   params: { sido: string; sigungu: string; type: string };
+  searchParams?: { page?: string };
 }) {
   const { region, sigungu, typeSeo } = resolveParams(params);
   if (!region || !sigungu || !typeSeo) notFound();
@@ -70,7 +85,16 @@ export default async function RegionTypePage({
   const summary = await getTypeSummary(region, sigungu, typeSeo.type);
   if (summary.total === 0) notFound();
 
-  const facilities = await getTopFacilities(region, sigungu, 24, typeSeo.type);
+  const page = Math.max(1, Number(searchParams?.page ?? 1) || 1);
+  const totalPages = Math.max(1, Math.ceil(summary.total / PER_PAGE));
+  const facilities = await getTopFacilities(
+    region,
+    sigungu,
+    PER_PAGE,
+    typeSeo.type,
+    (page - 1) * PER_PAGE
+  );
+  const stats = await getRegionStats(region, sigungu, typeSeo.type);
 
   const sidoUrl = `${SITE_URL}/region/${encodeURIComponent(region.slug)}`;
   const sigunguUrl = `${sidoUrl}/${encodeURIComponent(sigungu)}`;
@@ -156,16 +180,26 @@ export default async function RegionTypePage({
         </p>
       )}
 
+      <RegionStatStrip stats={stats} total={summary.total} regionName={`${sigungu} ${typeSeo.short}`} />
+
       <section className="mb-8">
         <h2 className="mb-3 font-bold text-ink-900">
           {sigungu} {typeSeo.short} 목록 (평가등급순)
         </h2>
         <FacilityLinkList facilities={facilities} />
-        {summary.total > facilities.length && (
+        {totalPages > 1 && (
           <p className="mt-2 text-center text-xs text-ink-300">
-            {summary.total}곳 중 {facilities.length}곳 표시
+            전체 {summary.total}곳 중 {(page - 1) * PER_PAGE + 1}~
+            {Math.min(page * PER_PAGE, summary.total)}번째 · {page}/{totalPages} 페이지
           </p>
         )}
+        <RegionPagination
+          basePath={`/region/${encodeURIComponent(region.slug)}/${encodeURIComponent(
+            sigungu
+          )}/${encodeURIComponent(typeSeo.slug)}`}
+          page={page}
+          totalPages={totalPages}
+        />
         <Link
           href={`/search?q=${encodeURIComponent(sigungu)}&type=${typeSeo.type}`}
           className="mt-3 block rounded-xl bg-primary-500 py-3 text-center text-sm font-bold text-white shadow-soft transition-all duration-200 hover:bg-primary-600"

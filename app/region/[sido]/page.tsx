@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { REGION_SEO, findRegionBySlug } from "@/lib/regionSeo";
-import { getRegionSummary, getTopFacilities } from "@/lib/regionData";
+import { getRegionSummary, getTopFacilities, getRegionStats } from "@/lib/regionData";
 import {
   TypeCountChips,
   FacilityLinkList,
   RegionFaq,
+  RegionStatStrip,
   GuideLinkStrip,
   regionFaqJsonLd,
 } from "@/components/RegionSeoParts";
@@ -57,6 +58,7 @@ export default async function RegionSidoPage({ params }: { params: { sido: strin
   if (!region) notFound();
 
   const summary = await getRegionSummary(region);
+  const stats = await getRegionStats(region, null);
   if (summary.total === 0) notFound();
 
   const topFacilities = await getTopFacilities(region, null, 12);
@@ -114,6 +116,8 @@ export default async function RegionSidoPage({ params }: { params: { sido: strin
       <div className="mb-6">
         <TypeCountChips typeCounts={summary.typeCounts} />
       </div>
+
+      <RegionStatStrip stats={stats} total={summary.total} regionName={region.label} />
 
       {summary.sigunguList.length > 0 && (
         <section className="mb-8">

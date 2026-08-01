@@ -1,8 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BookOpen } from "lucide-react";
+import { BookOpen, ChevronRight } from "lucide-react";
 import { GUIDES } from "@/lib/guides";
+import { GuideListHero } from "@/components/GuideIllustration";
 import { SITE_URL } from "@/lib/siteConfig";
+
+// 카테고리 구분용 점 색 — 목록에서 분류가 한눈에 들어오게
+const CATEGORY_DOT: Record<string, string> = {
+  "시설 선택": "bg-primary-400",
+  비용: "bg-accent-400",
+  제도: "bg-royal-400",
+};
 
 export const metadata: Metadata = {
   title: "요양 가이드 — 보호자가 가장 많이 묻는 질문들",
@@ -43,28 +51,39 @@ export default function GuideListPage() {
           <br />
           하나씩 정리해 드릴게요
         </h1>
-        <p className="text-sm leading-relaxed text-ink-500">
+        <p className="text-[15px] leading-relaxed text-ink-500">
           보호자들이 가장 많이 묻는 질문을 공공데이터와 제도 기준으로 정리했어요.
         </p>
       </div>
+
+      <GuideListHero />
 
       {CATEGORY_ORDER.map((category) => {
         const list = GUIDES.filter((g) => g.category === category);
         if (list.length === 0) return null;
         return (
-          <section key={category} className="mb-8">
-            <h2 className="mb-3 text-sm font-bold text-ink-300">{category}</h2>
+          <section key={category} className="mb-9">
+            <h2 className="mb-3 flex items-center gap-2 text-sm font-bold text-ink-500">
+              <span className={`h-2 w-2 rounded-full ${CATEGORY_DOT[category]}`} aria-hidden />
+              {category}
+              <span className="font-medium text-ink-300">{list.length}편</span>
+            </h2>
             <div className="space-y-2.5">
               {list.map((g) => (
                 <Link
                   key={g.slug}
                   href={`/guide/${g.slug}`}
-                  className="block rounded-2xl border border-ink-100 bg-white p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card"
+                  className="flex items-center gap-3 rounded-2xl border border-ink-100 bg-white p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card"
                 >
-                  <p className="mb-1 text-base font-bold text-ink-900">{g.shortTitle}</p>
-                  <p className="line-clamp-2 text-xs leading-relaxed text-ink-500">
-                    {g.description}
-                  </p>
+                  <span className="min-w-0 flex-1">
+                    <span className="mb-1 block text-[17px] font-bold leading-snug text-ink-900">
+                      {g.shortTitle}
+                    </span>
+                    <span className="line-clamp-2 block text-[13px] leading-relaxed text-ink-500">
+                      {g.description}
+                    </span>
+                  </span>
+                  <ChevronRight size={18} className="shrink-0 text-ink-300" />
                 </Link>
               ))}
             </div>

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, ChevronRight } from "lucide-react";
 import { GUIDES, findGuide } from "@/lib/guides";
+import { GuideIllustration } from "@/components/GuideIllustration";
 import { SITE_URL } from "@/lib/siteConfig";
 
 // 전부 정적 콘텐츠 — 빌드 때 생성해 온전한 HTML로 서빙한다
@@ -89,33 +90,42 @@ export default function GuidePage({ params }: { params: { slug: string } }) {
         돌보다 요양 가이드 · {guide.updated} 기준 · 국민건강보험공단·보건복지부 고시 자료 기반
       </p>
 
+      {/* 카테고리별 일러스트 — 글만 이어지면 읽기 부담이 커서 시선을 쉬어가게 한다 */}
+      <GuideIllustration category={guide.category} />
+
       {/* 3줄 요약 — 바쁜 보호자가 여기까지만 읽어도 답을 얻게 */}
-      <div className="mb-8 rounded-2xl bg-gradient-to-br from-primary-50 to-peach-100/60 p-4">
-        <p className="mb-2 text-xs font-bold text-primary-700">3줄 요약</p>
-        <ul className="space-y-1.5">
+      <div className="mb-9 rounded-2xl bg-gradient-to-br from-primary-50 to-peach-100/60 p-5">
+        <p className="mb-2.5 text-xs font-bold text-primary-700">3줄 요약</p>
+        <ul className="space-y-2">
           {guide.keyPoints.map((k) => (
-            <li key={k} className="flex gap-2 text-sm font-semibold leading-relaxed text-ink-900">
-              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary-500" />
+            <li key={k} className="flex gap-2.5 text-[15px] font-semibold leading-[1.7] text-ink-900">
+              <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary-500" />
               {k}
             </li>
           ))}
         </ul>
       </div>
 
-      <article className="space-y-8">
-        {guide.sections.map((s) => (
+      <article className="space-y-10">
+        {guide.sections.map((s, i) => (
           <section key={s.heading}>
-            <h2 className="mb-3 text-lg font-bold text-ink-900">{s.heading}</h2>
+            {/* 번호를 붙여 어디까지 읽었는지 감이 오게 */}
+            <h2 className="mb-3.5 flex items-baseline gap-2 text-[19px] font-bold leading-snug text-ink-900">
+              <span className="shrink-0 text-sm font-extrabold text-primary-400">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              {s.heading}
+            </h2>
             {s.paragraphs.map((p) => (
-              <p key={p.slice(0, 20)} className="mb-3 text-[15px] leading-relaxed text-ink-700">
+              <p key={p.slice(0, 20)} className="mb-4 text-[16px] leading-[1.8] text-ink-700">
                 {p}
               </p>
             ))}
             {s.list && (
-              <ul className="space-y-2 rounded-2xl bg-white p-4 shadow-card">
+              <ul className="space-y-2.5 rounded-2xl bg-white p-5 shadow-card">
                 {s.list.map((item) => (
-                  <li key={item} className="flex gap-2 text-sm leading-relaxed text-ink-700">
-                    <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-primary-400" />
+                  <li key={item} className="flex gap-2.5 text-[15px] leading-[1.75] text-ink-700">
+                    <span className="mt-2.5 h-1 w-1 shrink-0 rounded-full bg-primary-400" />
                     {item}
                   </li>
                 ))}

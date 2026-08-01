@@ -25,6 +25,12 @@ export async function Footer() {
             <Link href="/guide" className="transition-colors duration-150 hover:text-ink-700">
               요양 가이드
             </Link>
+            <Link href="/about" className="transition-colors duration-150 hover:text-ink-700">
+              돌보다 소개
+            </Link>
+            <Link href="/data-policy" className="transition-colors duration-150 hover:text-ink-700">
+              데이터 출처
+            </Link>
             <Link href="/terms" className="transition-colors duration-150 hover:text-ink-700">
               이용약관
             </Link>

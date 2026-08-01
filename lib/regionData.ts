@@ -162,12 +162,14 @@ export const getTypeSummary = cache(
 );
 
 // 등급 좋은 순 대표 시설 — sigungu/facilityType을 주면 그만큼 좁힌다.
+// skip을 주면 페이지네이션(2페이지 이후)에 쓴다.
 export const getTopFacilities = cache(
   async (
     region: RegionSeo,
     sigungu: string | null,
     take: number,
-    facilityType?: FacilityType
+    facilityType?: FacilityType,
+    skip = 0
   ) => {
     const conditions: object[] = [prefixWhere(region)];
     if (sigungu) conditions.push({ address: { contains: ` ${sigungu} ` } });
@@ -176,6 +178,7 @@ export const getTopFacilities = cache(
       where: { AND: conditions },
       orderBy: [{ grade: { sort: "asc", nulls: "last" } }, { name: "asc" }],
       take,
+      skip,
       select: {
         id: true,
         name: true,
@@ -184,5 +187,64 @@ export const getTopFacilities = cache(
         address: true,
       },
     });
+  }
+);
+
+export interface RegionStats {
+  /** 평가등급 1등급(A등급) 시설 수 */
+  topGrade: number;
+  /** 평가등급이 공개된 시설 수 */
+  graded: number;
+  /** 입소 가능(정원 > 현원) 시설 수 — 입소형만 집계 */
+  vacancy: number;
+  /** 입소형 시설의 평균 정원 (없으면 null) */
+  avgCapacity: number | null;
+}
+
+// 지역 페이지에 넣을 고유 통계. 지역마다 다른 숫자가 나와야 페이지가 서로 구별된다.
+export const getRegionStats = cache(
+  async (
+    region: RegionSeo,
+    sigungu: string | null,
+    facilityType?: FacilityType
+  ): Promise<RegionStats> => {
+    const conditions: object[] = [prefixWhere(region)];
+    if (sigungu) conditions.push({ address: { contains: ` ${sigungu} ` } });
+    if (facilityType) conditions.push({ facilityType });
+
+    const rows = await prisma.facility.findMany({
+      where: { AND: conditions },
+      select: { grade: true, facilityType: true, extra: true },
+    });
+
+    let topGrade = 0;
+    let graded = 0;
+    let vacancy = 0;
+    let capacitySum = 0;
+    let capacityCount = 0;
+
+    for (const row of rows) {
+      if (row.grade !== null) {
+        graded++;
+        if (row.grade === 1) topGrade++;
+      }
+      // 방문요양은 정원 개념이 없어 평균/빈자리 집계에서 제외한다
+      if (row.facilityType === "HOME_CARE") continue;
+      const extra = row.extra as { capacity?: number; currentOccupancy?: number } | null;
+      const capacity = extra?.capacity ?? 0;
+      if (capacity > 0) {
+        capacitySum += capacity;
+        capacityCount++;
+        const occupancy = extra?.currentOccupancy;
+        if (occupancy !== undefined && capacity - occupancy > 0) vacancy++;
+      }
+    }
+
+    return {
+      topGrade,
+      graded,
+      vacancy,
+      avgCapacity: capacityCount > 0 ? Math.round(capacitySum / capacityCount) : null,
+    };
   }
 );

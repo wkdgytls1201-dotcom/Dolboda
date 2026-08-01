@@ -120,6 +120,104 @@ export function buildRegionFaq(ctx: RegionFaqContext = {}): { q: string; a: stri
   return faq;
 }
 
+// 지역 고유 통계 — 페이지마다 다른 숫자가 나와 중복 콘텐츠로 읽히지 않게 한다.
+export function RegionStatStrip({
+  stats,
+  total,
+  regionName,
+}: {
+  stats: { topGrade: number; graded: number; vacancy: number; avgCapacity: number | null };
+  total: number;
+  regionName: string;
+}) {
+  const items: { label: string; value: string }[] = [
+    { label: "전체 시설", value: `${total.toLocaleString()}곳` },
+  ];
+  if (stats.graded > 0) {
+    items.push({ label: "평가등급 공개", value: `${stats.graded.toLocaleString()}곳` });
+    items.push({ label: "최고등급(1·A등급)", value: `${stats.topGrade.toLocaleString()}곳` });
+  }
+  if (stats.vacancy > 0) items.push({ label: "입소 가능", value: `${stats.vacancy.toLocaleString()}곳` });
+  if (stats.avgCapacity) items.push({ label: "평균 정원", value: `${stats.avgCapacity}명` });
+
+  return (
+    <section className="mb-8">
+      <h2 className="mb-3 text-base font-bold text-ink-900">{regionName} 요양시설 현황</h2>
+      <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {items.map((item) => (
+          <div key={item.label} className="rounded-2xl bg-white p-3.5 text-center shadow-card">
+            <dt className="text-[11px] leading-tight text-ink-300">{item.label}</dt>
+            <dd className="mt-1 text-lg font-extrabold text-ink-900">{item.value}</dd>
+          </div>
+        ))}
+      </dl>
+      <p className="mt-2 text-[11px] text-ink-300">
+        공공데이터 기준이며, 입소 가능 여부는 실제와 다를 수 있어 시설에 확인이 필요해요.
+      </p>
+    </section>
+  );
+}
+
+// 검색엔진이 24곳 뒤의 시설도 따라갈 수 있게, 실제 링크가 있는 페이지네이션을 그린다.
+export function RegionPagination({
+  basePath,
+  page,
+  totalPages,
+}: {
+  basePath: string;
+  page: number;
+  totalPages: number;
+}) {
+  if (totalPages <= 1) return null;
+  // 페이지가 많으면 현재 주변 + 처음/끝만 노출
+  const pages = Array.from({ length: totalPages }, (_, i) => i + 1).filter(
+    (p) => p === 1 || p === totalPages || Math.abs(p - page) <= 2
+  );
+
+  return (
+    <nav aria-label="페이지 이동" className="mt-4 flex flex-wrap items-center justify-center gap-1.5">
+      {page > 1 && (
+        <Link
+          href={page === 2 ? basePath : `${basePath}?page=${page - 1}`}
+          rel="prev"
+          className="flex min-h-[44px] items-center rounded-xl border border-ink-100 bg-white px-3.5 text-sm font-semibold text-ink-700 hover:bg-ink-100"
+        >
+          이전
+        </Link>
+      )}
+      {pages.map((p, i) => (
+        <span key={p} className="flex items-center gap-1.5">
+          {i > 0 && pages[i - 1] !== p - 1 && <span className="text-xs text-ink-300">…</span>}
+          {p === page ? (
+            <span
+              aria-current="page"
+              className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl bg-primary-500 px-3 text-sm font-bold text-white"
+            >
+              {p}
+            </span>
+          ) : (
+            <Link
+              href={p === 1 ? basePath : `${basePath}?page=${p}`}
+              className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl border border-ink-100 bg-white px-3 text-sm font-semibold text-ink-700 hover:bg-ink-100"
+            >
+              {p}
+            </Link>
+          )}
+        </span>
+      ))}
+      {page < totalPages && (
+        <Link
+          href={`${basePath}?page=${page + 1}`}
+          rel="next"
+          className="flex min-h-[44px] items-center rounded-xl border border-ink-100 bg-white px-3.5 text-sm font-semibold text-ink-700 hover:bg-ink-100"
+        >
+          다음
+        </Link>
+      )}
+    </nav>
+  );
+}
+
 export function RegionFaq(ctx: RegionFaqContext = {}) {
   const faq = buildRegionFaq(ctx);
   return (

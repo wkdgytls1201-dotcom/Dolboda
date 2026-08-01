@@ -1,4 +1,5 @@
 import { Activity, ScanLine, Scan, Waves, Stethoscope, Users, LucideIcon } from "lucide-react";
+import { NHIS_GRADE_LETTER } from "./GradeBadge";
 
 // 5단계/6단계 등급을 척도 위 위치로 보여주는 게이지. 숫자만 나열하지 않고
 // 전체 등급 범위 중 이 시설이 어디에 있는지 한눈에 보여주기 위한 용도.
@@ -13,15 +14,20 @@ const SCALE_COLORS: Record<number, string[]> = {
 export function GradeScaleBar({
   grade,
   levels,
+  gradeSource,
 }: {
   grade: number | null;
   levels: number;
+  /** NHIS(공단)는 A~E로 공개하므로 배지와 같은 표기를 쓴다 — 위는 A등급, 아래는 1등급이면 혼란스럽다 */
+  gradeSource?: "HIRA" | "NHIS";
 }) {
   if (grade === null) {
     return <p className="text-sm text-ink-300">등급 제외 시설이에요.</p>;
   }
 
   const colors = SCALE_COLORS[levels] ?? SCALE_COLORS[5];
+  const labelFor = (level: number) =>
+    gradeSource === "NHIS" ? NHIS_GRADE_LETTER[level - 1] ?? String(level) : String(level);
 
   return (
     <div className="flex items-end gap-1">
@@ -35,7 +41,7 @@ export function GradeScaleBar({
               {isCurrent && (
                 <div className="flex flex-col items-center">
                   <span className="whitespace-nowrap rounded-full bg-ink-900 px-2.5 py-1 text-[11px] font-bold leading-none text-white shadow-card">
-                    {level}등급
+                    {labelFor(level)}등급
                   </span>
                   <span className="-mt-px h-0 w-0 border-x-4 border-t-4 border-x-transparent border-t-ink-900" />
                 </div>
@@ -53,7 +59,7 @@ export function GradeScaleBar({
                 isCurrent ? "font-bold text-ink-900" : "text-ink-300"
               }`}
             >
-              {level}
+              {labelFor(level)}
             </span>
           </div>
         );

@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { findRegionBySlug } from "@/lib/regionSeo";
-import { getSigunguSummary, getTopFacilities } from "@/lib/regionData";
+import { getSigunguSummary, getTopFacilities, getRegionStats } from "@/lib/regionData";
 import { FACILITY_TYPE_SEO } from "@/lib/facilityTypeSeo";
 import {
   TypeCountChips,
   FacilityLinkList,
   RegionFaq,
+  RegionStatStrip,
   GuideLinkStrip,
   regionFaqJsonLd,
 } from "@/components/RegionSeoParts";
@@ -74,6 +75,7 @@ export default async function RegionSigunguPage({
   if (!region || !sigungu) notFound();
 
   const summary = await getSigunguSummary(region, sigungu);
+  const stats = await getRegionStats(region, sigungu);
   if (summary.total === 0) notFound();
 
   const topFacilities = await getTopFacilities(region, sigungu, 20);
@@ -159,6 +161,8 @@ export default async function RegionSigunguPage({
           {sigungu} 내 {summary.subLocalities.join(" · ")} 지역의 요양시설 정보를 확인할 수 있어요.
         </p>
       )}
+      <RegionStatStrip stats={stats} total={summary.total} regionName={sigungu} />
+
 
       <section className="mb-8">
         <h2 className="mb-3 font-bold text-ink-900">{sigungu} 시설 목록 (평가등급순)</h2>

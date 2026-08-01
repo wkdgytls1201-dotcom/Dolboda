@@ -48,6 +48,7 @@ import { CopayCalculator } from "@/components/CopayCalculator";
 import { HospitalCostEstimator } from "@/components/HospitalCostEstimator";
 import { DolbodaScoreCard } from "@/components/DolbodaScoreCard";
 import { calcDolbodaScore } from "@/lib/dolbodaScore";
+import { checkFee, MONTHLY_BASIS_NOTE } from "@/lib/feeQuality";
 
 const DOCTOR_GRADE_TABLE = [
   { grade: 1, desc: "35명 이하 (전문의 비율 50% 이상)" },
@@ -327,7 +328,7 @@ export default function FacilityDetailClient({
                 {facility.updatedAt} 기준 갱신
               </p>
             </div>
-            <GradeScaleBar grade={facility.grade} levels={5} />
+            <GradeScaleBar grade={facility.grade} levels={5} gradeSource={facility.gradeSource} />
           </div>
 
           {hospital && (
@@ -656,22 +657,42 @@ export default function FacilityDetailClient({
             {facility.nonCoveredFees.length > 0 && (
               <DetailSection id="fees" title="비급여 비용" tooltip={TOOLTIPS.nonCovered}>
                 <div className="divide-y divide-ink-100 rounded-2xl border border-ink-100">
-                  {facility.nonCoveredFees.map((fee) => (
-                    <div key={fee.name} className="px-4 py-3">
-                      <p className="mb-1.5 text-sm text-ink-700">{fee.name}</p>
-                      <div className="flex flex-wrap gap-2">
-                        <span className="rounded-full bg-ink-100/60 px-2.5 py-1 text-xs font-semibold text-ink-900">
-                          월 {fee.monthly.toLocaleString()}원
-                        </span>
-                        {fee.daily > 0 && (
-                          <span className="rounded-full bg-ink-100/60 px-2.5 py-1 text-xs text-ink-500">
-                            1일 {fee.daily.toLocaleString()}원
-                          </span>
+                  {facility.nonCoveredFees.map((fee) => {
+                    // 원본에 "1일 1원" 같은 값이 섞여 있어, 그대로 보여주면 오히려 오해를 준다
+                    const quality = checkFee(fee);
+                    return (
+                      <div key={fee.name} className="px-4 py-3">
+                        <p className="mb-1.5 text-sm text-ink-700">{fee.name}</p>
+                        {quality.kind === "ok" ? (
+                          <div className="flex flex-wrap gap-2">
+                            <span className="rounded-full bg-ink-100/60 px-2.5 py-1 text-xs font-semibold text-ink-900">
+                              월 {fee.monthly.toLocaleString()}원
+                            </span>
+                            {fee.daily > 0 && (
+                              <span className="rounded-full bg-ink-100/60 px-2.5 py-1 text-xs text-ink-500">
+                                1일 {fee.daily.toLocaleString()}원
+                              </span>
+                            )}
+                          </div>
+                        ) : quality.kind === "unpublished" ? (
+                          <p className="text-xs text-ink-300">공개된 금액이 없어요</p>
+                        ) : (
+                          <div>
+                            <span className="inline-flex items-center gap-1 rounded-full bg-accent-100 px-2.5 py-1 text-xs font-bold text-accent-600">
+                              <AlertTriangle size={11} />
+                              시설 문의 필요
+                            </span>
+                            <p className="mt-1.5 text-[11px] leading-relaxed text-ink-300">
+                              공공데이터에 {quality.reason}. 실제 금액과 다를 수 있어 그대로 표시하지
+                              않았어요.
+                            </p>
+                          </div>
                         )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
+                <p className="mt-2 text-[11px] text-ink-300">{MONTHLY_BASIS_NOTE}</p>
               </DetailSection>
             )}
 
