@@ -31,17 +31,41 @@ p {
 
 /* 주 사용자가 40~60대 보호자라 작은 글씨가 특히 불리하다.
    화면마다 클래스를 고치면 레이아웃이 깨지기 쉬워, 크기 정의를 여기서 한 번에 올린다.
-   text-[10px]/[11px]는 px 고정값이라 루트 폰트(18.5px)에 비례하지 않고 홀로 작아지던 것들이다. */
+   px 고정값(text-[10px] 등)은 루트 폰트(18.5px)에 비례하지 않아 홀로 작아지던 것들이라
+   특히 크게 올렸다. 줄간격도 함께 늘려야 커진 글씨가 답답해 보이지 않는다. */
 .text-\[10px\] {
-  font-size: 12px;
+  font-size: 13px;
+  line-height: 1.5;
 }
 .text-\[11px\] {
-  font-size: 13.5px;
-}
-/* Tailwind 기본 xs(0.75rem≈13.9px)도 한 단계 올린다 — 배지·보조 설명에 가장 많이 쓰인다 */
-.text-xs {
-  font-size: 0.82rem; /* ≈15.2px */
+  font-size: 14.5px;
   line-height: 1.55;
+}
+.text-\[12px\] {
+  font-size: 15px;
+  line-height: 1.55;
+}
+.text-\[13px\] {
+  font-size: 15.5px;
+  line-height: 1.6;
+}
+.text-\[14px\] {
+  font-size: 16px;
+  line-height: 1.6;
+}
+.text-\[15px\] {
+  font-size: 17px;
+  line-height: 1.7;
+}
+/* Tailwind 기본 xs(0.75rem≈13.9px)·sm(0.875rem≈16.2px)을 한 단계씩 올린다 —
+   배지·보조 설명(xs 362곳)과 본문 보조 텍스트(sm 339곳)에 가장 많이 쓰인다 */
+.text-xs {
+  font-size: 0.87rem; /* ≈16.1px */
+  line-height: 1.6;
+}
+.text-sm {
+  font-size: 0.96rem; /* ≈17.8px */
+  line-height: 1.65;
 }
 
 @keyframes slide-up {
