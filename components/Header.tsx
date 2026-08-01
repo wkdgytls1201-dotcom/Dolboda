@@ -59,7 +59,8 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-ink-100 bg-white/80 backdrop-blur">
+      {/* padding-top: 앱(웹뷰)에서 상태바·노치 아래로 내용이 파고들지 않게 — 브라우저에선 0 */}
+      <header className="sticky top-0 z-40 border-b border-ink-100 bg-white/80 backdrop-blur [padding-top:var(--safe-top)]">
         <div className="mx-auto flex h-12 max-w-6xl items-center justify-between px-4 sm:h-16">
           <Link
             href="/"

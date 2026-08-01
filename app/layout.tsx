@@ -49,6 +49,12 @@ export const metadata: Metadata = {
     images: ["/og.png"],
   },
   robots: { index: true, follow: true },
+  // iOS 홈 화면 설치·웹뷰 대응 — 상태바를 콘텐츠 위에 겹치는 대신 배경색으로 채운다
+  appleWebApp: {
+    capable: true,
+    title: SITE_NAME,
+    statusBarStyle: "default",
+  },
   // 서치콘솔 소유 확인 코드 — 어차피 HTML에 공개되는 값이라 코드에 직접 둔다.
   // (환경변수가 있으면 그 값이 우선)
   verification: {

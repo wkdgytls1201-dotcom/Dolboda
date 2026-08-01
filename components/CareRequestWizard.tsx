@@ -309,7 +309,7 @@ export function CareRequestWizard({
   return (
     <main className="mx-auto max-w-lg px-4 pb-32 pt-3">
       {/* 스크롤해도 현재 단계가 보이도록 상단 고정 (모바일에서 길어지는 폼 대비) */}
-      <div className="sticky top-12 z-20 -mx-4 mb-5 border-b border-ink-100 bg-ivory/95 px-4 pb-3 pt-3 backdrop-blur sm:top-16">
+      <div className="sticky z-20 -mx-4 mb-5 border-b border-ink-100 bg-ivory/95 px-4 pb-3 pt-3 backdrop-blur [top:calc(3rem+var(--safe-top))] sm:[top:calc(4rem+var(--safe-top))]">
         <div className="mb-3 flex items-center gap-2">
           {step > 0 ? (
             <button

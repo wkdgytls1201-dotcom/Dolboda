@@ -9,6 +9,13 @@
    (2) 전체 파일은 한글 전 글리프가 담겨 수 MB인데, dynamic-subset은 unicode-range로
        쪼개져 있어 화면에 실제로 쓰인 글자 묶음(개당 ~35KB)만 내려받는다. 모바일에 유리하다 */
 
+:root {
+  /* 노치·상태바 안전영역 — 브라우저에선 0, 앱(웹뷰·홈화면 설치)에서는 기기값.
+     헤더의 padding-top과 sticky 하위 바들의 top 오프셋이 모두 이 변수를 쓴다.
+     (viewport-fit=cover는 layout.tsx의 viewport export에 이미 설정돼 있다) */
+  --safe-top: env(safe-area-inset-top, 0px);
+}
+
 html {
   scroll-behavior: smooth;
   font-size: 18.5px;

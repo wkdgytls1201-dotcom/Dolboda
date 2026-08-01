@@ -466,7 +466,7 @@ export function GradeTest() {
 
   return (
     <main className="mx-auto max-w-lg px-4 pb-28 pt-3">
-      <div className="sticky top-12 z-20 -mx-4 mb-5 border-b border-ink-100 bg-ivory/95 px-4 pb-3 pt-3 backdrop-blur sm:top-16">
+      <div className="sticky z-20 -mx-4 mb-5 border-b border-ink-100 bg-ivory/95 px-4 pb-3 pt-3 backdrop-blur [top:calc(3rem+var(--safe-top))] sm:[top:calc(4rem+var(--safe-top))]">
         <div className="mb-2.5 flex items-center gap-2">
           <button
             type="button"
