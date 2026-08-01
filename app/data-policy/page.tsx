@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SCORE_AREAS, weightTier } from "@/lib/dolbodaScore";
 import { SITE_URL } from "@/lib/siteConfig";
+import { jsonLdHtml } from "@/lib/jsonLd";
 
 export const metadata: Metadata = {
   title: "데이터 출처와 안심지수 계산 방식",
@@ -45,7 +46,7 @@ export default function DataPolicyPage() {
     <main className="mx-auto max-w-2xl px-4 pb-24 pt-8">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }}
       />
 
       <h1 className="mb-3 text-2xl font-bold leading-snug text-ink-900">

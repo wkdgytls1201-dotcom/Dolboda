@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { findRegionBySlug } from "@/lib/regionSeo";
 import { findTypeSeoBySlug, FACILITY_TYPE_SEO } from "@/lib/facilityTypeSeo";
-import { getTypeSummary, getTopFacilities, getRegionStats } from "@/lib/regionData";
+import { getTypeSummary, getTopFacilities, getRegionStats, getRegionIndex } from "@/lib/regionData";
 import {
   FacilityLinkList,
   RegionFaq,
@@ -12,6 +12,7 @@ import {
   regionFaqJsonLd,
 } from "@/components/RegionSeoParts";
 import { SITE_URL } from "@/lib/siteConfig";
+import { jsonLdHtml } from "@/lib/jsonLd";
 
 export const revalidate = 86400;
 
@@ -132,14 +133,24 @@ export default async function RegionTypePage({
     ],
   };
 
-  // 같은 시/군/구의 다른 유형으로 이동하는 링크 (내부 링크 강화)
-  const otherTypes = FACILITY_TYPE_SEO.filter((t) => t.slug !== typeSeo.slug);
+  // 같은 시/군/구의 다른 유형으로 이동하는 링크 (내부 링크 강화).
+  // 시설이 0곳인 유형은 그 페이지가 notFound()라, 링크를 그대로 뿌리면 크롤러가 404를 만난다
+  // (군 지역엔 요양병원·실버타운이 아예 없는 곳이 많다). 이미 캐시된 지역 인덱스로 걸러낸다.
+  const index = await getRegionIndex();
+  const typesWithFacilities = new Set(
+    index
+      .filter((r) => r.sidoSlug === region.slug && r.sigungu === sigungu && r.count > 0)
+      .map((r) => r.facilityType)
+  );
+  const otherTypes = FACILITY_TYPE_SEO.filter(
+    (t) => t.slug !== typeSeo.slug && typesWithFacilities.has(t.type)
+  );
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-8 pb-16">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }}
       />
 
       <nav aria-label="현재 위치" className="mb-3 text-xs text-ink-300">
@@ -208,6 +219,7 @@ export default async function RegionTypePage({
         </Link>
       </section>
 
+      {otherTypes.length > 0 && (
       <section className="mb-8">
         <h2 className="mb-3 font-bold text-ink-900">{sigungu}의 다른 돌봄 서비스</h2>
         <ul className="flex flex-wrap gap-2">
@@ -225,6 +237,7 @@ export default async function RegionTypePage({
           ))}
         </ul>
       </section>
+      )}
 
       <RegionFaq regionName={sigungu} total={summary.total} />
     </main>

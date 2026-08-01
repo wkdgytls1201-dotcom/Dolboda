@@ -4,6 +4,12 @@ import { rowToFacility, toCardFacility } from "@/lib/facilityRepo";
 import { compareFacilities, rankByIntent } from "@/lib/similarity";
 import FacilityDetailClient from "./FacilityDetailClient";
 
+// 28,000여 개 상세페이지는 방문마다 (레이아웃 조회 + 본문 조회 + 유사시설 60행 조회)를
+// 다시 돌고 있었다. 시설 데이터는 import 스크립트를 돌릴 때만 바뀌므로 하루 캐시로 충분하다.
+// generateStaticParams는 두지 않는다 — 빌드 때 2만 8천 페이지를 미리 굽는 건 지나치고,
+// dynamicParams 기본값(true) 덕분에 처음 요청된 시설만 그때 생성돼 캐시된다.
+export const revalidate = 86400;
+
 // 서버에서 시설을 조회해 클라이언트 컴포넌트에 넘긴다.
 // 예전처럼 클라이언트에서 fetch하면 검색봇이 받는 초기 HTML이 헤더·푸터뿐이라
 // 28,000여 개 상세페이지가 전부 빈 페이지로 색인된다. 여기서 넘겨주면 같은 JSX가

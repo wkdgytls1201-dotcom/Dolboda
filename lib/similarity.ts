@@ -16,6 +16,29 @@ import type { ProgramTag } from "./programTaxonomy";
 
 export type SimilarIntent = "similar" | "closer" | "available" | "cheaper" | "better";
 
+export const ALL_INTENTS: SimilarIntent[] = [
+  "similar",
+  "better",
+  "available",
+  "cheaper",
+  "closer",
+];
+
+// 안심지수 계산은 신호 20여 개를 만들고 여러 번 접는 작업이라 한 번이 싸지 않다.
+// 예전엔 후보 400곳마다 기준 시설 점수를 다시 계산했고(=400번), 거기에 정렬 비교 함수
+// 안에서 또 불러서 O(n log n)번 더 계산했다. 시설 객체당 한 번만 계산해 재사용한다.
+// (요청 하나 안에서만 사는 객체들이라 WeakMap이면 누수 걱정이 없다)
+const scoreMemo = new WeakMap<object, number | null>();
+function totalScoreOf(f: Facility): number | null {
+  const cached = scoreMemo.get(f as object);
+  if (cached !== undefined) return cached;
+  const total = calcDolbodaScore(f).total;
+  scoreMemo.set(f as object, total);
+  return total;
+}
+
+const feeMemo = new WeakMap<object, number | null>();
+
 export const INTENT_META: Record<SimilarIntent, { label: string; empty: string }> = {
   similar: { label: "비슷한 곳", empty: "비슷한 조건의 시설을 찾지 못했어요" },
   closer: { label: "더 가까운 곳", empty: "이 시설보다 가까운 비슷한 곳이 없어요" },
@@ -48,6 +71,14 @@ export interface SimilarFacility {
  * 자릿수가 어긋난 값(1일 1원 등)은 비교를 왜곡하므로 제외한다 — feeQuality와 같은 기준.
  */
 function monthlyFeeOf(f: Facility): number | null {
+  const cached = feeMemo.get(f as object);
+  if (cached !== undefined) return cached;
+  const fee = computeMonthlyFee(f);
+  feeMemo.set(f as object, fee);
+  return fee;
+}
+
+function computeMonthlyFee(f: Facility): number | null {
   let sum = 0;
   let counted = 0;
 
@@ -186,8 +217,8 @@ export function compareFacilities(base: Facility, other: Facility): SimilarFacil
     }
   }
 
-  const scoreBase = calcDolbodaScore(base).total;
-  const scoreOther = calcDolbodaScore(other).total;
+  const scoreBase = totalScoreOf(base);
+  const scoreOther = totalScoreOf(other);
   if (scoreBase != null && scoreOther != null && scoreOther !== scoreBase) {
     const diff = scoreOther - scoreBase;
     if (Math.abs(diff) >= 3) {
@@ -213,7 +244,9 @@ function withinReasonableDistance(list: SimilarFacility[]): SimilarFacility[] {
     const near = list.filter((c) => c.distanceKm == null || c.distanceKm <= km);
     if (near.length >= 3) return near;
   }
-  return list;
+  // 항상 새 배열로 돌려준다 — 아래 정렬이 제자리 정렬이라, 원본을 그대로 넘기면
+  // 같은 후보 배열로 여러 의도를 연달아 계산할 때 서로의 순서를 건드리게 된다.
+  return [...list];
 }
 
 /** 의도에 맞게 후보를 걸러 다시 정렬한다 */
@@ -223,7 +256,7 @@ export function rankByIntent(
   intent: SimilarIntent
 ): SimilarFacility[] {
   const baseFee = monthlyFeeOf(base);
-  const baseScore = calcDolbodaScore(base).total;
+  const baseScore = totalScoreOf(base);
   const baseDist = 0;
 
   // 거리 가드 — closer는 어차피 거리순이라 그대로 두고, 나머지는 현실적인 반경으로 좁힌다
@@ -248,13 +281,10 @@ export function rankByIntent(
   if (intent === "better") {
     if (baseScore == null) return [];
     list = list.filter((c) => {
-      const s = calcDolbodaScore(c.facility).total;
+      const s = totalScoreOf(c.facility);
       return s != null && s > baseScore;
     });
-    return list.sort(
-      (a, b) =>
-        (calcDolbodaScore(b.facility).total ?? 0) - (calcDolbodaScore(a.facility).total ?? 0)
-    );
+    return list.sort((a, b) => (totalScoreOf(b.facility) ?? 0) - (totalScoreOf(a.facility) ?? 0));
   }
 
   // similar — 유사도 우선, 동점이면 가까운 순
@@ -262,4 +292,21 @@ export function rankByIntent(
   return list.sort(
     (a, b) => b.similarity - a.similarity || (a.distanceKm ?? 999) - (b.distanceKm ?? 999)
   );
+}
+
+/**
+ * 5개 의도를 한 번에 계산한다.
+ * 무거운 건 후보를 DB에서 가져와 채점하는 부분이고 그건 의도와 무관하게 똑같다.
+ * 탭을 누를 때마다 그 과정을 처음부터 되풀이하는 대신, 한 번 계산해 전부 돌려준다.
+ */
+export function rankAllIntents(
+  base: Facility,
+  candidates: SimilarFacility[],
+  limit: number
+): Record<SimilarIntent, SimilarFacility[]> {
+  const out = {} as Record<SimilarIntent, SimilarFacility[]>;
+  for (const intent of ALL_INTENTS) {
+    out[intent] = rankByIntent(base, candidates, intent).slice(0, limit);
+  }
+  return out;
 }

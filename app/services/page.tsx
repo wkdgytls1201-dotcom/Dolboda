@@ -5,6 +5,7 @@ import { CareServicesHero } from "@/components/CareServicesHero";
 import { ServicesShowcase } from "@/components/ServicesShowcase";
 import { CARE_SERVICES, SERVICE_STEPS } from "@/lib/careServices";
 import { SITE_URL } from "@/lib/siteConfig";
+import { jsonLdHtml } from "@/lib/jsonLd";
 
 export const metadata: Metadata = {
   title: "돌봄 서비스 — 병원 간병·집에서 돌봄·가사 돌봄·가족 간병",
@@ -87,7 +88,7 @@ export default function ServicesPage() {
     <main className="mx-auto max-w-2xl px-4 pb-24 pt-6">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }}
       />
 
       <div className="mb-2">

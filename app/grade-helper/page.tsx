@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { GradeHelperChat } from "@/components/GradeHelperChat";
 import { SITE_URL } from "@/lib/siteConfig";
+import { jsonLdHtml } from "@/lib/jsonLd";
 
 export const metadata: Metadata = {
   title: "AI 장기요양등급 도우미 — 1분 대화로 예상 등급 확인",
@@ -73,7 +74,7 @@ export default function GradeHelperPage() {
     <main className="min-h-[85vh] bg-ivory-50 px-4 py-8 pb-24">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }}
       />
       <div className="mx-auto max-w-xl">
         <h1 className="text-xl font-extrabold text-ink-900">AI 장기요양등급 도우미</h1>

@@ -3,6 +3,7 @@ import { Sparkles, ArrowRight } from "lucide-react";
 import { GradeTest } from "@/components/GradeTest";
 import { TEST_AREAS, TOTAL_ITEMS, APPLY_STEPS } from "@/lib/gradeTest";
 import { SITE_URL } from "@/lib/siteConfig";
+import { jsonLdHtml } from "@/lib/jsonLd";
 
 export const metadata: Metadata = {
   title: "장기요양등급 예상 테스트 — 요양등급 자가진단",
@@ -83,7 +84,7 @@ export default function GradeTestPage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }}
       />
       <div className="mx-auto max-w-xl px-4 pt-4">
         <a

@@ -25,6 +25,12 @@ interface FacilitiesResult {
 // 22,000건 넘는 전국 데이터를 클라이언트에 통째로 내려주면 응답이 20MB가 넘어 브라우저가
 // 멈춘다. q(검색어)/limit으로 서버에서 좁힌 결과만 받아온다. q가 비어있으면 최근 등록순
 // limit건만 받아오므로, 검색창에 입력해야 원하는 시설을 찾을 수 있다.
+// 검색어는 글자를 칠 때마다 요청을 보내면 안 된다.
+// q는 서버에서 ILIKE '%...%'로 걸리는데 address에 인덱스가 없어 28,000행 순차 스캔이고,
+// findMany와 count가 각각 도니까 한 글자에 전체 스캔 2회다. "김해시요양원"이면 24회.
+// (병원 자동완성은 이미 같은 300ms 디바운스를 쓰고 있다 — components/CareRequestWizard.tsx)
+const QUERY_DEBOUNCE_MS = 300;
+
 export function useFacilities(query: FacilitiesQuery = {}): FacilitiesResult {
   const { q = "", limit = 200, enabled = true, cardView = false } = query;
   // 배열을 그대로 의존성에 쓰면 매 렌더마다 새 배열이라 무한 요청이 된다.
@@ -36,6 +42,17 @@ export function useFacilities(query: FacilitiesQuery = {}): FacilitiesResult {
   });
   const [loading, setLoading] = useState(enabled);
 
+  const [debouncedQ, setDebouncedQ] = useState(q);
+  useEffect(() => {
+    // 검색어를 지운 건 기다릴 이유가 없다 — 바로 전체 목록으로 돌아간다
+    if (!q) {
+      setDebouncedQ("");
+      return;
+    }
+    const timer = setTimeout(() => setDebouncedQ(q), QUERY_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [q]);
+
   useEffect(() => {
     if (!enabled) {
       setLoading(false);
@@ -44,7 +61,7 @@ export function useFacilities(query: FacilitiesQuery = {}): FacilitiesResult {
     let cancelled = false;
     setLoading(true);
     const params = new URLSearchParams();
-    if (q) params.set("q", q);
+    if (debouncedQ) params.set("q", debouncedQ);
     if (typeKey) params.set("type", typeKey);
     if (programTagKey) params.set("programTags", programTagKey);
     if (cardView) params.set("view", "card");
@@ -64,7 +81,7 @@ export function useFacilities(query: FacilitiesQuery = {}): FacilitiesResult {
     return () => {
       cancelled = true;
     };
-  }, [q, limit, typeKey, programTagKey, enabled, cardView]);
+  }, [debouncedQ, limit, typeKey, programTagKey, enabled, cardView]);
 
   return { facilities: state.facilities, total: state.total, loading };
 }

@@ -4,6 +4,7 @@ import { BookOpen, ChevronRight } from "lucide-react";
 import { GUIDES } from "@/lib/guides";
 import { GuideListHero } from "@/components/GuideIllustration";
 import { SITE_URL } from "@/lib/siteConfig";
+import { jsonLdHtml } from "@/lib/jsonLd";
 
 // 카테고리 구분용 점 색 — 목록에서 분류가 한눈에 들어오게
 const CATEGORY_DOT: Record<string, string> = {
@@ -38,7 +39,7 @@ export default function GuideListPage() {
     <main className="mx-auto max-w-2xl px-4 pb-24 pt-8">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }}
       />
 
       <div className="mb-8 text-center">

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Mail, Phone, ShieldCheck, Database, HeartHandshake } from "lucide-react";
 import { SITE_URL } from "@/lib/siteConfig";
+import { jsonLdHtml } from "@/lib/jsonLd";
 
 export const metadata: Metadata = {
   title: "돌보다 소개 — 정보 비대칭 없는 투명한 돌봄",
@@ -61,7 +62,7 @@ export default function AboutPage() {
     <main className="mx-auto max-w-2xl px-4 pb-24 pt-8">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }}
       />
 
       <h1 className="mb-3 text-2xl font-bold leading-snug text-ink-900">

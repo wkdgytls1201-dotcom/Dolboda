@@ -5,6 +5,7 @@ import { ArrowRight, ChevronRight } from "lucide-react";
 import { GUIDES, findGuide } from "@/lib/guides";
 import { GuideIllustration } from "@/components/GuideIllustration";
 import { SITE_URL } from "@/lib/siteConfig";
+import { jsonLdHtml } from "@/lib/jsonLd";
 
 // 전부 정적 콘텐츠 — 빌드 때 생성해 온전한 HTML로 서빙한다
 export function generateStaticParams() {
@@ -70,7 +71,7 @@ export default function GuidePage({ params }: { params: { slug: string } }) {
     <main className="mx-auto max-w-2xl px-4 pb-24 pt-6">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }}
       />
 
       {/* 빵부스러기 */}

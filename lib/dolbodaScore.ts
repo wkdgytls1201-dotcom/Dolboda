@@ -273,7 +273,11 @@ function nhisAreas(
     },
   ];
 
-  // 요양보호사 1명이 몇 분을 돌보는지 — 법정 기준은 요양원 2.1:1, 낮을수록 여유가 있다
+  // 요양보호사 1명이 몇 분을 돌보는지 — 낮을수록 여유가 있다.
+  // 요양원 법정 배치기준은 입소자 2.3명당 1명(노인복지법 시행규칙, 2022년 개정 전 2.5명)이다.
+  // 만점 경계선은 그보다 엄격한 2.1로 둔다 — 법정 최저선을 만점으로 잡으면 기준만 겨우 지킨
+  // 시설과 여유 있게 배치한 시설이 구분되지 않는다. 실제 분포의 p25도 2.25라 이 근처다.
+  // (근무환경 지수 docs/work-index-spec.md의 구간 근거와 같은 데이터)
   const careWorkers = f.careWorkerDetail?.total ?? 0;
   const perCareWorker = careWorkers > 0 && f.capacity > 0 ? f.capacity / careWorkers : null;
   // 프로그램 종류 수 — 인지·신체활동이 다양할수록 하루가 단조롭지 않다

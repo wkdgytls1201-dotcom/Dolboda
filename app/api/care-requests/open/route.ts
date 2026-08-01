@@ -39,6 +39,12 @@ export async function GET(req: Request) {
     ...(genderPref && { sitterGenderPref: { in: ["무관", genderPref] } }),
   };
 
+  // 마이페이지 대시보드는 "새 일자리 N건" 배지 숫자 하나만 필요하다.
+  // 예전엔 그것 때문에 공고 100건을 통째로 받아서 items.length를 셌다.
+  if (searchParams.get("count") === "1") {
+    return NextResponse.json({ count: await prisma.careRequest.count({ where }) });
+  }
+
   const orderBy: Prisma.CareRequestOrderByWithRelationInput[] =
     sort === "startSoon"
       ? [{ startDate: "asc" }]
@@ -54,10 +60,14 @@ export async function GET(req: Request) {
   });
 
   return NextResponse.json({
-    items: openRequests.map(({ applications, ...r }) => ({
-      ...r,
-      alreadyApplied: applications.length > 0,
-      applicationId: applications[0]?.id ?? null,
-    })),
+    // guardianId는 화면에서 안 쓰는데 나가고 있었다 — 보호자 식별자를 시터에게 줄 이유가 없다
+    items: openRequests.map(({ applications, guardianId, ...r }) => {
+      void guardianId;
+      return {
+        ...r,
+        alreadyApplied: applications.length > 0,
+        applicationId: applications[0]?.id ?? null,
+      };
+    }),
   });
 }

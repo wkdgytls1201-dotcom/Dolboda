@@ -6,6 +6,7 @@ import { SERVICE_LANDINGS, findServiceLanding } from "@/lib/serviceLanding";
 import { CARE_SERVICES } from "@/lib/careServices";
 import { findGuide } from "@/lib/guides";
 import { SITE_URL } from "@/lib/siteConfig";
+import { jsonLdHtml } from "@/lib/jsonLd";
 
 // 서비스별 독립 랜딩 — /services 종합 페이지는 그대로 두고, "병원 간병" "가사 돌봄" 같은
 // 검색어를 각각 노리는 정적 페이지를 추가한다. 전부 SSG.
@@ -78,7 +79,7 @@ export default function ServiceLandingPage({ params }: { params: { slug: string 
     <main className="mx-auto max-w-2xl px-4 pb-24 pt-6">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }}
       />
 
       <nav aria-label="현재 위치" className="mb-5 flex items-center gap-1 text-xs text-ink-300">

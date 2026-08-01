@@ -3,6 +3,25 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { parseLocationType, buildCareRequestData } from "@/lib/careRequestValidation";
 
+// 지원자 정보는 보호자가 고르는 데 필요한 만큼만 내려보낸다.
+// 예전엔 sitterProfile 행을 통째로 include해서 정산 계좌(bankName·bankAccountNumber·
+// bankAccountHolder)까지 응답에 실려 나갔다. 화면에는 안 그렸지만 개발자도구
+// 네트워크 탭에서는 그대로 보였다. lib/careRequestTypes.ts의 Applicant와 같은 모양이다.
+const APPLICANT_SELECT = {
+  id: true,
+  status: true,
+  createdAt: true,
+  sitterProfile: {
+    select: {
+      id: true,
+      nickname: true,
+      experienceYears: true,
+      intro: true,
+      certifications: { select: { id: true, name: true } },
+    },
+  },
+} as const;
+
 // 보호자 본인의 가장 최근 돌봄 요청 1건(진행 중이 아니어도 최근 것 하나) — 상세/관리 화면에서 사용
 export async function GET() {
   const session = await auth();
@@ -14,9 +33,7 @@ export async function GET() {
     where: { guardianId: session.user.id },
     orderBy: { createdAt: "desc" },
     include: {
-      applications: {
-        include: { sitterProfile: { include: { certifications: true } } },
-      },
+      applications: { select: APPLICANT_SELECT },
     },
   });
 
@@ -72,9 +89,7 @@ export async function POST(req: Request) {
   // 등록 직후 상세 화면이 바로 뜰 수 있게 applications(빈 배열)까지 포함해 돌려준다.
   const careRequest = await prisma.careRequest.create({
     include: {
-      applications: {
-        include: { sitterProfile: { include: { certifications: true } } },
-      },
+      applications: { select: APPLICANT_SELECT },
     },
     data: {
       ...fields,

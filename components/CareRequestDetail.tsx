@@ -69,6 +69,9 @@ export function CareRequestDetail({
 
   async function refresh() {
     const res = await fetch("/api/care-requests");
+    // res.ok를 안 보면 401·404 응답({error:"..."})이 돌봄 요청 자리에 들어가서
+    // 아래 careRequest.locationType 같은 접근이 전부 undefined가 되고 화면이 죽는다.
+    if (!res.ok) return;
     onChange(await res.json());
   }
 

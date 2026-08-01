@@ -50,11 +50,13 @@ export async function GET(req: Request) {
       return { ...base, distanceKm: distanceById.get(row.id) };
     });
 
-  // 좌표가 있어 거리 계산이 가능한 전체 건수 (목록 위 "총 N개" 표시에 사용)
+  // 좌표가 있어 거리 계산이 가능한 전체 건수 (목록 위 "총 N개" 표시에 사용).
+  // items와 같은 조건이어야 한다 — mock 제외를 여기만 빼먹어서 "총 N개"가 항목 수와 어긋났다.
   const total = await prisma.facility.count({
     where: {
       lat: { not: null },
       lng: { not: null },
+      dataSource: { not: "mock" },
       ...(types.length > 0 && { facilityType: { in: types as never } }),
     },
   });

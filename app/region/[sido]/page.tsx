@@ -12,6 +12,7 @@ import {
   regionFaqJsonLd,
 } from "@/components/RegionSeoParts";
 import { SITE_URL } from "@/lib/siteConfig";
+import { jsonLdHtml } from "@/lib/jsonLd";
 
 // 지역별 시설 수는 자주 안 바뀌므로 하루 단위로 재생성(ISR)
 export const revalidate = 86400;
@@ -92,7 +93,7 @@ export default async function RegionSidoPage({ params }: { params: { sido: strin
     <main className="mx-auto max-w-2xl px-4 py-8 pb-16">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }}
       />
 
       <nav aria-label="현재 위치" className="mb-3 text-xs text-ink-300">

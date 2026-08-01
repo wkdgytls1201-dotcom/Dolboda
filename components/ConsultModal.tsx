@@ -26,12 +26,19 @@ export function ConsultModal({
       const res = await fetch("/api/consult", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ facilityId, facilityName, name, phone }),
+        body: JSON.stringify({ facilityId, name, phone }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        // 연락처 형식·신청 제한처럼 사용자가 고칠 수 있는 이유는 그대로 알려준다.
+        // "실패했어요"만 띄우면 무엇을 바꿔야 할지 알 수 없어 그냥 이탈한다.
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error ?? "");
+      }
       setSubmitted(true);
-    } catch {
-      setError("접수에 실패했어요. 잠시 후 다시 시도해주세요.");
+    } catch (err) {
+      setError(
+        (err instanceof Error && err.message) || "접수에 실패했어요. 잠시 후 다시 시도해주세요."
+      );
     } finally {
       setSubmitting(false);
     }

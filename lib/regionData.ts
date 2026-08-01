@@ -4,6 +4,11 @@ import { prisma } from "@/lib/prisma";
 import { REGION_SEO, type RegionSeo, sigunguOf, subLocalityOf } from "@/lib/regionSeo";
 import type { FacilityType } from "@/lib/types";
 
+// 데모용 시설(dataSource=mock)은 실재하지 않으므로 지역 페이지의 개수·통계·목록에서 뺀다.
+// 목록·검색·사이트맵은 이미 제외하고 있었는데 지역 쪽만 빠져 있어서, "OO시 요양원 N곳"의
+// N이 다른 화면과 어긋나고 목록에서 noindex인 상세 페이지로 링크가 나가고 있었다.
+const NOT_MOCK = { dataSource: { not: "mock" } } as const;
+
 function prefixWhere(region: RegionSeo) {
   return { OR: region.prefixes.map((p) => ({ address: { startsWith: p } })) };
 }
@@ -14,7 +19,7 @@ export const getActiveRegions = unstable_cache(
   async (): Promise<{ slug: string; label: string; count: number }[]> => {
     const rows = await prisma.$queryRaw<{ sido: string; count: bigint }[]>`
       SELECT split_part(address, ' ', 1) AS sido, COUNT(*) AS count
-      FROM "Facility" GROUP BY 1
+      FROM "Facility" WHERE "dataSource" != 'mock' GROUP BY 1
     `;
     const counts = new Map<string, number>();
     for (const row of rows) {
@@ -84,6 +89,7 @@ export const getRegionIndex = unstable_cache(
              "facilityType"::text AS facility_type,
              COUNT(*) AS count
       FROM "Facility"
+      WHERE "dataSource" != 'mock'
       GROUP BY 1, 2, 3
     `;
 
@@ -125,7 +131,7 @@ export const getSigunguSummary = cache(
     }
 
     const rows = await prisma.facility.findMany({
-      where: { AND: [prefixWhere(region), { address: { contains: ` ${sigungu} ` } }] },
+      where: { AND: [prefixWhere(region), { address: { contains: ` ${sigungu} ` } }, NOT_MOCK] },
       select: { address: true },
     });
     const subs = new Set<string>();
@@ -151,7 +157,12 @@ export const getTypeSummary = cache(
   ): Promise<{ total: number; subLocalities: string[] }> => {
     const rows = await prisma.facility.findMany({
       where: {
-        AND: [prefixWhere(region), { address: { contains: ` ${sigungu} ` } }, { facilityType }],
+        AND: [
+          prefixWhere(region),
+          { address: { contains: ` ${sigungu} ` } },
+          { facilityType },
+          NOT_MOCK,
+        ],
       },
       select: { address: true },
     });
@@ -177,7 +188,7 @@ export const getTopFacilities = cache(
     facilityType?: FacilityType,
     skip = 0
   ) => {
-    const conditions: object[] = [prefixWhere(region)];
+    const conditions: object[] = [prefixWhere(region), NOT_MOCK];
     if (sigungu) conditions.push({ address: { contains: ` ${sigungu} ` } });
     if (facilityType) conditions.push({ facilityType });
     return prisma.facility.findMany({
@@ -234,7 +245,8 @@ export const getRegionStats = cache(
           WHERE "facilityType" != 'HOME_CARE' AND (extra->>'capacity')::numeric > 0
         ) AS avg_capacity
       FROM "Facility"
-      WHERE address LIKE ANY(${prefixes.map((p) => `${p}%`)}::text[])
+      WHERE "dataSource" != 'mock'
+        AND address LIKE ANY(${prefixes.map((p) => `${p}%`)}::text[])
         AND (${sigunguPattern}::text IS NULL OR address LIKE ${sigunguPattern})
         AND (${facilityType ?? null}::text IS NULL OR "facilityType"::text = ${facilityType ?? null})
     `;

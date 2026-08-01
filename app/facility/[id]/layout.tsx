@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { FACILITY_TYPE_LABEL, type FacilityType } from "@/lib/types";
 import { SITE_URL } from "@/lib/siteConfig";
 import { findRegionByAddress, sigunguOf } from "@/lib/regionSeo";
+import { jsonLdHtml } from "@/lib/jsonLd";
 
 // generateMetadata와 레이아웃 렌더가 같은 요청 안에서 한 번만 조회하도록 캐시.
 const getFacility = cache((id: string) =>
@@ -22,8 +23,15 @@ const getFacility = cache((id: string) =>
   })
 );
 
-// "서울특별시 강남구 ..." → "서울특별시 강남구" 같은 지역 접두어
-function regionOf(address: string) {
+// "서울특별시 강남구 ..." → "서울특별시 강남구" 같은 지역 접두어.
+//
+// 공단 원본에 시/도가 통째로 빠진 주소가 37건 있다(예: 강진군노인전문요양원의 주소가
+// "(강진읍)"뿐이다 — Institution 마스터도 같은 상태라 코드로는 복구할 수 없다).
+// 그걸 그대로 쓰면 제목이 "강진군노인전문요양원 — (강진읍) 요양시설 정보"가 되고
+// 설명도 "(강진읍) 요양원 ..."이 된다. 지역을 못 알아보면 아예 빼는 편이 낫다.
+function regionOf(address: string): string | null {
+  const region = findRegionByAddress(address);
+  if (!region) return null;
   return address.split(" ").slice(0, 2).join(" ");
 }
 
@@ -42,8 +50,11 @@ export async function generateMetadata({
 
   const typeLabel = FACILITY_TYPE_LABEL[facility.facilityType as FacilityType] ?? "요양시설";
   const region = regionOf(facility.address);
-  const title = `${facility.name} — ${region} ${typeLabel} 정보`;
-  const description = `${region} ${typeLabel} ${facility.name}의 평가등급, 비급여 비용, 인력 현황, 위치와 연락처를 확인하세요. 주소: ${facility.address}`;
+  // 지역을 못 알아본 주소(공단 원본 결손 37건)에서는 지역 부분을 통째로 뺀다
+  const title = region
+    ? `${facility.name} — ${region} ${typeLabel} 정보`
+    : `${facility.name} — ${typeLabel} 정보`;
+  const description = `${region ? `${region} ` : ""}${typeLabel} ${facility.name}의 평가등급, 비급여 비용, 인력 현황, 위치와 연락처를 확인하세요. 주소: ${facility.address}`;
 
   return {
     title,
@@ -129,7 +140,7 @@ export default async function FacilityLayout({
       {jsonLd && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }}
         />
       )}
       {children}
