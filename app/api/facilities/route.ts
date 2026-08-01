@@ -15,12 +15,21 @@ export async function GET(req: Request) {
   const ids = searchParams.get("ids");
   const limit = Math.min(Number(searchParams.get("limit")) || DEFAULT_LIMIT, MAX_LIMIT);
 
+  // 시설 데이터는 공공데이터 갱신 스크립트가 돌 때만 바뀐다(하루 단위) — 개인화도 없다.
+  // CDN(s-maxage)에 1시간 캐시해두면 같은 검색 조합의 반복 방문이 DB를 다시 훑지 않는다.
+  const CACHE_HEADERS = {
+    "Cache-Control": "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400",
+  };
+
   // ids가 있으면 특정 시설들을 정확히 지정해서 가져오는 것 — limit/필터 무시하고 그대로 반환
   // (비교하기·찜한시설처럼 기본 200건 안에 없을 수도 있는 특정 시설을 조회할 때 씀)
   if (ids) {
     const idList = ids.split(",").filter(Boolean);
     const rows = await prisma.facility.findMany({ where: { id: { in: idList } } });
-    return NextResponse.json({ items: rows.map(rowToFacility), total: rows.length });
+    return NextResponse.json(
+      { items: rows.map(rowToFacility), total: rows.length },
+      { headers: CACHE_HEADERS }
+    );
   }
 
   // 데모용 시설(dataSource=mock 10건)은 공개 목록에 섞이면 안 된다 — 실제로 없는 시설이
@@ -52,8 +61,11 @@ export async function GET(req: Request) {
   const items = rows.map(rowToFacility);
   // 목록 화면은 카드에 쓰는 몇 개 필드만 필요한데, 전체를 내려주면 300건에 290KB가 넘는다.
   // view=card면 필요한 것만 추려 보낸다(상세 페이지는 ids= 조회라 영향 없음).
-  return NextResponse.json({
-    items: searchParams.get("view") === "card" ? items.map(toCardFacility) : items,
-    total,
-  });
+  return NextResponse.json(
+    {
+      items: searchParams.get("view") === "card" ? items.map(toCardFacility) : items,
+      total,
+    },
+    { headers: CACHE_HEADERS }
+  );
 }

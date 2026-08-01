@@ -71,11 +71,14 @@ export function FacilityThumbnail({
   className?: string;
 }) {
   // 시설이 동의하고 제공한 실제 사진이 있으면 로드뷰/일러스트/스톡사진보다 항상 우선한다.
+  // 목록에서는 카드 수백 장이 한 번에 마운트되므로 화면 밖 사진은 lazy로 미룬다.
   if (facility.photos && facility.photos.length > 0) {
     return (
       <img
         src={facility.photos[0]}
         alt=""
+        loading="lazy"
+        decoding="async"
         className={`h-full w-full object-cover ${className}`}
       />
     );
@@ -102,6 +105,8 @@ export function FacilityThumbnail({
     <img
       src={facilityPhotoFor(facility.id, 480)}
       alt=""
+      loading="lazy"
+      decoding="async"
       className={`h-full w-full object-cover ${className}`}
     />
   );
