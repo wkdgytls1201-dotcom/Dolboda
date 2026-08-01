@@ -34,6 +34,7 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
     include: {
       applications: { select: APPLICANT_SELECT },
+      review: { select: { id: true, rating: true } },
     },
   });
 
@@ -41,7 +42,50 @@ export async function GET() {
     return NextResponse.json({ error: "등록된 돌봄 요청이 없어요." }, { status: 404 });
   }
 
-  return NextResponse.json(careRequest);
+  // 지원자별 "돌보다 인증 실적" — 완료 건수와 보호자 후기 평점.
+  // 자기 신고 경력(experienceYears)과 달리 플랫폼이 보증하는 숫자라 따로 계산해 붙인다.
+  const sitterIds = careRequest.applications.map((a) => a.sitterProfile.id);
+  let statsById = new Map<
+    string,
+    { completedCount: number; reviewCount: number; avgRating: number | null }
+  >();
+  if (sitterIds.length > 0) {
+    const [completed, reviews] = await Promise.all([
+      prisma.careRequestApplication.groupBy({
+        by: ["sitterProfileId"],
+        where: { sitterProfileId: { in: sitterIds }, status: "돌봄완료" },
+        _count: { _all: true },
+      }),
+      prisma.careReview.groupBy({
+        by: ["sitterProfileId"],
+        where: { sitterProfileId: { in: sitterIds } },
+        _count: { _all: true },
+        _avg: { rating: true },
+      }),
+    ]);
+    statsById = new Map(
+      sitterIds.map((id) => {
+        const c = completed.find((x) => x.sitterProfileId === id);
+        const r = reviews.find((x) => x.sitterProfileId === id);
+        return [
+          id,
+          {
+            completedCount: c?._count._all ?? 0,
+            reviewCount: r?._count._all ?? 0,
+            avgRating: r?._avg.rating != null ? Math.round(r._avg.rating * 10) / 10 : null,
+          },
+        ];
+      })
+    );
+  }
+
+  return NextResponse.json({
+    ...careRequest,
+    applications: careRequest.applications.map((a) => ({
+      ...a,
+      stats: statsById.get(a.sitterProfile.id),
+    })),
+  });
 }
 
 export async function POST(req: Request) {

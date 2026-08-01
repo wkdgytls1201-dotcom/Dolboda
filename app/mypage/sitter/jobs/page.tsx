@@ -319,7 +319,11 @@ export default function SitterJobsPage() {
     );
   }
 
-  const applied = applications.filter((a) => a.status === "지원완료");
+  // 미선정도 지원 현황에 함께 보여준다 — 무소식으로 사라지는 것보다
+  // "이번엔 다른 분과 진행됐어요"가 낫고, 그 자리에서 새 일자리로 잇는다.
+  const applied = applications.filter(
+    (a) => a.status === "지원완료" || a.status === "미선정"
+  );
   const matched = applications.filter((a) => a.status === "매칭확정");
   const done = applications.filter((a) => a.status === "돌봄완료");
 
@@ -515,18 +519,36 @@ export default function SitterJobsPage() {
                 key={a.id}
                 job={a.careRequest}
                 badge={
-                  <span className="rounded-full bg-ink-100 px-2.5 py-1 text-xs font-semibold text-ink-500">
-                    보호자 확인 대기
-                  </span>
+                  a.status === "미선정" ? (
+                    <span className="rounded-full bg-ink-100 px-2.5 py-1 text-xs font-semibold text-ink-400">
+                      이번엔 다른 분과 진행됐어요
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-accent-50 px-2.5 py-1 text-xs font-semibold text-ink-700">
+                      보호자 확인 대기
+                    </span>
+                  )
                 }
                 footer={
-                  <button
-                    type="button"
-                    onClick={() => handleWithdraw(a.id)}
-                    className="min-h-[48px] w-full rounded-xl border border-ink-100 text-sm font-semibold text-ink-500 transition-colors duration-150 hover:bg-ink-100 active:scale-[0.98]"
-                  >
-                    지원 취소
-                  </button>
+                  a.status === "미선정" ? (
+                    // 떨어졌다는 사실을 숨기지 않되, 다음 행동으로 바로 잇는다 —
+                    // 무소식보다 낫고, 여기서 새 일자리로 돌려보내는 게 리텐션이다.
+                    <button
+                      type="button"
+                      onClick={() => setTab("open")}
+                      className="min-h-[48px] w-full rounded-xl bg-primary-50 text-sm font-bold text-primary-700 transition-colors duration-150 hover:bg-primary-100 active:scale-[0.98]"
+                    >
+                      다른 일자리 둘러보기
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleWithdraw(a.id)}
+                      className="min-h-[48px] w-full rounded-xl border border-ink-100 text-sm font-semibold text-ink-500 transition-colors duration-150 hover:bg-ink-100 active:scale-[0.98]"
+                    >
+                      지원 취소
+                    </button>
+                  )
                 }
               />
             ))

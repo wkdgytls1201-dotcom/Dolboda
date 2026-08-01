@@ -18,6 +18,7 @@ import {
   CONDITION_SUGGESTIONS,
 } from "@/lib/careOptions";
 import { GRADE_BANDS } from "@/lib/gradeTest";
+import { ltcGuideFor } from "@/lib/ltcGuide";
 
 interface CareProfileData {
   id: string;
@@ -274,6 +275,18 @@ function CareProfileContent() {
               value={form.ltcGrade}
               onChange={(v) => set("ltcGrade", v)}
             />
+            {/* 고른 등급으로 무엇을 이용할 수 있는지 그 자리에서 알려준다 —
+                제도 구조만 설명하고 금액은 말하지 않는다(매년 고시로 바뀜) */}
+            {(() => {
+              const guide = ltcGuideFor(form.ltcGrade || null);
+              if (!guide) return null;
+              return (
+                <div className="mt-3 rounded-xl bg-ivory-100 p-3.5">
+                  <p className="text-[13px] font-bold text-ink-900">{guide.summary}</p>
+                  <p className="mt-1 text-[12px] leading-relaxed text-ink-500">{guide.detail}</p>
+                </div>
+              );
+            })()}
           </div>
         </div>
 

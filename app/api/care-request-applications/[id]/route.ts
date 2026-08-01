@@ -27,6 +27,17 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       where: { id: params.id },
       data: { status: "매칭확정" },
     }),
+    // 나머지 지원자는 그 자리에서 "미선정"으로 — 무소식으로 방치하는 것이
+    // 매니저 이탈의 가장 큰 원인이다. 떨어진 걸 아는 게 아무 소식 없는 것보다 낫고,
+    // 화면에서 "다음 기회에 다시 만나요"로 재지원을 유도할 수 있다.
+    prisma.careRequestApplication.updateMany({
+      where: {
+        careRequestId: application.careRequestId,
+        id: { not: params.id },
+        status: "지원완료",
+      },
+      data: { status: "미선정" },
+    }),
     prisma.careRequest.update({
       where: { id: application.careRequestId },
       data: { status: "MATCHED" },

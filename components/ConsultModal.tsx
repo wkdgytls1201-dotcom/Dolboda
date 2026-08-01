@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { X, CheckCircle2 } from "lucide-react";
+import { useCareProfiles } from "@/lib/useCareProfiles";
 
 export function ConsultModal({
   facilityId,
@@ -17,6 +18,9 @@ export function ConsultModal({
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  // "어르신 정보 함께 전달" — 민감정보라 기본은 끔(옵트인). 체크해야만 서버로 간다.
+  const { profiles } = useCareProfiles();
+  const [shareProfileId, setShareProfileId] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -26,7 +30,12 @@ export function ConsultModal({
       const res = await fetch("/api/consult", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ facilityId, name, phone }),
+        body: JSON.stringify({
+          facilityId,
+          name,
+          phone,
+          ...(shareProfileId ? { careProfileId: shareProfileId } : {}),
+        }),
       });
       if (!res.ok) {
         // 연락처 형식·신청 제한처럼 사용자가 고칠 수 있는 이유는 그대로 알려준다.
@@ -100,6 +109,46 @@ export function ConsultModal({
                 placeholder="010-0000-0000"
               />
             </div>
+            {/* 어르신 정보 함께 전달 — 민감정보라 기본 꺼짐(옵트인). 프로필이 있을 때만 노출 */}
+            {profiles.length > 0 && (
+              <div className="rounded-xl bg-ivory-100 p-3">
+                <label className="flex cursor-pointer items-start gap-2.5">
+                  <input
+                    type="checkbox"
+                    checked={shareProfileId !== null}
+                    onChange={(e) =>
+                      setShareProfileId(e.target.checked ? profiles[0].id : null)
+                    }
+                    className="mt-0.5 h-4 w-4 shrink-0 accent-[#FF6250]"
+                  />
+                  <span className="text-xs leading-relaxed text-ink-700">
+                    <strong className="font-bold">어르신 정보 함께 전달</strong>
+                    <span className="block text-ink-500">
+                      돌봄 프로필 요약(연령대·거동 수준 등)을 상담에 포함해요. 시설이 미리
+                      준비된 상담을 할 수 있어요.
+                    </span>
+                  </span>
+                </label>
+                {shareProfileId !== null && profiles.length > 1 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5 pl-6">
+                    {profiles.map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => setShareProfileId(p.id)}
+                        className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                          shareProfileId === p.id
+                            ? "bg-primary-500 text-white"
+                            : "bg-white text-ink-500 shadow-card"
+                        }`}
+                      >
+                        {p.relation}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
             {error && <p className="text-xs font-semibold text-primary-600">{error}</p>}
             <button
               type="submit"

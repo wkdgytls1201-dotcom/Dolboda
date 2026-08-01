@@ -16,6 +16,7 @@ import { useSitterProfileContext } from "@/lib/sitterProfileContext";
 import { sitterProgress, sitterLevel } from "@/lib/sitterProgress";
 import { useFavorites } from "@/lib/favoritesContext";
 import { useCareProfiles, type CareProfileSummary } from "@/lib/useCareProfiles";
+import { ltcGuideFor } from "@/lib/ltcGuide";
 
 interface GuardianRequest {
   id: string;
@@ -31,7 +32,7 @@ interface MyApplication {
 }
 
 // 돌봄 프로필의 상태에서 맞춤 검색 링크를 만든다.
-// 조건이 태그와 자연스럽게 이어질 때만 맞춤 문구를 쓰고, 아니면 일반 검색으로.
+// 우선순위: 질환·거동(구체적 필요) → 장기요양등급(이용 가능 급여) → 일반 검색.
 function profileCta(p: CareProfileSummary): { label: string; href: string } {
   if (p.conditions.includes("치매·인지저하")) {
     return {
@@ -46,6 +47,9 @@ function profileCta(p: CareProfileSummary): { label: string; href: string } {
   ) {
     return { label: "재활 치료 프로그램 있는 시설 보기", href: "/search?programTags=therapy" };
   }
+  // 등급을 알고 있으면 그 등급으로 이용 가능한 서비스로 안내 (등급 모름 → 등급테스트)
+  const guide = ltcGuideFor(p.ltcGrade);
+  if (guide?.cta) return guide.cta;
   return { label: "시설 찾아보기", href: "/search" };
 }
 

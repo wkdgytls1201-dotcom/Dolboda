@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { CareRequestWizard } from "@/components/CareRequestWizard";
 import { CareRequestDetail } from "@/components/CareRequestDetail";
+import { CareReviewPrompt } from "@/components/CareReviewPrompt";
 import { CareRequestSignedOut } from "@/components/CareRequestSignedOut";
 import { PageLoader } from "@/components/PageLoader";
 import type { CareRequestData } from "@/lib/careRequestTypes";
@@ -18,6 +19,8 @@ function CareRequestContent() {
   const [current, setCurrent] = useState<CareRequestData | null | undefined>(undefined);
   const [editing, setEditing] = useState(false);
   const [justCreated, setJustCreated] = useState(false);
+  // 완료 직후 화면에서 고른 다음 행동: "같은 조건으로 다시"(template) 또는 "새로"(blank)
+  const [nextAction, setNextAction] = useState<"template" | "blank" | null>(null);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -37,6 +40,19 @@ function CareRequestContent() {
   if (!session?.user) return <CareRequestSignedOut presetType={presetType} />;
 
   const isActive = current && (current.status === "OPEN" || current.status === "MATCHED");
+
+  // 완료된 직후 — 예전엔 곧바로 새 요청 폼으로 바뀌어서 후기를 남길 자리도,
+  // 마무리 인사도 없었다. 후기·재요청·새요청을 한 화면에 모은다.
+  if (current && current.status === "COMPLETED" && nextAction === null) {
+    return (
+      <CareReviewPrompt
+        careRequest={current}
+        onReviewed={setCurrent}
+        onReuse={() => setNextAction("template")}
+        onNewRequest={() => setNextAction("blank")}
+      />
+    );
+  }
 
   if (isActive && current && !editing) {
     return (
@@ -58,12 +74,14 @@ function CareRequestContent() {
   return (
     <CareRequestWizard
       initial={editing ? current : null}
+      template={!editing && nextAction === "template" ? current : null}
       presetType={editing ? null : presetType}
       onSaved={(saved) => {
         // 새로 등록한 경우에만 축하 배너를 보여준다 (수정 완료는 제외)
         setJustCreated(!editing);
         setCurrent(saved);
         setEditing(false);
+        setNextAction(null);
         window.scrollTo({ top: 0, behavior: "instant" });
       }}
       onCancelEdit={editing ? () => setEditing(false) : undefined}

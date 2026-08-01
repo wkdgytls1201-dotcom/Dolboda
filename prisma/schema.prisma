@@ -75,14 +75,30 @@ model Institution {
   @@index([serviceCode])
 }
 
-// 상담 신청 접수함 — 관리자만 보는 목록으로, 접수 시 이메일도 함께 발송(lib/resend.ts)
+// 상담 신청 접수함 — 관리자 목록 + 접수 시 이메일 발송(lib/resend.ts).
+// 리드 파이프는 회사가 쥔다: 시설로 자동 전달되지 않고, 운영자를 거쳐야만 시설에 닿는다
+// (나중에 리드 과금·프리미엄 노출 같은 B2B 수익화의 기반이 되는 관문).
 model ConsultRequest {
   id           String   @id @default(cuid())
   facilityId   String
   facilityName String
   name         String
   phone        String
-  createdAt    DateTime @default(now())
+  // 로그인 상태로 신청하면 계정과 연결 — 마이페이지 "상담 내역"의 근거.
+  // 비로그인 신청도 받아야 하므로 널 허용. 계정 삭제 시 연결만 끊는다(SetNull) —
+  // 상담 기록 자체는 운영 리드라 유지하되, 누구 것인지는 잊는다.
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  // 보호자가 "어르신 정보 함께 전달"에 체크한 경우에만 저장되는 프로필 요약 스냅샷(구간값).
+  // 원본 CareProfile을 참조하지 않고 신청 시점 값을 복사한다 — 이후 프로필을 지워도
+  // 이미 전달된 상담 내용은 신청 당시 그대로 남아야 운영자·시설과의 대화가 안 꼬인다.
+  profileSummary Json?
+  // 보호자 본인이 표시하는 진행 상태: 연락받음 / 입소결정 (null = 대기)
+  status String?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 // 아래 4개는 @auth/prisma-adapter(NextAuth) 표준 스키마 그대로
@@ -121,9 +137,10 @@ model User {
   image         String?
   accounts      Account[]
   sessions      Session[]
-  sitterProfile SitterProfile?
-  careRequests  CareRequest[]
-  careProfiles  CareProfile[]
+  sitterProfile   SitterProfile?
+  careRequests    CareRequest[]
+  careProfiles    CareProfile[]
+  consultRequests ConsultRequest[]
 }
 
 // 보호자가 저장해두는 "어르신 돌봄 프로필" — 검색 개인화·돌봄 요청 자동 채움에 재사용한다.
@@ -181,6 +198,7 @@ model SitterProfile {
   updatedAt         DateTime @updatedAt
   certifications    SitterCertification[]
   applications      CareRequestApplication[]
+  reviews           CareReview[]
 }
 
 model SitterCertification {
@@ -260,10 +278,15 @@ model CareRequest {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   applications      CareRequestApplication[]
+  review            CareReview?
 
   @@index([status, region])
 }
 
+// status 흐름: 지원완료 → 매칭확정 → 돌봄완료
+//                        ↘ 미선정 (다른 지원자가 확정되는 순간 일괄 처리 —
+//                          무소식으로 방치하는 것이 매니저 이탈의 가장 큰 원인이라
+//                          떨어진 것도 반드시 알린다)
 model CareRequestApplication {
   id              String        @id @default(cuid())
   careRequestId   String
@@ -274,6 +297,22 @@ model CareRequestApplication {
   createdAt       DateTime      @default(now())
 
   @@unique([careRequestId, sitterProfileId])
+}
+
+// 완료된 돌봄에 보호자가 남기는 후기 — 매니저의 "돌보다 인증 경력"이 되는 데이터.
+// 요청당 1건(unique), 확정됐던 매니저에게만 남길 수 있다(API에서 검증).
+// 별점 + 짧은 한줄평만 받는다. 지원자 카드의 "완료 N건 · ★4.8"이 여기서 나온다.
+model CareReview {
+  id              String        @id @default(cuid())
+  careRequestId   String        @unique
+  careRequest     CareRequest   @relation(fields: [careRequestId], references: [id], onDelete: Cascade)
+  sitterProfileId String
+  sitterProfile   SitterProfile @relation(fields: [sitterProfileId], references: [id], onDelete: Cascade)
+  rating          Int // 1~5
+  comment         String?
+  createdAt       DateTime      @default(now())
+
+  @@index([sitterProfileId])
 }
 
 model VerificationToken {

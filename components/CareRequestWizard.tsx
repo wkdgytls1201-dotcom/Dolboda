@@ -27,6 +27,7 @@ import {
 import {
   EMPTY_FORM,
   formFromRequest,
+  formFromTemplate,
   type CareRequestData,
   type CareRequestForm,
 } from "@/lib/careRequestTypes";
@@ -140,21 +141,27 @@ function HospitalLocationInput({
 
 export function CareRequestWizard({
   initial,
+  template = null,
   presetType = null,
   onSaved,
   onCancelEdit,
 }: {
   initial: CareRequestData | null;
+  /** "같은 조건으로 다시 요청" — 지난 요청을 초안으로 새 요청(POST)을 만든다. 날짜만 다시 고른다 */
+  template?: CareRequestData | null;
   /** /services에서 유형을 정해 들어온 경우 그 단계를 건너뛴다 */
   presetType?: LocationTypeValue | null;
   onSaved: (r: CareRequestData) => void;
   onCancelEdit?: () => void;
 }) {
   // 유형을 정해서 들어왔으면 1단계(유형 선택)를 건너뛰고 바로 2단계에서 시작한다.
-  const [step, setStep] = useState(!initial && presetType ? 1 : 0);
+  // 재요청(template)도 내용은 이미 차 있으니 유형 단계는 건너뛰고 일정부터 고르게 한다.
+  const [step, setStep] = useState(!initial && (presetType || template) ? 1 : 0);
   const [form, setForm] = useState<CareRequestForm>(
     initial
       ? formFromRequest(initial)
+      : template
+      ? formFromTemplate(template)
       : presetType
       ? { ...EMPTY_FORM, locationType: presetType }
       : EMPTY_FORM

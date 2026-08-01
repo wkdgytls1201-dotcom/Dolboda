@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { resend, CONSULT_NOTIFY_EMAIL } from "@/lib/resend";
 import { rateLimit, clientIp, tooManyRequests } from "@/lib/rateLimit";
@@ -52,8 +53,40 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "시설을 찾을 수 없어요." }, { status: 404 });
   }
 
+  // 로그인 상태면 계정에 연결 — 마이페이지 "상담 내역"의 근거. 비로그인도 그대로 접수.
+  const session = await auth();
+  const userId = session?.user?.id ?? null;
+
+  // "어르신 정보 함께 전달" 옵트인 — careProfileId가 왔고 그 프로필이 본인 것일 때만.
+  // 신청 시점 스냅샷으로 복사한다(이후 프로필을 지워도 이미 한 상담 내용은 유지).
+  let profileSummary: Record<string, string | string[] | null> | null = null;
+  const careProfileId = typeof body.careProfileId === "string" ? body.careProfileId : null;
+  if (careProfileId && userId) {
+    const p = await prisma.careProfile.findUnique({ where: { id: careProfileId } });
+    if (p && p.userId === userId) {
+      profileSummary = {
+        relation: p.relation,
+        gender: p.gender,
+        ageBand: p.ageBand,
+        weightBand: p.weightBand,
+        mobilityLevel: p.mobilityLevel,
+        mealAssistLevel: p.mealAssistLevel,
+        toiletAssistLevel: p.toiletAssistLevel,
+        conditions: p.conditions,
+        ltcGrade: p.ltcGrade,
+      };
+    }
+  }
+
   const request = await prisma.consultRequest.create({
-    data: { facilityId, facilityName: facility.name, name, phone },
+    data: {
+      facilityId,
+      facilityName: facility.name,
+      name,
+      phone,
+      userId,
+      ...(profileSummary ? { profileSummary } : {}),
+    },
   });
 
   // 이메일 발송은 실패해도 접수(DB 저장) 자체는 성공으로 처리 — 리드를 잃지 않는 게 우선
@@ -63,10 +96,29 @@ export async function POST(req: Request) {
         from: "돌보다 상담신청 <onboarding@resend.dev>",
         to: CONSULT_NOTIFY_EMAIL,
         subject: `[상담신청] ${facility.name}`,
-        text: `시설: ${facility.name} (${facilityId})\n이름: ${name}\n연락처: ${phone}\n접수시각: ${request.createdAt.toLocaleString(
-          "ko-KR",
-          { timeZone: "Asia/Seoul" }
-        )}`,
+        text:
+          `시설: ${facility.name} (${facilityId})\n이름: ${name}\n연락처: ${phone}\n접수시각: ${request.createdAt.toLocaleString(
+            "ko-KR",
+            { timeZone: "Asia/Seoul" }
+          )}` +
+          (profileSummary
+            ? `\n\n[보호자가 전달에 동의한 어르신 정보]\n` +
+              [
+                profileSummary.relation && `관계: ${profileSummary.relation}`,
+                profileSummary.gender && `성별: ${profileSummary.gender}`,
+                profileSummary.ageBand && `연령대: ${profileSummary.ageBand}`,
+                profileSummary.weightBand && `체중대: ${profileSummary.weightBand}`,
+                profileSummary.mobilityLevel && `거동: ${profileSummary.mobilityLevel}`,
+                profileSummary.mealAssistLevel && `식사: ${profileSummary.mealAssistLevel}`,
+                profileSummary.toiletAssistLevel && `배변: ${profileSummary.toiletAssistLevel}`,
+                Array.isArray(profileSummary.conditions) &&
+                  profileSummary.conditions.length > 0 &&
+                  `질환·상태: ${(profileSummary.conditions as string[]).join(", ")}`,
+                profileSummary.ltcGrade && `장기요양등급: ${profileSummary.ltcGrade}`,
+              ]
+                .filter(Boolean)
+                .join("\n")
+            : ""),
       });
     } catch (err) {
       console.error("상담신청 이메일 발송 실패", err);

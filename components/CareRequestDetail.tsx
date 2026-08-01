@@ -274,6 +274,16 @@ export function CareRequestDetail({
                     {app.sitterProfile.certifications.length > 0 &&
                       ` · ${app.sitterProfile.certifications.map((c) => c.name).join(", ")}`}
                   </p>
+                  {/* 돌보다 안에서 검증된 실적 — 자기 신고 경력과 구분되는 신뢰 신호.
+                      실적이 없으면 아무것도 안 붙인다(0건을 굳이 광고하지 않는다) */}
+                  {app.stats && app.stats.completedCount > 0 && (
+                    <p className="mb-1.5 flex items-center gap-1 text-xs font-semibold text-royal-600">
+                      <CheckCircle2 size={12} className="shrink-0" />
+                      돌보다에서 돌봄 완료 {app.stats.completedCount}건
+                      {app.stats.avgRating != null &&
+                        ` · ★${app.stats.avgRating} (후기 ${app.stats.reviewCount})`}
+                    </p>
+                  )}
                   {app.sitterProfile.intro && (
                     <p className="mb-2 text-sm leading-relaxed text-ink-700">
                       {app.sitterProfile.intro}

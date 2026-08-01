@@ -10,6 +10,12 @@ export interface Applicant {
     intro: string | null;
     certifications: { id: string; name: string }[];
   };
+  /** 돌보다 안에서 쌓인 실적 — 자기 신고 경력과 달리 플랫폼이 보증하는 숫자 */
+  stats?: {
+    completedCount: number;
+    reviewCount: number;
+    avgRating: number | null;
+  };
 }
 
 // 돌봄 요청 한 건 — API 응답과 화면이 함께 쓰는 형태.
@@ -52,6 +58,8 @@ export interface CareRequestData {
   budgetUnit: string | null;
 
   applications: Applicant[];
+  /** 완료된 돌봄에 남긴 후기 — 없으면 완료 직후 화면에서 작성을 권한다 */
+  review?: { id: string; rating: number } | null;
 }
 
 export const EMPTY_FORM = {
@@ -88,6 +96,11 @@ export const EMPTY_FORM = {
 };
 
 export type CareRequestForm = typeof EMPTY_FORM;
+
+/** "같은 조건으로 다시 요청" — 지난 요청을 새 요청의 초안으로. 날짜만 비워 다시 고르게 한다. */
+export function formFromTemplate(r: CareRequestData): CareRequestForm {
+  return { ...formFromRequest(r), startDate: "", endDate: "" };
+}
 
 export function formFromRequest(r: CareRequestData): CareRequestForm {
   return {

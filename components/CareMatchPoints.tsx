@@ -6,6 +6,7 @@ import { HeartHandshake, Check, Minus } from "lucide-react";
 import type { Facility } from "@/lib/types";
 import { isHospital } from "@/lib/types";
 import { useCareProfiles, type CareProfileSummary } from "@/lib/useCareProfiles";
+import { gradeFacilityFit } from "@/lib/ltcGuide";
 
 // 시설 상세의 "우리 어르신 기준 체크포인트".
 //
@@ -24,6 +25,16 @@ interface Point {
 function pointsFor(profile: CareProfileSummary, f: Facility): Point[] {
   if (isHospital(f)) return []; // 요양병원은 데이터 구조가 달라 v1에서는 제외
   const points: Point[] = [];
+
+  // 장기요양등급으로 이 유형의 시설을 이용할 수 있는지 — 확실한 조합만 말한다
+  const fit = gradeFacilityFit(profile.ltcGrade, f.facilityType);
+  if (fit) {
+    points.push({
+      label: `${profile.ltcGrade}로 이용`,
+      ok: fit.ok,
+      detail: fit.note,
+    });
+  }
 
   // 치매·인지저하 → 치매전담실 + 인지 프로그램
   if (profile.conditions.includes("치매·인지저하")) {
