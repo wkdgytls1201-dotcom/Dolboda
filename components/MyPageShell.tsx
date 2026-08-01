@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 import {
   HeartHandshake,
   Settings,
@@ -12,6 +13,10 @@ import {
   BookOpen,
   ChevronLeft,
   ChevronRight,
+  ClipboardCheck,
+  Heart,
+  Scale,
+  User,
 } from "lucide-react";
 import { useSitterProfileContext } from "@/lib/sitterProfileContext";
 
@@ -28,6 +33,7 @@ interface NavItem {
 // /api/sitter-profile를 따로 불러서 페이지를 옮길 때마다 중복 요청이 나갔다.
 export function MyPageShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { data: session } = useSession();
   const { isSitter } = useSitterProfileContext();
   // 모바일에서는 /mypage 루트가 메뉴 허브, 서브 화면은 콘텐츠만 보여준다.
   // 예전엔 매니저 메뉴 블록(대표 카드+그리드)이 모든 서브 화면 위에 그대로 깔려서,
@@ -179,9 +185,74 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
       <aside className={`${atRoot ? "mb-6" : "hidden"} sm:mb-0 sm:block sm:w-56 sm:shrink-0`}>
         <h1 className="mb-5 hidden text-lg font-bold text-ink-900 sm:block">마이페이지</h1>
 
+        {/* 모바일 인사 카드 — 케어닥의 "OO 보호자님 + 빠른 액션 2개" 구조를 참고하되,
+            돌보다 톤(아이보리 그라데이션·코랄 포인트)으로. 이름과 역할이 먼저 보이면
+            "내 계정에 잘 들어왔다"는 안심이 생기고, 가장 자주 갈 두 곳을 큰 버튼으로 둔다 */}
+        <div className="mb-4 rounded-3xl bg-gradient-to-b from-white to-ivory-100 p-5 shadow-card sm:hidden">
+          <div className="mb-4 flex items-center gap-3">
+            {session?.user?.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={session.user.image}
+                alt=""
+                className="h-12 w-12 rounded-full object-cover ring-2 ring-primary-100"
+              />
+            ) : (
+              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-50 text-primary-500 ring-2 ring-primary-100">
+                <User size={22} />
+              </span>
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-lg font-extrabold text-ink-900">
+                {session?.user?.name ?? "회원"}님
+              </p>
+              <p className="text-[13px] text-ink-400">
+                {isSitter ? "돌보다 매니저로 활동 중이에요" : "오늘도 어르신 곁을 지켜요"}
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Link
+              href="/mypage/care-profile"
+              className="flex min-h-[48px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-white text-sm font-bold text-ink-700 shadow-soft ring-1 ring-inset ring-ink-100 transition-all duration-150 ease-snappy hover:-translate-y-0.5 hover:ring-primary-200 active:translate-y-0 active:scale-[0.98]"
+            >
+              <HeartHandshake size={16} className="text-primary-500" />
+              보호자 프로필
+            </Link>
+            <Link
+              href="/mypage/edit"
+              className="flex min-h-[48px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-white text-sm font-bold text-ink-700 shadow-soft ring-1 ring-inset ring-ink-100 transition-all duration-150 ease-snappy hover:-translate-y-0.5 hover:ring-primary-200 active:translate-y-0 active:scale-[0.98]"
+            >
+              <Settings size={16} className="text-ink-400" />
+              정보 수정
+            </Link>
+          </div>
+        </div>
+
+        {/* 모바일 빠른 메뉴 3종 — 케어닥의 공지/FAQ/고객센터 아이콘 줄 자리에,
+            우리 앱에서 실제로 자주 오가는 화면(등급테스트·관심시설·시설비교)을 놓는다 */}
+        <div className="mb-5 grid grid-cols-3 overflow-hidden rounded-2xl bg-white shadow-card sm:hidden">
+          {[
+            { href: "/grade-test", label: "등급테스트", icon: <ClipboardCheck size={20} /> },
+            { href: "/favorites", label: "관심시설", icon: <Heart size={20} /> },
+            { href: "/compare", label: "시설 비교", icon: <Scale size={20} /> },
+          ].map((q, i) => (
+            <Link
+              key={q.href}
+              href={q.href}
+              className={`flex min-h-[76px] flex-col items-center justify-center gap-1.5 text-[13px] font-semibold text-ink-700 transition-colors duration-150 active:bg-primary-50 ${
+                i > 0 ? "border-l border-ink-100/70" : ""
+              }`}
+            >
+              <span className="text-primary-400">{q.icon}</span>
+              {q.label}
+            </Link>
+          ))}
+        </div>
+
+        {/* 데스크톱 사이드바용 내 정보 목록 (모바일에서는 위 인사 카드가 대신한다) */}
         <p className="mb-2 hidden px-1 text-[13px] font-semibold text-ink-300 sm:block">내 정보</p>
-        {/* 2개뿐이라 가로 스크롤을 둘 이유가 없다 — 좁은 화면에서도 줄바꿈이면 충분하다 */}
-        <nav className="flex flex-wrap gap-2 sm:flex-col sm:gap-1.5">
+        <nav className="hidden sm:flex sm:flex-col sm:gap-1.5">
           {infoItems.map((item) => (
             <NavLink key={item.href} item={item} />
           ))}

@@ -98,10 +98,14 @@ export function FacilityCard({
           />
           <GradeBadge grade={facility.grade} gradeSource={facility.gradeSource} />
           {/* 안심지수 — 돌보다의 핵심 지표라 등급 바로 옆, 배지들 중 가장 눈에 띄는 톤으로.
-              점수는 목록 API(toCardFacility)가 실어준 것만 쓴다(없으면 안 보여줌) */}
+              점수는 목록 API(toCardFacility)가 실어준 것만 쓴다(없으면 안 보여줌).
+              "안심지수" 글자를 다 쓰면 "방문요양센터"(6자)+"등급 제외"(4자) 조합에서
+              375px 폭을 넘어 두 번째 줄로 밀려났다 — 아이콘이 이미 뜻을 전달하니
+              숫자만 남기고, 스크린리더에는 aria-label로 전체 의미를 준다. */}
           {facility.dolbodaTotal != null && (
             <span
-              className={`flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-bold ${
+              aria-label={`안심지수 ${facility.dolbodaTotal}점`}
+              className={`flex shrink-0 items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-bold ${
                 facility.dolbodaTotal >= 85
                   ? "bg-mint-100 text-mint-700"
                   : facility.dolbodaTotal >= 70
@@ -109,8 +113,8 @@ export function FacilityCard({
                   : "bg-ink-100/70 text-ink-500"
               }`}
             >
-              <ShieldCheck size={11} />
-              안심지수 {facility.dolbodaTotal}
+              <ShieldCheck size={11} aria-hidden />
+              {facility.dolbodaTotal}
             </span>
           )}
           {facility.adminActions && facility.adminActions.length > 0 && (

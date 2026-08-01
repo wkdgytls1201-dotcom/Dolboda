@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   X,
   Building2,
@@ -321,7 +322,11 @@ export function FilterBar({
         </div>
       )}
 
-      {sheetOpen && (
+      {/* document.body에 포털로 그린다 — 상단 필터 바 조상에 backdrop-blur가 걸려 있으면
+          그게 fixed 자식의 기준점이 되어버려(새 containing block), inset-0가 뷰포트가
+          아니라 그 작은 바 크기로 잡히는 문제가 있었다(모바일에서 시트가 화면 밖으로
+          밀려 안 보이던 버그). body 바로 아래로 포털을 쓰면 조상 필터와 무관해진다. */}
+      {sheetOpen && createPortal(
         <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
           <button
             type="button"
@@ -494,7 +499,8 @@ export function FilterBar({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

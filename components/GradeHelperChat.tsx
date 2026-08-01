@@ -86,6 +86,7 @@ export function GradeHelperChat() {
   // ref로 하면 StrictMode 이중 실행 때 초기값이 저장분을 덮어써 복원이 깨진다 — 반드시 state로.
   const [hydrated, setHydrated] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const resultTopRef = useRef<HTMLDivElement>(null);
 
   // 복지용구 보기처럼 외부 링크를 눌렀다 돌아오면 모바일 브라우저(특히 앱 웹뷰)가 탭을
   // 통째로 새로고침하는 경우가 있어, 대화 상태를 sessionStorage에 저장해뒀다가 복원한다.
@@ -118,9 +119,24 @@ export function GradeHelperChat() {
   const answeredCount = queue.filter((q) => answers[q.id] != null).length;
   const progressPct = queue.length > 0 ? Math.round((answeredCount / queue.length) * 100) : 0;
 
+  // 문답 중에는 새 메시지가 늘어날 때마다 맨 아래(방금 뜬 질문)로 스크롤한다.
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }, [entries.length, result, showApply, typing]);
+  }, [entries.length, typing]);
+
+  // 결과가 막 나타난 순간엔 맨 아래(버튼·면책조항)가 아니라 결과 카드 맨 위(예상 등급)부터
+  // 보여야 한다 — 13문항 답하는 동안 채팅이 길게 쌓여서, 위 효과처럼 맨 아래로 스크롤하면
+  // 정작 중요한 예상 등급은 이미 지나쳐 버튼만 보이는 위치에서 시작하게 된다.
+  // (아래에 선언돼 있어 entries.length 변화와 같은 틱에 result가 함께 바뀌어도
+  //  이 효과가 나중에 실행되며 스크롤 목적지를 최종적으로 덮어쓴다)
+  useEffect(() => {
+    if (result) resultTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [result]);
+
+  // "신청 방법 보기"를 펼치면 그 내용이 보이는 위치로 스크롤한다.
+  useEffect(() => {
+    if (showApply) bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [showApply]);
 
   function pick(optionLabel: string, score: number) {
     if (!current || pendingSelection) return;
@@ -252,7 +268,10 @@ export function GradeHelperChat() {
       )}
 
       {result && (
-        <div className="mt-5 animate-message-in space-y-4">
+        <div
+          ref={resultTopRef}
+          className="mt-5 animate-message-in space-y-4 [scroll-margin-top:calc(3rem+var(--safe-top)+12px)] sm:[scroll-margin-top:calc(4rem+var(--safe-top)+12px)]"
+        >
           <div className="rounded-2xl bg-white p-5 shadow-card">
             {result.ineligible ? (
               <p className="text-base font-bold text-ink-900">
