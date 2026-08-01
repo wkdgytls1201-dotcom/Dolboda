@@ -8,10 +8,9 @@ export type RoadviewPanoStatus = "loading" | "good" | "fallback" | "none" | "err
 export interface RoadviewPano {
   status: RoadviewPanoStatus;
   panoId: number | null;
-  pan: number; // 시설 방향을 향하도록 계산된 방위각
 }
 
-const IDLE: RoadviewPano = { status: "loading", panoId: null, pan: 0 };
+const IDLE: RoadviewPano = { status: "loading", panoId: null };
 
 function getNearestPanoId(
   client: any,
@@ -21,26 +20,19 @@ function getNearestPanoId(
   return new Promise((resolve) => client.getNearestPanoId(position, radius, resolve));
 }
 
-// 좌표 → 파노ID를 얻기 위해 임시 Roadview를 잠깐 만들어 촬영지점 좌표(방위각 계산용)를 받아온다.
-// (Roadview는 실제로 DOM에 붙어 크기가 있어야 init 이벤트가 발생함)
-function resolvePanoPosition(panoId: number, position: any): Promise<{ lat: number; lng: number }> {
-  return new Promise((resolve, reject) => {
-    const tempDiv = document.createElement("div");
-    tempDiv.style.cssText = "position:fixed;left:-9999px;top:0;width:100px;height:100px;";
-    document.body.appendChild(tempDiv);
-    const timeout = setTimeout(() => {
-      tempDiv.remove();
-      reject(new Error("로드뷰 init 타임아웃"));
-    }, 6000);
-    const tempRoadview = new window.kakao.maps.Roadview(tempDiv);
-    window.kakao.maps.event.addListener(tempRoadview, "init", () => {
-      clearTimeout(timeout);
-      const panoPos = tempRoadview.getPosition();
-      tempDiv.remove();
-      resolve({ lat: panoPos.getLat(), lng: panoPos.getLng() });
-    });
-    tempRoadview.setPanoId(panoId, position);
-  });
+/**
+ * 실제 Roadview 인스턴스가 init된 뒤, 촬영지점에서 시설 쪽을 바라보도록 시점을 돌린다.
+ *
+ * 방위각 계산에 필요한 촬영지점 좌표는 init된 인스턴스 자신이 이미 알고 있다
+ * (`roadview.getPosition()`). 예전엔 이 좌표를 얻자고 화면 밖에 숨긴 임시 Roadview를
+ * 하나 더 만들었는데, 그 임시 인스턴스도 파노라마 타일을 통째로 내려받아서
+ * 로드뷰 하나당 타일을 두 번씩 받고 있었다(모바일에서 특히 아까운 낭비).
+ * init 이벤트 안에서 계산하면 임시 인스턴스도, 6초 타임아웃 장치도 필요 없다.
+ */
+export function pointRoadviewAt(roadview: any, lat: number, lng: number, zoom: number) {
+  const panoPos = roadview.getPosition();
+  const pan = bearingDegrees(panoPos.getLat(), panoPos.getLng(), lat, lng);
+  roadview.setViewpoint({ pan, tilt: 0, zoom });
 }
 
 // 시설 좌표에서 가까운 로드뷰 촬영지점을 찾는다.
@@ -76,17 +68,14 @@ export function useRoadviewPano(
           panoId = await getNearestPanoId(client, position, maxRadius);
           quality = "fallback";
         }
-        if (!panoId) return { status: "none" as const, panoId: null, pan: 0 };
-
-        const panoPos = await resolvePanoPosition(panoId, position);
-        const pan = bearingDegrees(panoPos.lat, panoPos.lng, lat, lng);
-        return { status: quality, panoId, pan };
+        if (!panoId) return { status: "none" as const, panoId: null };
+        return { status: quality, panoId };
       })
       .then((result) => {
         if (!cancelled && result) setState(result);
       })
       .catch(() => {
-        if (!cancelled) setState({ status: "error", panoId: null, pan: 0 });
+        if (!cancelled) setState({ status: "error", panoId: null });
       });
 
     return () => {

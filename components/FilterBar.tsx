@@ -122,6 +122,26 @@ export function FilterBar({
   onChange: (next: FacilityFilters) => void;
   facilities: Facility[];
 }) {
+  // 필터 줄은 모바일에서 7개가 한 줄에 안 들어가 옆으로 밀어야 한다(줄바꿈은 아래 주석 참고).
+  // 문제는 밀 수 있다는 걸 알 방법이 없다는 것 — 매니저 메뉴·활동지역 탭에서 겪은 것과 같다.
+  // 오른쪽 끝을 흐리게 해서 "더 있다"를 알리고, 끝까지 밀면 흐림을 없앤다.
+  // 배경색 위에 덧그리는 대신 마스크로 처리해서, 이 줄이 어떤 배경 위에 있든 맞아떨어진다.
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [hasMoreRight, setHasMoreRight] = useState(false);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const update = () => setHasMoreRight(el.scrollWidth - el.scrollLeft - el.clientWidth > 8);
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      el.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, []);
+
   // 드롭다운 안에서 쓰는 알약형 선택지 — 평가등급과 같은 모양으로 통일한다.
   function FilterPill({
     label,
@@ -240,8 +260,16 @@ export function FilterBar({
   return (
     <div>
       {/* 모바일에서는 줄바꿈 대신 옆으로 밀어보게 한다.
-          7개 필터가 3줄로 접히면 목록이 보이기도 전에 화면 절반을 필터가 차지한다. */}
-      <div className="-mx-1 flex items-center gap-1 overflow-x-auto rounded-2xl bg-ink-100/40 p-1.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden">
+          7개 필터가 3줄로 접히면 목록이 보이기도 전에 화면 절반을 필터가 차지한다.
+          대신 오른쪽 끝에 옅은 그라데이션을 덮어 "더 있다"를 알린다(위 hasMoreRight 참고).
+          스크롤 박스 자체에 mask를 걸면 안 된다 — 안쪽 드롭다운 패널이 position:fixed로
+          overflow 클리핑을 빠져나가는 구조라, containing block이 생기면 패널이 잘린다.
+          그래서 형제 오버레이로 얹는다(relative는 fixed에 영향이 없다). */}
+      <div className="relative">
+        <div
+          ref={scrollRef}
+          className="-mx-1 flex items-center gap-1 overflow-x-auto rounded-2xl bg-ink-100/40 p-1.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden"
+        >
         <FilterDropdown
           label="시설 유형"
           icon={<Building2 size={15} />}
@@ -426,6 +454,14 @@ export function FilterBar({
           >
             초기화
           </button>
+        )}
+        </div>
+
+        {hasMoreRight && (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-y-0 right-0 w-9 rounded-r-2xl bg-gradient-to-l from-[#F5F4F9] to-transparent sm:hidden"
+          />
         )}
       </div>
 

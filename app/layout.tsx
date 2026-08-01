@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -9,6 +9,7 @@ import { ViewGateProvider } from "@/lib/viewGateContext";
 import { FavoritesProvider } from "@/lib/favoritesContext";
 import { AlertPreferencesProvider } from "@/lib/alertPreferencesContext";
 import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from "@/lib/siteConfig";
+import { jsonLdHtml } from "@/lib/jsonLd";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -61,6 +62,16 @@ export const metadata: Metadata = {
   },
 };
 
+// 모바일 브라우저 UI(주소창·상태바)를 배경색과 같은 아이보리로 물들이고,
+// 노치 기기에서 화면 끝까지 쓸 수 있게 한다(하단 탭바는 이미 safe-area 패딩을 갖고 있다).
+// 나중에 WebView로 감쌀 때도 이 설정을 그대로 쓴다.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#FFFBF3",
+};
+
 // 구글/네이버가 사이트 성격과 내부 검색을 이해하도록 돕는 구조화 데이터.
 const SITE_JSONLD = {
   "@context": "https://schema.org",
@@ -97,6 +108,17 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <head>
+        {/* 본문 폰트(Pretendard) — 공식 배포 방식인 dynamic-subset을 쓴다.
+            unicode-range로 쪼개져 있어 화면에 실제 등장한 글자 묶음만 내려받는다(개당 ~35KB).
+            예전 globals.css의 @font-face는 URL이 404라 폰트가 로드된 적이 없었다(글꼴 복구 겸 교체).
+            preconnect 두 줄: CSS는 no-cors, 폰트 파일은 CORS 연결이라 서로 재사용이 안 돼
+            각각 미리 열어둔다. */}
+        <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+        <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
+        />
         {/* 히어로 배너 사진 도메인에 미리 연결해 첫 이미지 로딩을 앞당긴다 */}
         <link rel="preconnect" href="https://images.unsplash.com" />
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
@@ -106,7 +128,7 @@ export default function RootLayout({
       <body className="font-sans">
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(SITE_JSONLD) }}
+          dangerouslySetInnerHTML={{ __html: jsonLdHtml(SITE_JSONLD) }}
         />
         <SessionProvider>
           <ViewGateProvider>

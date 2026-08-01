@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronRight, MapPin, Sparkles } from "lucide-react";
 import type { Facility } from "@/lib/types";
@@ -31,47 +31,54 @@ export function SimilarFacilities({
   initialItems?: SimilarItem[];
 }) {
   const [intent, setIntent] = useState<SimilarIntent>("similar");
-  const [items, setItems] = useState<SimilarItem[] | null>(initialItems);
-  // 의도별 결과를 캐시해 탭을 오갈 때 매번 다시 부르지 않게 한다
+  // 서버가 5개 의도를 한 번에 내려준다 — 첫 탭 전환에서 한 번만 받고 이후는 전부 즉시 전환된다.
+  // (예전엔 탭마다 요청이 나갔고, 그 한 번이 후보 400곳을 다시 받아 다시 채점하는 일이었다)
   const [cache, setCache] = useState<Partial<Record<SimilarIntent, SimilarItem[]>>>({
     similar: initialItems,
   });
+  const [loading, setLoading] = useState(false);
+  const requested = useRef(false);
 
   useEffect(() => {
-    const cached = cache[intent];
-    if (cached) {
-      setItems(cached);
-      return;
-    }
+    if (cache[intent] || requested.current) return;
+    requested.current = true;
     let cancelled = false;
-    setItems(null);
-    fetch(`/api/facilities/similar?id=${encodeURIComponent(facilityId)}&intent=${intent}`)
+    setLoading(true);
+    fetch(`/api/facilities/similar?id=${encodeURIComponent(facilityId)}`)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((d) => {
+      .then((d: { intents?: Partial<Record<SimilarIntent, SimilarItem[]>> }) => {
         if (cancelled) return;
-        const list: SimilarItem[] = d.items ?? [];
-        setItems(list);
-        setCache((c) => ({ ...c, [intent]: list }));
+        // 첫 화면분(similar)은 서버 렌더링으로 이미 받은 것을 유지한다
+        setCache((c) => ({ ...d.intents, similar: c.similar ?? d.intents?.similar ?? [] }));
+        setLoading(false);
       })
       .catch(() => {
-        if (!cancelled) setItems([]);
+        if (cancelled) return;
+        requested.current = false;
+        setCache((c) => ({ ...c, [intent]: [] }));
+        setLoading(false);
       });
     return () => {
       cancelled = true;
     };
   }, [facilityId, intent, cache]);
 
+  const items = cache[intent] ?? (loading ? null : []);
+
   return (
     <div>
-      {/* 의도 탭 — 모바일에서 엄지로 밀어 넘기게 가로 스크롤 */}
-      <div className="-mx-4 mb-3 flex gap-1.5 overflow-x-auto px-4 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {/* 의도 탭 — 줄바꿈으로 5개를 전부 보여준다.
+          예전엔 가로 스크롤이었는데 5개가 375px을 넘어서 마지막 "더 가까운 곳"이 화면 밖에
+          있었고, 스크롤바까지 숨겨져 있어 더 있다는 것도 알 수 없었다.
+          여기서 고를 수 있는 관점이 이 기능의 전부라, 두 줄이 되더라도 다 보이는 쪽이 맞다. */}
+      <div className="mb-3 flex flex-wrap gap-1.5">
         {INTENTS.map((key) => (
           <button
             key={key}
             type="button"
             onClick={() => setIntent(key)}
             aria-pressed={intent === key}
-            className={`min-h-[44px] shrink-0 rounded-full px-4 text-xs font-bold transition-colors duration-150 ${
+            className={`min-h-[44px] rounded-full px-4 text-[13px] font-bold transition-colors duration-150 ${
               intent === key
                 ? "bg-ink-900 text-white"
                 : "bg-white text-ink-500 shadow-card hover:text-ink-900"

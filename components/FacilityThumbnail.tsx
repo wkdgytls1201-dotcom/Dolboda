@@ -5,7 +5,7 @@ import { Facility } from "@/lib/types";
 import { facilityPhotoFor } from "@/lib/stockPhotos";
 import { FacilityIllustration } from "./FacilityIllustration";
 import { loadKakaoSdk } from "./KakaoMap";
-import { useRoadviewPano } from "@/lib/useRoadviewPano";
+import { pointRoadviewAt, useRoadviewPano } from "@/lib/useRoadviewPano";
 
 // 로드뷰 촬영지점이 시설과 가까울 때("good")만 카드 썸네일로 승격한다.
 // 촬영지점이 멀어서 각도가 애매하거나(나무 등에 가려질 가능성) 아예 없는 경우("fallback"/"none")는
@@ -43,7 +43,8 @@ function RoadviewThumb({ lat, lng }: { lat: number; lng: number }) {
       if (cancelled || !containerRef.current) return;
       const roadview = new window.kakao.maps.Roadview(containerRef.current);
       window.kakao.maps.event.addListener(roadview, "init", () => {
-        roadview.setViewpoint({ pan: pano.pan, tilt: 0, zoom: -2 });
+        // 시설 방향 계산은 init된 인스턴스 스스로 한다 — lib/useRoadviewPano.ts 주석 참고
+        pointRoadviewAt(roadview, lat, lng, -2);
       });
       roadview.setPanoId(pano.panoId, new window.kakao.maps.LatLng(lat, lng));
     });
@@ -51,7 +52,7 @@ function RoadviewThumb({ lat, lng }: { lat: number; lng: number }) {
     return () => {
       cancelled = true;
     };
-  }, [pano.status, pano.panoId, pano.pan, lat, lng]);
+  }, [pano.status, pano.panoId, lat, lng]);
 
   return (
     <div ref={wrapRef} className="h-full w-full">

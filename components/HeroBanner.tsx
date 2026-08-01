@@ -47,6 +47,21 @@ export function HeroBanner({ slides }: { slides: HeroSlide[] }) {
     return () => clearTimeout(t);
   }, [index]);
 
+  // 사진은 현재 슬라이드와 양옆 이웃만 마운트한다(자동 넘김 5초면 다음 장 받기에 충분).
+  // 예전엔 7장 전부 eager였는데, DPR 3 폰은 84vw에 맞춰 1200w를 골라 첫 화면에서
+  // 800KB 가까이 내려받았다. loading="lazy"는 가로 캐러셀에서 브라우저가 "화면 밖"으로
+  // 오판해 안 뜨는 문제가 있었으므로(아래 주석), 추측에 맡기지 않고 index 상태로 직접 정한다.
+  // 한 번 마운트한 장은 Set에 남겨 되돌아와도 다시 받지 않는다.
+  const mountedSlides = useRef<Set<number>>(new Set());
+  {
+    const n = SLIDES.length;
+    if (n > 0) {
+      mountedSlides.current.add(index);
+      mountedSlides.current.add((index + 1) % n);
+      mountedSlides.current.add((index - 1 + n) % n);
+    }
+  }
+
   if (SLIDES.length === 0) return null;
 
   function handleScroll() {
@@ -99,22 +114,26 @@ export function HeroBanner({ slides }: { slides: HeroSlide[] }) {
               i === index ? "scale-100 opacity-100" : "scale-[0.94] cursor-pointer opacity-50"
             }`}
           >
-            {/* 전부 즉시 로드한다. loading="lazy"였을 때는 가로 스크롤 캐러셀이라 브라우저가
-                "화면 밖"으로 잘못 판단해서 자동으로 넘어가도 사진이 안 뜨는 문제가 있었다.
-                화면 폭에 맞는 작은 크기(모바일 480px)라 7장 다 받아도 용량 부담은 적다. */}
-            <img
-              src={facilityPhotoFor(f.id, 800)}
-              srcSet={`${facilityPhotoFor(f.id, 480)} 480w, ${facilityPhotoFor(
-                f.id,
-                800
-              )} 800w, ${facilityPhotoFor(f.id, 1200)} 1200w`}
-              sizes="(max-width: 640px) 84vw, 78vw"
-              alt=""
-              loading="eager"
-              fetchPriority={i === 0 ? "high" : "low"}
-              decoding="async"
-              className="absolute inset-0 h-full w-full bg-ink-100 object-cover"
-            />
+            {/* 마운트된 장만 즉시 로드(eager). loading="lazy"는 가로 스크롤 캐러셀이라
+                브라우저가 "화면 밖"으로 잘못 판단해서 자동으로 넘어가도 사진이 안 뜨는
+                문제가 있었다 — 어떤 장을 받을지는 위 mountedSlides가 index로 직접 정한다. */}
+            {mountedSlides.current.has(i) ? (
+              <img
+                src={facilityPhotoFor(f.id, 800)}
+                srcSet={`${facilityPhotoFor(f.id, 480)} 480w, ${facilityPhotoFor(
+                  f.id,
+                  800
+                )} 800w, ${facilityPhotoFor(f.id, 1200)} 1200w`}
+                sizes="(max-width: 640px) 84vw, 78vw"
+                alt=""
+                loading="eager"
+                fetchPriority={i === 0 ? "high" : "low"}
+                decoding="async"
+                className="absolute inset-0 h-full w-full bg-ink-100 object-cover"
+              />
+            ) : (
+              <div className="absolute inset-0 bg-ink-100" aria-hidden />
+            )}
             <div className="absolute inset-0 bg-gradient-to-t from-ink-900/75 via-ink-900/10 to-transparent" />
 
             <div className="absolute inset-x-0 bottom-0 w-full px-5 pb-12 pt-6 sm:px-8 sm:pb-14">

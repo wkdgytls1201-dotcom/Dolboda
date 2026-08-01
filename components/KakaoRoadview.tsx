@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { MapPlaceholder } from "./MapPlaceholder";
 import { loadKakaoSdk } from "./KakaoMap";
-import { useRoadviewPano } from "@/lib/useRoadviewPano";
+import { pointRoadviewAt, useRoadviewPano } from "@/lib/useRoadviewPano";
 
 // 실제 거리뷰 사진 — 스톡사진과 달리 그 좌표의 진짜 모습이라 시설-사진 오매칭 위험이 없다.
 // 상세페이지 "미리보기"용이라 촬영지점이 멀어도(fallback) 일단 보여준다.
@@ -28,7 +28,8 @@ export function KakaoRoadview({
       if (cancelled || !containerRef.current) return;
       const roadview = new window.kakao.maps.Roadview(containerRef.current);
       window.kakao.maps.event.addListener(roadview, "init", () => {
-        roadview.setViewpoint({ pan: pano.pan, tilt: 0, zoom: -3 });
+        // 시설 방향 계산은 init된 인스턴스 스스로 한다 — lib/useRoadviewPano.ts 주석 참고
+        pointRoadviewAt(roadview, lat!, lng!, -3);
       });
       roadview.setPanoId(pano.panoId, new window.kakao.maps.LatLng(lat, lng));
     });
@@ -36,7 +37,7 @@ export function KakaoRoadview({
     return () => {
       cancelled = true;
     };
-  }, [pano.status, pano.panoId, pano.pan, lat, lng]);
+  }, [pano.status, pano.panoId, lat, lng]);
 
   if (lat === undefined || lng === undefined) {
     return <MapPlaceholder label="위치 정보가 없어요" />;

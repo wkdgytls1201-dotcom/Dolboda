@@ -8,8 +8,8 @@ import { CompareSelectBar } from "@/components/CompareSelectBar";
 import { StatsStrip } from "@/components/StatsStrip";
 import { Reveal } from "@/components/Reveal";
 import { LocationConsentModal } from "@/components/LocationConsentModal";
-import { useFacilities, useFacilityStats, useNearbyFacilities, type FacilityStats } from "@/lib/useFacilities";
-import { DEFAULT_ORIGIN } from "@/lib/distance";
+import { useFacilities, useNearbyFacilities, type FacilityStats } from "@/lib/useFacilities";
+import { DEFAULT_ORIGIN, haversineDistanceKm } from "@/lib/distance";
 import { isHospital } from "@/lib/types";
 import { PROMOTED_FACILITY_IDS } from "@/lib/promotedFacilities";
 import { LOCATION_CONSENT_KEY, saveUserLocation, readUserLocation } from "@/lib/userLocation";
@@ -22,20 +22,23 @@ export default function HomeClient({
   heroSlides: HeroSlide[];
 }) {
   // 홈 카드들은 슬림 응답이면 충분 — 전체 응답은 평가 세부점수까지 실려 두 배 넘게 무겁다
-  const { facilities, total } = useFacilities({ cardView: true });
-  const { stats: liveStats } = useFacilityStats();
-  // 서버에서 미리 계산한 값으로 시작해 첫 HTML에도 "0곳" 대신 실제 숫자가 실린다
-  const stats = liveStats ?? initialStats;
+  const { facilities } = useFacilities({ cardView: true });
+  // 통계는 서버(page.tsx)가 이미 넘겨줬다. 예전엔 여기서 /api/facilities/stats를 한 번 더
+  // 불렀는데, 그 API도 같은 lib/facilityStats.ts 하루 캐시를 읽어서 값이 언제나 동일했다.
+  // 방문마다 나가던 왕복 한 번을 그대로 없앤 것.
+  const stats = initialStats;
   const [origin, setOrigin] = useState(DEFAULT_ORIGIN);
+  // 저장된 위치를 읽기 전에는 주변 시설을 부르지 않는다 — 먼저 서울시청 기준으로 한 번 부르고
+  // 좌표가 정해지면 또 부르느라, 300건짜리 요청이 방문마다 두 번씩 나가고 있었다.
+  const [originReady, setOriginReady] = useState(false);
   const [showLocationConsent, setShowLocationConsent] = useState(false);
 
   // 전체 22,000여 건 기준 집계라 /api/facilities/stats에서 서버 계산값을 따로 받아온다.
   // (홈에 표시되는 facilities 배열은 200건 제한이 있어 그걸로 계산하면 숫자가 틀어짐)
   const homeStats = useMemo(
     () => [
-      // total은 목록 API 응답이 와야 채워져서 첫 화면에 0이 잠깐 보였다 —
-      // 서버에서 미리 집계한 stats.total로 시작하고, 목록이 오면 그 값을 쓴다
-      { label: "등록된 시설", value: total || stats.total, suffix: "곳" },
+      // 서버에서 미리 집계한 값이라 첫 HTML부터 실제 숫자가 실린다(예전엔 0이 잠깐 보였다)
+      { label: "등록된 시설", value: stats.total, suffix: "곳" },
       {
         label: "1등급 시설",
         value: stats?.grade1Count ?? 0,
@@ -50,19 +53,30 @@ export default function HomeClient({
           "정원 대비 현재 입소 가능한 자리가 있는 시설 수예요. 방문요양센터처럼 정원 개념이 없는 시설은 제외돼요.",
       },
     ],
-    [total, stats]
+    [stats]
   );
 
-  function requestLocation() {
-    if (!("geolocation" in navigator)) return;
+  function requestLocation(onSettled?: () => void) {
+    if (!("geolocation" in navigator)) {
+      onSettled?.();
+      return;
+    }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const next = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        setOrigin(next);
+        // 저장해둔 위치와 사실상 같은 자리면 좌표를 갈아끼우지 않는다 —
+        // 몇 미터 차이로도 주변 시설 300건 요청이 한 번 더 나갔다.
+        setOrigin((prev) =>
+          haversineDistanceKm(prev.lat, prev.lng, next.lat, next.lng) < 0.5 ? prev : next
+        );
         // 시설 찾기 등 다른 페이지에서도 같은 기준점을 쓰도록 저장해둔다.
         saveUserLocation(next);
+        onSettled?.();
       },
-      () => setOrigin(DEFAULT_ORIGIN),
+      () => {
+        setOrigin(DEFAULT_ORIGIN);
+        onSettled?.();
+      },
       { timeout: 5000 }
     );
   }
@@ -77,27 +91,39 @@ export default function HomeClient({
     const granted = localStorage.getItem(LOCATION_CONSENT_KEY) === "granted";
     const skippedThisSession = sessionStorage.getItem(LOCATION_CONSENT_KEY) === "denied";
     if (granted) {
+      // 이미 허용한 사용자는 가진 좌표(저장분 또는 기본값)로 즉시 보여준다 —
+      // 위치 응답을 기다리며 "내 주변 시설"을 비워두면 최대 5초간 빈 화면이 된다.
+      // 저장된 좌표가 정확하면 아래 0.5km 가드가 재요청을 막아준다.
+      setOriginReady(true);
       requestLocation();
     } else if (!skippedThisSession) {
+      // 동의 모달이 화면을 덮고 있는 동안은 기준점이 안 정해진 상태라 요청하지 않는다.
       setShowLocationConsent(true);
+    } else {
+      setOriginReady(true);
     }
   }, []);
 
   function handleAllowLocation() {
     localStorage.setItem(LOCATION_CONSENT_KEY, "granted");
     setShowLocationConsent(false);
-    requestLocation();
+    // 여기서는 좌표가 올 때까지 기다린다 — 방금 "허용"을 누른 사용자에게 서울 기준 목록을
+    // 먼저 보여줬다가 갈아끼우면 결과가 통째로 바뀌는 것처럼 보인다.
+    requestLocation(() => setOriginReady(true));
   }
 
   function handleSkipLocation() {
     sessionStorage.setItem(LOCATION_CONSENT_KEY, "denied");
     setShowLocationConsent(false);
+    setOriginReady(true);
   }
 
   // 한 번에 넉넉히 받아 "내 주변 시설"(가까운 6곳)·"최근 설립"(주변 후보 중 최신순)·
   // "점수 높은 시설"(주변 100km 이내 등급순)에 함께 쓴다. 300건이면 100km 반경을
   // 등급순으로 훑기에 충분하다(위치 미허용이면 origin이 서울시청 기본값이라 그 기준으로 온다).
-  const { facilities: nearbyPool } = useNearbyFacilities(origin.lat, origin.lng, 300);
+  const { facilities: nearbyPool } = useNearbyFacilities(origin.lat, origin.lng, 300, {
+    enabled: originReady,
+  });
   const nearbyFacilities = useMemo(() => nearbyPool.slice(0, 6), [nearbyPool]);
 
   // 추천 시설: PROMOTED_FACILITY_IDS에 넣은 시설을 순서 그대로 맨 앞에 고정 노출하고,

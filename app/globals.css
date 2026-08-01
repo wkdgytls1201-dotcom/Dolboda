@@ -2,24 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
-@font-face {
-  font-family: "Pretendard Variable";
-  src: url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/woff2/PretendardVariable.woff2")
-    format("woff2-variations");
-  font-weight: 45 920;
-  font-display: swap;
-}
+/* Pretendard는 app/layout.tsx의 <link>로 dynamic-subset CSS를 불러온다.
+   예전엔 여기서 @font-face로 전체 woff2 하나를 직접 받았는데,
+   (1) 그 URL(dist/web/variable/woff2/...)이 404라 폰트가 아예 로드된 적이 없었고
+       — 시스템 폰트로 폴백돼 아무도 눈치채지 못했다
+   (2) 전체 파일은 한글 전 글리프가 담겨 수 MB인데, dynamic-subset은 unicode-range로
+       쪼개져 있어 화면에 실제로 쓰인 글자 묶음(개당 ~35KB)만 내려받는다. 모바일에 유리하다 */
 
 html {
   scroll-behavior: smooth;
   font-size: 18.5px;
   color-scheme: light;
+  /* iOS가 가로 회전 시 글자를 임의로 키우는 것 방지 — 크기는 우리가 정한 값대로 */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
   color: #1b1730;
   background-color: #fffbf3;
   line-height: 1.65;
+  /* 모바일에서 탭할 때마다 번쩍이는 회색 하이라이트 제거 —
+     버튼·카드에는 이미 active:scale 등 자체 눌림 피드백이 있다 */
+  -webkit-tap-highlight-color: transparent;
   /* 한글은 기본 줄바꿈 규칙상 단어 중간(예: "지역"의 "지"/"역" 사이)에서도 끊길 수 있어
      좁은 화면에서 보기 안 좋다 — 띄어쓰기 단위로만 줄바꿈되게 한다 */
   word-break: keep-all;
