@@ -70,7 +70,7 @@ function FilterPill({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-150 active:scale-95 ${
+      className={`flex min-h-[44px] items-center rounded-lg px-3.5 text-xs font-semibold transition-all duration-150 active:scale-95 ${
         selected
           ? "bg-primary-500 text-white"
           : "bg-ink-100/60 text-ink-500 hover:bg-ink-100"
@@ -116,13 +116,25 @@ export function FilterBar({
 }) {
   const [sheetOpen, setSheetOpen] = useState(false);
 
-  // 시트가 떠 있는 동안 배경 스크롤 잠금 (ApplyConfirmSheet와 같은 패턴)
+  // 시트가 떠 있는 동안 배경 스크롤 잠금.
+  // body에 overflow:hidden만 주는 방식(ApplyConfirmSheet와 같은 패턴)은 모바일에서
+  // 터치 스크롤이 완전히 막히지 않는다 — 시트 안의 필터 목록을 끝까지 내리면 그 스크롤
+  // 제스처가 뒤에 있는 시설 목록으로 "새어나가"(scroll chaining) 배경이 같이 밀려 올라간다.
+  // body를 fixed로 그 자리에 고정하고 닫힐 때 원래 스크롤 위치로 되돌리는 방식이라야
+  // iOS·안드로이드 모두에서 확실히 막힌다.
   useEffect(() => {
     if (!sheetOpen) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const scrollY = window.scrollY;
+    const body = document.body;
+    const prev = { position: body.style.position, top: body.style.top, width: body.style.width };
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.width = "100%";
     return () => {
-      document.body.style.overflow = prev;
+      body.style.position = prev.position;
+      body.style.top = prev.top;
+      body.style.width = prev.width;
+      window.scrollTo(0, scrollY);
     };
   }, [sheetOpen]);
 
@@ -243,7 +255,7 @@ export function FilterBar({
         <button
           type="button"
           onClick={() => onChange({ ...filters, goodScoreOnly: !filters.goodScoreOnly })}
-          className={`flex shrink-0 items-center gap-2 rounded-2xl py-2 pl-2 pr-3.5 text-sm font-extrabold transition-all duration-200 ease-snappy active:scale-95 ${
+          className={`flex min-h-[44px] shrink-0 items-center gap-2 rounded-2xl pl-2 pr-3.5 text-sm font-extrabold transition-all duration-200 ease-snappy active:scale-95 ${
             filters.goodScoreOnly
               ? "animate-pop bg-gradient-to-r from-royal-500 to-primary-500 text-white shadow-royal"
               : "bg-gradient-to-r from-royal-50 to-primary-50 text-royal-700 shadow-soft ring-1 ring-inset ring-royal-200/70 hover:shadow-card-hover"
@@ -265,7 +277,7 @@ export function FilterBar({
         <button
           type="button"
           onClick={() => setSheetOpen(true)}
-          className={`flex shrink-0 items-center gap-2 rounded-2xl py-2 pl-2 pr-3.5 text-sm font-bold transition-all duration-200 ease-snappy active:scale-95 ${
+          className={`flex min-h-[44px] shrink-0 items-center gap-2 rounded-2xl pl-2 pr-3.5 text-sm font-bold transition-all duration-200 ease-snappy active:scale-95 ${
             sheetFilterCount > 0
               ? "bg-primary-50 text-primary-700 shadow-soft ring-1 ring-inset ring-primary-200"
               : "bg-white text-ink-600 shadow-card hover:bg-ink-100/60"
@@ -325,13 +337,20 @@ export function FilterBar({
                 type="button"
                 aria-label="닫기"
                 onClick={() => setSheetOpen(false)}
-                className="-mr-2 flex h-9 w-9 items-center justify-center rounded-full text-ink-300 transition-colors duration-150 hover:bg-ink-100 hover:text-ink-700"
+                className="-mr-2.5 flex h-11 w-11 items-center justify-center rounded-full text-ink-300 transition-colors duration-150 hover:bg-ink-100 hover:text-ink-700"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-5">
+            {/* overscroll-contain: 이 목록을 끝까지 내려도 스크롤이 뒤 배경으로
+                번지지 않게 이중으로 막는다(위 body-lock과 함께 적용).
+                touchAction: 안드로이드 일부 웹뷰는 overscroll-behavior만으로 스크롤
+                체이닝이 안 막힐 때가 있어, 세로 스크롤만 허용한다고 명시해 한 번 더 막는다. */}
+            <div
+              className="flex-1 overflow-y-auto overscroll-contain px-5"
+              style={{ touchAction: "pan-y" }}
+            >
               <FilterSection icon={<Building2 size={15} />} label="시설 유형">
                 <p className="mb-2 flex items-center text-[11px] text-ink-300">
                   시설 유형이 헷갈리시나요?
