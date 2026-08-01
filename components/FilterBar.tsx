@@ -1,10 +1,20 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, X, Building2, Award, Navigation, Stethoscope, ShieldCheck } from "lucide-react";
+import {
+  ChevronDown,
+  X,
+  Building2,
+  Award,
+  Navigation,
+  Stethoscope,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
 import { FACILITY_TYPE_LABEL, Facility, FacilityType, isHospital } from "@/lib/types";
 import { InfoTooltip } from "./InfoTooltip";
 import { TOOLTIPS } from "@/lib/tooltips";
+import { PROGRAM_TAG_META, type ProgramTag } from "@/lib/programTaxonomy";
 
 const ALL_TYPES: FacilityType[] = [
   "NURSING_HOSPITAL",
@@ -29,6 +39,8 @@ export interface FacilityFilters {
   departments: string[];
   onlyVacancy: boolean;
   verifiedOnly: boolean;
+  /** 프로그램 태그 — 공단 프로그램 12만 건을 분류해 만든 필터 */
+  programTags: ProgramTag[];
 }
 
 export const EMPTY_FILTERS: FacilityFilters = {
@@ -38,6 +50,7 @@ export const EMPTY_FILTERS: FacilityFilters = {
   departments: [],
   onlyVacancy: false,
   verifiedOnly: false,
+  programTags: [],
 };
 
 function FilterDropdown({
@@ -156,6 +169,13 @@ export function FilterBar({
     onChange({ ...filters, grades: n === null ? [] : Array.from({ length: n }, (_, i) => i + 1) });
   }
 
+  function toggleProgramTag(tag: ProgramTag) {
+    const next = filters.programTags.includes(tag)
+      ? filters.programTags.filter((t) => t !== tag)
+      : [...filters.programTags, tag];
+    onChange({ ...filters, programTags: next });
+  }
+
   function toggleDepartment(name: string) {
     const next = filters.departments.includes(name)
       ? filters.departments.filter((d) => d !== name)
@@ -191,6 +211,13 @@ export function FilterBar({
     }
     filters.departments.forEach((d) =>
       chips.push({ key: `dept-${d}`, label: d, onRemove: () => toggleDepartment(d) })
+    );
+    filters.programTags.forEach((t) =>
+      chips.push({
+        key: `prog-${t}`,
+        label: PROGRAM_TAG_META[t].label,
+        onRemove: () => toggleProgramTag(t),
+      })
     );
     if (filters.onlyVacancy) {
       chips.push({
@@ -292,6 +319,30 @@ export function FilterBar({
           </div>
           <p className="mt-2 text-[11px] leading-relaxed text-ink-300">
             내 위치를 켜두면 실제 거리로 걸러져요.
+          </p>
+        </FilterDropdown>
+
+        <FilterDropdown
+          label="프로그램"
+          icon={<Sparkles size={15} />}
+          count={filters.programTags.length}
+          active={filters.programTags.length > 0}
+        >
+          <p className="mb-2 text-[11px] leading-relaxed text-ink-300">
+            공단에 등록된 프로그램 12만 건을 분류했어요. 어르신께 필요한 활동으로 골라보세요.
+          </p>
+          <div className="flex max-h-56 flex-wrap gap-1.5 overflow-y-auto">
+            {(Object.keys(PROGRAM_TAG_META) as ProgramTag[]).map((tag) => (
+              <FilterPill
+                key={tag}
+                label={`${PROGRAM_TAG_META[tag].emoji} ${PROGRAM_TAG_META[tag].label}`}
+                selected={filters.programTags.includes(tag)}
+                onClick={() => toggleProgramTag(tag)}
+              />
+            ))}
+          </div>
+          <p className="mt-2 text-[11px] text-ink-300">
+            요양원·주야간보호·방문요양에만 있는 정보예요.
           </p>
         </FilterDropdown>
 

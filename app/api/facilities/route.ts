@@ -35,6 +35,14 @@ export async function GET(req: Request) {
   if (type) {
     where.facilityType = { in: type.split(",") as FacilityType[] };
   }
+  // 프로그램 태그 — 클라이언트에서 걸러내면 앞에서 받아온 300건 안에서만 찾게 돼서,
+  // 원예처럼 전국에 300여 곳뿐인 태그는 결과가 비어버린다. 전체를 대상으로 서버에서 거른다.
+  const programTags = searchParams.get("programTags")?.split(",").filter(Boolean);
+  if (programTags?.length) {
+    where.AND = programTags.map((tag) => ({
+      extra: { path: ["programTags"], array_contains: [{ tag }] },
+    })) as Prisma.FacilityWhereInput[];
+  }
 
   const [rows, total] = await Promise.all([
     prisma.facility.findMany({ where, orderBy: { createdAt: "asc" }, take: limit }),

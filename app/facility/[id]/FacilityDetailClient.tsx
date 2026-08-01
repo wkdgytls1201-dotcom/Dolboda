@@ -49,6 +49,7 @@ import { HospitalCostEstimator } from "@/components/HospitalCostEstimator";
 import { DolbodaScoreCard } from "@/components/DolbodaScoreCard";
 import { calcDolbodaScore } from "@/lib/dolbodaScore";
 import { checkFee, MONTHLY_BASIS_NOTE } from "@/lib/feeQuality";
+import { PROGRAM_TAG_META } from "@/lib/programTaxonomy";
 
 const DOCTOR_GRADE_TABLE = [
   { grade: 1, desc: "35명 이하 (전문의 비율 50% 이상)" },
@@ -866,6 +867,24 @@ export default function FacilityDetailClient({
 
             {programGroups.length > 0 && (
               <DetailSection id="programs" title="프로그램 운영">
+                {/* 태그 요약 — 공단 원본 분류는 '기타'가 많아, 프로그램명을 다시 분류해
+                    어르신께 필요한 활동이 있는지 한눈에 보이게 한다 */}
+                {nhis?.programTags && nhis.programTags.length > 0 && (
+                  <div className="mb-3 flex flex-wrap gap-1.5">
+                    {nhis.programTags.map((t) => (
+                      <span
+                        key={t.tag}
+                        className="inline-flex items-center gap-1 rounded-full bg-mint-50 px-2.5 py-1 text-[11px] font-semibold text-mint-700"
+                        title={t.samples.join(", ")}
+                      >
+                        {PROGRAM_TAG_META[t.tag].emoji} {PROGRAM_TAG_META[t.tag].label}
+                        {t.weekly >= 1 && (
+                          <span className="font-bold">주 {Math.round(t.weekly)}회</span>
+                        )}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 <p className="mb-3 text-xs leading-relaxed text-ink-500">
                   이 시설이 공단에 신고한 프로그램이에요. 종류를 누르면 세부 목록이 열려요.
                 </p>

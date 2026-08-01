@@ -77,6 +77,7 @@ function SearchContent() {
     q: query,
     limit: 300,
     types: filters.types,
+    programTags: filters.programTags,
     enabled: !useNearest,
     cardView: true,
   });
@@ -132,6 +133,15 @@ function SearchContent() {
           isHospital(x.f) &&
           x.f.departments.some((d) => filters.departments.includes(d.name))
       );
+    }
+    // 프로그램 태그는 서버(/api/facilities)가 전체 시설을 대상으로 걸러 온다.
+    // 다만 거리·등급순으로 nearby 결과를 쓸 때는 서버 필터가 안 걸려 여기서 한 번 더 본다.
+    if (filters.programTags.length > 0 && useNearest) {
+      list = list.filter((x) => {
+        const tags = isHospital(x.f) ? [] : x.f.programTags ?? [];
+        const owned = new Set(tags.map((t) => t.tag));
+        return filters.programTags.every((t) => owned.has(t));
+      });
     }
     if (filters.onlyVacancy) {
       list = list.filter((x) => {
@@ -272,7 +282,14 @@ function SearchContent() {
           여기 따로 스켈레톤 바를 놓으면 오히려 "뭔가 잘못됐나" 싶은 깜빡임으로 보인다. */}
       {!(loading && facilities.length === 0) && (
         <p className="mb-4 text-sm text-ink-500">
-          총 <span className="font-bold text-ink-900">{total.toLocaleString()}</span>개 시설
+          총{" "}
+          <span className="font-bold text-ink-900">
+            {(filters.programTags.length > 0 && useNearest
+              ? results.length
+              : total
+            ).toLocaleString()}
+          </span>
+          개 시설
           {total > results.length && (
             <span className="ml-1 text-ink-300">
               (그중 {results.length}개 표시 · 검색어로 좁혀보세요)

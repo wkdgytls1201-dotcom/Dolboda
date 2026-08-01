@@ -12,6 +12,8 @@ export interface FacilitiesQuery {
   enabled?: boolean;
   /** 목록 카드용 슬림 응답을 받는다(상세 필드 제외) */
   cardView?: boolean;
+  /** 프로그램 태그 필터 — 서버에서 전체 시설을 대상으로 걸러준다 */
+  programTags?: string[];
 }
 
 interface FacilitiesResult {
@@ -27,6 +29,7 @@ export function useFacilities(query: FacilitiesQuery = {}): FacilitiesResult {
   const { q = "", limit = 200, enabled = true, cardView = false } = query;
   // 배열을 그대로 의존성에 쓰면 매 렌더마다 새 배열이라 무한 요청이 된다.
   const typeKey = (query.types ?? []).join(",");
+  const programTagKey = (query.programTags ?? []).join(",");
   const [state, setState] = useState<{ facilities: Facility[]; total: number }>({
     facilities: [],
     total: 0,
@@ -43,6 +46,7 @@ export function useFacilities(query: FacilitiesQuery = {}): FacilitiesResult {
     const params = new URLSearchParams();
     if (q) params.set("q", q);
     if (typeKey) params.set("type", typeKey);
+    if (programTagKey) params.set("programTags", programTagKey);
     if (cardView) params.set("view", "card");
     params.set("limit", String(limit));
 
@@ -60,7 +64,7 @@ export function useFacilities(query: FacilitiesQuery = {}): FacilitiesResult {
     return () => {
       cancelled = true;
     };
-  }, [q, limit, typeKey, enabled, cardView]);
+  }, [q, limit, typeKey, programTagKey, enabled, cardView]);
 
   return { facilities: state.facilities, total: state.total, loading };
 }

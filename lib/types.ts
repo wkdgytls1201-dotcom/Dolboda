@@ -139,6 +139,8 @@ export interface NursingHomeExtra {
   staffTotal?: number;
   careWorkerDetail?: { level1: number; level2: number; provisional: number; total: number };
   programRoomCount?: number;
+  /** 프로그램 태그 요약 — scripts/build-program-tags.mts가 미리 계산해 넣는다 */
+  programTags?: import("./programTaxonomy").ProgramTagSummary[];
   availableSlots?: number; // 이용 가능 인원 (정원-현원과 다를 수 있는 공단 집계값)
   tenure?: TenureStat[];
   institutionInfo?: InstitutionInfo;
