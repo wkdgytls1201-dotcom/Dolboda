@@ -56,14 +56,35 @@ function SearchContent() {
   const initialType = params.get("type") as FacilityType | null;
   // URL로 검색어/유형이 지정돼 들어온 경우엔 저장된 상태보다 URL을 우선한다.
   const fromUrl = Boolean(initialQuery || initialType);
-  const restored = typeof window !== "undefined" && !fromUrl ? readPersistedState() : null;
 
-  const [query, setQuery] = useState(restored?.query ?? initialQuery);
-  const [view, setView] = useState<"list" | "map">(restored?.view ?? "list");
-  const [sortKey, setSortKey] = useState<SortKey>(restored?.sortKey ?? "distance");
-  const [filters, setFilters] = useState<FacilityFilters>(
-    restored?.filters ?? { ...EMPTY_FILTERS, types: initialType ? [initialType] : [] }
-  );
+  // 첫 렌더는 서버와 똑같은 값(URL·기본값)으로 시작한다. 예전엔 렌더 중에 sessionStorage를
+  // 읽어서 서버 HTML과 클라이언트 결과가 달라졌고("Prop className did not match"),
+  // 그 상태에서 React가 일부 DOM을 버리면서 필터가 간헐적으로 어긋났다.
+  // 저장된 상태는 하이드레이션이 끝난 뒤 effect에서 덮어쓴다.
+  const [query, setQuery] = useState(initialQuery);
+  const [view, setView] = useState<"list" | "map">("list");
+  const [sortKey, setSortKey] = useState<SortKey>("distance");
+  const [filters, setFilters] = useState<FacilityFilters>({
+    ...EMPTY_FILTERS,
+    types: initialType ? [initialType] : [],
+  });
+  // 복원이 끝나기 전에는 저장 effect가 돌지 않게 막는다(초기값으로 덮어쓰는 것 방지)
+  const [restoredDone, setRestoredDone] = useState(false);
+
+  useEffect(() => {
+    if (!fromUrl) {
+      const saved = readPersistedState();
+      if (saved) {
+        setQuery(saved.query);
+        setView(saved.view);
+        setSortKey(saved.sortKey);
+        setFilters(saved.filters);
+      }
+    }
+    setRestoredDone(true);
+    // 최초 1회만 — 이후 사용자의 조작을 되돌리면 안 된다
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 홈에서 위치를 허용했다면 그 좌표를 그대로 쓰고, 아직 없으면 직접 요청할 수 있게 한다.
   const { origin, hasLocation, locating, requestLocation } = useUserOrigin();
@@ -91,6 +112,7 @@ function SearchContent() {
   const total = useNearest ? nearestQuery.total : listQuery.total;
 
   useEffect(() => {
+    if (!restoredDone) return;
     try {
       sessionStorage.setItem(
         SEARCH_STATE_KEY,
@@ -99,7 +121,7 @@ function SearchContent() {
     } catch {
       // 저장 실패해도 검색 자체에는 지장 없음
     }
-  }, [query, filters, sortKey, view]);
+  }, [restoredDone, query, filters, sortKey, view]);
 
   const results = useMemo(() => {
     let list = facilities.map((f) => ({

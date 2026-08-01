@@ -910,18 +910,19 @@ export default function FacilityDetailClient({
                               {list.length}개
                             </span>
                           </span>
-                          {/* 화살표만 두면 누를 수 있는 줄 모르고 지나친다 —
-                              원형 버튼 모양으로 감싸고, 열리면 색을 채워 상태가 보이게 */}
+                          {/* 아이콘만 두면 누를 수 있는 줄 모르고 지나친다 —
+                              글자까지 붙인 알약 버튼으로 만들어 눌러야 한다는 걸 분명히 한다 */}
                           <span
-                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all duration-200 ${
+                            className={`flex shrink-0 items-center gap-1 rounded-full py-1.5 pl-3 pr-2 text-xs font-bold transition-all duration-200 ${
                               open
                                 ? "bg-primary-500 text-white"
-                                : "bg-primary-50 text-primary-600"
+                                : "bg-primary-50 text-primary-600 ring-1 ring-primary-200"
                             }`}
                           >
+                            {open ? "접기" : "펼치기"}
                             <ChevronDown
-                              size={17}
-                              strokeWidth={2.5}
+                              size={16}
+                              strokeWidth={2.75}
                               className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`}
                             />
                           </span>
