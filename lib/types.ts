@@ -149,6 +149,50 @@ export interface NursingHomeExtra {
 }
 
 // 행정처분(위반사실 공표) 이력 — scripts/import-admin-actions.mjs 로 채운다
+// 시설 실사진의 촬영 영역 — 메인은 반드시 외관(건물 밖에서 본 모습)이어야 한다.
+// 보호자가 찾아갈 때 알아볼 수 있는 사진이 첫인상이 되게 하기 위함.
+export type FacilityPhotoArea =
+  | "exterior" // 외관 (메인)
+  | "entrance" // 입구·로비
+  | "common" // 거실·공용공간
+  | "room" // 생활실·침실
+  | "program" // 프로그램·활동
+  | "dining" // 식당·급식
+  | "rehab" // 재활·물리치료
+  | "outdoor" // 마당·산책로
+  | "etc"; // 기타
+
+export const PHOTO_AREA_LABEL: Record<FacilityPhotoArea, string> = {
+  exterior: "외관",
+  entrance: "입구·로비",
+  common: "거실·공용공간",
+  room: "생활실",
+  program: "프로그램·활동",
+  dining: "식당·급식",
+  rehab: "재활·물리치료",
+  outdoor: "마당·산책로",
+  etc: "기타",
+};
+
+/** 갤러리에서 보여주는 순서 — 외관(찾아가는 길) → 생활 공간 → 활동 → 부대시설 */
+export const PHOTO_AREA_ORDER: FacilityPhotoArea[] = [
+  "exterior",
+  "common",
+  "room",
+  "program",
+  "dining",
+  "rehab",
+  "outdoor",
+  "entrance",
+  "etc",
+];
+
+export interface FacilityPhoto {
+  url: string;
+  area: FacilityPhotoArea;
+  caption?: string;
+}
+
 export interface AdminAction {
   type: string; // 처분 내용 (업무정지, 지정취소, 경고 등)
   reason: string; // 위반 내용
@@ -172,7 +216,11 @@ export interface FacilityBase {
   updatedAt: string;
   // 시설이 동의하고 제공한 실제 사진 URL 목록 (아직 수집 전이라 대부분 undefined/빈 배열).
   // 2장 이상일 때만 상세페이지에서 옆으로 넘기는 갤러리로 보여준다.
+  // 가져오기 스크립트가 외관 사진을 항상 첫 번째로 넣는다 — 카드 썸네일은 [0]만 쓴다.
   photos?: string[];
+  // 영역 정보가 붙은 구조화 사진 목록 (photos와 같은 사진, 상세 갤러리가 영역 라벨에 사용).
+  // scripts/import-facility-photos.mts가 photos와 함께 채운다.
+  photoItems?: FacilityPhoto[];
   parking?: {
     spots: number;
     isFree: boolean;
