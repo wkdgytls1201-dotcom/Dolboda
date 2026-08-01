@@ -111,12 +111,13 @@ export function DolbodaScoreCard({
           </div>
         )}
 
-        {/* 설계 근거는 히어로 바로 아래에 — 점수만 보고 넘어가지 않게 */}
-        <p className="mt-3 text-center text-xs leading-relaxed text-white/75 sm:text-left">
-          돌보다가 자체 설계한 6개 영역 지표
-          <span className="mx-1.5 text-white/40">·</span>
-          공공데이터 {score.coverage}% 확보 기준
-        </p>
+        {/* 설계 근거는 히어로 바로 아래에 — 점수만 보고 넘어가지 않게.
+            한 줄에 붙이면 좁은 화면에서 어중간하게 접혀 읽기 어려워, 두 줄로 나누고
+            둘째 줄은 들여써서 첫 줄에 딸린 부연임이 드러나게 한다. */}
+        <div className="mt-3 space-y-0.5 text-xs leading-relaxed text-white/75">
+          <p>돌보다가 자체 설계한 6개 영역 지표</p>
+          <p className="pl-3 text-white/60">└ 공공데이터 {score.coverage}% 확보 기준</p>
+        </div>
       </div>
 
       <div className="p-4 sm:p-5">
