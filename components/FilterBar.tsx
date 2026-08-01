@@ -238,17 +238,24 @@ export function FilterBar({
     <div>
       <div className="flex items-center gap-2">
         {/* 안심지수 필터 — 돌보다만의 핵심 지표라 시트 안에 묻지 않고 항상 한 번의
-            탭으로 켤 수 있게 밖에 둔다(꺼져 있어도 눈에 띄는 톤) */}
+            탭으로 켤 수 있게 밖에 둔다. 꺼져 있을 때도 옅은 그라데이션+아이콘 배지로
+            "이건 특별한 필터다"가 눈에 들어오게 하고, 켜지는 순간 pop으로 확인해준다. */}
         <button
           type="button"
           onClick={() => onChange({ ...filters, goodScoreOnly: !filters.goodScoreOnly })}
-          className={`flex shrink-0 items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-bold transition-all duration-150 active:scale-95 ${
+          className={`flex shrink-0 items-center gap-2 rounded-2xl py-2 pl-2 pr-3.5 text-sm font-extrabold transition-all duration-200 ease-snappy active:scale-95 ${
             filters.goodScoreOnly
-              ? "bg-gradient-to-r from-royal-500 to-primary-500 text-white shadow-soft"
-              : "bg-white text-royal-600 shadow-card ring-1 ring-inset ring-royal-200 hover:bg-royal-50"
+              ? "animate-pop bg-gradient-to-r from-royal-500 to-primary-500 text-white shadow-royal"
+              : "bg-gradient-to-r from-royal-50 to-primary-50 text-royal-700 shadow-soft ring-1 ring-inset ring-royal-200/70 hover:shadow-card-hover"
           }`}
         >
-          <ShieldCheck size={15} className={filters.goodScoreOnly ? "text-white" : "text-royal-500"} />
+          <span
+            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
+              filters.goodScoreOnly ? "bg-white/25" : "bg-white"
+            }`}
+          >
+            <ShieldCheck size={14} className={filters.goodScoreOnly ? "text-white" : "text-royal-500"} />
+          </span>
           안심지수 우수만
         </button>
 
@@ -258,16 +265,22 @@ export function FilterBar({
         <button
           type="button"
           onClick={() => setSheetOpen(true)}
-          className={`flex shrink-0 items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold transition-colors duration-200 ${
+          className={`flex shrink-0 items-center gap-2 rounded-2xl py-2 pl-2 pr-3.5 text-sm font-bold transition-all duration-200 ease-snappy active:scale-95 ${
             sheetFilterCount > 0
-              ? "bg-primary-50 text-primary-700 ring-1 ring-inset ring-primary-200"
-              : "bg-white text-ink-500 shadow-card hover:bg-ink-100/60"
+              ? "bg-primary-50 text-primary-700 shadow-soft ring-1 ring-inset ring-primary-200"
+              : "bg-white text-ink-600 shadow-card hover:bg-ink-100/60"
           }`}
         >
-          <SlidersHorizontal size={15} className={sheetFilterCount > 0 ? "text-primary-500" : "text-ink-300"} />
+          <span
+            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
+              sheetFilterCount > 0 ? "bg-primary-500 text-white" : "bg-ivory-100 text-ink-400"
+            }`}
+          >
+            <SlidersHorizontal size={13} />
+          </span>
           필터
           {sheetFilterCount > 0 && (
-            <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-primary-500 px-1 text-[10px] font-bold text-white">
+            <span className="animate-pop flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary-500 px-1 text-[11px] font-extrabold text-white">
               {sheetFilterCount}
             </span>
           )}
