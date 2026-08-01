@@ -256,20 +256,22 @@ function nhisAreas(
         ? 65
         : 45,
       weight: 3,
+      // 라벨이 이미 "간호인력 배치"라고 말하니, 여기서 또 "간호인력"을 반복하지 않고
+      // 숫자만 짧게 보여준다(회색 보조설명은 짧을수록 읽기 편하다)
       note: !hasStaffData
         ? "이 시설의 인력현황은 공공데이터에 아직 공개되지 않았어요"
         : nurseCount === 0
-        ? "간호사·간호조무사 배치 없음"
+        ? "배치 없음"
         : perNurse == null
-        ? `간호인력 ${nurseCount}명`
-        : `간호인력 ${nurseCount}명 · 1명당 정원 ${Math.round(perNurse)}명`,
+        ? `${nurseCount}명 배치`
+        : `${nurseCount}명 · 정원 ${Math.round(perNurse)}명당 1명`,
     },
     {
       label: "인근 요양병원 접근성",
       score:
         km == null ? null : km <= 2 ? 100 : km <= 5 ? 85 : km <= 10 ? 70 : km <= 20 ? 50 : 30,
       weight: 2,
-      note: km == null ? "위치 정보 확인 중" : `가장 가까운 요양병원 ${km.toFixed(1)}km`,
+      note: km == null ? "위치 정보 확인 중" : `가까운 요양병원 ${km.toFixed(1)}km`,
     },
   ];
 
@@ -341,7 +343,7 @@ function nhisAreas(
 
   const environment: ScoreSignal[] = [
     {
-      label: "정원 대비 운영 안정성",
+      label: "정원 안정성",
       score: !hasCapacity
         ? null
         : occupancy <= 0

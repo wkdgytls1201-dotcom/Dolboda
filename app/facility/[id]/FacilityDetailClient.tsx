@@ -691,20 +691,32 @@ export default function FacilityDetailClient({
                 </p>
               ) : (
               <div className="space-y-5">
-                {/* 요양보호사는 어르신을 실제로 돌보는 인력이라 맨 위에 크게 보여준다 */}
+                {/* 요양보호사는 어르신을 실제로 돌보는 인력이라 맨 위에 크게 보여준다.
+                    설명 문장과 전체 직원 수를 한 줄에 "·"로 붙여 쓰면 읽기 답답해서,
+                    전체 직원 수는 아래 칸으로 따로 내려 한눈에 들어오게 나눴다. */}
                 {(nhis?.careWorkerDetail?.total ?? 0) > 0 && (
-                  <div className="flex items-center justify-between rounded-2xl bg-primary-50 px-4 py-3.5">
-                    <div>
-                      <p className="text-sm font-bold text-ink-900">요양보호사</p>
-                      <p className="mt-0.5 text-xs text-ink-500">
-                        어르신을 직접 돌보시는 분들이에요
-                        {(nhis?.staffTotal ?? 0) > 0 && ` · 전체 직원 ${nhis!.staffTotal}명`}
+                  <div className="rounded-2xl bg-primary-50 px-4 py-3.5">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-bold text-ink-900">요양보호사</p>
+                        <p className="mt-0.5 text-xs text-ink-500">
+                          어르신을 직접 돌보시는 분들이에요
+                        </p>
+                      </div>
+                      <p className="shrink-0 text-2xl font-extrabold text-primary-600">
+                        {nhis!.careWorkerDetail!.total}
+                        <span className="text-sm font-bold">명</span>
                       </p>
                     </div>
-                    <p className="shrink-0 text-2xl font-extrabold text-primary-600">
-                      {nhis!.careWorkerDetail!.total}
-                      <span className="text-sm font-bold">명</span>
-                    </p>
+                    {(nhis?.staffTotal ?? 0) > 0 && (
+                      <div className="mt-3 flex items-center justify-between rounded-xl bg-white/70 px-3.5 py-2.5">
+                        <p className="text-xs font-semibold text-ink-500">전체 직원</p>
+                        <p className="text-sm font-bold text-ink-900">
+                          {nhis!.staffTotal}
+                          <span className="ml-0.5 font-semibold text-ink-500">명</span>
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
                 <div>

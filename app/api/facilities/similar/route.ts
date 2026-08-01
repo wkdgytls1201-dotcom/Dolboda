@@ -103,9 +103,13 @@ export async function GET(req: Request) {
   const all = await getSimilar(id);
   if (!all) return NextResponse.json({ error: "시설을 찾을 수 없어요." }, { status: 404 });
 
-  // intent를 지정하면 그것만, 없으면 전부 — 클라이언트는 한 번 받아 탭 전환에 재사용한다.
+  // intent를 지정하면 그 탭 것만 보낸다(≈13KB). 예전엔 intent가 있어도 intents(5개 전부,
+  // ≈60KB)를 함께 실어 보내서, 처음 다른 탭을 누르는 순간 필요 없는 나머지 4개 탭
+  // 데이터까지 받아오느라 그 탭 전환이 느리게 느껴졌다(2026-08-02 실측: 60KB→13KB).
+  // intent가 없을 때만(시설 상세 서버 렌더링처럼 여러 탭을 한 번에 준비해두고 싶을 때)
+  // 5개 전부를 보낸다.
   const intent = searchParams.get("intent") as SimilarIntent | null;
-  const body = intent && all[intent] ? { items: all[intent], intents: all } : { intents: all };
+  const body = intent && all[intent] ? { items: all[intent] } : { intents: all };
 
   return NextResponse.json(body, {
     headers: {

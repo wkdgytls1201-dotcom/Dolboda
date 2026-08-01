@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronRight, MapPin, Sparkles } from "lucide-react";
 import type { Facility } from "@/lib/types";
@@ -31,30 +31,32 @@ export function SimilarFacilities({
   initialItems?: SimilarItem[];
 }) {
   const [intent, setIntent] = useState<SimilarIntent>("similar");
-  // 서버가 5개 의도를 한 번에 내려준다 — 첫 탭 전환에서 한 번만 받고 이후는 전부 즉시 전환된다.
-  // (예전엔 탭마다 요청이 나갔고, 그 한 번이 후보 400곳을 다시 받아 다시 채점하는 일이었다)
+  // 탭마다 그 탭 데이터만 받아 캐시해둔다(한 번 받으면 다시 안 받음).
+  //
+  // 한때는 처음 탭을 바꾸는 순간 5개 의도를 전부(≈60KB) 받아와 이후 전환을 공짜로
+  // 만들려 했는데, 실제로는 그 첫 전환 자체가 느려졌다 — "안심지수 높은 곳"을 보려고
+  // 누른 순간 보지도 않을 나머지 4개 탭(≈47KB)까지 같이 받아야 했기 때문이다
+  // (2026-08-02 실측 60KB→13KB). 서버는 여전히 5개를 한 번에 계산해 하루 캐시해두므로
+  // (app/api/facilities/similar/route.ts) 탭을 이것저것 눌러도 DB는 다시 타지 않고,
+  // 네트워크로 나가는 응답만 그 탭 몫으로 줄었다.
   const [cache, setCache] = useState<Partial<Record<SimilarIntent, SimilarItem[]>>>({
     similar: initialItems,
   });
   const [loading, setLoading] = useState(false);
-  const requested = useRef(false);
 
   useEffect(() => {
-    if (cache[intent] || requested.current) return;
-    requested.current = true;
+    if (cache[intent]) return;
     let cancelled = false;
     setLoading(true);
-    fetch(`/api/facilities/similar?id=${encodeURIComponent(facilityId)}`)
+    fetch(`/api/facilities/similar?id=${encodeURIComponent(facilityId)}&intent=${intent}`)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((d: { intents?: Partial<Record<SimilarIntent, SimilarItem[]>> }) => {
+      .then((d: { items?: SimilarItem[] }) => {
         if (cancelled) return;
-        // 첫 화면분(similar)은 서버 렌더링으로 이미 받은 것을 유지한다
-        setCache((c) => ({ ...d.intents, similar: c.similar ?? d.intents?.similar ?? [] }));
+        setCache((c) => ({ ...c, [intent]: d.items ?? [] }));
         setLoading(false);
       })
       .catch(() => {
         if (cancelled) return;
-        requested.current = false;
         setCache((c) => ({ ...c, [intent]: [] }));
         setLoading(false);
       });
