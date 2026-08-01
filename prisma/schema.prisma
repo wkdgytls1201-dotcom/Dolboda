@@ -95,6 +95,9 @@ model ConsultRequest {
   profileSummary Json?
   // 보호자 본인이 표시하는 진행 상태: 연락받음 / 입소결정 (null = 대기)
   status String?
+  // 시설에 자동 이메일 발송이 성공한 시각 (null = 이메일 정보가 없거나 발송 실패 —
+  // 이 경우 운영자가 직접 연락해야 한다는 신호). 상담 이력 화면에서 "안내 완료" 표시에 쓴다.
+  facilityNotifiedAt DateTime?
 
   createdAt DateTime @default(now())
 
