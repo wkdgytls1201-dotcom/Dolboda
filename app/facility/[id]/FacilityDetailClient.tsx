@@ -400,9 +400,9 @@ export default function FacilityDetailClient({
             {/* 비급여비용 */}
             <DetailSection id="fees" title="비급여 비용" tooltip={TOOLTIPS.nonCovered}>
               <div className="divide-y divide-ink-100 rounded-2xl border border-ink-100">
-                {hospital.nonCoveredFees.map((fee) => (
+                {hospital.nonCoveredFees.map((fee, i) => (
                   <div
-                    key={fee.name}
+                    key={`${fee.name}-${i}`}
                     className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-3 text-sm"
                   >
                     <span className="text-ink-700">{fee.name}</span>
@@ -660,11 +660,11 @@ export default function FacilityDetailClient({
             {facility.nonCoveredFees.length > 0 && (
               <DetailSection id="fees" title="비급여 비용" tooltip={TOOLTIPS.nonCovered}>
                 <div className="divide-y divide-ink-100 rounded-2xl border border-ink-100">
-                  {facility.nonCoveredFees.map((fee) => {
+                  {facility.nonCoveredFees.map((fee, i) => {
                     // 원본에 "1일 1원" 같은 값이 섞여 있어, 그대로 보여주면 오히려 오해를 준다
                     const quality = checkFee(fee);
                     return (
-                      <div key={fee.name} className="px-4 py-3">
+                      <div key={`${fee.name}-${i}`} className="px-4 py-3">
                         <p className="mb-1.5 text-sm text-ink-700">{fee.name}</p>
                         {quality.kind === "ok" ? (
                           <div className="flex flex-wrap gap-2">
@@ -910,10 +910,21 @@ export default function FacilityDetailClient({
                               {list.length}개
                             </span>
                           </span>
-                          <ChevronDown
-                            size={16}
-                            className={`shrink-0 text-ink-300 transition-transform ${open ? "rotate-180" : ""}`}
-                          />
+                          {/* 화살표만 두면 누를 수 있는 줄 모르고 지나친다 —
+                              원형 버튼 모양으로 감싸고, 열리면 색을 채워 상태가 보이게 */}
+                          <span
+                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all duration-200 ${
+                              open
+                                ? "bg-primary-500 text-white"
+                                : "bg-primary-50 text-primary-600"
+                            }`}
+                          >
+                            <ChevronDown
+                              size={17}
+                              strokeWidth={2.5}
+                              className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+                            />
+                          </span>
                         </button>
                         {open && (
                           <div className="grid grid-cols-1 gap-2 border-t border-ink-100 p-3 sm:grid-cols-2">
