@@ -13,6 +13,7 @@ import { useFacilities, useNearbyFacilities } from "@/lib/useFacilities";
 import { haversineDistanceKm } from "@/lib/distance";
 import { useUserOrigin } from "@/lib/userLocation";
 import { FACILITY_TYPE_LABEL, FacilityType, isHospital } from "@/lib/types";
+import { PROGRAM_TAG_META, type ProgramTag } from "@/lib/programTaxonomy";
 
 function gradeText(grade: number | null, gradeSource?: "HIRA" | "NHIS") {
   if (grade === null) return "등급 제외";
@@ -54,8 +55,13 @@ function SearchContent() {
   const params = useSearchParams();
   const initialQuery = params.get("q") ?? "";
   const initialType = params.get("type") as FacilityType | null;
-  // URL로 검색어/유형이 지정돼 들어온 경우엔 저장된 상태보다 URL을 우선한다.
-  const fromUrl = Boolean(initialQuery || initialType);
+  // 프로그램 태그 딥링크 — 대시보드의 "인지 프로그램 있는 시설 보기" 같은 맞춤 CTA가
+  // 필터가 걸린 검색으로 바로 데려올 수 있게 한다. 아는 태그만 통과시킨다.
+  const initialProgramTags = (params.get("programTags") ?? "")
+    .split(",")
+    .filter((t): t is ProgramTag => t in PROGRAM_TAG_META);
+  // URL로 검색어/유형/태그가 지정돼 들어온 경우엔 저장된 상태보다 URL을 우선한다.
+  const fromUrl = Boolean(initialQuery || initialType || initialProgramTags.length > 0);
 
   // 첫 렌더는 서버와 똑같은 값(URL·기본값)으로 시작한다. 예전엔 렌더 중에 sessionStorage를
   // 읽어서 서버 HTML과 클라이언트 결과가 달라졌고("Prop className did not match"),
@@ -67,6 +73,7 @@ function SearchContent() {
   const [filters, setFilters] = useState<FacilityFilters>({
     ...EMPTY_FILTERS,
     types: initialType ? [initialType] : [],
+    programTags: initialProgramTags,
   });
   // 복원이 끝나기 전에는 저장 effect가 돌지 않게 막는다(초기값으로 덮어쓰는 것 방지)
   const [restoredDone, setRestoredDone] = useState(false);

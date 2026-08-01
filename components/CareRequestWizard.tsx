@@ -39,6 +39,7 @@ import {
   NoticeBox,
 } from "./CareFormFields";
 import { DateRangeCalendar } from "./DateRangeCalendar";
+import { useCareProfiles, type CareProfileSummary } from "@/lib/useCareProfiles";
 
 const STEPS = [
   "어떤 돌봄이 필요하세요",
@@ -177,35 +178,10 @@ export function CareRequestWizard({
     setForm((f) => ({ ...f, [key]: value }));
 
   // 저장된 돌봄 프로필 — "돌봄 받으실 분" 단계에서 한 번에 채우는 용도.
-  // 새 요청일 때만 부른다(수정 모드에서는 이미 값이 있다).
-  const [careProfiles, setCareProfiles] = useState<
-    {
-      id: string;
-      relation: string;
-      gender: string | null;
-      ageBand: string | null;
-      weightBand: string | null;
-      mobilityLevel: string | null;
-      mealAssistLevel: string | null;
-      toiletAssistLevel: string | null;
-      conditions: string[];
-    }[]
-  >([]);
-  useEffect(() => {
-    if (initial) return;
-    let cancelled = false;
-    fetch("/api/care-profile")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (!cancelled && Array.isArray(d?.items)) setCareProfiles(d.items);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [initial]);
+  // (수정 모드에서는 이미 값이 있어 렌더 조건에서 걸러진다)
+  const { profiles: careProfiles } = useCareProfiles();
 
-  function applyCareProfile(p: (typeof careProfiles)[number]) {
+  function applyCareProfile(p: CareProfileSummary) {
     setForm((f) => ({
       ...f,
       recipientRelation: p.relation,

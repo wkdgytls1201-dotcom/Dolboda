@@ -15,6 +15,7 @@ import {
 import { useSitterProfileContext } from "@/lib/sitterProfileContext";
 import { sitterProgress, sitterLevel } from "@/lib/sitterProgress";
 import { useFavorites } from "@/lib/favoritesContext";
+import { useCareProfiles, type CareProfileSummary } from "@/lib/useCareProfiles";
 
 interface GuardianRequest {
   id: string;
@@ -29,11 +30,31 @@ interface MyApplication {
   status: string;
 }
 
+// 돌봄 프로필의 상태에서 맞춤 검색 링크를 만든다.
+// 조건이 태그와 자연스럽게 이어질 때만 맞춤 문구를 쓰고, 아니면 일반 검색으로.
+function profileCta(p: CareProfileSummary): { label: string; href: string } {
+  if (p.conditions.includes("치매·인지저하")) {
+    return {
+      label: "인지·치매 예방 프로그램 있는 시설 보기",
+      href: "/search?programTags=cognitive",
+    };
+  }
+  if (
+    p.mobilityLevel === "거의 누워 지냄" ||
+    p.mobilityLevel === "휠체어 이용" ||
+    p.conditions.includes("뇌졸중 후유증")
+  ) {
+    return { label: "재활 치료 프로그램 있는 시설 보기", href: "/search?programTags=therapy" };
+  }
+  return { label: "시설 찾아보기", href: "/search" };
+}
+
 // 마이페이지 상단 대시보드 — 로그인한 사람이 "지금 뭘 하면 되는지"를 한눈에 보여준다.
 // 보호자: 진행 중인 돌봄 요청 상태 / 매니저: 프로필 완성도·활동 레벨·새 일자리.
 export function MyPageDashboard() {
   const { profile, isSitter } = useSitterProfileContext();
   const { favoriteIds } = useFavorites();
+  const { profiles: careProfiles, loaded: careProfilesLoaded } = useCareProfiles();
 
   const [request, setRequest] = useState<GuardianRequest | null | undefined>(undefined);
   const [applications, setApplications] = useState<MyApplication[] | null>(null);
@@ -231,6 +252,74 @@ export function MyPageDashboard() {
         <ChevronRight size={18} className="shrink-0 text-ink-300" />
       </Link>
     );
+  }
+
+  /* ---------- 보호자: 돌봄 프로필 — 있으면 맞춤 검색, 없으면 만들기 유도 ---------- */
+  if (!isSitter && careProfilesLoaded) {
+    if (careProfiles.length > 0) {
+      const p = careProfiles[0];
+      const cta = profileCta(p);
+      const summary = [p.ageBand, p.mobilityLevel].filter(Boolean).join(" · ");
+      cards.push(
+        <div key="care-profile" className="rounded-2xl bg-white p-5 shadow-card sm:p-6">
+          <div className="mb-2.5 flex items-center justify-between gap-2">
+            <p className="flex items-center gap-2 text-[15px] font-bold text-ink-900">
+              <HeartHandshake size={16} className="text-primary-500" />
+              {p.relation} 돌봄 프로필
+            </p>
+            <Link
+              href="/mypage/care-profile"
+              className="text-[12px] font-semibold text-ink-300 hover:text-ink-500"
+            >
+              관리
+            </Link>
+          </div>
+          {summary && <p className="mb-3 text-[13px] text-ink-500">{summary}</p>}
+          {p.conditions.length > 0 && (
+            <div className="mb-3.5 flex flex-wrap gap-1.5">
+              {p.conditions.slice(0, 4).map((c) => (
+                <span
+                  key={c}
+                  className="rounded-full bg-ivory-100 px-2.5 py-1 text-[12px] font-medium text-ink-500"
+                >
+                  {c}
+                </span>
+              ))}
+            </div>
+          )}
+          <Link
+            href={cta.href}
+            className="flex min-h-[48px] items-center justify-between gap-2 rounded-xl bg-primary-50 px-4 text-[13px] font-semibold text-primary-700 transition-colors hover:bg-primary-100"
+          >
+            {cta.label}
+            <ArrowRight size={14} className="shrink-0" />
+          </Link>
+        </div>
+      );
+    } else {
+      cards.push(
+        <Link
+          key="care-profile-empty"
+          href="/mypage/care-profile"
+          className="flex items-center justify-between gap-3 rounded-2xl border border-dashed border-primary-200 bg-primary-50/50 p-4 transition-colors hover:bg-primary-50"
+        >
+          <span className="flex items-center gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-primary-500 shadow-soft">
+              <HeartHandshake size={17} />
+            </span>
+            <span>
+              <span className="block text-[15px] font-bold text-ink-900">
+                어르신 돌봄 프로필 만들기
+              </span>
+              <span className="mt-0.5 block text-[13px] leading-snug text-ink-500">
+                한 번 저장하면 시설 찾기·돌봄 요청이 훨씬 빨라져요
+              </span>
+            </span>
+          </span>
+          <ChevronRight size={16} className="shrink-0 text-ink-300" />
+        </Link>
+      );
+    }
   }
 
   /* ---------- 보호자: 요청이 없을 때 시작 안내 ---------- */
