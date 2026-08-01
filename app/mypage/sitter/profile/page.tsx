@@ -8,6 +8,7 @@ import { MyPageShell } from "@/components/MyPageShell";
 import { PageLoader } from "@/components/PageLoader";
 import { REGIONS } from "@/lib/regions";
 import { useSitterProfileContext, SitterProfileData } from "@/lib/sitterProfileContext";
+import { sitterProgress } from "@/lib/sitterProgress";
 
 type SitterProfile = SitterProfileData;
 
@@ -125,6 +126,30 @@ export default function SitterProfilePage() {
     <MyPageShell>
       <h2 className="mb-1 text-xl font-bold text-ink-900">프로필 관리</h2>
       <p className="mb-6 text-sm text-ink-500">시설·업체에게 보여지는 내 프로필이에요.</p>
+
+      {/* 완성도 게이지 — 무엇을 채우면 좋을지 한눈에. 100%면 응원 문구만 */}
+      {(() => {
+        const progress = sitterProgress(profile);
+        return (
+          <div className="mb-4 rounded-2xl bg-gradient-to-br from-primary-50 to-peach-100/50 p-4">
+            <div className="mb-1.5 flex items-center justify-between">
+              <p className="text-sm font-bold text-ink-900">프로필 완성도</p>
+              <p className="text-sm font-extrabold text-primary-600">{progress.percent}%</p>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-white">
+              <div
+                className="h-2 rounded-full bg-gradient-to-r from-primary-400 to-peach-400 transition-all duration-500"
+                style={{ width: `${progress.percent}%` }}
+              />
+            </div>
+            <p className="mt-2 text-xs text-ink-500">
+              {progress.nextItem
+                ? `다음 할 일: ${progress.nextItem.hint}`
+                : "완벽해요! 완성된 프로필은 매칭 확률이 훨씬 높아요 🎉"}
+            </p>
+          </div>
+        );
+      })()}
 
       <div className="space-y-4">
         {/* 기본 정보 */}

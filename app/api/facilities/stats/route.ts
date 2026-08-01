@@ -1,26 +1,12 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getFacilityStats } from "@/lib/facilityStats";
 
-// 홈 화면 통계(등급/입소가능)는 /api/facilities의 200건 제한 목록으로 계산하면 안 됨 —
-// 전체 22,000여 건을 대상으로 서버에서 직접 집계한다.
+// 홈 화면 통계 — 집계·캐시는 lib/facilityStats.ts에서 홈 페이지(서버)와 공유한다.
 export async function GET() {
-  const [total, grade1Count, vacancyRows] = await Promise.all([
-    prisma.facility.count({ where: { dataSource: { not: "mock" } } }),
-    prisma.facility.count({ where: { grade: 1, dataSource: { not: "mock" } } }),
-    prisma.$queryRaw<{ vacancy: bigint }[]>`
-      SELECT COUNT(*) AS vacancy
-      FROM "Facility"
-      WHERE "facilityType" != 'NURSING_HOSPITAL'
-        AND "dataSource" != 'mock'
-        AND extra ? 'currentOccupancy'
-        AND (extra->>'capacity')::numeric > 0
-        AND (extra->>'capacity')::numeric - (extra->>'currentOccupancy')::numeric > 0
-    `,
-  ]);
-
-  return NextResponse.json({
-    total,
-    grade1Count,
-    vacancyCount: Number(vacancyRows[0]?.vacancy ?? 0),
+  const stats = await getFacilityStats();
+  return NextResponse.json(stats, {
+    headers: {
+      "Cache-Control": "public, max-age=0, s-maxage=86400, stale-while-revalidate=86400",
+    },
   });
 }

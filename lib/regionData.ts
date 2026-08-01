@@ -38,24 +38,24 @@ export interface RegionSummary {
   sigunguList: { name: string; count: number }[];
 }
 
-// 시/도 단위 요약 — 지역 랜딩 페이지와 sitemap이 공유. ISR(하루)로 재생성.
+// 시/도 단위 요약 — 지역 랜딩 페이지와 sitemap이 공유.
+// 예전엔 시/도별로 수천 행을 통째로 읽어 JS에서 셌는데(서울 5,000행+), 이미 하루 캐시된
+// getRegionIndex가 (시도·시군구·유형)별 개수를 모두 갖고 있어 DB를 다시 칠 이유가 없다.
 export const getRegionSummary = cache(async (region: RegionSeo): Promise<RegionSummary> => {
-  const rows = await prisma.facility.findMany({
-    where: prefixWhere(region),
-    select: { facilityType: true, address: true },
-  });
+  const index = await getRegionIndex();
+  const rows = index.filter((r) => r.sidoSlug === region.slug);
 
   const typeCounts: Partial<Record<FacilityType, number>> = {};
   const sigunguCounts = new Map<string, number>();
+  let total = 0;
   for (const row of rows) {
-    const t = row.facilityType as FacilityType;
-    typeCounts[t] = (typeCounts[t] ?? 0) + 1;
-    const sg = sigunguOf(row.address);
-    if (sg) sigunguCounts.set(sg, (sigunguCounts.get(sg) ?? 0) + 1);
+    typeCounts[row.facilityType] = (typeCounts[row.facilityType] ?? 0) + row.count;
+    sigunguCounts.set(row.sigungu, (sigunguCounts.get(row.sigungu) ?? 0) + row.count);
+    total += row.count;
   }
 
   return {
-    total: rows.length,
+    total,
     typeCounts,
     sigunguList: [...sigunguCounts.entries()]
       .map(([name, count]) => ({ name, count }))
@@ -114,22 +114,28 @@ export interface SigunguSummary {
 
 export const getSigunguSummary = cache(
   async (region: RegionSeo, sigungu: string): Promise<SigunguSummary> => {
+    // 개수는 캐시된 인덱스에서, 읍면동 목록만 주소 컬럼으로 좁혀 조회한다
+    const index = await getRegionIndex();
+    const typeCounts: Partial<Record<FacilityType, number>> = {};
+    let total = 0;
+    for (const row of index) {
+      if (row.sidoSlug !== region.slug || row.sigungu !== sigungu) continue;
+      typeCounts[row.facilityType] = (typeCounts[row.facilityType] ?? 0) + row.count;
+      total += row.count;
+    }
+
     const rows = await prisma.facility.findMany({
       where: { AND: [prefixWhere(region), { address: { contains: ` ${sigungu} ` } }] },
-      select: { facilityType: true, address: true },
+      select: { address: true },
     });
-
-    const typeCounts: Partial<Record<FacilityType, number>> = {};
     const subs = new Set<string>();
     for (const row of rows) {
-      const t = row.facilityType as FacilityType;
-      typeCounts[t] = (typeCounts[t] ?? 0) + 1;
       const sub = subLocalityOf(row.address);
       if (sub) subs.add(sub);
     }
 
     return {
-      total: rows.length,
+      total,
       typeCounts,
       subLocalities: [...subs].sort((a, b) => a.localeCompare(b, "ko")),
     };
@@ -202,49 +208,43 @@ export interface RegionStats {
 }
 
 // 지역 페이지에 넣을 고유 통계. 지역마다 다른 숫자가 나와야 페이지가 서로 구별된다.
+// 행을 전부 읽어 JS에서 세면 extra(jsonb) 전체가 딸려와 무거우므로 DB에서 집계만 받아온다.
 export const getRegionStats = cache(
   async (
     region: RegionSeo,
     sigungu: string | null,
     facilityType?: FacilityType
   ): Promise<RegionStats> => {
-    const conditions: object[] = [prefixWhere(region)];
-    if (sigungu) conditions.push({ address: { contains: ` ${sigungu} ` } });
-    if (facilityType) conditions.push({ facilityType });
+    const prefixes = region.prefixes;
+    const sigunguPattern = sigungu ? `% ${sigungu} %` : null;
 
-    const rows = await prisma.facility.findMany({
-      where: { AND: conditions },
-      select: { grade: true, facilityType: true, extra: true },
-    });
+    const rows = await prisma.$queryRaw<
+      { graded: bigint; top_grade: bigint; vacancy: bigint; avg_capacity: number | null }[]
+    >`
+      SELECT
+        COUNT(*) FILTER (WHERE grade IS NOT NULL) AS graded,
+        COUNT(*) FILTER (WHERE grade = 1) AS top_grade,
+        COUNT(*) FILTER (
+          WHERE "facilityType" != 'HOME_CARE'
+            AND extra ? 'currentOccupancy'
+            AND (extra->>'capacity')::numeric > 0
+            AND (extra->>'capacity')::numeric - (extra->>'currentOccupancy')::numeric > 0
+        ) AS vacancy,
+        AVG((extra->>'capacity')::numeric) FILTER (
+          WHERE "facilityType" != 'HOME_CARE' AND (extra->>'capacity')::numeric > 0
+        ) AS avg_capacity
+      FROM "Facility"
+      WHERE address LIKE ANY(${prefixes.map((p) => `${p}%`)}::text[])
+        AND (${sigunguPattern}::text IS NULL OR address LIKE ${sigunguPattern})
+        AND (${facilityType ?? null}::text IS NULL OR "facilityType"::text = ${facilityType ?? null})
+    `;
 
-    let topGrade = 0;
-    let graded = 0;
-    let vacancy = 0;
-    let capacitySum = 0;
-    let capacityCount = 0;
-
-    for (const row of rows) {
-      if (row.grade !== null) {
-        graded++;
-        if (row.grade === 1) topGrade++;
-      }
-      // 방문요양은 정원 개념이 없어 평균/빈자리 집계에서 제외한다
-      if (row.facilityType === "HOME_CARE") continue;
-      const extra = row.extra as { capacity?: number; currentOccupancy?: number } | null;
-      const capacity = extra?.capacity ?? 0;
-      if (capacity > 0) {
-        capacitySum += capacity;
-        capacityCount++;
-        const occupancy = extra?.currentOccupancy;
-        if (occupancy !== undefined && capacity - occupancy > 0) vacancy++;
-      }
-    }
-
+    const row = rows[0];
     return {
-      topGrade,
-      graded,
-      vacancy,
-      avgCapacity: capacityCount > 0 ? Math.round(capacitySum / capacityCount) : null,
+      topGrade: Number(row?.top_grade ?? 0),
+      graded: Number(row?.graded ?? 0),
+      vacancy: Number(row?.vacancy ?? 0),
+      avgCapacity: row?.avg_capacity != null ? Math.round(Number(row.avg_capacity)) : null,
     };
   }
 );

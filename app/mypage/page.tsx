@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { signOutAndClear } from "@/lib/signOutAndClear";
 import { LogOut, User } from "lucide-react";
 import { MyPageShell } from "@/components/MyPageShell";
+import { MyPageDashboard } from "@/components/MyPageDashboard";
 import { PageLoader } from "@/components/PageLoader";
 
 export default function MyPageAccountPage() {
@@ -38,6 +39,9 @@ export default function MyPageAccountPage() {
 
   return (
     <MyPageShell>
+      {/* 지금 할 일(진행 중 요청·프로필 완성도·새 일자리)을 계정 정보보다 먼저 보여준다 */}
+      <MyPageDashboard />
+
       <h2 className="mb-1 text-xl font-bold text-ink-900">계정 설정</h2>
       <p className="mb-6 text-sm text-ink-500">돌보다 로그인 정보를 확인해요.</p>
 
