@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { List, Map as MapIcon, Crosshair } from "lucide-react";
+import { List, Map as MapIcon, Crosshair, Search } from "lucide-react";
 import { FacilityCard } from "@/components/FacilityCard";
 import { CompareSelectBar } from "@/components/CompareSelectBar";
 import { FilterBar, FacilityFilters, EMPTY_FILTERS } from "@/components/FilterBar";
@@ -20,12 +20,14 @@ function gradeText(grade: number | null, gradeSource?: "HIRA" | "NHIS") {
   return gradeSource === "NHIS" ? `${NHIS_GRADE_LETTER[grade - 1] ?? grade}등급` : `${grade}등급`;
 }
 
-type SortKey = "distance" | "grade" | "rating";
+// "rating"(평점순)은 실제 이용자 평점 데이터가 없어 등급 대체 정렬에 불과했다 —
+// 실체가 있는 안심지수 정렬로 교체했다.
+type SortKey = "distance" | "grade" | "score";
 
 const SORT_LABEL: Record<SortKey, string> = {
   distance: "거리순",
   grade: "등급순",
-  rating: "평점순",
+  score: "안심지수순",
 };
 
 // 시설 상세페이지에 들어갔다 뒤로가기로 돌아와도 검색어·필터가 남아 있게 한다.
@@ -45,7 +47,9 @@ function readPersistedState(): PersistedSearchState | null {
     const parsed = JSON.parse(raw) as PersistedSearchState;
     if (!parsed?.filters) return null;
     // 필드가 추가돼도 깨지지 않게 기본값 위에 덮어쓴다.
-    return { ...parsed, filters: { ...EMPTY_FILTERS, ...parsed.filters } };
+    // 정렬 키가 바뀐 옛 저장값("rating" 등)은 기본값으로 되돌린다.
+    const sortKey: SortKey = parsed.sortKey in SORT_LABEL ? parsed.sortKey : "distance";
+    return { ...parsed, sortKey, filters: { ...EMPTY_FILTERS, ...parsed.filters } };
   } catch {
     return null;
   }
@@ -186,6 +190,10 @@ function SearchContent() {
     if (filters.verifiedOnly) {
       list = list.filter((x) => x.f.dataSource === "public");
     }
+    // 안심지수 우수만(70점 이상) — 점수가 안 나오는 시설(데이터 부족)은 제외된다
+    if (filters.goodScoreOnly) {
+      list = list.filter((x) => (x.f.dolbodaTotal ?? 0) >= 70);
+    }
 
     list.sort((a, b) => {
       if (sortKey === "distance") return (a.dist ?? Infinity) - (b.dist ?? Infinity);
@@ -196,12 +204,10 @@ function SearchContent() {
         const bScore = !isHospital(b.f) ? b.f.evaluationDetail?.totalScore ?? 0 : 0;
         return a.f.grade - b.f.grade || bScore - aScore;
       }
-      // 평점순: 별도 이용자 평점 데이터가 없어 등급 우선 + 최근 설립순으로 대체
-      if (a.f.grade === null && b.f.grade === null)
-        return (b.f.establishedYear ?? 0) - (a.f.establishedYear ?? 0);
-      if (a.f.grade === null) return 1;
-      if (b.f.grade === null) return -1;
-      return a.f.grade - b.f.grade || (b.f.establishedYear ?? 0) - (a.f.establishedYear ?? 0);
+      // 안심지수순: 점수 없는 시설(데이터 부족)은 뒤로, 동점이면 가까운 순
+      const aTotal = a.f.dolbodaTotal ?? -1;
+      const bTotal = b.f.dolbodaTotal ?? -1;
+      return bTotal - aTotal || (a.dist ?? Infinity) - (b.dist ?? Infinity);
     });
 
     return list;
@@ -234,17 +240,30 @@ function SearchContent() {
   }, [results.length]);
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8 pb-28">
+    <main className="mx-auto max-w-6xl px-4 py-4 pb-28 sm:py-6">
+      {/* 검색창은 한 줄 컴팩트하게 — 예전엔 위아래 여백까지 화면 한 뼘을 차지해
+          정작 필터·결과가 밀렸다. 375px에서 필터 줄과 같이 첫 화면에 들어오게 줄인다 */}
       <form
         onSubmit={(e) => e.preventDefault()}
-        className="mb-6 flex items-center gap-2 rounded-2xl bg-white p-2 shadow-card"
+        className="mb-3 flex h-11 items-center gap-1.5 rounded-xl bg-white px-3 shadow-card"
       >
+        <Search size={16} className="shrink-0 text-ink-300" />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="지역, 시설명으로 검색"
-          className="w-full bg-transparent px-3 py-2 text-sm focus:outline-none"
+          className="h-full w-full bg-transparent text-sm focus:outline-none"
         />
+        {query && (
+          <button
+            type="button"
+            aria-label="검색어 지우기"
+            onClick={() => setQuery("")}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-ink-300 transition-colors duration-150 hover:bg-ink-100 hover:text-ink-500"
+          >
+            ×
+          </button>
+        )}
       </form>
 
       {/* top 값은 헤더 높이와 같아야 한다 (모바일 h-12 / 데스크톱 sm:h-16) */}
@@ -253,7 +272,7 @@ function SearchContent() {
 
         <div className="flex shrink-0 items-center gap-2">
           <div className="flex flex-1 overflow-hidden rounded-xl border border-ink-100 sm:flex-none">
-            {(["distance", "grade", "rating"] as SortKey[]).map((key) => (
+            {(["distance", "grade", "score"] as SortKey[]).map((key) => (
               <button
                 key={key}
                 onClick={() => setSortKey(key)}

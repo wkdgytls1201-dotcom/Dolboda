@@ -1,5 +1,6 @@
 import type { Facility as FacilityDTO } from "./types";
 import type { Facility as FacilityRow } from "@prisma/client";
+import { calcDolbodaScore } from "./dolbodaScore";
 
 // DB row(기본 컬럼 + extra jsonb) → 클라이언트가 쓰는 Facility 형태로 복원 (seed.ts의 역변환)
 export function rowToFacility(row: FacilityRow): FacilityDTO {
@@ -26,7 +27,12 @@ export function rowToFacility(row: FacilityRow): FacilityDTO {
 // 300건 기준 응답이 290KB → 40KB대로 줄어든다.
 export function toCardFacility(f: FacilityDTO): FacilityDTO {
   const anyF = f as unknown as Record<string, unknown>;
+  // 안심지수 총점만 계산해 붙인다 — 카드 페이로드에는 계산 재료(평가 도메인·인력 상세)가
+  // 빠지므로 클라이언트가 계산할 수 없다. 인근 병원 거리(extras) 없이 계산하는 방식은
+  // 유사시설 추천(lib/similarity.ts)과 동일하다.
+  const dolbodaTotal = calcDolbodaScore(f).total;
   return {
+    dolbodaTotal,
     id: f.id,
     name: f.name,
     facilityType: f.facilityType,

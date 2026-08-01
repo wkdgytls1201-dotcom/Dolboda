@@ -178,6 +178,9 @@ export interface FacilityBase {
     isFree: boolean;
   };
   adminActions?: AdminAction[];
+  /** 목록 카드용 안심지수 총점 — 서버(toCardFacility)가 미리 계산해 실어준다.
+      상세 페이지는 인근 병원 거리(extras)까지 반영해 직접 계산하므로 몇 점 다를 수 있다. */
+  dolbodaTotal?: number | null;
 }
 
 export type Facility =

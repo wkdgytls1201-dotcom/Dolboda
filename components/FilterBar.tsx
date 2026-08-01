@@ -41,6 +41,8 @@ export interface FacilityFilters {
   verifiedOnly: boolean;
   /** 프로그램 태그 — 공단 프로그램 12만 건을 분류해 만든 필터 */
   programTags: ProgramTag[];
+  /** 안심지수 70점(우수) 이상만 — 돌보다의 핵심 지표를 필터 첫 자리에 내세운다 */
+  goodScoreOnly: boolean;
 }
 
 export const EMPTY_FILTERS: FacilityFilters = {
@@ -51,6 +53,7 @@ export const EMPTY_FILTERS: FacilityFilters = {
   onlyVacancy: false,
   verifiedOnly: false,
   programTags: [],
+  goodScoreOnly: false,
 };
 
 function FilterDropdown({
@@ -253,6 +256,13 @@ export function FilterBar({
         onRemove: () => onChange({ ...filters, verifiedOnly: false }),
       });
     }
+    if (filters.goodScoreOnly) {
+      chips.push({
+        key: "good-score",
+        label: "안심지수 우수만",
+        onRemove: () => onChange({ ...filters, goodScoreOnly: false }),
+      });
+    }
     return chips;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters]);
@@ -270,6 +280,21 @@ export function FilterBar({
           ref={scrollRef}
           className="-mx-1 flex items-center gap-1 overflow-x-auto rounded-2xl bg-ink-100/40 p-1.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden"
         >
+        {/* 안심지수 필터 — 돌보다만의 핵심 지표라 필터 줄 맨 앞, 항상 테두리가 있는
+            도드라진 모양으로 둔다(다른 필터와 달리 꺼져 있어도 눈에 들어오게) */}
+        <button
+          type="button"
+          onClick={() => onChange({ ...filters, goodScoreOnly: !filters.goodScoreOnly })}
+          className={`flex shrink-0 items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-bold transition-all duration-150 active:scale-95 ${
+            filters.goodScoreOnly
+              ? "bg-gradient-to-r from-royal-500 to-primary-500 text-white shadow-soft"
+              : "bg-white text-royal-600 ring-1 ring-inset ring-royal-200 hover:bg-royal-50"
+          }`}
+        >
+          <ShieldCheck size={15} className={filters.goodScoreOnly ? "text-white" : "text-royal-500"} />
+          안심지수 우수만
+        </button>
+
         <FilterDropdown
           label="시설 유형"
           icon={<Building2 size={15} />}

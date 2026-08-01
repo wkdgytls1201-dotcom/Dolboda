@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Heart, MapPin, Phone } from "lucide-react";
+import { Heart, MapPin, Phone, ShieldCheck } from "lucide-react";
 import { Facility, FACILITY_TYPE_LABEL, isHospital } from "@/lib/types";
 import { formatDistance } from "@/lib/distance";
 import { GradeBadge, TypeBadge } from "./GradeBadge";
@@ -97,6 +97,22 @@ export function FacilityCard({
             label={FACILITY_TYPE_LABEL[facility.facilityType]}
           />
           <GradeBadge grade={facility.grade} gradeSource={facility.gradeSource} />
+          {/* 안심지수 — 돌보다의 핵심 지표라 등급 바로 옆, 배지들 중 가장 눈에 띄는 톤으로.
+              점수는 목록 API(toCardFacility)가 실어준 것만 쓴다(없으면 안 보여줌) */}
+          {facility.dolbodaTotal != null && (
+            <span
+              className={`flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                facility.dolbodaTotal >= 85
+                  ? "bg-mint-100 text-mint-700"
+                  : facility.dolbodaTotal >= 70
+                  ? "bg-royal-50 text-royal-600"
+                  : "bg-ink-100/70 text-ink-500"
+              }`}
+            >
+              <ShieldCheck size={11} />
+              안심지수 {facility.dolbodaTotal}
+            </span>
+          )}
           {facility.adminActions && facility.adminActions.length > 0 && (
             <span className="rounded-full bg-accent-100 px-2 py-0.5 text-[11px] font-bold text-accent-600">
               행정처분 이력
