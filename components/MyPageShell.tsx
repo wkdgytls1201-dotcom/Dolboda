@@ -2,7 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { HeartHandshake, Settings, Briefcase, Wallet, Bell, BookOpen, ChevronRight } from "lucide-react";
+import {
+  HeartHandshake,
+  Settings,
+  Briefcase,
+  Building2,
+  Wallet,
+  Bell,
+  BookOpen,
+  ChevronRight,
+} from "lucide-react";
 import { useSitterProfileContext } from "@/lib/sitterProfileContext";
 
 interface NavItem {
@@ -26,6 +35,7 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
   const sitterItems: NavItem[] = [
     { href: "/mypage/sitter/profile", label: "프로필 관리", icon: <HeartHandshake size={16} /> },
     { href: "/mypage/sitter/jobs", label: "일자리 관리", icon: <Briefcase size={16} /> },
+    { href: "/mypage/sitter/workplaces", label: "일하기 좋은 시설", icon: <Building2 size={16} /> },
     { href: "/mypage/sitter/tips", label: "매니저 가이드", icon: <BookOpen size={16} /> },
     { href: "/mypage/sitter/settlements", label: "정산 관리", icon: <Wallet size={16} /> },
     { href: "/mypage/sitter/notifications", label: "알림 설정", icon: <Bell size={16} /> },
