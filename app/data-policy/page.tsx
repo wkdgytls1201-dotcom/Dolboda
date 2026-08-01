@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SCORE_AREAS } from "@/lib/dolbodaScore";
+import { SCORE_AREAS, weightTier } from "@/lib/dolbodaScore";
 import { SITE_URL } from "@/lib/siteConfig";
 
 export const metadata: Metadata = {
   title: "데이터 출처와 안심지수 계산 방식",
   description:
-    "돌보다가 사용하는 공공데이터의 출처와 갱신 주기, 돌보다 AI기반 안심지수의 영역별 가중치와 계산식, 데이터가 없을 때의 처리 원칙, 오류 정정 요청 방법을 공개합니다.",
+    "돌보다가 사용하는 공공데이터의 출처와 갱신 주기, 돌보다 AI기반 안심지수가 보는 영역과 반영 비중, 데이터가 없을 때의 처리 원칙, 오류 정정 요청 방법을 안내합니다.",
   alternates: { canonical: "/data-policy" },
 };
 
@@ -63,8 +63,9 @@ export default function DataPolicyPage() {
         데이터 출처와 안심지수 계산 방식
       </h1>
       <p className="mb-9 text-[16px] leading-[1.8] text-ink-700">
-        돌보다에 표시되는 모든 숫자는 공공기관이 공개한 자료에서 옵니다. 어떤 자료를 쓰는지, 안심지수를
-        어떻게 계산하는지, 데이터가 없을 때 무엇을 하는지 전부 공개합니다.
+        돌보다에 표시되는 모든 숫자는 공공기관이 공개한 자료에서 옵니다. 어떤 자료를 쓰는지,
+        안심지수가 무엇을 보는지, 데이터가 없을 때 무엇을 하는지 밝힙니다. 세부 산식은 돌보다가
+        자체 설계한 기술이라 구조와 원칙 중심으로 안내합니다.
       </p>
 
       <section className="mb-10">
@@ -96,27 +97,40 @@ export default function DataPolicyPage() {
             <thead>
               <tr className="border-b border-ink-100 bg-ink-100/40">
                 <th className="p-3 text-left text-xs font-bold text-ink-500">영역</th>
-                <th className="p-3 text-right text-xs font-bold text-ink-500">가중치</th>
+                <th className="p-3 text-right text-xs font-bold text-ink-500">반영 비중</th>
               </tr>
             </thead>
             <tbody>
-              {SCORE_AREAS.map((a) => (
-                <tr key={a.key} className="border-b border-ink-100 last:border-0">
-                  <td className="p-3 text-ink-700">{a.label}</td>
-                  <td className="p-3 text-right font-bold text-ink-900">{a.weight}%</td>
-                </tr>
-              ))}
+              {SCORE_AREAS.map((a) => {
+                const tier = weightTier(a.weight);
+                return (
+                  <tr key={a.key} className="border-b border-ink-100 last:border-0">
+                    <td className="p-3 text-ink-700">{a.label}</td>
+                    <td className="p-3 text-right">
+                      <span className={`rounded-full px-2 py-1 text-[11px] font-bold ${tier.tone}`}>
+                        {tier.label}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
+        <p className="mb-4 text-[13px] leading-relaxed text-ink-500">
+          영역별 세부 배점과 신호별 계산식은 돌보다가 자체 설계한 기술이라 비중 수준만
+          공개합니다. 다만 <strong className="text-ink-700">어떤 데이터를 쓰는지, 없을 때 어떻게
+          처리하는지</strong>는 아래에 모두 밝히고, 시설별 &lsquo;전체 근거 보기&rsquo;에서 항목별
+          점수를 직접 확인하실 수 있습니다.
+        </p>
 
         <h3 className="mb-2 text-[15px] font-bold text-ink-900">계산 방법</h3>
         <ul className="mb-4 space-y-2.5 rounded-2xl bg-white p-5 shadow-card">
           {[
             "영역 점수 = 그 영역에 속한 신호들의 가중 평균 (데이터가 없는 신호는 계산에서 제외)",
-            "총점 = 영역 점수 × 영역 가중치의 합 ÷ 확보된 가중치",
-            "확보된 가중치가 절반(50%) 미만이면 점수를 내지 않고 '산출 보류'로 표시",
-            "미확보 가중치만큼은 전국 평균 수준(65점)으로 수렴시켜, 데이터가 적은 시설이 유리해지지 않게 보정",
+            "총점 = 각 영역 점수를 설계된 비중으로 합산한 뒤, 데이터가 확보된 비중으로 나눈 값",
+            "확보된 비중이 절반(50%) 미만이면 점수를 내지 않고 '산출 보류'로 표시",
+            "미확보 비중만큼은 전국 평균 수준으로 수렴시켜, 데이터가 적은 시설이 유리해지지 않게 보정",
           ].map((t) => (
             <li key={t} className="flex gap-2.5 text-[14px] leading-[1.75] text-ink-700">
               <span className="mt-2.5 h-1 w-1 shrink-0 rounded-full bg-primary-400" />

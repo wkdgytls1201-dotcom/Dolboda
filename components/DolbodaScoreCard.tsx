@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ChevronDown, Sparkles } from "lucide-react";
-import { DolbodaScore, scoreLevel } from "@/lib/dolbodaScore";
+import { DolbodaScore, scoreLevel, weightTier } from "@/lib/dolbodaScore";
 
 // 원형 점수 링 — 외부 라이브러리 없이 SVG stroke로만 그린다
 function ScoreRing({ total }: { total: number }) {
@@ -69,7 +69,7 @@ export function DolbodaScoreCard({
             </span>
             <p className="mt-2 text-xl font-extrabold text-white">{level.label}</p>
             <p className="mt-1 text-[11px] leading-relaxed text-white/70">
-              공공데이터 {score.coverage}% 확보 기준 · 6개 영역 가중치 자동 산출
+              돌보다가 자체 설계한 6개 영역 지표 · 공공데이터 {score.coverage}% 확보 기준
             </p>
           </div>
         </div>
@@ -101,10 +101,14 @@ export function DolbodaScoreCard({
             <div key={area.key}>
               {/* 모바일에서 라벨·점수를 윗줄, 막대를 아랫줄 전체 폭으로 — 좁은 화면에서 막대가 짓눌리지 않게 */}
               <div className="mb-1 flex items-baseline justify-between gap-2">
-                <p className="text-xs font-semibold text-ink-700">
+                <p className="flex items-center gap-1.5 text-xs font-semibold text-ink-700">
                   {area.label}
-                  <span className="ml-1 text-[10px] font-medium text-ink-300">
-                    {area.weight}%
+                  <span
+                    className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                      weightTier(area.weight).tone
+                    }`}
+                  >
+                    {weightTier(area.weight).label}
                   </span>
                 </p>
                 <span
@@ -145,9 +149,15 @@ export function DolbodaScoreCard({
           <div className="mt-3 space-y-3">
             {score.areas.map((area) => (
               <div key={area.key} className="rounded-xl border border-ink-100 p-3">
-                <p className="mb-1.5 text-xs font-bold text-ink-900">
+                <p className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-ink-900">
                   {area.label}
-                  <span className="ml-1 font-medium text-ink-300">가중치 {area.weight}%</span>
+                  <span
+                    className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                      weightTier(area.weight).tone
+                    }`}
+                  >
+                    {weightTier(area.weight).label}
+                  </span>
                 </p>
                 <ul className="space-y-1">
                   {area.signals.map((s) => (

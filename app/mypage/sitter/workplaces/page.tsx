@@ -47,7 +47,8 @@ export default function WorkplacesPage() {
       </h2>
       <p className="mb-4 text-sm leading-relaxed text-ink-500">
         내 활동 지역의 시설을 <strong className="text-ink-700">근무환경 지수</strong> 순으로
-        보여드려요. 요양보호사 1인당 어르신 수와 근속률을 공공데이터로 계산한 값이에요.
+        보여드려요. 요양보호사 1인당 어르신 수와 근속률 등을 돌보다가 자체 설계한 기준으로
+        계산한 값이에요.
       </p>
 
       {regions.length > 1 && (

@@ -25,6 +25,15 @@ export const SCORE_AREAS: { key: ScoreAreaKey; label: string; weight: number }[]
   { key: "availability", label: "이용 가능성", weight: 10 },
 ];
 
+// 화면에는 가중치를 숫자로 노출하지 않는다.
+// 퍼센트를 그대로 나열하면 우리가 설계한 지표라기보다 계산표처럼 보이고,
+// 반대로 아예 가리면 "뭘 숨기나" 싶어 신뢰를 잃는다 — 비중의 크기만 말로 밝힌다.
+export function weightTier(weight: number): { label: string; tone: string } {
+  if (weight >= 25) return { label: "핵심 반영", tone: "bg-primary-50 text-primary-600" };
+  if (weight >= 15) return { label: "높게 반영", tone: "bg-royal-50 text-royal-600" };
+  return { label: "보조 반영", tone: "bg-ink-100/60 text-ink-500" };
+}
+
 export interface ScoreSignal {
   label: string;
   score: number | null; // null = 공공데이터 미확보
