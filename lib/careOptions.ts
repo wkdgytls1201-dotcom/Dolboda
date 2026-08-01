@@ -68,6 +68,20 @@ export const ADMISSION_REASONS = [
 
 export const SURGERY_PLANS = ["예정 없음", "수술 예정", "아직 미정"] as const;
 
+// 어르신 돌봄 프로필의 장기요양등급 자기신고 선택지.
+// "모름"을 첫 항목으로 둔다 — 등급 제도를 모르는 보호자가 아무거나 찍지 않게.
+export const LTC_GRADE_OPTIONS = [
+  "아직 몰라요",
+  "신청 준비 중",
+  "1등급",
+  "2등급",
+  "3등급",
+  "4등급",
+  "5등급",
+  "인지지원등급",
+  "등급 외 판정",
+] as const;
+
 export const CONDITION_SUGGESTIONS = [
   "치매·인지저하",
   "뇌졸중 후유증",

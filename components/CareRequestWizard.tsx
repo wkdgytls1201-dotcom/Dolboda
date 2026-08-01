@@ -176,6 +176,49 @@ export function CareRequestWizard({
   const set = <K extends keyof CareRequestForm>(key: K, value: CareRequestForm[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
 
+  // 저장된 돌봄 프로필 — "돌봄 받으실 분" 단계에서 한 번에 채우는 용도.
+  // 새 요청일 때만 부른다(수정 모드에서는 이미 값이 있다).
+  const [careProfiles, setCareProfiles] = useState<
+    {
+      id: string;
+      relation: string;
+      gender: string | null;
+      ageBand: string | null;
+      weightBand: string | null;
+      mobilityLevel: string | null;
+      mealAssistLevel: string | null;
+      toiletAssistLevel: string | null;
+      conditions: string[];
+    }[]
+  >([]);
+  useEffect(() => {
+    if (initial) return;
+    let cancelled = false;
+    fetch("/api/care-profile")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!cancelled && Array.isArray(d?.items)) setCareProfiles(d.items);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [initial]);
+
+  function applyCareProfile(p: (typeof careProfiles)[number]) {
+    setForm((f) => ({
+      ...f,
+      recipientRelation: p.relation,
+      recipientGender: p.gender ?? f.recipientGender,
+      recipientAgeBand: p.ageBand ?? f.recipientAgeBand,
+      recipientWeightBand: p.weightBand ?? f.recipientWeightBand,
+      mobilityLevel: p.mobilityLevel ?? f.mobilityLevel,
+      mealAssistLevel: p.mealAssistLevel ?? f.mealAssistLevel,
+      toiletAssistLevel: p.toiletAssistLevel ?? f.toiletAssistLevel,
+      conditions: p.conditions.length > 0 ? p.conditions : f.conditions,
+    }));
+  }
+
   const toggleIn = (key: "conditions" | "householdTasks" | "specialRequests", v: string) =>
     setForm((f) => {
       const list = f[key];
@@ -533,6 +576,28 @@ export function CareRequestWizard({
       {/* 3. 돌봄 받으실 분 */}
       {step === 2 && (
         <div className="space-y-6">
+          {/* 저장된 돌봄 프로필이 있으면 한 번에 채운다 — 매번 같은 정보를 다시 고르지 않게.
+              수정 모드(initial)에서는 이미 값이 있으니 띄우지 않는다. */}
+          {!initial && careProfiles.length > 0 && (
+            <div className="rounded-2xl border border-primary-200 bg-primary-50/60 p-4">
+              <p className="mb-2.5 text-[13px] font-bold text-ink-900">
+                저장된 돌봄 프로필로 채우기
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {careProfiles.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => applyCareProfile(p)}
+                    className="min-h-[44px] rounded-xl border border-primary-300 bg-white px-4 text-sm font-bold text-primary-700 transition-all duration-150 active:scale-[0.97]"
+                  >
+                    {p.relation}
+                    {p.ageBand ? ` · ${p.ageBand}` : ""}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <div>
             <FieldLabel optional hint="성만 적어주셔도 괜찮아요. 시터에게는 이 이름으로 안내돼요.">
               돌봄 받으실 분 성함

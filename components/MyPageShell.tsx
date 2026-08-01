@@ -31,6 +31,7 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
 
   const infoItems: NavItem[] = [
     { href: "/mypage", label: "계정 설정", icon: <Settings size={16} /> },
+    { href: "/mypage/care-profile", label: "돌봄 프로필", icon: <HeartHandshake size={16} /> },
     { href: "/mypage/edit", label: "정보 수정", icon: <ChevronRight size={16} /> },
   ];
 

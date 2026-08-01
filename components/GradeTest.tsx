@@ -14,6 +14,7 @@ import {
   RotateCcw,
   ArrowRight,
   ExternalLink,
+  HeartHandshake,
   Info,
 } from "lucide-react";
 import {
@@ -281,6 +282,30 @@ export function GradeTest() {
             ))}
           </div>
         </section>
+
+        {/* 결과를 돌봄 프로필에 저장 — 지금은 결과가 화면을 닫으면 사라진다.
+            저장해두면 시설 찾기·돌봄 요청에서 재사용되고, 나중에 재판정 시기 안내의 기준이 된다. */}
+        {!locked && (
+          <Link
+            href={`/mypage/care-profile?estimate=${encodeURIComponent(result.band.id)}`}
+            className="mb-6 flex items-center justify-between gap-3 rounded-2xl border border-primary-200 bg-primary-50/70 p-4 transition-colors hover:bg-primary-50"
+          >
+            <span className="flex items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-primary-500 shadow-soft">
+                <HeartHandshake size={18} />
+              </span>
+              <span>
+                <span className="block text-[15px] font-bold text-ink-900">
+                  이 결과를 돌봄 프로필에 저장하기
+                </span>
+                <span className="mt-0.5 block text-[13px] leading-snug text-ink-500">
+                  저장해두면 시설 찾기와 돌봄 요청에서 다시 입력할 필요가 없어요
+                </span>
+              </span>
+            </span>
+            <ArrowRight size={16} className="shrink-0 text-primary-400" />
+          </Link>
+        )}
           </div>
 
           {locked && (

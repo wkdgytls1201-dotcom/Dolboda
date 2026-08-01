@@ -123,6 +123,41 @@ model User {
   sessions      Session[]
   sitterProfile SitterProfile?
   careRequests  CareRequest[]
+  careProfiles  CareProfile[]
+}
+
+// 보호자가 저장해두는 "어르신 돌봄 프로필" — 검색 개인화·돌봄 요청 자동 채움에 재사용한다.
+//
+// 민감정보(건강 상태) 최소 수집 원칙:
+//  - 이름·생년월일·주민번호는 아예 받지 않는다. 호칭(어머니 등)이 이름을 대신한다.
+//  - 전부 구간값(연령대·체중대·상태 단계)만 받는다 — CareRequest의 recipient 필드와 같은 선택지.
+//  - consentAt(민감정보 수집·이용 동의 시각)이 필수라, 동의 없는 저장은 스키마 수준에서 불가능.
+//  - 보호자가 언제든 삭제할 수 있고, 회원 탈퇴 시 함께 삭제된다(Cascade).
+model CareProfile {
+  id       String @id @default(cuid())
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  relation String // 어르신과의 관계 호칭 (어머니/아버지 등) — 프로필 이름 역할
+
+  gender            String?
+  ageBand           String?
+  weightBand        String?
+  mobilityLevel     String?
+  mealAssistLevel   String?
+  toiletAssistLevel String?
+  conditions        String[] // 질환·상태 (치매·인지저하 등, 선택지 기반)
+
+  // 실제 장기요양등급 (본인 신고값) — "없음/신청 준비 중/1~5등급/인지지원등급"
+  ltcGrade String?
+  // 등급테스트 추정 구간 — 실제 등급이 아니므로 화면에서 항상 "예상"으로 구분 표시
+  estimatedBand String?
+  estimatedAt   DateTime?
+
+  consentAt DateTime // 민감정보(건강정보) 수집·이용 동의 시각
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 // 로그인한 보호자가 마이페이지에서 옵트인으로 추가하는 "모심시터" 프로필.
