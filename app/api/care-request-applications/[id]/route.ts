@@ -22,6 +22,12 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     return NextResponse.json({ error: "알 수 없는 처리예요." }, { status: 400 });
   }
 
+  // 상태 가드 — 이게 없으면 이미 확정된 요청에 다시 PATCH가 들어올 때
+  // (중복 클릭·재시도) 지원자 두 명이 동시에 "매칭확정"이 될 수 있다.
+  if (application.careRequest.status !== "OPEN" || application.status !== "지원완료") {
+    return NextResponse.json({ error: "이미 처리된 요청이에요." }, { status: 409 });
+  }
+
   const [updatedApplication] = await prisma.$transaction([
     prisma.careRequestApplication.update({
       where: { id: params.id },

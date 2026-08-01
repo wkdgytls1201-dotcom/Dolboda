@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { HeartHandshake, Pencil, Plus, ShieldCheck } from "lucide-react";
 import { MyPageShell } from "@/components/MyPageShell";
 import { PageLoader } from "@/components/PageLoader";
@@ -70,7 +70,16 @@ function estimatedLabel(bandId: string | null): string | null {
 function CareProfileContent() {
   // 등급테스트 결과 화면에서 "프로필에 저장"으로 넘어오면 ?estimate=<band id>가 붙는다
   const params = useSearchParams();
+  const router = useRouter();
   const estimateFromTest = params.get("estimate");
+  // URL 쿼리를 그대로 두고 계속 읽으면, 이 추정치를 프로필 A에 저장한 뒤 같은 방문에서
+  // "다른 어르신 추가"로 프로필 B를 만들어도 B에 같은 추정치가 또 붙는다.
+  // 세션당 한 번만 쓰고 나면 지워지는 로컬 상태로 옮겨서, 첫 저장에만 반영되게 한다.
+  const [pendingEstimate, setPendingEstimate] = useState(estimateFromTest);
+  useEffect(() => {
+    if (estimateFromTest) router.replace("/mypage/care-profile");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [items, setItems] = useState<CareProfileData[] | null>(null);
   // null = 목록 보기, "new" = 새로 만들기, 그 외 = 해당 id 수정
@@ -89,7 +98,7 @@ function CareProfileContent() {
         if (cancelled) return;
         setItems(d.items ?? []);
         // 테스트에서 넘어왔는데 프로필이 하나도 없으면 바로 만들기 화면으로
-        if (estimateFromTest && (d.items ?? []).length === 0) setEditing("new");
+        if (pendingEstimate && (d.items ?? []).length === 0) setEditing("new");
       })
       .catch(() => {
         if (!cancelled) setError("정보를 불러오지 못했어요.");
@@ -135,8 +144,8 @@ function CareProfileContent() {
         body: JSON.stringify({
           ...(isNew ? { consent } : { id: editing }),
           ...form,
-          // 테스트에서 넘어온 추정 구간은 새 프로필/수정 대상에 함께 반영
-          ...(estimateFromTest ? { estimatedBand: estimateFromTest } : {}),
+          // 테스트에서 넘어온 추정 구간 — 이번 저장 한 번에만 반영하고 바로 비운다
+          ...(pendingEstimate ? { estimatedBand: pendingEstimate } : {}),
         }),
       });
       const data = await res.json().catch(() => null);
@@ -145,6 +154,7 @@ function CareProfileContent() {
         const list = prev ?? [];
         return isNew ? [...list, data] : list.map((p) => (p.id === data.id ? data : p));
       });
+      if (pendingEstimate) setPendingEstimate(null);
       setEditing(null);
     } catch (e) {
       setError(
@@ -179,7 +189,7 @@ function CareProfileContent() {
           <span className="block text-ink-400">모든 항목은 선택이고, 언제든 삭제할 수 있어요.</span>
         </p>
 
-        {estimateFromTest && (
+        {pendingEstimate && (
           <NoticeBox>
             등급테스트 결과(예상 구간)가 이 프로필에 함께 저장돼요. 실제 등급은 공단
             방문조사로 결정되며, 화면에는 항상 &quot;예상&quot;으로 표시돼요.

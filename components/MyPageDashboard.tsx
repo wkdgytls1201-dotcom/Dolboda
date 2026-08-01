@@ -259,7 +259,10 @@ export function MyPageDashboard() {
   }
 
   /* ---------- 보호자: 돌봄 프로필 — 있으면 맞춤 검색, 없으면 만들기 유도 ---------- */
-  if (!isSitter && careProfilesLoaded) {
+  // isSitter는 boolean | null(로딩 중)이라 !isSitter로 쓰면 로딩 중에도 true가 돼서,
+  // 실제 매니저 계정에도 /api/sitter-profile 응답이 오기 전까지 이 카드가 잠깐 떴다
+  // 사라지는 깜빡임이 생긴다. false로 확정된 경우만 보호자로 취급한다.
+  if (isSitter === false && careProfilesLoaded) {
     if (careProfiles.length > 0) {
       const p = careProfiles[0];
       const cta = profileCta(p);
@@ -327,7 +330,8 @@ export function MyPageDashboard() {
   }
 
   /* ---------- 보호자: 요청이 없을 때 시작 안내 ---------- */
-  if (request === null && !isSitter) {
+  // 같은 이유로 isSitter === false만 확정 조건으로 쓴다(위 주석 참고)
+  if (request === null && isSitter === false) {
     cards.push(
       <div key="start" className="rounded-2xl bg-white p-5 shadow-card sm:p-6">
         <p className="mb-1.5 text-[15px] font-bold text-ink-900">

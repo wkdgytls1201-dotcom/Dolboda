@@ -273,10 +273,9 @@ export default function FacilityDetailClient({
         )}
 
         {/* 저장된 돌봄 프로필이 있으면 — 이 시설을 "우리 어르신 기준"으로 맞춰본 체크포인트.
-            프로필과 데이터가 직접 이어지는 항목만 만들고, 없으면 아예 렌더하지 않는다. */}
-        <div className="mb-6">
-          <CareMatchPoints facility={facility} />
-        </div>
+            프로필과 데이터가 직접 이어지는 항목만 만들고, 없으면 아예 렌더하지 않는다.
+            여백(mb-6)은 컴포넌트 내부에 있다 — 여기서 감싸면 null 렌더 시에도 빈 여백이 남는다. */}
+        <CareMatchPoints facility={facility} />
 
         {/* 돌보다 AI기반 안심지수 */}
         <DetailSection id="dolboda-score" title="돌보다 AI기반 안심지수">

@@ -100,7 +100,7 @@ export function CareMatchPoints({ facility }: { facility: Facility }) {
   if (points.length === 0) return null;
 
   return (
-    <section className="rounded-2xl border border-primary-100 bg-primary-50/40 p-4 sm:p-5">
+    <section className="mb-6 rounded-2xl border border-primary-100 bg-primary-50/40 p-4 sm:p-5">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h3 className="flex items-center gap-2 text-[15px] font-bold text-ink-900">
           <HeartHandshake size={16} className="text-primary-500" />
@@ -113,7 +113,7 @@ export function CareMatchPoints({ facility }: { facility: Facility }) {
                 key={p.id}
                 type="button"
                 onClick={() => setActiveId(p.id)}
-                className={`rounded-full px-3 py-1.5 text-[12px] font-bold transition-colors ${
+                className={`flex min-h-[40px] items-center rounded-full px-3.5 text-[12px] font-bold transition-colors ${
                   p.id === active.id
                     ? "bg-primary-500 text-white"
                     : "bg-white text-ink-500 shadow-card"
