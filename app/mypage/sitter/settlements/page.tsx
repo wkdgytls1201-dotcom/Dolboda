@@ -36,17 +36,18 @@ export default function SitterSettlementsPage() {
 
   return (
     <MyPageShell>
-      <h2 className="mb-1 text-xl font-bold text-ink-900">정산 관리</h2>
+      <h2 className="mb-2 text-xl font-bold text-ink-900">정산 관리</h2>
       <p className="mb-6 text-sm text-ink-500">돌봄 활동에 대한 정산 내역을 확인할 수 있어요.</p>
 
-      <section className="mb-4 rounded-2xl border border-ink-100 bg-white p-5 shadow-card">
-        <h3 className="mb-3 font-bold text-ink-900">정산 계좌</h3>
+      <section className="mb-4 rounded-2xl border border-ink-100 bg-white p-5 shadow-card sm:p-6">
+        <h3 className="mb-3 text-[15px] font-bold text-ink-900">정산 계좌</h3>
         {profile.bankName ? (
-          <p className="text-sm text-ink-700">
-            {profile.bankName} {profile.bankAccountNumber} ({profile.bankAccountHolder})
+          <p className="text-[15px] font-semibold text-ink-700">
+            {profile.bankName} {profile.bankAccountNumber}
+            <span className="ml-1.5 font-normal text-ink-400">({profile.bankAccountHolder})</span>
           </p>
         ) : (
-          <p className="text-sm text-ink-300">
+          <p className="text-sm leading-relaxed text-ink-400">
             등록된 계좌가 없어요.{" "}
             <Link href="/mypage/sitter/profile" className="font-semibold text-primary-600 underline">
               프로필 관리
@@ -57,9 +58,11 @@ export default function SitterSettlementsPage() {
       </section>
 
       <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-ink-100 bg-ink-100/20 py-16 text-center">
-        <Wallet size={28} className="text-ink-300" />
-        <p className="text-sm font-medium text-ink-500">정산 내역이 아직 없어요</p>
-        <p className="px-6 text-xs text-ink-300">
+        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-ink-300 shadow-card">
+          <Wallet size={22} />
+        </span>
+        <p className="text-base font-bold text-ink-700">정산 내역이 아직 없어요</p>
+        <p className="px-6 text-[13px] leading-relaxed text-ink-400">
           실제 정산·지급 기능은 준비 중이에요. 완료되면 여기서 내역을 확인할 수 있어요.
         </p>
       </div>

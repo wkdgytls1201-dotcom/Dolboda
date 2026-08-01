@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { X, Plus, ChevronLeft, HeartHandshake } from "lucide-react";
 import { REGIONS } from "@/lib/regions";
 import { PageLoader } from "@/components/PageLoader";
+import { useSitterProfileContext } from "@/lib/sitterProfileContext";
 
 const STEP_TITLES = ["약관 동의", "기본 정보", "경력 · 자격", "활동 지역", "정산 계좌 (선택)"];
 const MAX_REGIONS = 10;
@@ -19,6 +20,7 @@ interface Certification {
 export default function SitterRegisterPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { update: updateContextProfile } = useSitterProfileContext();
 
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
@@ -113,6 +115,10 @@ export default function SitterRegisterPage() {
         }),
       });
       if (!res.ok) throw new Error();
+      // /mypage 레이아웃은 화면을 옮겨도 다시 마운트되지 않는다. 방금 만든 프로필을
+      // 공유 상태에 넣어주지 않으면, 등록을 마치고 넘어간 프로필 관리 화면이
+      // "아직 돌보다 매니저로 등록하지 않으셨어요"를 띄운다(사이드바도 마찬가지).
+      updateContextProfile(await res.json());
       router.push("/mypage/sitter/profile");
     } catch {
       setError("등록에 실패했어요. 잠시 후 다시 시도해주세요.");

@@ -13,7 +13,7 @@ export default function SitterTipsPage() {
 
   return (
     <MyPageShell>
-      <h2 className="mb-1 flex items-center gap-2 text-xl font-bold text-ink-900">
+      <h2 className="mb-2 flex items-center gap-2 text-xl font-bold text-ink-900">
         <BookOpen size={20} className="text-royal-500" />
         매니저 가이드
       </h2>
@@ -26,7 +26,7 @@ export default function SitterTipsPage() {
         if (list.length === 0) return null;
         return (
           <section key={category} className="mb-7">
-            <h3 className="mb-2.5 text-xs font-bold text-ink-300">{category}</h3>
+            <h3 className="mb-3 text-[13px] font-bold text-ink-400">{category}</h3>
             <div className="space-y-2.5">
               {list.map((tip) => {
                 const isOpen = open === tip.slug;
@@ -46,17 +46,22 @@ export default function SitterTipsPage() {
                           {tip.title}
                         </span>
                         {!isOpen && (
-                          <span className="mt-0.5 line-clamp-1 block text-xs text-ink-400">
+                          <span className="mt-1 line-clamp-1 block text-[13px] text-ink-400">
                             {tip.summary}
                           </span>
                         )}
                       </span>
-                      <ChevronDown
-                        size={18}
-                        className={`shrink-0 text-ink-300 transition-transform duration-200 ${
-                          isOpen ? "rotate-180" : ""
-                        }`}
-                      />
+                      {/* 화살표만 두면 누를 수 있는 줄 모른다 — 시설 상세 프로그램 아코디언과
+                          같은 규칙으로 "펼치기/접기" 글자를 함께 둔다 */}
+                      <span className="flex shrink-0 items-center gap-1 text-[12px] font-semibold text-ink-300">
+                        {isOpen ? "접기" : "펼치기"}
+                        <ChevronDown
+                          size={16}
+                          className={`transition-transform duration-200 ${
+                            isOpen ? "rotate-180" : ""
+                          }`}
+                        />
+                      </span>
                     </button>
 
                     {isOpen && (

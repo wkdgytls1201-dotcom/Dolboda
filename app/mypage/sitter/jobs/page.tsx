@@ -90,26 +90,26 @@ function JobCard({
     : null;
 
   return (
-    <div className="rounded-2xl border border-ink-100 bg-white p-4 shadow-card transition-shadow duration-150 active:shadow-none sm:p-5">
-      <div className="mb-2 flex flex-wrap items-center gap-1.5">
-        <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${meta.badgeClass}`}>
+    <div className="rounded-2xl border border-ink-100 bg-white p-5 shadow-card transition-shadow duration-150 active:shadow-none sm:p-6">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <span className={`rounded-full px-3 py-1.5 text-[13px] font-bold ${meta.badgeClass}`}>
           {meta.label}
         </span>
-        <span className="flex items-center gap-1 rounded-full bg-ink-100/60 px-2.5 py-1 text-xs font-semibold text-ink-700">
-          <MapPin size={11} />
+        <span className="flex items-center gap-1.5 rounded-full bg-ink-100/60 px-3 py-1.5 text-[13px] font-semibold text-ink-700">
+          <MapPin size={12} />
           {job.region}
         </span>
         {badge}
       </div>
 
       {job.locationNote && (
-        <p className="mb-1.5 text-sm font-bold text-ink-900">{job.locationNote}</p>
+        <p className="mb-2 text-base font-bold leading-snug text-ink-900">{job.locationNote}</p>
       )}
 
-      <dl className="mb-2 space-y-1 text-xs text-ink-500">
+      <dl className="mb-3 space-y-2 text-[13px] text-ink-500">
         <div className="flex gap-2">
-          <dt className="flex w-14 shrink-0 items-center gap-1 text-ink-300">
-            <Calendar size={11} />
+          <dt className="flex w-16 shrink-0 items-center gap-1.5 text-ink-300">
+            <Calendar size={13} />
             기간
           </dt>
           <dd className="font-medium text-ink-700">
@@ -119,8 +119,8 @@ function JobCard({
         </div>
         {(timeRange || visit) && (
           <div className="flex gap-2">
-            <dt className="flex w-14 shrink-0 items-center gap-1 text-ink-300">
-              <Clock size={11} />
+            <dt className="flex w-16 shrink-0 items-center gap-1.5 text-ink-300">
+              <Clock size={13} />
               시간
             </dt>
             <dd className="font-medium text-ink-700">
@@ -130,8 +130,8 @@ function JobCard({
         )}
         {recipient && (
           <div className="flex gap-2">
-            <dt className="flex w-14 shrink-0 items-center gap-1 text-ink-300">
-              <User size={11} />
+            <dt className="flex w-16 shrink-0 items-center gap-1.5 text-ink-300">
+              <User size={13} />
               대상
             </dt>
             <dd className="font-medium text-ink-700">{recipient}</dd>
@@ -139,8 +139,8 @@ function JobCard({
         )}
         {job.budgetAmount && (
           <div className="flex gap-2">
-            <dt className="flex w-14 shrink-0 items-center gap-1 text-ink-300">
-              <Wallet size={11} />
+            <dt className="flex w-16 shrink-0 items-center gap-1.5 text-ink-300">
+              <Wallet size={13} />
               사례비
             </dt>
             <dd className="font-bold text-primary-600">
@@ -156,7 +156,7 @@ function JobCard({
           {job.householdTasks.map((t) => (
             <span
               key={t}
-              className="rounded-full bg-mint-100 px-2 py-0.5 text-[11px] font-medium text-mint-700"
+              className="rounded-full bg-mint-100 px-2.5 py-1 text-[12px] font-medium text-mint-700"
             >
               {t}
             </span>
@@ -169,7 +169,7 @@ function JobCard({
             .map((t) => (
               <span
                 key={t}
-                className="rounded-full bg-ink-100/60 px-2 py-0.5 text-[11px] font-medium text-ink-700"
+                className="rounded-full bg-ink-100/60 px-2.5 py-1 text-[12px] font-medium text-ink-700"
               >
                 {t}
               </span>
@@ -177,7 +177,7 @@ function JobCard({
           {job.conditions.map((c) => (
             <span
               key={c}
-              className="rounded-full bg-accent-50 px-2 py-0.5 text-[11px] font-medium text-ink-700"
+              className="rounded-full bg-accent-50 px-2.5 py-1 text-[12px] font-medium text-ink-700"
             >
               {c}
             </span>
@@ -208,8 +208,8 @@ function EmptyState({
       <span className="mb-1 flex h-12 w-12 items-center justify-center rounded-full bg-white text-ink-300 shadow-card">
         <Briefcase size={22} />
       </span>
-      <p className="text-sm font-bold text-ink-700">{text}</p>
-      <p className="text-xs leading-relaxed text-ink-300">{sub}</p>
+      <p className="text-base font-bold text-ink-700">{text}</p>
+      <p className="text-[13px] leading-relaxed text-ink-300">{sub}</p>
       {action && <div className="mt-3 w-full max-w-[240px]">{action}</div>}
     </div>
   );
@@ -250,6 +250,9 @@ export default function SitterJobsPage() {
       setIsSitter(false);
       return;
     }
+    // 404 외의 실패(로그인 만료 401 등)에서 그냥 진행하면 에러 응답을 목록으로 읽어
+    // "공고가 하나도 없는 매니저"처럼 보인다. 목록은 건드리지 않고 그대로 둔다.
+    if (!res.ok) return;
     setIsSitter(true);
     const data = await res.json();
     setJobs(data.items ?? []);
@@ -329,25 +332,25 @@ export default function SitterJobsPage() {
 
   return (
     <MyPageShell>
-      <h2 className="mb-1 text-xl font-bold text-ink-900">일자리 관리</h2>
-      <p className="mb-4 text-sm text-ink-500">
+      <h2 className="mb-2 text-xl font-bold text-ink-900">일자리 관리</h2>
+      <p className="mb-5 text-sm leading-relaxed text-ink-500">
         내 활동 지역에 올라온 돌봄 요청과 내 지원 현황을 한곳에서 확인하세요.
       </p>
 
-      <div className="mb-4 flex gap-1 overflow-x-auto border-b border-ink-100">
+      <div className="mb-5 flex gap-1 overflow-x-auto border-b border-ink-100">
         {TABS.map((t) => (
           <button
             key={t.key}
             type="button"
             onClick={() => setTab(t.key)}
-            className={`min-h-[46px] shrink-0 border-b-2 px-3.5 text-sm font-bold transition-colors duration-150 ${
+            className={`min-h-[48px] shrink-0 border-b-2 px-4 text-[15px] font-bold transition-colors duration-150 ${
               tab === t.key
                 ? "border-primary-500 text-primary-700"
                 : "border-transparent text-ink-300 hover:text-ink-500"
             }`}
           >
             {t.label}
-            {counts[t.key] > 0 && <span className="ml-1 text-xs">{counts[t.key]}</span>}
+            {counts[t.key] > 0 && <span className="ml-1.5 text-[13px]">{counts[t.key]}</span>}
           </button>
         ))}
       </div>

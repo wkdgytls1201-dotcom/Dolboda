@@ -17,7 +17,7 @@ const MAX_REGIONS = 10;
 export default function SitterProfilePage() {
   const { data: session, status } = useSession();
   // MyPageShell이 이미 한 번 불러온 데이터를 그대로 받아 쓴다 — 이 화면에서 또 fetch하지 않는다.
-  const { profile: contextProfile } = useSitterProfileContext();
+  const { profile: contextProfile, update: updateContextProfile } = useSitterProfileContext();
   const [profile, setProfile] = useState<SitterProfile | null | undefined>(undefined);
   const [editSection, setEditSection] = useState<null | "basic" | "regions" | "bank">(null);
 
@@ -32,6 +32,7 @@ export default function SitterProfilePage() {
   const [certName, setCertName] = useState("");
   const [certIssuer, setCertIssuer] = useState("");
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   // photoUrl이 깨진 링크일 때 브라우저 기본 "깨진 이미지" 아이콘 대신 기본 아바타로 대체
   const [photoFailed, setPhotoFailed] = useState(false);
 
@@ -52,34 +53,62 @@ export default function SitterProfilePage() {
 
   async function patch(data: Record<string, unknown>) {
     setSaving(true);
-    const res = await fetch("/api/sitter-profile", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    const updated = await res.json();
-    setProfile(updated);
-    setSaving(false);
-    return updated;
+    setSaveError(null);
+    try {
+      const res = await fetch("/api/sitter-profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      // res.ok를 안 보고 바로 setProfile하면, 실패 응답({error:"..."})이 프로필 자리에
+      // 들어가 certifications가 undefined가 되고 아래 .map()에서 화면이 통째로 죽는다.
+      if (!res.ok) throw new Error();
+      const updated: SitterProfileData = await res.json();
+      setProfile(updated);
+      // 사이드바·대시보드·정산관리가 보는 공유 상태도 같이 갱신한다
+      updateContextProfile(updated);
+      return updated;
+    } catch {
+      setSaveError("저장하지 못했어요. 잠시 후 다시 시도해주세요.");
+      return null;
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function addCertification() {
     if (!certName.trim() || !profile) return;
+    setSaveError(null);
     const res = await fetch("/api/sitter-profile/certifications", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: certName.trim(), issuedBy: certIssuer.trim() || undefined }),
     });
+    if (!res.ok) {
+      setSaveError("자격증을 추가하지 못했어요.");
+      return;
+    }
     const cert = await res.json();
-    setProfile({ ...profile, certifications: [...profile.certifications, cert] });
+    const next = { ...profile, certifications: [...profile.certifications, cert] };
+    setProfile(next);
+    updateContextProfile(next);
     setCertName("");
     setCertIssuer("");
   }
 
   async function removeCertification(id: string) {
     if (!profile) return;
-    await fetch(`/api/sitter-profile/certifications/${id}`, { method: "DELETE" });
-    setProfile({ ...profile, certifications: profile.certifications.filter((c) => c.id !== id) });
+    const res = await fetch(`/api/sitter-profile/certifications/${id}`, { method: "DELETE" });
+    if (!res.ok) {
+      setSaveError("자격증을 삭제하지 못했어요.");
+      return;
+    }
+    const next = {
+      ...profile,
+      certifications: profile.certifications.filter((c) => c.id !== id),
+    };
+    setProfile(next);
+    updateContextProfile(next);
   }
 
   function toggleRegion(region: string) {
@@ -124,8 +153,19 @@ export default function SitterProfilePage() {
 
   return (
     <MyPageShell>
-      <h2 className="mb-1 text-xl font-bold text-ink-900">프로필 관리</h2>
+      <h2 className="mb-2 text-xl font-bold text-ink-900">프로필 관리</h2>
       <p className="mb-6 text-sm text-ink-500">시설·업체에게 보여지는 내 프로필이에요.</p>
+
+      {/* 저장이 실패하면 조용히 넘어가지 않고 알린다 — 예전엔 실패해도 화면상으론
+          저장된 것처럼 보였고, 실패 응답이 프로필 자리에 들어가 화면이 죽기도 했다 */}
+      {saveError && (
+        <p
+          role="alert"
+          className="mb-4 rounded-xl bg-primary-50 px-4 py-3 text-[13px] font-semibold text-primary-700"
+        >
+          {saveError}
+        </p>
+      )}
 
       {/* 완성도 게이지 — 무엇을 채우면 좋을지 한눈에. 100%면 응원 문구만 */}
       {(() => {
@@ -205,7 +245,7 @@ export default function SitterProfilePage() {
                 placeholder="자기소개 — 경력, 어르신을 대하는 마음가짐 등 나를 어필해보세요"
                 className="w-full resize-none rounded-xl border border-ink-100 px-3 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-100"
               />
-              <p className="text-right text-[11px] text-ink-300">{intro.length}/200</p>
+              <p className="text-right text-[12px] text-ink-300">{intro.length}/200</p>
               <div className="flex items-center gap-2">
                 <input
                   type="number"

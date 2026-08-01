@@ -28,6 +28,13 @@ interface SitterProfileContextValue {
   /** profile과 같은 정보를 boolean으로 — 사이드바 메뉴 분기 등에 편하게 쓰려고 */
   isSitter: boolean | null;
   refetch: () => void;
+  /**
+   * 저장 API가 돌려준 최신 프로필을 그대로 밀어 넣는다.
+   * 레이아웃은 /mypage/* 안에서 다시 마운트되지 않으므로, 이걸 안 부르면
+   * 프로필을 고쳐도 사이드바·대시보드·정산관리는 예전 값을 계속 보여준다
+   * (계좌를 막 등록하고 정산관리에 가면 "등록된 계좌가 없어요"가 뜨던 원인).
+   */
+  update: (profile: SitterProfileData) => void;
 }
 
 const SitterProfileContext = createContext<SitterProfileContextValue | null>(null);
@@ -49,10 +56,12 @@ export function SitterProfileProvider({ children }: { children: React.ReactNode 
     refetch();
   }, [refetch]);
 
+  const update = useCallback((next: SitterProfileData) => setProfile(next), []);
+
   const isSitter = profile === undefined ? null : profile !== null;
 
   return (
-    <SitterProfileContext.Provider value={{ profile, isSitter, refetch }}>
+    <SitterProfileContext.Provider value={{ profile, isSitter, refetch, update }}>
       {children}
     </SitterProfileContext.Provider>
   );
