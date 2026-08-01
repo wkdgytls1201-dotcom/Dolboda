@@ -160,7 +160,7 @@ function CareProfileContent() {
         {/* editing 값이 바뀔 때마다(목록↔새로 만들기↔다른 프로필 수정) key로 리마운트해
             매번 살짝 떠오르며 들어오게 한다 — 화면이 툭 끊겨 바뀌지 않게 */}
         <h2 key={editing} className="animate-fade-up mb-2 text-xl font-bold text-ink-900">
-          {isNew ? "돌봄 프로필 만들기" : "돌봄 프로필 수정"}
+          {isNew ? "보호자 프로필 만들기" : "보호자 프로필 수정"}
         </h2>
         <p className="mb-5 text-sm leading-relaxed text-ink-500">
           한 번 저장해두면 시설 찾기와 돌봄 요청에서 다시 입력할 필요가 없어요.
@@ -375,7 +375,7 @@ function CareProfileContent() {
     <MyPageShell>
       <h2 className="mb-2 flex items-center gap-2 text-xl font-bold text-ink-900">
         <HeartHandshake size={22} className="text-primary-500" />
-        어르신 돌봄 프로필
+        보호자 프로필
       </h2>
       <p className="mb-5 text-sm leading-relaxed text-ink-500">
         모시는 어르신의 상태를 저장해두면 돌봄 요청을 올릴 때 자동으로 채워져요.

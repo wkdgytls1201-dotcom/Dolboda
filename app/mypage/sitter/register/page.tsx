@@ -460,7 +460,9 @@ export default function SitterRegisterPage() {
 
       {error && <p className="mt-4 text-center text-xs font-semibold text-primary-600">{error}</p>}
 
-      <div className="fixed inset-x-0 bottom-0 border-t border-ink-100 bg-white/95 px-4 py-3 backdrop-blur">
+      {/* z-30: 하단 탭바(z-40)와 같은 자리를 쓰므로 명시적 z-index가 없으면 가려진다
+          (탭바는 이 화면에서 숨기지만, 안전하게 이쪽도 층을 올려둔다) */}
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-ink-100 bg-white/95 px-4 pt-3 backdrop-blur [padding-bottom:calc(0.75rem+env(safe-area-inset-bottom))]">
         <div className="mx-auto max-w-lg">
           {isLastStep ? (
             <button

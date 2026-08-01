@@ -128,7 +128,7 @@ export function ConsultModal({
                   <span className="text-xs leading-relaxed text-ink-700">
                     <strong className="font-bold">어르신 정보 함께 전달</strong>
                     <span className="block text-ink-500">
-                      돌봄 프로필 요약(연령대·거동 수준 등)을 상담에 포함해요. 시설이 미리
+                      보호자 프로필 요약(연령대·거동 수준 등)을 상담에 포함해요. 시설이 미리
                       준비된 상담을 할 수 있어요.
                     </span>
                   </span>

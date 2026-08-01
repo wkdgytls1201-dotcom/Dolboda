@@ -189,8 +189,10 @@ export function GradeHelperChat() {
 
   return (
     <div className="mx-auto max-w-xl">
+      {/* 진행률 바는 sticky — 대화가 길어지면 새 답변마다 아래로 자동 스크롤되는데,
+          문서 흐름에만 두면 두 번째 질문부터 화면 위로 밀려나 진행률이 안 보인다 */}
       {!result && (
-        <div className="mb-4">
+        <div className="sticky top-12 z-20 -mx-4 mb-4 bg-ivory-50/95 px-4 pb-2.5 pt-2.5 backdrop-blur sm:top-16">
           <div className="mb-1.5 flex items-center justify-between text-xs">
             <span className="text-ink-300">버튼만 눌러서 답하면 돼요</span>
             <span className="font-bold text-royal-600">{progressPct}%</span>

@@ -10,6 +10,7 @@ import {
   Wallet,
   Bell,
   BookOpen,
+  ChevronLeft,
   ChevronRight,
 } from "lucide-react";
 import { useSitterProfileContext } from "@/lib/sitterProfileContext";
@@ -28,10 +29,14 @@ interface NavItem {
 export function MyPageShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { isSitter } = useSitterProfileContext();
+  // 모바일에서는 /mypage 루트가 메뉴 허브, 서브 화면은 콘텐츠만 보여준다.
+  // 예전엔 매니저 메뉴 블록(대표 카드+그리드)이 모든 서브 화면 위에 그대로 깔려서,
+  // 보호자 프로필을 만들러 들어가도 매니저 메뉴가 한 화면을 다 차지했다.
+  const atRoot = pathname === "/mypage";
 
   const infoItems: NavItem[] = [
     { href: "/mypage", label: "계정 설정", icon: <Settings size={16} /> },
-    { href: "/mypage/care-profile", label: "돌봄 프로필", icon: <HeartHandshake size={16} /> },
+    { href: "/mypage/care-profile", label: "보호자 프로필", icon: <HeartHandshake size={16} /> },
     { href: "/mypage/edit", label: "정보 수정", icon: <ChevronRight size={16} /> },
   ];
 
@@ -171,7 +176,7 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 pb-24 sm:flex sm:gap-9">
-      <aside className="mb-6 sm:mb-0 sm:w-56 sm:shrink-0">
+      <aside className={`${atRoot ? "mb-6" : "hidden"} sm:mb-0 sm:block sm:w-56 sm:shrink-0`}>
         <h1 className="mb-5 hidden text-lg font-bold text-ink-900 sm:block">마이페이지</h1>
 
         <p className="mb-2 hidden px-1 text-[13px] font-semibold text-ink-300 sm:block">내 정보</p>
@@ -223,7 +228,19 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
         )}
       </aside>
 
-      <div className="flex-1">{children}</div>
+      <div className="flex-1">
+        {/* 서브 화면 모바일 전용 — 메뉴 대신 마이페이지로 돌아가는 길만 한 줄 남긴다 */}
+        {!atRoot && (
+          <Link
+            href="/mypage"
+            className="-ml-2 mb-3 inline-flex min-h-[44px] items-center gap-0.5 px-2 text-sm font-semibold text-ink-500 transition-colors duration-150 hover:text-ink-900 sm:hidden"
+          >
+            <ChevronLeft size={18} />
+            마이페이지
+          </Link>
+        )}
+        {children}
+      </div>
     </main>
   );
 }

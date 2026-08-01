@@ -128,7 +128,9 @@ export function MyPageDashboard() {
                 : "매니저들의 지원을 기다리고 있어요"}
             </p>
             <p className="mt-1.5 text-[13px] leading-relaxed text-white/75">
-              {request.region} · {request.startDate} ~ {request.endDate}
+              {/* API의 날짜는 ISO 문자열("2026-08-05T00:00:00.000Z") — 그대로 찍으면
+                  카드가 알아볼 수 없는 글자로 깨져 보인다. 날짜 부분만 잘라 쓴다 */}
+              {request.region} · {request.startDate.slice(0, 10)} ~ {request.endDate.slice(0, 10)}
             </p>
           </>
         ) : (
@@ -290,7 +292,7 @@ export function MyPageDashboard() {
           <div className="mb-2.5 flex items-center justify-between gap-2">
             <p className="flex items-center gap-2 text-[15px] font-bold text-ink-900">
               <HeartHandshake size={16} className="text-primary-500" />
-              {p.relation} 돌봄 프로필
+              {p.relation} 보호자 프로필
             </p>
             <Link
               href="/mypage/care-profile"
@@ -339,7 +341,7 @@ export function MyPageDashboard() {
             </span>
             <span>
               <span className="block text-[15px] font-bold text-ink-900">
-                어르신 돌봄 프로필 만들기
+                보호자 프로필 만들기
               </span>
               <span className="mt-0.5 block text-[13px] leading-snug text-ink-500">
                 한 번 저장하면 시설 찾기·돌봄 요청이 훨씬 빨라져요

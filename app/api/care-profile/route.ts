@@ -82,7 +82,7 @@ export async function POST(req: Request) {
   const count = await prisma.careProfile.count({ where: { userId: session.user.id } });
   if (count >= MAX_PROFILES) {
     return NextResponse.json(
-      { error: `돌봄 프로필은 최대 ${MAX_PROFILES}개까지 만들 수 있어요.` },
+      { error: `보호자 프로필은 최대 ${MAX_PROFILES}개까지 만들 수 있어요.` },
       { status: 400 }
     );
   }

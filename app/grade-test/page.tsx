@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Sparkles, ArrowRight } from "lucide-react";
 import { GradeTest } from "@/components/GradeTest";
 import { TEST_AREAS, TOTAL_ITEMS, APPLY_STEPS } from "@/lib/gradeTest";
 import { SITE_URL } from "@/lib/siteConfig";
@@ -86,35 +85,8 @@ export default function GradeTestPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }}
       />
-      <div className="mx-auto max-w-xl px-4 pt-4">
-        <a
-          href="/grade-helper"
-          className="group relative flex min-h-[64px] items-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-royal-600 via-royal-500 to-primary-500 px-4 py-3.5 shadow-royal transition-all hover:-translate-y-0.5 hover:shadow-royal-hover"
-        >
-          <span className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-white/10" />
-          <span className="absolute -bottom-8 right-10 h-16 w-16 rounded-full bg-white/10" />
-
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/20 backdrop-blur">
-            <Sparkles size={18} className="text-white" />
-          </span>
-
-          <span className="min-w-0 flex-1">
-            <span className="flex items-center gap-1.5 text-[13px] font-bold text-white">
-              시간 없으면 AI 도우미로 1분 컷
-              <span className="rounded-full bg-white/25 px-1.5 py-0.5 text-[10px] font-extrabold">
-                NEW
-              </span>
-            </span>
-            <span className="mt-0.5 block text-[11px] text-white/80">
-              버튼 13번만 눌러도 예상 등급이 나와요
-            </span>
-          </span>
-
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-royal-600 transition-transform group-hover:translate-x-0.5">
-            <ArrowRight size={16} />
-          </span>
-        </a>
-      </div>
+      {/* AI 도우미 배너는 GradeTest 안(intro 단계)에서만 보여준다 — 52문항을 다
+          마친 사람의 결과·로그인 화면 위에까지 "1분 컷"이 떠 있으면 혼란스럽다 */}
       <GradeTest />
 
       {/* 검색엔진·AI가 읽는 정적 설명 (테스트는 클라이언트에서만 그려지므로 별도로 둔다) */}

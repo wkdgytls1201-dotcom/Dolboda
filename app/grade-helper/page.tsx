@@ -82,11 +82,11 @@ export default function GradeHelperPage() {
           버튼만 눌러 답하면 1분 안에 예상 등급 범위를 알려드려요.
           <br />
           <span className="text-ink-300">
-            정식 테스트(52개 항목)는{" "}
+            정식 테스트는{" "}
             <a href="/grade-test" className="font-semibold text-royal-600 underline">
               등급 예상 테스트
             </a>
-            에서 하실 수 있어요.
+            에서 할 수 있어요.
           </span>
         </p>
         <div className="mt-6">

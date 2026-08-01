@@ -57,6 +57,8 @@ export function CareRequestDetail({
   justCreated?: boolean;
 }) {
   const [busy, setBusy] = useState<string | null>(null);
+  // "돌봄이 끝났어요"는 되돌릴 수 없는 액션 — 바로 실행하지 않고 확인을 한 번 거친다
+  const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
   const meta = typeMeta(careRequest.locationType);
   const timeRange = formatTimeRange(
     careRequest.roundTheClock,
@@ -94,6 +96,7 @@ export function CareRequestDetail({
   }
 
   async function handleComplete() {
+    setShowCompleteConfirm(false);
     setBusy("complete");
     await fetch(`/api/care-requests/${careRequest.id}`, {
       method: "PATCH",
@@ -330,12 +333,49 @@ export function CareRequestDetail({
         <button
           type="button"
           disabled={busy === "complete"}
-          onClick={handleComplete}
+          onClick={() => setShowCompleteConfirm(true)}
           className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl border border-ink-100 py-3 text-sm font-semibold text-ink-700 transition-colors duration-150 hover:bg-ink-100 disabled:opacity-60"
         >
           <CheckCircle2 size={16} />
           {busy === "complete" ? "처리 중..." : "돌봄이 끝났어요"}
         </button>
+      )}
+
+      {/* 완료 확인 — 누르는 순간 요청이 종료되고 되돌릴 수 없으므로,
+          무엇이 바뀌는지 먼저 알려주고 한 번 더 묻는다 */}
+      {showCompleteConfirm && (
+        <div
+          className="animate-overlay-in fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 px-4"
+          onClick={() => setShowCompleteConfirm(false)}
+        >
+          <div
+            className="animate-modal-in w-full max-w-sm rounded-2xl bg-white p-5 shadow-card-hover"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="mb-1.5 text-base font-bold text-ink-900">돌봄을 완료 처리할까요?</h2>
+            <ul className="mb-5 space-y-1.5 text-sm leading-relaxed text-ink-500">
+              <li>· 이 요청은 종료되고 다시 열 수 없어요</li>
+              <li>· 함께한 매니저에게 &quot;돌봄 완료&quot;로 기록돼요</li>
+              <li>· 완료 후에 별점·후기를 남길 수 있어요</li>
+            </ul>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setShowCompleteConfirm(false)}
+                className="min-h-[48px] flex-1 rounded-xl border border-ink-100 text-sm font-semibold text-ink-500 transition-colors duration-150 hover:bg-ink-100/60"
+              >
+                아직이에요
+              </button>
+              <button
+                type="button"
+                onClick={handleComplete}
+                className="min-h-[48px] flex-[1.4] rounded-xl bg-primary-500 text-sm font-bold text-white shadow-soft transition-all duration-150 ease-snappy hover:bg-primary-600 active:scale-[0.98]"
+              >
+                네, 돌봄이 끝났어요
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </main>
   );

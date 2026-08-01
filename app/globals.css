@@ -187,6 +187,21 @@ p {
   animation: modal-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* 강조 CTA 위를 지나가는 반짝이는 띠 — 무한 반복이 아니라 3번만 지나가고 멈춘다
+   (무한 애니메이션은 본문에서 금지 원칙, §애니메이션 규칙). 띠 자체는 카드 폭의
+   1/3짜리 그라데이션이고, 자기 폭 기준 -150%→400%로 움직여 카드 전체를 훑는다. */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-150%) skewX(-12deg);
+  }
+  100% {
+    transform: translateX(400%) skewX(-12deg);
+  }
+}
+.animate-shimmer {
+  animation: shimmer 2.2s ease-in-out 0.6s 3 both;
+}
+
 /* 카카오 로드뷰 기본 컨트롤(줌인/줌아웃/나침반/미니맵, 동서남북 방위 표시) 숨김
    — 카드/미리보기는 순수 사진처럼만 보이게 함 */
 [id^="_box_util_"],

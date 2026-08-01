@@ -141,7 +141,37 @@ export function GradeTest() {
   /* ---------------------------------- 소개 ---------------------------------- */
   if (phase === "intro") {
     return (
-      <main className="mx-auto max-w-lg px-4 pb-24 pt-8">
+      <main className="mx-auto max-w-lg px-4 pb-24 pt-4">
+        {/* 1분 AI 도우미 배너 — 테스트를 시작하기 전에만 보여준다.
+            52문항을 이미 진행/완료한 사람에게 "1분 컷"을 계속 노출하면 헷갈린다 */}
+        <a
+          href="/grade-helper"
+          className="group relative mb-6 flex min-h-[64px] items-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-royal-600 via-royal-500 to-primary-500 px-4 py-3.5 shadow-royal transition-all hover:-translate-y-0.5 hover:shadow-royal-hover"
+        >
+          <span className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-white/10" />
+          <span className="absolute -bottom-8 right-10 h-16 w-16 rounded-full bg-white/10" />
+
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/20 backdrop-blur">
+            <Sparkles size={18} className="text-white" />
+          </span>
+
+          <span className="min-w-0 flex-1">
+            <span className="flex items-center gap-1.5 text-[13px] font-bold text-white">
+              AI 도우미로 1분만에
+              <span className="rounded-full bg-white/25 px-1.5 py-0.5 text-[10px] font-extrabold">
+                NEW
+              </span>
+            </span>
+            <span className="mt-0.5 block text-[11px] text-white/80">
+              버튼 13번만 눌러도 예상 등급이 나와요
+            </span>
+          </span>
+
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-royal-600 transition-transform group-hover:translate-x-0.5">
+            <ArrowRight size={16} />
+          </span>
+        </a>
+
         <div className="mb-8 text-center">
           <span className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-primary-50 px-3.5 py-1.5 text-xs font-bold text-primary-700">
             <Sparkles size={13} />
@@ -169,7 +199,9 @@ export function GradeTest() {
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-bold text-ink-900">{a.title}</span>
-                <span className="block truncate text-xs text-ink-300">{a.subtitle}</span>
+                {/* truncate로 한 줄 자르면 375px에서 설명이 "일상생활 동작을 혼…"처럼
+                    잘려 무슨 내용인지 알 수 없다 — 줄바꿈을 허용해 끝까지 보여준다 */}
+                <span className="block text-xs leading-relaxed text-ink-400">{a.subtitle}</span>
               </span>
               <span className="shrink-0 text-xs font-semibold text-ink-300">{a.items.length}개</span>
             </div>
@@ -283,27 +315,41 @@ export function GradeTest() {
           </div>
         </section>
 
-        {/* 결과를 돌봄 프로필에 저장 — 지금은 결과가 화면을 닫으면 사라진다.
-            저장해두면 시설 찾기·돌봄 요청에서 재사용되고, 나중에 재판정 시기 안내의 기준이 된다. */}
+        {/* 결과를 보호자 프로필에 저장 — 결과 화면에서 가장 눈에 띄어야 하는 다음 행동.
+            저장해두면 시설 찾기·돌봄 요청에서 재사용되고, 나중에 재판정 시기 안내의 기준이 된다.
+            반짝이는 띠(shimmer)는 3회만 지나가고 멈춘다 — 시선은 끌되 계속 산만하지 않게. */}
         {!locked && (
           <Link
             href={`/mypage/care-profile?estimate=${encodeURIComponent(result.band.id)}`}
-            className="mb-6 flex items-center justify-between gap-3 rounded-2xl border border-primary-200 bg-primary-50/70 p-4 transition-colors hover:bg-primary-50"
+            className="group relative mb-6 block overflow-hidden rounded-2xl bg-gradient-to-br from-primary-500 via-primary-500 to-peach-500 p-5 shadow-royal transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:shadow-royal-hover active:translate-y-0 active:scale-[0.99]"
           >
-            <span className="flex items-center gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-primary-500 shadow-soft">
-                <HeartHandshake size={18} />
+            {/* 장식 원 — 배너 톤과 맞춘 일러스트풍 배경 */}
+            <span aria-hidden className="absolute -right-8 -top-10 h-28 w-28 rounded-full bg-white/10" />
+            <span aria-hidden className="absolute -bottom-12 right-14 h-24 w-24 rounded-full bg-white/10" />
+            <span aria-hidden className="absolute -left-6 -bottom-8 h-20 w-20 rounded-full bg-white/[0.07]" />
+            {/* 반짝이는 띠 */}
+            <span
+              aria-hidden
+              className="animate-shimmer pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-white/40 to-transparent"
+            />
+            <span className="relative flex items-center gap-3.5">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/20 text-white backdrop-blur">
+                <HeartHandshake size={22} />
               </span>
-              <span>
-                <span className="block text-[15px] font-bold text-ink-900">
-                  이 결과를 돌봄 프로필에 저장하기
+              <span className="min-w-0 flex-1">
+                <span className="flex flex-wrap items-center gap-1.5 text-base font-extrabold leading-snug text-white">
+                  이 결과를 보호자 프로필에 저장하기
+                  <Sparkles size={15} className="shrink-0" />
                 </span>
-                <span className="mt-0.5 block text-[13px] leading-snug text-ink-500">
-                  저장해두면 시설 찾기와 돌봄 요청에서 다시 입력할 필요가 없어요
+                <span className="mt-1 block text-[13px] leading-snug text-white/85">
+                  저장해두면 시설마다 우리 어르신 기준 체크포인트를 보여드리고,
+                  돌봄 요청서도 자동으로 채워져요
                 </span>
+              </span>
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-primary-600 transition-transform duration-200 group-hover:translate-x-0.5">
+                <ArrowRight size={17} />
               </span>
             </span>
-            <ArrowRight size={16} className="shrink-0 text-primary-400" />
           </Link>
         )}
           </div>

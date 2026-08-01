@@ -564,7 +564,7 @@ export function CareRequestWizard({
           {!initial && careProfiles.length > 0 && (
             <div className="rounded-2xl border border-primary-200 bg-primary-50/60 p-4">
               <p className="mb-2.5 text-[13px] font-bold text-ink-900">
-                저장된 돌봄 프로필로 채우기
+                저장된 보호자 프로필로 채우기
               </p>
               <div className="flex flex-wrap gap-2">
                 {careProfiles.map((p) => (

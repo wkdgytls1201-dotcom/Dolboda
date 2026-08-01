@@ -157,7 +157,7 @@ export function CareMatchPoints({ facility }: { facility: Facility }) {
       </ul>
 
       <p className="mt-3 text-[12px] leading-relaxed text-ink-400">
-        저장하신 돌봄 프로필과 공공데이터를 맞춰본 참고 정보예요.{" "}
+        저장하신 보호자 프로필과 공공데이터를 맞춰본 참고 정보예요.{" "}
         <Link
           href="/mypage/care-profile"
           className="font-semibold text-ink-500 underline transition-colors hover:text-primary-600"
