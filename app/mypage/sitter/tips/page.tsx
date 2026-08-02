@@ -9,7 +9,18 @@ const CATEGORY_ORDER = ["지원 잘하기", "돌봄 실전", "정산·제도"] a
 
 // 매니저 가이드 — 지원 성공률을 높이는 실전 팁. 매니저가 마이페이지에 다시 올 이유를 만든다.
 export default function SitterTipsPage() {
-  const [open, setOpen] = useState<string | null>(MANAGER_TIPS[0]?.slug ?? null);
+  // 여러 개를 동시에 펼칠 수 있게 한다. 예전엔 한 번에 하나만 열리는 아코디언이라,
+  // 아래쪽 글을 펼치면 위에 열려 있던 긴 글이 접히면서 화면이 통째로 위로 올라갔다
+  // — 누른 카드가 손가락 아래에서 사라지고 엉뚱한 위치로 튄 것처럼 보였다.
+  const [openSlugs, setOpenSlugs] = useState<Set<string>>(
+    () => new Set(MANAGER_TIPS[0] ? [MANAGER_TIPS[0].slug] : [])
+  );
+  const toggle = (slug: string) =>
+    setOpenSlugs((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(slug)) next.add(slug);
+      return next;
+    });
 
   return (
     <MyPageShell>
@@ -29,7 +40,7 @@ export default function SitterTipsPage() {
             <h3 className="mb-3 text-[13px] font-bold text-ink-400">{category}</h3>
             <div className="space-y-2.5">
               {list.map((tip) => {
-                const isOpen = open === tip.slug;
+                const isOpen = openSlugs.has(tip.slug);
                 return (
                   <article
                     key={tip.slug}
@@ -37,7 +48,7 @@ export default function SitterTipsPage() {
                   >
                     <button
                       type="button"
-                      onClick={() => setOpen(isOpen ? null : tip.slug)}
+                      onClick={() => toggle(tip.slug)}
                       aria-expanded={isOpen}
                       className="flex w-full items-center gap-3 p-4 text-left"
                     >

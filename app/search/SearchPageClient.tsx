@@ -120,28 +120,41 @@ function SearchContent() {
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   // 홈에서 위치를 허용했다면 그 좌표를 그대로 쓰고, 아직 없으면 직접 요청할 수 있게 한다.
-  const { origin, hasLocation, locating, requestLocation } = useUserOrigin();
+  const { origin, hasLocation, locating, ready: originReady, requestLocation } = useUserOrigin();
 
-  // 거리순 또는 등급순인데 검색어가 없으면 서버에서 전국 기준 최근접을 계산해 받아온다.
+  // 거리·등급·안심지수순인데 검색어가 없으면 서버에서 전국 기준 최근접을 계산해 받아온다.
   // (등록순 300건 안에서 거리를 재면 그 300건이 몰려있는 지역만 계속 나온다)
-  // 등급순은 위치가 있으면 내 주변 100km 이내로 좁혀서 보여주므로 이 최근접 목록이 필요하다.
-  const useNearest = (sortKey === "distance" || sortKey === "grade") && hasLocation && !query.trim();
+  // 세 정렬 모두 위치가 있으면 내 주변 100km 이내로 좁혀 보여주므로 이 최근접 목록이 필요하다.
+  //
+  // 안심지수순이 빠져 있어서, 부산에서 정렬해도 등록순 300건에 들어 있던 서울 시설이
+  // 1위로 올라왔다. 정렬 기준만 바뀌었을 뿐 "내 주변에서 고르는 화면"인 건 같다.
+  const useNearest =
+    (sortKey === "distance" || sortKey === "grade" || sortKey === "score") &&
+    hasLocation &&
+    !query.trim();
+
+  // 저장된 검색 상태(sessionStorage)와 기준점(위치)이 정해지기 전에는 아무것도 부르지 않는다.
+  // 예전엔 첫 렌더의 기본값으로 전국 300건을 먼저 받고, 곧이어 복원된 필터로 한 번,
+  // 위치가 붙으면 주변 300건으로 또 한 번 — 첫 진입에 150KB짜리 요청이 두세 번 나갔다.
+  const queriesReady = restoredDone && originReady;
 
   const listQuery = useFacilities({
     q: query,
     limit: 300,
     types: filters.types,
     programTags: filters.programTags,
-    enabled: !useNearest,
+    enabled: queriesReady && !useNearest,
     cardView: true,
   });
   const nearestQuery = useNearbyFacilities(origin.lat, origin.lng, 300, {
     types: filters.types,
-    enabled: useNearest,
+    enabled: queriesReady && useNearest,
   });
 
   const facilities = useNearest ? nearestQuery.facilities : listQuery.facilities;
-  const loading = useNearest ? nearestQuery.loading : listQuery.loading;
+  // 아직 아무것도 안 부른 구간(복원·위치 대기)도 "불러오는 중"으로 본다 —
+  // 그러지 않으면 그 찰나에 "조건에 맞는 시설이 없어요"가 번쩍인다.
+  const loading = !queriesReady || (useNearest ? nearestQuery.loading : listQuery.loading);
   const total = useNearest ? nearestQuery.total : listQuery.total;
 
   useEffect(() => {
@@ -192,8 +205,9 @@ function SearchContent() {
     if (filters.maxDistanceKm !== null) {
       list = list.filter((x) => x.dist !== undefined && x.dist <= filters.maxDistanceKm!);
     }
-    // 등급순으로 볼 때 위치를 알고 있으면 너무 먼 시설까지 섞이지 않게 100km로 좁힌다.
-    if (sortKey === "grade" && hasLocation && !query.trim()) {
+    // 등급·안심지수순으로 볼 때 위치를 알고 있으면 너무 먼 시설까지 섞이지 않게 100km로
+    // 좁힌다. 거리 필터(위 maxDistanceKm)를 함께 걸면 그보다 좁은 쪽이 자연히 이긴다.
+    if ((sortKey === "grade" || sortKey === "score") && hasLocation && !query.trim()) {
       list = list.filter((x) => x.dist !== undefined && x.dist <= 100);
     }
     if (filters.departments.length > 0) {
@@ -244,7 +258,9 @@ function SearchContent() {
     });
 
     return list;
-  }, [facilities, query, filters, sortKey, origin]);
+    // hasLocation·useNearest도 필터 조건에 들어간다 — 빠뜨리면 위치를 뒤늦게 허용했을 때
+    // 100km 제한이 안 걸린 옛 목록이 그대로 남는다(§가드와 의존성 배열은 같이 본다)
+  }, [facilities, query, filters, sortKey, origin, hasLocation, useNearest]);
 
   useEffect(() => {
     // 상세에서 돌아오는 길이면 30장으로 접지 않고 보던 만큼 다시 펼친다.

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Sparkles } from "lucide-react";
+import { ChevronDown, Info, Sparkles } from "lucide-react";
 import { DolbodaScore, scoreLevel, weightTier } from "@/lib/dolbodaScore";
+import { NHIS_GRADE_LETTER } from "./GradeBadge";
 
 // 원형 점수 링 — 외부 라이브러리 없이 SVG stroke로만 그린다
 function ScoreRing({ total }: { total: number }) {
@@ -36,10 +37,15 @@ function ScoreRing({ total }: { total: number }) {
 export function DolbodaScoreCard({
   score,
   regionContext,
+  grade,
+  gradeSource,
 }: {
   score: DolbodaScore;
   /** 같은 시군구·같은 유형 시설들의 안심지수 평균 (서버에서 동일 산식으로 계산) */
   regionContext?: { name: string; average: number; count: number } | null;
+  /** 국가 평가등급 — 지수와 엇갈릴 때 이유를 설명하기 위해 받는다 */
+  grade?: number | null;
+  gradeSource?: "HIRA" | "NHIS";
 }) {
   const [open, setOpen] = useState(false);
 
@@ -55,6 +61,34 @@ export function DolbodaScoreCard({
   }
 
   const level = scoreLevel(score.total);
+
+  // 국가 평가등급과 안심지수가 엇갈려 보일 때(3등급인데 "우수" 등) 왜 그런지 밝힌다.
+  // 두 숫자는 보는 대상이 다르다 — 평가등급은 정해진 주기의 심사 결과 하나이고,
+  // 안심지수는 그 등급을 가장 크게 반영하되 인력·시설·공개 정보까지 함께 본 값이다.
+  // 설명 없이 나란히 두면 "국가는 3등급인데 여기선 우수?"로 읽혀 오히려 신뢰를 잃는다.
+  const gradeLabel =
+    grade == null
+      ? null
+      : gradeSource === "NHIS"
+      ? `${NHIS_GRADE_LETTER[grade - 1] ?? grade}등급`
+      : `${grade}등급`;
+  // "무엇 덕분에 올랐는지"는 비중이 큰 영역에서 골라야 설득력이 있다 —
+  // 점수만 보고 고르면 보조 반영(10%)인 정보 투명성 100점이 뽑혀,
+  // 정작 핵심인 의료·간호 대응 94점을 놔두고 곁가지를 이유로 대게 된다.
+  const scored = score.areas.filter((a) => a.score != null) as (typeof score.areas)[number][];
+  const best = scored.reduce<(typeof scored)[number] | null>((top, a) => {
+    if ((a.score as number) < 75) return top; // 강점이라 부를 수 없는 점수는 후보에서 제외
+    if (top == null) return a;
+    return a.weight > top.weight ||
+      (a.weight === top.weight && (a.score as number) > (top.score as number))
+      ? a
+      : top;
+  }, null);
+  const mismatch =
+    grade != null &&
+    gradeLabel &&
+    best &&
+    ((grade >= 3 && score.total >= 70) || (grade <= 2 && score.total < 70));
 
   return (
     <div className="overflow-hidden rounded-2xl bg-white shadow-card">
@@ -121,6 +155,18 @@ export function DolbodaScoreCard({
       </div>
 
       <div className="p-4 sm:p-5">
+        {mismatch && (
+          <p className="mb-3.5 flex items-start gap-1.5 rounded-xl bg-ink-100/50 px-3 py-2 text-[11px] leading-relaxed text-ink-500">
+            <Info size={12} className="mt-0.5 shrink-0 text-ink-300" aria-hidden />
+            <span>
+              평가등급 {gradeLabel} · 안심지수 {score.total}점 —{" "}
+              {grade! >= 3
+                ? `등급을 가장 크게 반영하지만 ${best!.label}(${best!.score}점)이 좋아 총점이 올랐어요.`
+                : `등급은 좋지만 다른 영역 점수가 낮아 총점은 ${score.total}점이에요.`}
+            </span>
+          </p>
+        )}
+
         <div className="space-y-3.5">
           {score.areas.map((area) => (
             <div key={area.key}>

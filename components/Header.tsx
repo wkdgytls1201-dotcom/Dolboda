@@ -14,8 +14,10 @@ import { Logo } from "./Logo";
 // authOnly 항목은 로그인해야 쓸 수 있는 기능이라 비로그인 상태에선 노출하지 않는다.
 const NAV = [
   // highlight: 다른 메뉴와 색을 달리해 눈에 띄게 (신규·핵심 기능)
-  { href: "/grade-test", label: "등급 테스트", highlight: true },
+  // 요양 가이드가 앞 — 처음 온 보호자는 "무엇부터 알아야 하는지"를 먼저 찾는다.
+  // (모바일 햄버거에는 등급 테스트가 하단 탭바에 있어서 애초에 안 들어간다)
   { href: "/guide", label: "요양 가이드" },
+  { href: "/grade-test", label: "등급 테스트", highlight: true },
   { href: "/services", label: "돌봄 서비스" },
   { href: "/search", label: "시설 찾기" },
   { href: "/compare", label: "시설 비교" },

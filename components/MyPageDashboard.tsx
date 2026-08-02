@@ -178,7 +178,11 @@ export function MyPageDashboard() {
     const progress = sitterProgress(profile);
     const matched = applications?.filter((a) => a.status === "매칭확정").length ?? 0;
     const completed = applications?.filter((a) => a.status === "돌봄완료").length ?? 0;
+    // 등급 판정에는 누적 지원 수를 쓴다("한 번이라도 지원해본 사람"이 기준이라 취소·완료도 포함).
     const applied = applications?.length ?? 0;
+    // 화면 숫자는 "지금 답을 기다리는 지원"만 센다. 예전엔 누적 지원 수를 "지원"으로 보여줘서,
+    // 이미 완료된 옛 지원 1건이 "지금 1곳에 지원 중"으로 읽혔다(지원 1·완료 1 동시 표시).
+    const pending = applications?.filter((a) => a.status === "지원완료").length ?? 0;
     const level = sitterLevel({ completed, matched, applied, profilePercent: progress.percent });
 
     // 프로필 완성도 — 100%면 숨기고, 미완성일 때만 다음 할 일을 보여준다
@@ -260,7 +264,7 @@ export function MyPageDashboard() {
             끝나면 "그래서 어디서 보는데?"가 된다 */}
         <div className="grid grid-cols-3 gap-2.5">
           {[
-            { label: "지원", value: applied },
+            { label: "지원 중", value: pending },
             { label: "매칭", value: matched },
             { label: "완료", value: completed },
           ].map((s) => (

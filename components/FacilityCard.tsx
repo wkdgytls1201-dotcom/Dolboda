@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Heart, MapPin, Phone, ShieldCheck } from "lucide-react";
+import { Heart, MapPin, Phone, ShieldCheck, Trophy } from "lucide-react";
 import { Facility, FACILITY_TYPE_LABEL, isHospital } from "@/lib/types";
 import { formatDistance } from "@/lib/distance";
 import { shortAddress } from "@/lib/shortAddress";
@@ -94,10 +94,11 @@ export function FacilityCard({
             className="transition-transform duration-500 group-hover:scale-105"
           />
           {/* 순위 리본은 사진 위에 올린다 — 배지 줄(유형·등급·안심지수)은 이미 좁은 폭에서
-              두 줄로 밀리기 직전이라 여기에 더 넣으면 주소까지 아래로 밀린다. */}
+              두 줄로 밀리기 직전이라 여기에 더 넣으면 주소까지 아래로 밀린다.
+              브랜드 보라 그라데이션 + 금색 트로피로, 사진 톤이 무엇이든 눈에 먼저 들어오게. */}
           {rankBadge && (
-            <span className="absolute bottom-2 left-2 flex items-center gap-1 rounded-full bg-ink-900/75 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur-sm">
-              <ShieldCheck size={12} aria-hidden />
+            <span className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-full bg-royal-gradient px-3 py-1.5 text-xs font-extrabold tracking-tight text-white shadow-royal ring-2 ring-white/70">
+              <Trophy size={13} className="shrink-0 text-accent-300" aria-hidden />
               {rankBadge}
             </span>
           )}

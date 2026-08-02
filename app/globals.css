@@ -209,6 +209,32 @@ p {
   animation: shimmer 2.2s ease-in-out 0.6s 3 both;
 }
 
+/* CTA 오른쪽 화살표가 "눌러보세요" 하고 살짝 밀리는 움직임. 무한 반복은 본문에서
+   쓰지 않는 원칙이라 shimmer와 같이 3번만 흔들리고 멈춘다. 폭은 4px — 더 크게 하면
+   버튼이 흔들리는 것처럼 보여 40~60대 사용자에게 산만하다.
+   호버 시 translate-x와 겹치면 어긋나 보이므로, 마우스를 올리면 이 움직임은 멈춘다. */
+@keyframes nudge-x {
+  0%,
+  60%,
+  100% {
+    transform: translateX(0);
+  }
+  30% {
+    transform: translateX(4px);
+  }
+}
+.animate-nudge-x {
+  animation: nudge-x 1.6s ease-in-out 1s 3 both;
+}
+.group:hover .animate-nudge-x {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-nudge-x {
+    animation: none;
+  }
+}
+
 /* 카카오 로드뷰 기본 컨트롤(줌인/줌아웃/나침반/미니맵, 동서남북 방위 표시) 숨김
    — 카드/미리보기는 순수 사진처럼만 보이게 함 */
 [id^="_box_util_"],

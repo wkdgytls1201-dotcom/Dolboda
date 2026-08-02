@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { Sparkles } from "lucide-react";
 import { SearchHero } from "@/components/SearchHero";
 import type { HeroSlide } from "@/components/HeroBanner";
 import { FacilityCard } from "@/components/FacilityCard";
@@ -183,8 +185,9 @@ export default function HomeClient({
   }, [nearbyPool]);
 
   // 상위 3곳만 리본을 단다 — 6장 전부에 순위를 붙이면 "6위"까지 강조돼 변별력이 없어진다.
+  // 문구는 카드 사진 위에 얹히는 자리라 짧을수록 좋다("이 지역 안심지수 1위"는 길었다).
   const rankBadgeById = useMemo(
-    () => new Map(regionTop.slice(0, 3).map((f, i) => [f.id, `이 지역 안심지수 ${i + 1}위`])),
+    () => new Map(regionTop.slice(0, 3).map((f, i) => [f.id, `지역 안심지수 ${i + 1}위`])),
     [regionTop]
   );
 
@@ -232,6 +235,45 @@ export default function HomeClient({
         <StatsStrip stats={homeStats} />
       </Reveal>
 
+      {/* 통계 바로 다음 자리 — 돌보다만 가진 지표라 홈에서 가장 먼저 보여준다.
+          섹션 자체를 옅은 보라 판 위에 올려 다른 목록 섹션과 구분한다. */}
+      {regionTop.length > 0 && (
+        <section className="mt-12 bg-royal-50/50 py-12">
+          <div className="mx-auto max-w-6xl px-4">
+            <Reveal className="mb-5">
+              <span className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-royal-500 px-3 py-1 text-[11px] font-bold text-white shadow-royal">
+                <Sparkles size={12} aria-hidden />
+                돌보다 AI
+              </span>
+              <h2 className="text-xl font-bold text-ink-900">이 지역 안심지수 TOP</h2>
+              <p className="mt-1 max-w-2xl text-sm leading-relaxed text-ink-500">
+                평가등급 하나만 보지 않고 인력·현원·운영 정보까지 함께 계산해, 내 주변 시설의
+                순위를 매겼어요.{" "}
+                {/* 설명 끝에 이어 붙인다 — 제목 옆에 두면 모바일에서 한 줄을 통째로 차지해
+                    목록보다 링크가 먼저 눈에 들어온다 */}
+                <Link
+                  href="/data-policy"
+                  className="whitespace-nowrap font-semibold text-royal-600 underline underline-offset-2"
+                >
+                  계산 방식 보기
+                </Link>
+              </p>
+            </Reveal>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {regionTop.map((f, i) => (
+                <Reveal key={f.id} delay={i * 60}>
+                  <FacilityCard
+                    facility={f}
+                    distanceKm={f.distanceKm}
+                    rankBadge={rankBadgeById.get(f.id)}
+                  />
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       <section className="mx-auto max-w-6xl px-4 py-12">
         <Reveal className="mb-5 flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
           <h2 className="text-xl font-bold text-ink-900">내 주변 시설</h2>
@@ -245,28 +287,6 @@ export default function HomeClient({
           ))}
         </div>
       </section>
-
-      {regionTop.length > 0 && (
-        <section className="mx-auto max-w-6xl px-4 pb-12">
-          <Reveal className="mb-5 flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
-            <h2 className="text-xl font-bold text-ink-900">이 지역 안심지수 TOP</h2>
-            <span className="text-sm text-ink-300">
-              내 주변 시설을 돌보다 AI 안심지수로 매긴 순위
-            </span>
-          </Reveal>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {regionTop.map((f, i) => (
-              <Reveal key={f.id} delay={i * 60}>
-                <FacilityCard
-                  facility={f}
-                  distanceKm={f.distanceKm}
-                  rankBadge={rankBadgeById.get(f.id)}
-                />
-              </Reveal>
-            ))}
-          </div>
-        </section>
-      )}
 
       {recommended.length > 0 && (
         <section className="mx-auto max-w-6xl px-4 pb-12">

@@ -322,13 +322,26 @@ export function GradeTest() {
         <section className="mb-6 rounded-2xl border border-ink-100 bg-white p-5 shadow-card sm:p-6">
           <h2 className="mb-2 text-sm font-bold text-ink-900">이런 서비스를 주로 이용해요</h2>
           <p className="mb-3 text-xs leading-relaxed text-ink-500">{result.band.detail}</p>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             {result.band.services.map((s) => (
               <span key={s} className={`rounded-full px-3 py-1.5 text-xs font-bold ${tone.chip}`}>
                 {s}
               </span>
             ))}
+            {/* 돌보다 매니저는 등급과 무관하게 항상 보여준다 — 공단 급여 서비스는 등급별로
+                갈리지만, 집에서 곁을 지켜줄 사람이 필요한 상황은 어느 등급에서나 생긴다.
+                우리만 연결해줄 수 있는 것이라 다른 칩과 색을 달리해 눈에 띄게 둔다. */}
+            <Link
+              href="/care-request"
+              className="flex min-h-[44px] items-center gap-1 rounded-full bg-royal-500 px-3.5 text-xs font-bold text-white shadow-royal transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:bg-royal-600 hover:shadow-royal-hover active:translate-y-0 active:scale-95"
+            >
+              <HeartHandshake size={13} className="shrink-0" aria-hidden />
+              돌보다 매니저
+            </Link>
           </div>
+          <p className="mt-2.5 text-[11px] leading-relaxed text-ink-400">
+            등급과 상관없이, 집에서 어르신 곁을 지켜드릴 돌보다 매니저를 연결해드려요.
+          </p>
         </section>
 
         {/* 결과를 보호자 프로필에 저장 — 결과 화면에서 가장 눈에 띄어야 하는 다음 행동.
@@ -354,7 +367,7 @@ export function GradeTest() {
               </span>
               <span className="min-w-0 flex-1">
                 <span className="flex flex-wrap items-center gap-1.5 text-base font-extrabold leading-snug text-white">
-                  이 결과를 보호자 프로필에 저장하기
+                  이 결과를 보호자로 저장하기
                   <Sparkles size={15} className="shrink-0" />
                 </span>
                 <span className="mt-1 block text-[13px] leading-snug text-white/85">
@@ -362,7 +375,7 @@ export function GradeTest() {
                   돌봄 요청서도 자동으로 채워져요
                 </span>
               </span>
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-primary-600 transition-transform duration-200 group-hover:translate-x-0.5">
+              <span className="animate-nudge-x flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-primary-600 transition-transform duration-200 group-hover:translate-x-0.5">
                 <ArrowRight size={17} />
               </span>
             </span>

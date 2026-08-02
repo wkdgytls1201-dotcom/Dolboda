@@ -43,14 +43,23 @@ export function useUserOrigin(): {
   origin: Origin;
   hasLocation: boolean;
   locating: boolean;
+  /** 기준점이 정해졌는지 — 이게 true가 되기 전에 목록을 부르면 요청이 두 번 나간다 */
+  ready: boolean;
   requestLocation: () => void;
 } {
   const [origin, setOrigin] = useState<Origin>(DEFAULT_ORIGIN);
   const [hasLocation, setHasLocation] = useState(false);
   const [locating, setLocating] = useState(false);
+  // 첫 렌더에는 저장된 위치를 아직 못 읽은 상태다. 이때 목록을 부르면 "위치 없음" 기준으로
+  // 전국 목록 300건을 받고, 곧이어 위치가 붙으면 주변 300건을 또 받는다 —
+  // 시설 찾기 첫 진입이 느렸던 가장 큰 이유였다(실측: 300건 요청이 2~3번).
+  const [ready, setReady] = useState(false);
 
   const requestLocation = useCallback(() => {
-    if (!("geolocation" in navigator)) return;
+    if (!("geolocation" in navigator)) {
+      setReady(true);
+      return;
+    }
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -60,8 +69,12 @@ export function useUserOrigin(): {
         setOrigin(next);
         setHasLocation(true);
         setLocating(false);
+        setReady(true);
       },
-      () => setLocating(false),
+      () => {
+        setLocating(false);
+        setReady(true);
+      },
       { timeout: 8000 }
     );
   }, []);
@@ -71,10 +84,13 @@ export function useUserOrigin(): {
     if (saved) {
       setOrigin(saved);
       setHasLocation(true);
+      setReady(true);
       return;
     }
+    // 예전에 허용한 사용자는 조용히 다시 받아온다 — 응답(또는 실패)이 와야 기준점이 정해진다.
     if (localStorage.getItem(LOCATION_CONSENT_KEY) === "granted") requestLocation();
+    else setReady(true);
   }, [requestLocation]);
 
-  return { origin, hasLocation, locating, requestLocation };
+  return { origin, hasLocation, locating, ready, requestLocation };
 }

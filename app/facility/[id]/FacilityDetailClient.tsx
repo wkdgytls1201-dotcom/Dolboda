@@ -283,6 +283,8 @@ export default function FacilityDetailClient({
             score={calcDolbodaScore(facility, {
               nearestHospitalKm: scoreContext?.nearestHospitalKm ?? null,
             })}
+            grade={facility.grade}
+            gradeSource={facility.gradeSource}
             regionContext={
               scoreContext?.regionAverage != null && scoreContext.regionName
                 ? {
