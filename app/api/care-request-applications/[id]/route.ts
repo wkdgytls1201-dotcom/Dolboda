@@ -80,6 +80,17 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
     return NextResponse.json({ error: "취소할 수 없어요." }, { status: 404 });
   }
 
+  // 아직 보호자 답을 기다리는 중일 때만 철회할 수 있다.
+  // 가드가 없으면 매칭이 확정된 뒤에도 매니저가 지원을 지울 수 있는데, 그러면
+  // 돌봄 요청은 "매칭확정"으로 남은 채 지원자만 사라져 보호자 화면이 빈 상태가 된다.
+  // 확정 뒤에 사정이 생기면 보호자와 이야기해 보호자가 요청을 취소하는 게 맞는 순서다.
+  if (application.status !== "지원완료") {
+    return NextResponse.json(
+      { error: "매칭이 확정된 뒤에는 보호자와 상의해주세요." },
+      { status: 409 }
+    );
+  }
+
   await prisma.careRequestApplication.delete({ where: { id: params.id } });
   return NextResponse.json({ ok: true });
 }

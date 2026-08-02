@@ -24,15 +24,35 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
   // 돌봄이 끝났을 때 보호자가 완료 처리 — 시터의 "완료된 돌봄" 탭에 쌓인다.
   if (body.action === "complete") {
-    const completed = await prisma.careRequest.update({
-      where: { id: params.id },
-      data: { status: "COMPLETED", completedAt: new Date() },
-    });
-    await prisma.careRequestApplication.updateMany({
-      where: { careRequestId: params.id, status: "매칭확정" },
-      data: { status: "돌봄완료" },
-    });
+    // 매칭된 건만 완료할 수 있다. 가드가 없으면 아직 지원자도 없는 OPEN 요청이나
+    // 이미 취소·완료된 요청까지 완료 처리돼(completedAt이 덮어써진다) 매니저 실적이
+    // 실제와 어긋난다.
+    if (existing.status !== "MATCHED") {
+      return NextResponse.json(
+        { error: "매칭이 확정된 돌봄만 완료 처리할 수 있어요." },
+        { status: 409 }
+      );
+    }
+    const [completed] = await prisma.$transaction([
+      prisma.careRequest.update({
+        where: { id: params.id },
+        data: { status: "COMPLETED", completedAt: new Date() },
+      }),
+      prisma.careRequestApplication.updateMany({
+        where: { careRequestId: params.id, status: "매칭확정" },
+        data: { status: "돌봄완료" },
+      }),
+    ]);
     return NextResponse.json(completed);
+  }
+
+  // 수정은 아직 지원자를 받는 중일 때만 — 확정된 뒤에 조건이 바뀌면 매니저가 동의한
+  // 내용과 실제가 달라지고, 합의서에 서명까지 했다면 더 곤란해진다.
+  if (existing.status !== "OPEN") {
+    return NextResponse.json(
+      { error: "매칭이 확정된 뒤에는 요청을 수정할 수 없어요." },
+      { status: 409 }
+    );
   }
 
   const { locationType, region, startDate, endDate } = body as Partial<{
@@ -82,11 +102,29 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   if (!existing) {
     return NextResponse.json({ error: "취소할 수 없어요." }, { status: 404 });
   }
+  // 이미 끝났거나 취소된 건을 다시 취소하지 않는다 — 완료된 돌봄이 취소로 뒤집히면
+  // 매니저 실적이 사라진다.
+  if (existing.status !== "OPEN" && existing.status !== "MATCHED") {
+    return NextResponse.json({ error: "이미 처리된 요청이에요." }, { status: 409 });
+  }
 
-  const careRequest = await prisma.careRequest.update({
-    where: { id: params.id },
-    data: { status: "CANCELLED" },
-  });
+  const [careRequest] = await prisma.$transaction([
+    prisma.careRequest.update({
+      where: { id: params.id },
+      data: { status: "CANCELLED" },
+    }),
+    // ★ 지원자들의 상태도 함께 정리한다. 예전에는 요청만 취소하고 지원은 그대로 둬서,
+    //   매니저 화면에는 "지원완료"·"매칭확정"이 계속 남아 답을 기다리는 것처럼 보였다.
+    //   무소식으로 방치하는 것이 매니저 이탈의 가장 큰 원인이라, 확정 때 미선정을
+    //   알려주는 것과 같은 이유로 취소도 알려준다.
+    prisma.careRequestApplication.updateMany({
+      where: {
+        careRequestId: params.id,
+        status: { in: ["지원완료", "매칭확정"] },
+      },
+      data: { status: "요청취소" },
+    }),
+  ]);
 
   return NextResponse.json(careRequest);
 }
