@@ -133,20 +133,29 @@ export function consultForwardEmailHtml(params: {
                   않습니다. 번거롭게 해 드리지 않겠습니다.
                 </p>
 
-                <!-- 맺음말 — 광고가 아니라 인사다. 제안·권유·혜택 문구는 넣지 않는다. -->
-                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0 0;background:#FFF7E9;border-radius:14px;">
+                <!-- 맺음말 — 광고가 아니라 인사다. 제안·권유·혜택 문구는 넣지 않는다.
+                     메일에서 가장 오래 읽히는 자리라 본문보다 한 단계 크게 두었다. -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#FFF7E9" style="margin:28px 0 0;background:#FFF7E9;background-image:linear-gradient(135deg,#FFF9EF 0%,#FFF1DF 100%);border-radius:18px;">
                   <tr>
-                    <td style="padding:20px 22px;">
-                      <p style="margin:0 0 10px;font-size:14px;line-height:1.85;color:#7A5B3A;">
-                        요양의 하루는 밖에서 잘 보이지 않습니다. 새벽에 불을 켜고, 식사를 챙기고,
-                        밤사이 몇 번씩 살피는 일들은 기록에도 잘 남지 않지요.
+                    <td style="padding:26px 24px;text-align:center;">
+                      <p style="margin:0 0 14px;font-size:26px;line-height:1;color:#E9B44C;">&#8220;</p>
+                      <p style="margin:0 0 14px;font-size:16px;line-height:1.95;color:#7A5B3A;">
+                        요양의 하루는 밖에서 잘 보이지 않습니다.<br />
+                        새벽에 불을 켜고, 식사를 챙기고, 밤사이 몇 번씩 살피는 일들은
+                        기록에도 잘 남지 않지요.
+                      </p>
+                      <p style="margin:0 0 14px;font-size:16px;line-height:1.95;color:#7A5B3A;">
                         저희는 그 보이지 않는 시간이 쌓여 우리 사회를 조금씩 더 따뜻하게 만들고
-                        있다고 믿습니다.
+                        있다고 믿습니다. 오늘 도착한 이 문의도, 그 시간을 믿고 문을 두드린
+                        한 가족의 마음입니다.
                       </p>
-                      <p style="margin:0;font-size:14px;line-height:1.85;color:#7A5B3A;">
-                        오늘 도착한 이 문의도, 그 시간을 믿고 문을 두드린 한 가족의 마음입니다.
-                        <strong style="color:#B15E13;">귀 시설이 걸어가시는 길을 진심으로 응원합니다.</strong>
+                      <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 14px;">
+                        <tr><td style="width:44px;height:1px;background:#EBD3AE;font-size:0;line-height:0;">&nbsp;</td></tr>
+                      </table>
+                      <p style="margin:0 0 6px;font-size:17px;font-weight:800;line-height:1.6;color:#B15E13;">
+                        귀 시설이 걸어가시는 길을 진심으로 응원합니다.
                       </p>
+                      <p style="margin:0;font-size:13px;color:#B69A72;">— ${SITE_NAME} 드림</p>
                     </td>
                   </tr>
                 </table>
