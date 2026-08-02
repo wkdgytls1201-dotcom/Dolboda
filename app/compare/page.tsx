@@ -10,6 +10,7 @@ import { GradeBadge, TypeBadge, NHIS_GRADE_LETTER } from "@/components/GradeBadg
 import { useCompare } from "@/lib/compareContext";
 import { useViewGate } from "@/lib/viewGateContext";
 import { PageLoader } from "@/components/PageLoader";
+import { shortAddress } from "@/lib/shortAddress";
 
 interface CompareRow {
   label: string;
@@ -223,7 +224,10 @@ function CompareContent() {
               <h3 className="text-base font-bold text-ink-900 [overflow-wrap:anywhere] hover:text-primary-600">
                 {f.name}
               </h3>
-              <p className="mt-0.5 text-xs text-ink-500 [overflow-wrap:anywhere]">{f.address}</p>
+              {/* 비교 카드는 최대 3개가 나란히 서서 폭이 특히 좁다 — 시/도 정식명칭을 줄인다 */}
+              <p className="mt-0.5 text-xs text-ink-500 [overflow-wrap:anywhere]">
+                {shortAddress(f.address)}
+              </p>
             </Link>
 
             <div className="space-y-3 border-t border-ink-100 pt-3">

@@ -15,28 +15,28 @@ export async function Footer() {
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-col items-center gap-3 text-center text-xs text-ink-300 sm:flex-row sm:justify-between sm:text-left">
           <p>&copy; {new Date().getFullYear()} 돌보다. 표시된 시설 정보는 공공데이터 기반으로 실제와 다를 수 있습니다.</p>
-          <div className="flex flex-wrap justify-center gap-x-4 gap-y-1">
-            <Link href="/services" className="transition-colors duration-150 hover:text-ink-700">
-              돌봄 서비스
-            </Link>
-            <Link href="/grade-test" className="transition-colors duration-150 hover:text-ink-700">
-              등급 테스트
-            </Link>
-            <Link href="/guide" className="transition-colors duration-150 hover:text-ink-700">
-              요양 가이드
-            </Link>
-            <Link href="/about" className="transition-colors duration-150 hover:text-ink-700">
-              돌보다 소개
-            </Link>
-            <Link href="/data-policy" className="transition-colors duration-150 hover:text-ink-700">
-              데이터 출처
-            </Link>
-            <Link href="/terms" className="transition-colors duration-150 hover:text-ink-700">
-              이용약관
-            </Link>
-            <Link href="/privacy" className="font-semibold transition-colors duration-150 hover:text-ink-700">
-              개인정보처리방침
-            </Link>
+          {/* 푸터 링크도 실제로 누르는 링크다 — 26px면 40~60대 사용자가 옆 링크를
+              잘못 누르기 쉬워서, 세로 여백으로 44px 터치 영역을 만든다(글자 크기는 유지) */}
+          <div className="flex flex-wrap justify-center gap-x-4">
+            {[
+              { href: "/services", label: "돌봄 서비스" },
+              { href: "/grade-test", label: "등급 테스트" },
+              { href: "/guide", label: "요양 가이드" },
+              { href: "/about", label: "돌보다 소개" },
+              { href: "/data-policy", label: "데이터 출처" },
+              { href: "/terms", label: "이용약관" },
+              { href: "/privacy", label: "개인정보처리방침", bold: true },
+            ].map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                className={`inline-flex min-h-[44px] items-center transition-colors duration-150 hover:text-ink-700 ${
+                  l.bold ? "font-semibold" : ""
+                }`}
+              >
+                {l.label}
+              </Link>
+            ))}
           </div>
         </div>
 

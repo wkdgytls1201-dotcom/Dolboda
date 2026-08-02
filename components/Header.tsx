@@ -161,7 +161,7 @@ export function Header() {
             {user && pathname?.startsWith("/mypage") && (
               <Link
                 href="/care-request"
-                className="flex items-center rounded-full bg-royal-500 px-3 py-1.5 text-xs font-bold text-white shadow-royal transition-transform active:scale-95"
+                className="flex min-h-[44px] items-center rounded-full bg-royal-500 px-3.5 text-xs font-bold text-white shadow-royal transition-transform active:scale-95"
               >
                 돌봄 요청
               </Link>
@@ -171,7 +171,7 @@ export function Header() {
             {user && !pathname?.startsWith("/mypage") && (
               <Link
                 href="/services"
-                className="flex items-center rounded-full bg-primary-500 px-3 py-1.5 text-xs font-bold text-white shadow-soft transition-transform active:scale-95"
+                className="flex min-h-[44px] items-center rounded-full bg-primary-500 px-3.5 text-xs font-bold text-white shadow-soft transition-transform active:scale-95"
               >
                 돌봄 서비스
               </Link>

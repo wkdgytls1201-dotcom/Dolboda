@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Heart, MapPin, Phone, ShieldCheck } from "lucide-react";
 import { Facility, FACILITY_TYPE_LABEL, isHospital } from "@/lib/types";
 import { formatDistance } from "@/lib/distance";
+import { shortAddress } from "@/lib/shortAddress";
 import { GradeBadge, TypeBadge } from "./GradeBadge";
 import { useCompare } from "@/lib/compareContext";
 import { useFavorites } from "@/lib/favoritesContext";
@@ -140,15 +141,19 @@ export function FacilityCard({
           )}
         </div>
 
-        <h3 className="mb-1 text-lg font-bold text-ink-900 group-hover:text-primary-600">
+        {/* 시설명은 긴 것이 많다("시립서대문노인종합복지관데이케어센터") — 한 줄로 자르면
+            어느 시설인지 알 수 없어서 두 줄까지 허용한다 */}
+        <h3 className="mb-1 line-clamp-2 text-lg font-bold leading-snug text-ink-900 group-hover:text-primary-600">
           {facility.name}
         </h3>
 
-        <div className="mb-1 flex items-center gap-1 text-sm text-ink-500">
-          <MapPin size={14} className="shrink-0" />
-          <span className="truncate">{facility.address}</span>
+        {/* 주소는 "어느 동네인가"를 판단하는 핵심 정보라 잘리면 안 된다.
+            시/도 정식명칭만 줄이고(서울특별시→서울) 그래도 길면 두 줄로 흘린다. */}
+        <div className="mb-1 flex items-start gap-1 text-sm text-ink-500">
+          <MapPin size={14} className="mt-[3px] shrink-0" />
+          <span className="line-clamp-2 min-w-0 flex-1">{shortAddress(facility.address)}</span>
           {distanceKm !== undefined && (
-            <span className="ml-1 shrink-0 font-medium text-mint-600">
+            <span className="mt-[1px] shrink-0 font-medium text-mint-600">
               {formatDistance(distanceKm)}
             </span>
           )}
