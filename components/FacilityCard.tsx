@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { DoorClosed, DoorOpen, Heart, MapPin, ShieldCheck, Trophy } from "lucide-react";
+import { Heart, MapPin, ShieldCheck, Trophy } from "lucide-react";
 import { Facility, FACILITY_TYPE_LABEL, isHospital } from "@/lib/types";
 import { formatDistance } from "@/lib/distance";
 import { shortAddress } from "@/lib/shortAddress";
@@ -33,31 +33,28 @@ export function FacilityCard({
   const order = selected ? selectedIds.indexOf(facility.id) + 1 : null;
   const disabled = !selected && !canAddMore;
 
-  // 방문요양센터는 입소 시설이 아니라 정원 개념이 없다 — "정원 0명" 대신 서비스 성격을 알려준다
+  // 방문요양센터는 입소 시설이 아니라 정원 개념이 없다 — "정원 0명" 대신 서비스 성격을 알려준다.
+  //
+  // 빈자리는 별도 줄로 빼지 않고 여기 이어 붙인다. 보호자가 실제로 궁금한 건 "들어갈 수
+  // 있나"인데, 정원·현원만 주고 뺄셈을 시키면 카드에서 바로 판단이 안 된다.
+  // 색을 더 쓰지 않는 이유: 위 배지 줄(유형·등급·안심지수)에 이미 색이 세 개다.
   const keyStat = isHospital(facility)
     ? `병상 ${facility.facilityStatus.generalBeds + facility.facilityStatus.upgradeBeds}개` +
       (facility.departments?.length ? ` · 진료과 ${facility.departments.length}개` : "")
     : facility.facilityType === "HOME_CARE"
     ? "우리 집으로 방문 · 정원 제한 없음"
     : facility.currentOccupancy !== undefined
-    ? `정원 ${facility.capacity}명 · 현원 ${facility.currentOccupancy}명`
+    ? `정원 ${facility.capacity}명 · 현원 ${facility.currentOccupancy}명 · ` +
+      (facility.capacity - facility.currentOccupancy > 0
+        ? `빈자리 ${facility.capacity - facility.currentOccupancy}`
+        : "정원 마감")
     : `정원 ${facility.capacity}명`;
 
   const isTopGrade = facility.grade === 1;
 
-  // 전화번호가 있던 줄을 대신할 정보.
-  //
-  // 전화번호는 카드에서 누를 일이 없다(상담 신청으로 흐름을 모았다). 그 자리에는 보호자가
-  // 카드만 보고 "여기 더 볼까"를 판단하는 데 실제로 쓰이는 것 — 자리가 있는지, 어떤
-  // 프로그램을 하는지 — 를 넣는다.
-  const vacancy =
-    !isHospital(facility) &&
-    facility.facilityType !== "HOME_CARE" &&
-    facility.capacity > 0 &&
-    facility.currentOccupancy !== undefined
-      ? facility.capacity - facility.currentOccupancy
-      : null;
-  // 프로그램 태그는 종류가 많아도 카드에선 2개까지만 — 그 이상은 줄이 밀리고 눈에도 안 들어온다
+  // 전화번호 줄을 대신하는 정보. 전화번호는 카드에서 누를 일이 없다(문의는 상담 신청으로
+  // 모았다). 프로그램 태그는 종류가 많아도 카드에선 2개까지만 — 더 넣으면 줄이 밀리고
+  // 눈에도 안 들어온다.
   const programTags = (isHospital(facility) ? [] : facility.programTags ?? [])
     .slice(0, 2)
     .map((t) => PROGRAM_TAG_META[t.tag]?.label)
@@ -191,35 +188,10 @@ export function FacilityCard({
           )}
         </div>
 
-        {/* 자리 여부 — 보호자가 카드에서 가장 먼저 확인하고 싶어 하는 것.
-            정원·현원은 아래 줄에 있지만, 뺄셈을 대신 해줘야 한눈에 들어온다. */}
-        {vacancy !== null && (
-          <div className="flex items-center gap-1 text-sm">
-            {vacancy > 0 ? (
-              <>
-                <DoorOpen size={14} className="shrink-0 text-mint-600" />
-                <span className="font-semibold text-mint-700">지금 {vacancy}자리 가능</span>
-              </>
-            ) : (
-              <>
-                <DoorClosed size={14} className="shrink-0 text-ink-300" />
-                <span className="text-ink-400">정원 마감 · 대기 문의</span>
-              </>
-            )}
-          </div>
-        )}
-
+        {/* 프로그램은 "무엇을 하며 하루를 보내는가"라 알아둘 값어치가 있지만, 카드의 주인공은
+            아니다. 칩·색을 쓰면 위쪽 배지들과 뒤엉켜 조잡해져서 옅은 한 줄로만 둔다. */}
         {programTags.length > 0 && (
-          <div className="mt-1 flex flex-wrap items-center gap-1">
-            {programTags.map((label) => (
-              <span
-                key={label}
-                className="rounded-md bg-royal-50 px-1.5 py-0.5 text-[11px] font-semibold text-royal-600"
-              >
-                {label}
-              </span>
-            ))}
-          </div>
+          <p className="line-clamp-1 text-xs text-ink-300">{programTags.join(" · ")}</p>
         )}
 
         <div className="mt-3 rounded-xl bg-primary-50 px-3 py-2 text-sm font-medium text-primary-700">

@@ -10,7 +10,7 @@ import { REGIONS } from "@/lib/regions";
 import { useSitterProfileContext, SitterProfileData } from "@/lib/sitterProfileContext";
 import { sitterProgress } from "@/lib/sitterProgress";
 import { maskAccount } from "@/lib/maskAccount";
-import { toSquareImage } from "@/lib/squareImage";
+import { PhotoCropModal } from "@/components/PhotoCropModal";
 
 type SitterProfile = SitterProfileData;
 
@@ -40,6 +40,8 @@ export default function SitterProfilePage() {
   // 업로드가 끝나기 전에도 고른 사진을 바로 보여준다(저장 후 서버 URL로 교체된다)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoBusy, setPhotoBusy] = useState(false);
+  // 크롭 창에 넘길 파일 — null이면 창이 닫힌 상태
+  const [cropFile, setCropFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (contextProfile === undefined) return; // 아직 로딩 중
@@ -81,13 +83,28 @@ export default function SitterProfilePage() {
     }
   }
 
-  async function uploadPhoto(file: File) {
+  // 파일을 고르면 바로 올리지 않고 크롭 창을 먼저 띄운다 — 얼굴이 가운데가 아닌 사진이
+  // 대부분이라, 기계적으로 가운데를 자르면 이마가 잘리거나 배경만 남는다.
+  function pickPhoto(file: File) {
+    setSaveError(null);
+    if (!file.type.startsWith("image/")) {
+      setSaveError("사진 파일만 올릴 수 있어요.");
+      return;
+    }
+    // 원본은 몇 MB든 받아서 브라우저에서 줄인다. 다만 너무 큰 파일은 폰에서 디코딩하다
+    // 멈춘 것처럼 보여서, 여기서 먼저 끊고 이유를 알려준다.
+    if (file.size > 30 * 1024 * 1024) {
+      setSaveError("사진 용량이 너무 커요. 30MB 이하로 올려주세요.");
+      return;
+    }
+    setCropFile(file);
+  }
+
+  async function uploadPhoto(blob: Blob, previewUrl: string) {
     setSaveError(null);
     setPhotoBusy(true);
+    setPhotoPreview(previewUrl);
     try {
-      // 원본 그대로 보내면 폰 사진 한 장이 몇 MB다 — 브라우저에서 정사각 512px로 줄인다.
-      const { blob, previewUrl } = await toSquareImage(file);
-      setPhotoPreview(previewUrl);
       const res = await fetch("/api/sitter-profile/photo", {
         method: "POST",
         headers: { "Content-Type": blob.type },
@@ -291,7 +308,7 @@ export default function SitterProfilePage() {
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     e.target.value = ""; // 같은 파일을 다시 골라도 onChange가 오게
-                    if (file) uploadPhoto(file);
+                    if (file) pickPhoto(file);
                   }}
                   className="sr-only"
                 />
@@ -328,7 +345,7 @@ export default function SitterProfilePage() {
           {!profile.photoUrl && (
             <p className="mb-4 rounded-xl bg-ink-100/40 px-3.5 py-2.5 text-[12px] leading-relaxed text-ink-500">
               보호자는 어르신을 맡길 사람을 고르는 중이에요. 밝은 곳에서 정면으로 찍은 얼굴
-              사진 한 장이 자기소개보다 먼저 신뢰를 만듭니다. 사진은 512px로 줄여 저장돼요.
+              사진 한 장이 자기소개보다 먼저 신뢰를 만듭니다.
             </p>
           )}
 
@@ -585,6 +602,17 @@ export default function SitterProfilePage() {
           )}
         </section>
       </div>
+
+      {cropFile && (
+        <PhotoCropModal
+          file={cropFile}
+          onCancel={() => setCropFile(null)}
+          onDone={(blob, previewUrl) => {
+            setCropFile(null);
+            uploadPhoto(blob, previewUrl);
+          }}
+        />
+      )}
     </MyPageShell>
   );
 }
