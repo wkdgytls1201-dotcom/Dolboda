@@ -34,7 +34,10 @@ interface NavItem {
 export function MyPageShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const { isSitter } = useSitterProfileContext();
+  const { isSitter, profile: sitterProfile } = useSitterProfileContext();
+  // 카카오 이름 미동의 계정은 name이 없다 — 매니저 닉네임이 있으면 그걸로 부르는 게
+  // "회원님"보다 훨씬 자기 계정답다.
+  const displayName = session?.user?.name ?? sitterProfile?.nickname ?? "회원";
   // 모바일에서는 /mypage 루트가 메뉴 허브, 서브 화면은 콘텐츠만 보여준다.
   // 예전엔 매니저 메뉴 블록(대표 카드+그리드)이 모든 서브 화면 위에 그대로 깔려서,
   // 보호자 프로필을 만들러 들어가도 매니저 메뉴가 한 화면을 다 차지했다.
@@ -204,7 +207,7 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
             )}
             <div className="min-w-0 flex-1">
               <p className="truncate text-lg font-extrabold text-ink-900">
-                {session?.user?.name ?? "회원"}님
+                {displayName}님
               </p>
               <p className="text-[13px] text-ink-400">
                 {isSitter ? "돌보다 매니저로 활동 중이에요" : "오늘도 어르신 곁을 지켜요"}
