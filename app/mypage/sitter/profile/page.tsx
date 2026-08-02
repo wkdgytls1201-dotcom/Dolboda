@@ -9,6 +9,7 @@ import { PageLoader } from "@/components/PageLoader";
 import { REGIONS } from "@/lib/regions";
 import { useSitterProfileContext, SitterProfileData } from "@/lib/sitterProfileContext";
 import { sitterProgress } from "@/lib/sitterProgress";
+import { maskAccount } from "@/lib/maskAccount";
 
 type SitterProfile = SitterProfileData;
 
@@ -474,7 +475,9 @@ export default function SitterProfilePage() {
             </div>
           ) : profile.bankName ? (
             <p className="text-sm text-ink-700">
-              {profile.bankName} {profile.bankAccountNumber} ({profile.bankAccountHolder})
+              {/* 계좌번호는 뒤 4자리만 — 바꾸려면 "수정"으로 새로 입력한다 */}
+              {profile.bankName} {maskAccount(profile.bankAccountNumber)} (
+              {profile.bankAccountHolder})
             </p>
           ) : (
             <p className="text-sm text-ink-300">등록된 계좌가 없어요.</p>

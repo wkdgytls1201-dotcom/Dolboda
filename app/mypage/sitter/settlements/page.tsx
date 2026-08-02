@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { maskAccount } from "@/lib/maskAccount";
 import { Wallet } from "lucide-react";
 import { MyPageShell } from "@/components/MyPageShell";
 import { PageLoader } from "@/components/PageLoader";
@@ -42,8 +43,10 @@ export default function SitterSettlementsPage() {
       <section className="mb-4 rounded-2xl border border-ink-100 bg-white p-5 shadow-card sm:p-6">
         <h3 className="mb-3 text-[15px] font-bold text-ink-900">정산 계좌</h3>
         {profile.bankName ? (
+          /* 본인 화면이어도 계좌번호 전체는 띄우지 않는다 — 어깨너머·공용 기기·화면
+             공유로 그대로 새어나간다. 뒤 4자리면 본인이 알아보기에 충분하다. */
           <p className="text-[15px] font-semibold text-ink-700">
-            {profile.bankName} {profile.bankAccountNumber}
+            {profile.bankName} {maskAccount(profile.bankAccountNumber)}
             <span className="ml-1.5 font-normal text-ink-400">({profile.bankAccountHolder})</span>
           </p>
         ) : (
