@@ -7,6 +7,7 @@ import { MyPageShell } from "@/components/MyPageShell";
 import { PageLoader } from "@/components/PageLoader";
 import { FACILITY_TYPE_LABEL, type FacilityType } from "@/lib/types";
 import { workLevel } from "@/lib/workIndex";
+import { REGIONS } from "@/lib/regions";
 
 interface WorkplaceItem {
   id: string;
@@ -51,34 +52,40 @@ export default function WorkplacesPage() {
         계산한 값이에요.
       </p>
 
-      {/* 가로 스크롤이면 안 된다 — 활동 지역을 여러 곳 등록한 매니저는 뒤쪽 지역(부산 등)이
-          화면 밖으로 밀려 존재 자체를 모르게 된다. 스크롤바까지 숨겨져 있어 더 알 수 없었다.
-          매니저 메뉴에서 겪은 것과 같은 문제라 같은 해법으로 간다: 줄바꿈해서 전부 보이게. */}
-      {regions.length > 1 && (
-        <div className="mb-4 flex flex-wrap gap-1.5">
-          <button
-            type="button"
-            onClick={() => setActive(null)}
-            className={`min-h-[40px] rounded-full px-3.5 text-xs font-bold transition-colors ${
-              active === null ? "bg-mint-600 text-white" : "bg-white text-ink-500 shadow-card"
-            }`}
-          >
-            전체
-          </button>
-          {regions.map((r) => (
+      {/* 지역 탭은 전국 시/도 전체를 보여준다 — 예전엔 본인 활동 지역(최대 10개)만 나와서
+          나머지 지역은 고를 수도, 존재를 알 수도 없었다. 내 활동 지역을 앞에 두고 점(·)으로
+          표시해 구분하되, 다른 지역도 눌러서 둘러볼 수 있다.
+          가로 스크롤 대신 줄바꿈 — 뒤쪽 지역이 화면 밖으로 밀려 안 보이는 문제 방지. */}
+      <div className="mb-4 flex flex-wrap gap-1.5">
+        <button
+          type="button"
+          onClick={() => setActive(null)}
+          className={`min-h-[40px] rounded-full px-3.5 text-xs font-bold transition-colors ${
+            active === null ? "bg-mint-600 text-white" : "bg-white text-ink-500 shadow-card"
+          }`}
+        >
+          내 활동 지역
+        </button>
+        {[...regions, ...REGIONS.filter((r) => !regions.includes(r))].map((r) => {
+          const mine = regions.includes(r);
+          return (
             <button
               key={r}
               type="button"
               onClick={() => setActive(r)}
               className={`min-h-[40px] rounded-full px-3.5 text-xs font-bold transition-colors ${
-                active === r ? "bg-mint-600 text-white" : "bg-white text-ink-500 shadow-card"
+                active === r
+                  ? "bg-mint-600 text-white"
+                  : mine
+                  ? "bg-mint-50 text-mint-700 ring-1 ring-inset ring-mint-200"
+                  : "bg-white text-ink-500 shadow-card"
               }`}
             >
-              {r}
+              {mine ? `${r} ·` : r}
             </button>
-          ))}
-        </div>
-      )}
+          );
+        })}
+      </div>
 
       {error && <p className="rounded-2xl bg-ink-100/40 p-4 text-sm text-ink-500">{error}</p>}
       {!error && items === null && <PageLoader compact />}

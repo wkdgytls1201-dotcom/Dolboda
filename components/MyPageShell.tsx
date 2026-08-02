@@ -229,6 +229,14 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
+        {/* 보호자 섹션 헤더 — 아래 매니저 섹션과 같은 문법(아이콘+라벨)으로 영역을 나눈다 */}
+        <div className="mb-2.5 flex items-center gap-2 px-1 sm:hidden">
+          <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-royal-50 text-royal-500">
+            <HeartHandshake size={13} />
+          </span>
+          <p className="text-[13px] font-bold text-ink-500">보호자</p>
+        </div>
+
         {/* 모바일 빠른 메뉴 3종 — 케어닥의 공지/FAQ/고객센터 아이콘 줄 자리에,
             우리 앱에서 실제로 자주 오가는 화면(등급테스트·관심시설·시설비교)을 놓는다 */}
         <div className="mb-5 grid grid-cols-3 overflow-hidden rounded-2xl bg-white shadow-card sm:hidden">
@@ -258,9 +266,21 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
 
-        <p className="mb-2.5 mt-6 px-1 text-[13px] font-bold text-ink-500 sm:mb-2 sm:mt-5 sm:font-semibold sm:text-ink-300">
-          돌보다 매니저
-        </p>
+        {/* 매니저 섹션 헤더 — 케어닥처럼 회색 글자 한 줄이 아니라, 아이콘+설명이 있는
+            섹션 타이틀로 "여기서부터는 매니저 영역"이 한눈에 구분되게 한다 */}
+        <div className="mb-2.5 mt-6 flex items-center gap-2 px-1 sm:mt-5">
+          <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-primary-50 text-primary-500 sm:hidden">
+            <Briefcase size={13} />
+          </span>
+          <p className="text-[13px] font-bold text-ink-500 sm:font-semibold sm:text-ink-300">
+            돌보다 매니저
+          </p>
+          {isSitter && (
+            <span className="rounded-full bg-mint-100 px-2 py-0.5 text-[11px] font-bold text-mint-700 sm:hidden">
+              활동 중
+            </span>
+          )}
+        </div>
         {isSitter === null ? (
           // 이미 등록된 시터에게 "등록하기"가 잠깐 떴다 사라지는 걸 막기 위해
           // 확인 끝나기 전(null)엔 아무것도 안 보여준다.
@@ -289,12 +309,26 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
             </nav>
           </>
         ) : (
+          // 미등록자에게는 "왜 등록하면 좋은지"까지 — 텅 빈 점선 박스보다 전환이 잘 된다
           <Link
             href="/mypage/sitter/register"
-            className="flex min-h-[60px] items-center justify-center gap-2 rounded-2xl border border-dashed border-primary-300 bg-primary-50 px-4 text-[15px] font-bold text-primary-600 transition-colors duration-150 hover:bg-primary-100 sm:w-full"
+            className="group flex items-center gap-3.5 rounded-2xl bg-gradient-to-br from-primary-500 to-peach-500 p-4 shadow-soft transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:shadow-card-hover active:translate-y-0 active:scale-[0.99] sm:w-full"
           >
-            <HeartHandshake size={18} />
-            돌보다 매니저 등록하기
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/20 text-white backdrop-blur">
+              <HeartHandshake size={20} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[15px] font-extrabold text-white">
+                돌보다 매니저 시작하기
+              </span>
+              <span className="mt-0.5 block text-[12px] leading-snug text-white/85">
+                돌봄 일자리에 지원하고 활동 실적을 쌓아보세요
+              </span>
+            </span>
+            <ChevronRight
+              size={17}
+              className="shrink-0 text-white/70 transition-transform duration-200 group-hover:translate-x-0.5"
+            />
           </Link>
         )}
       </aside>

@@ -5,7 +5,17 @@ import { prisma } from "@/lib/prisma";
 import { rowToFacility } from "@/lib/facilityRepo";
 import { calcWorkIndex } from "@/lib/workIndex";
 import { REGION_SEO } from "@/lib/regionSeo";
+import { REGIONS } from "@/lib/regions";
 import type { Facility as FacilityRow } from "@prisma/client";
+
+// 활동 지역 라벨(REGIONS 표기) → 주소 접두어.
+// REGION_SEO는 "전남·광주"를 한 항목으로 묶어서 "전남"/"광주" 단독 라벨은 못 찾는다 —
+// 그대로 두면 "전남" 매니저에게 "전라남도"로 시작하는 주소가 통째로 누락된다.
+function prefixesFor(label: string): string[] {
+  if (label === "광주") return ["광주"];
+  if (label === "전남") return ["전라남도", "전남"];
+  return REGION_SEO.find((r) => r.label === label)?.prefixes ?? [label];
+}
 
 // 돌보다 매니저의 활동 지역에서 "일하기 좋은 시설"을 근무환경 지수 순으로 돌려준다.
 // 일자리 공고가 없어도 매니저가 들어와 볼 거리를 만드는 것이 목적.
@@ -109,24 +119,19 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url);
   // 매니저가 특정 지역만 보고 싶을 때 (없으면 활동 지역 전체).
-  // 본인이 등록한 활동 지역 중 하나일 때만 받는다 — 화면의 지역 탭도 이 목록에서 나온다.
-  // 임의 문자열을 그대로 받으면 주소 LIKE 패턴이 돼 전국 스캔을 유발하고 캐시 키도 무한정 늘어난다.
+  // 전국 시/도 라벨이면 활동 지역이 아니어도 허용 — "다른 지역은 어떤가" 둘러보는 용도.
+  // 다만 임의 문자열은 여전히 거부한다(주소 LIKE 전국 스캔·캐시 키 폭증 방지 —
+  // REGIONS 17개로 한정되므로 캐시 키도 유한하다).
   const only = searchParams.get("region");
-  const regionLabels = only && profile.regions.includes(only) ? [only] : profile.regions;
+  const isKnownRegion = !!only && (REGIONS as readonly string[]).includes(only);
+  const regionLabels = isKnownRegion ? [only!] : profile.regions;
 
   if (regionLabels.length === 0) {
     return NextResponse.json({ items: [], regions: [] });
   }
 
-  // 활동 지역(시/도 라벨) → 주소 접두어. "경남" → ["경상남도", "경남"]
   // 같은 지역 집합이면 캐시가 맞도록 정렬해 키를 안정시킨다.
-  const prefixes = [
-    ...new Set(
-      regionLabels.flatMap(
-        (label) => REGION_SEO.find((r) => r.label === label)?.prefixes ?? [label]
-      )
-    ),
-  ].sort();
+  const prefixes = [...new Set(regionLabels.flatMap(prefixesFor))].sort();
 
   const items = await getRanking(prefixes);
 
