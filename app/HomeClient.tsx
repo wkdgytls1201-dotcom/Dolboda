@@ -164,6 +164,30 @@ export default function HomeClient({
       .slice(0, 6);
   }, [nearbyPool]);
 
+  // 이 지역 안심지수 TOP — 이미 받아둔 주변 300건에 서버가 실어준 점수(dolbodaTotal)가
+  // 들어 있어서 추가 요청 없이 계산만 하면 된다.
+  //
+  // "점수 높은 시설"(위)은 공단 평가등급 기준이라 1등급 안에서는 순서가 사실상 거리순인데,
+  // 안심지수는 등급·인력·현원·행정처분까지 묶은 값이라 같은 1등급 안에서도 순위가 갈린다.
+  //
+  // 표본이 적으면 "TOP"이 의미가 없어서(주변에 몇 곳뿐인 지역) 50곳 이상일 때만 내보내고,
+  // 80점 미만은 넣지 않는다 — 주변이 전부 낮은 지역에서 60점대 시설이 "1위"로 걸리면
+  // 보호자가 안심해도 되는 곳으로 오해할 수 있다.
+  const regionTop = useMemo(() => {
+    if (nearbyPool.length < 50) return [];
+    return nearbyPool
+      .filter((f) => (f.dolbodaTotal ?? 0) >= 80)
+      .slice()
+      .sort((a, b) => (b.dolbodaTotal ?? 0) - (a.dolbodaTotal ?? 0) || a.distanceKm - b.distanceKm)
+      .slice(0, 6);
+  }, [nearbyPool]);
+
+  // 상위 3곳만 리본을 단다 — 6장 전부에 순위를 붙이면 "6위"까지 강조돼 변별력이 없어진다.
+  const rankBadgeById = useMemo(
+    () => new Map(regionTop.slice(0, 3).map((f, i) => [f.id, `이 지역 안심지수 ${i + 1}위`])),
+    [regionTop]
+  );
+
   // 최근 설립: 설립연도 데이터는 요양병원(HIRA 소스)에만 있고 방문요양·요양원·주야간보호
   // (NHIS 소스)엔 원본에 그 항목 자체가 없다. 그래서 요양병원을 설립연도 최신순으로 먼저
   // 채우고, 남는 자리는 나머지 유형을 평가등급 높은 순(숫자가 작을수록 좋음)으로 채운다.
@@ -216,11 +240,33 @@ export default function HomeClient({
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {nearbyFacilities.map((f, i) => (
             <Reveal key={f.id} delay={i * 60}>
-              <FacilityCard facility={f} distanceKm={f.distanceKm} />
+              <FacilityCard facility={f} distanceKm={f.distanceKm} rankBadge={rankBadgeById.get(f.id)} />
             </Reveal>
           ))}
         </div>
       </section>
+
+      {regionTop.length > 0 && (
+        <section className="mx-auto max-w-6xl px-4 pb-12">
+          <Reveal className="mb-5 flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
+            <h2 className="text-xl font-bold text-ink-900">이 지역 안심지수 TOP</h2>
+            <span className="text-sm text-ink-300">
+              내 주변 시설을 돌보다 AI 안심지수로 매긴 순위
+            </span>
+          </Reveal>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {regionTop.map((f, i) => (
+              <Reveal key={f.id} delay={i * 60}>
+                <FacilityCard
+                  facility={f}
+                  distanceKm={f.distanceKm}
+                  rankBadge={rankBadgeById.get(f.id)}
+                />
+              </Reveal>
+            ))}
+          </div>
+        </section>
+      )}
 
       {recommended.length > 0 && (
         <section className="mx-auto max-w-6xl px-4 pb-12">
@@ -231,7 +277,7 @@ export default function HomeClient({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {recommended.map((f, i) => (
               <Reveal key={f.id} delay={i * 60}>
-                <FacilityCard facility={f} />
+                <FacilityCard facility={f} rankBadge={rankBadgeById.get(f.id)} />
               </Reveal>
             ))}
           </div>
@@ -261,7 +307,7 @@ export default function HomeClient({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {recentlyEstablished.map((f, i) => (
               <Reveal key={f.id} delay={i * 60}>
-                <FacilityCard facility={f} />
+                <FacilityCard facility={f} rankBadge={rankBadgeById.get(f.id)} />
               </Reveal>
             ))}
           </div>

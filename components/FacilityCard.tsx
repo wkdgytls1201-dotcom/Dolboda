@@ -15,10 +15,13 @@ export function FacilityCard({
   facility,
   distanceKm,
   selectable = true,
+  rankBadge,
 }: {
   facility: Facility;
   distanceKm?: number;
   selectable?: boolean;
+  /** "내 주변 안심지수 1위" 같은 순위 리본. 목록이 이미 가진 점수로만 계산해 넘긴다. */
+  rankBadge?: string;
 }) {
   const { toggle, isSelected, selectedIds, canAddMore } = useCompare();
   const { isFavorite, toggleFavorite } = useFavorites();
@@ -85,11 +88,19 @@ export function FacilityCard({
         }}
         className="block"
       >
-        <div className="mb-3 -mx-4 -mt-4 aspect-[16/9] overflow-hidden rounded-t-2xl">
+        <div className="relative mb-3 -mx-4 -mt-4 aspect-[16/9] overflow-hidden rounded-t-2xl">
           <FacilityThumbnail
             facility={facility}
             className="transition-transform duration-500 group-hover:scale-105"
           />
+          {/* 순위 리본은 사진 위에 올린다 — 배지 줄(유형·등급·안심지수)은 이미 좁은 폭에서
+              두 줄로 밀리기 직전이라 여기에 더 넣으면 주소까지 아래로 밀린다. */}
+          {rankBadge && (
+            <span className="absolute bottom-2 left-2 flex items-center gap-1 rounded-full bg-ink-900/75 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur-sm">
+              <ShieldCheck size={12} aria-hidden />
+              {rankBadge}
+            </span>
+          )}
         </div>
 
         <div className="mb-3 flex flex-wrap items-center gap-1.5 pr-10">
