@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { resend, CONSULT_NOTIFY_EMAIL, consultForwardEmailHtml } from "@/lib/resend";
 import { sendTelegram } from "@/lib/telegram";
+import { isOptedOut, unsubscribeToken } from "@/lib/emailOptOut";
 import { rateLimit, clientIp, tooManyRequests } from "@/lib/rateLimit";
 import { SITE_URL, SITE_NAME, MAIL_FROM } from "@/lib/siteConfig";
 
@@ -119,10 +120,21 @@ export async function POST(req: Request) {
         .join("\n")
     : "";
 
+  // 수신거부한 주소로는 두 번 다시 보내지 않는다. 발송 직전에 확인한다 —
+  // 화면이나 목록에서 걸러도, 결국 여기를 지나야 메일이 나가기 때문이다.
+  const optedOut = facilityEmail ? await isOptedOut(facilityEmail) : false;
+
   // 시설에 자동 발송 — 이메일 정보가 있을 때만. 실패해도 접수 자체는 이미 끝난 상태.
   // 발송 성공 여부를 DB에 남겨(facilityNotifiedAt) 운영자가 "직접 연락 필요"를 구분할 수 있게 한다.
   let facilityNotified = false;
-  if (resend && facilityEmail) {
+  if (resend && facilityEmail && !optedOut) {
+    // 주소마다 서명이 붙은 수신거부 링크 — 링크만 알면 남의 주소를 막을 수 있으면 안 된다
+    const unsubscribeUrl =
+      `${SITE_URL}/api/email/unsubscribe` +
+      `?e=${encodeURIComponent(facilityEmail)}` +
+      `&t=${unsubscribeToken(facilityEmail)}` +
+      `&f=${encodeURIComponent(facilityId)}` +
+      `&n=${encodeURIComponent(facility.name)}`;
     try {
       await resend.emails.send({
         from: `${SITE_NAME} 상담신청 <${MAIL_FROM}>`,
@@ -142,13 +154,14 @@ export async function POST(req: Request) {
         // List-Unsubscribe — Gmail이 발신자 평판을 매길 때 보는 항목이라 수신함 도달률에
         // 도움이 되고, 수신자는 본문을 읽지 않아도 메일 상단에서 바로 수신거부할 수 있다.
         //
-        // mailto 방식만 쓴다. 원클릭(List-Unsubscribe-Post)은 RFC 8058상 HTTPS POST를
-        // 받아 즉시 처리하는 엔드포인트가 있어야 하는데, 아직 차단 목록이 없어서
-        // 선언만 해두면 "눌러도 아무 일이 없는" 상태가 된다 — 그건 안 하느니만 못하다.
+        // 원클릭(RFC 8058)은 Gmail이 본문 없이 URL로 POST를 쏘고, 우리 엔드포인트가
+        // 그 자리에서 차단 목록에 넣는다. 사람이 링크를 눌러 브라우저로 들어와도
+        // 같은 처리를 하고 결과 화면을 보여준다. mailto도 함께 남겨 둘 다 되게 한다.
         headers: {
-          "List-Unsubscribe": `<mailto:${CONSULT_NOTIFY_EMAIL}?subject=${encodeURIComponent(
+          "List-Unsubscribe": `<${unsubscribeUrl}>, <mailto:${CONSULT_NOTIFY_EMAIL}?subject=${encodeURIComponent(
             `수신거부 ${facility.name}`
           )}>`,
+          "List-Unsubscribe-Post": "List=One-Click",
         },
         text:
           `안녕하세요, ${facility.name} 담당자님.\n` +

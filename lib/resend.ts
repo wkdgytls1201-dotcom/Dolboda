@@ -30,34 +30,23 @@ export function consultForwardEmailHtml(params: {
       <tr>
         <td align="center">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 4px 16px rgba(27,23,48,0.06);">
-            <!-- 헤더 — 메일 클라이언트는 CSS를 많이 걷어낸다. 그라데이션이 지워져도
-                 괜찮도록 bgcolor로 코랄 단색 바탕을 깔고 그 위에 그라데이션을 얹는다.
-                 로고가 코랄색 꽃이라 코랄 배경에 그냥 두면 묻힌다 → 흰 원 위에 올린다. -->
+            <!-- 헤더 — 일부러 작게. 큰 배너형 헤더는 업무 메일이 아니라 광고처럼 읽힌다.
+                 흰 바탕에 로고+이름 한 줄, 아래 얇은 선으로만 본문과 나눈다. -->
             <tr>
-              <td bgcolor="#FF6250" style="padding:32px 28px 26px;text-align:center;background:#FF6250;background-image:linear-gradient(135deg,#FF6250 0%,#FF8A73 55%,#FFB48C 100%);">
-                <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 14px;">
+              <td style="padding:18px 28px 14px;border-bottom:1px solid #F0EDF6;">
+                <table role="presentation" cellpadding="0" cellspacing="0">
                   <tr>
-                    <td bgcolor="#FFFFFF" width="116" height="116" align="center" valign="middle" style="width:116px;height:116px;background:#ffffff;border-radius:58px;text-align:center;vertical-align:middle;">
-                      <a href="${SITE_URL}" style="text-decoration:none;display:block;">
-                        <img src="${SITE_URL}/logo.png" alt="${SITE_NAME}" width="78" height="78" style="display:block;margin:0 auto;border:0;" />
+                    <td width="30" valign="middle" style="width:30px;">
+                      <a href="${SITE_URL}" style="text-decoration:none;">
+                        <img src="${SITE_URL}/logo.png" alt="${SITE_NAME}" width="26" height="26" style="display:block;border:0;" />
                       </a>
                     </td>
-                  </tr>
-                </table>
-                <p style="margin:0;color:#ffffff;font-size:24px;font-weight:800;letter-spacing:-0.4px;">${SITE_NAME}</p>
-                <!-- 태그라인은 알약 배경으로 — 흰 글씨만 두면 그라데이션 밝은 쪽에서 흐릿해진다 -->
-                <table role="presentation" cellpadding="0" cellspacing="0" style="margin:10px auto 0;">
-                  <tr>
-                    <td bgcolor="#E8442F" style="padding:6px 14px;background:#E8442F;border-radius:999px;">
-                      <span style="color:#ffffff;font-size:13px;font-weight:600;letter-spacing:-0.2px;">정보 비대칭 없는 투명한 돌봄</span>
+                    <td valign="middle" style="padding-left:8px;">
+                      <a href="${SITE_URL}" style="text-decoration:none;color:#FF6250;font-size:16px;font-weight:800;letter-spacing:-0.3px;">${SITE_NAME}</a>
+                      <span style="color:#C8C3D6;font-size:13px;"> · ${SITE_URL.replace(/^https?:\/\//, "")}</span>
                     </td>
                   </tr>
                 </table>
-                <p style="margin:12px 0 0;font-size:12px;letter-spacing:0.2px;">
-                  <a href="${SITE_URL}" style="color:#FFEDE8;text-decoration:underline;">
-                    ${SITE_URL.replace(/^https?:\/\//, "")}
-                  </a>
-                </p>
               </td>
             </tr>
             <tr>
