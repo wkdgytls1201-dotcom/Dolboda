@@ -1,20 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { BUSINESS_PLANS, formatPlanPrice } from "@/lib/businessPlans";
 
 // 입점 신청 폼. 이 페이지에서 유일한 클라이언트 컴포넌트다 —
 // 나머지 본문은 전부 서버에서 그려서 검색엔진·AI 크롤러가 그대로 읽는다.
 //
 // 받는 항목을 일부러 적게 뒀다. 서류·계좌·상세 시설정보는 확인 전화를 마친 뒤에 받는다.
 // 처음부터 다 요구하면 신청이 뚝 떨어지고, 아직 검증도 안 된 개인정보를 우리가 떠안는다.
+//
+// 상품 선택은 없다 — 신청은 항상 무료 인증(free)이고, 유료 확장은 인증 뒤
+// 시설 콘솔에서 안내한다(앞단에 가격표를 내밀지 않는 방침, app/business/page.tsx 주석).
 
 const FIELD =
   "w-full rounded-xl border border-ink-100 bg-white px-3.5 py-3 text-sm text-ink-900 outline-none transition-colors placeholder:text-ink-300 focus:border-primary-400";
 const LABEL = "mb-1.5 block text-sm font-semibold text-ink-700";
 
-export function BusinessInquiryForm({ defaultPlan }: { defaultPlan: string }) {
-  const [plan, setPlan] = useState(defaultPlan);
+export function BusinessInquiryForm() {
   const [agreed, setAgreed] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +40,7 @@ export function BusinessInquiryForm({ defaultPlan }: { defaultPlan: string }) {
           phone: data.get("phone"),
           email: data.get("email"),
           message: data.get("message"),
-          plan,
+          plan: "free",
           agreed,
         }),
       });
@@ -164,28 +165,6 @@ export function BusinessInquiryForm({ defaultPlan }: { defaultPlan: string }) {
               placeholder="manager@example.com"
             />
           </div>
-        </div>
-
-        <div>
-          <label className={LABEL} htmlFor="plan">
-            관심 있는 상품
-          </label>
-          <select
-            id="plan"
-            name="plan"
-            value={plan}
-            onChange={(e) => setPlan(e.target.value)}
-            className={FIELD}
-          >
-            {BUSINESS_PLANS.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name} · {formatPlanPrice(p)}
-              </option>
-            ))}
-          </select>
-          <p className="mt-1.5 text-xs text-ink-300">
-            지금 정하지 않으셔도 됩니다. 무료 등록만 하고 나중에 바꿔도 돼요.
-          </p>
         </div>
 
         <div>

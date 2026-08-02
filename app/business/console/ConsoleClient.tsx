@@ -2,8 +2,9 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-import { Camera, ExternalLink, Trash2, TrendingUp, MessageCircle } from "lucide-react";
+import { Camera, Check, ExternalLink, Trash2, TrendingUp, MessageCircle } from "lucide-react";
 import { toSquareImage } from "@/lib/squareImage";
+import { BUSINESS_PLANS, VAT_NOTE, formatPlanPrice } from "@/lib/businessPlans";
 
 // 시설 콘솔 화면.
 //
@@ -269,13 +270,94 @@ function FacilityPanel({ facility }: { facility: ConsoleFacility }) {
         />
 
         {facility.plan === "free" && photos.length >= facility.photoLimit && (
-          <Link
-            href="/business#plans"
+          <a
+            href="#plans"
             className="mt-3 block rounded-xl bg-ivory-100 p-3.5 text-center text-xs font-semibold text-ink-700 transition-colors hover:bg-ivory-200"
           >
             사진을 더 올리고 싶으신가요? 비즈니스 플러스에서 30장까지 열려요 →
-          </Link>
+          </a>
         )}
+      </section>
+
+      {/* 확장 상품 안내 — 가격은 여기(인증된 담당자만 보는 화면)에서만 보여준다.
+          앞단(/business)은 무료 혜택 중심이고, 요금표는 신뢰가 생긴 뒤의 이야기다. */}
+      <section id="plans" className={`${CARD} scroll-mt-20`}>
+        <h2 className="mb-1 text-[15px] font-bold text-ink-900">확장 상품 안내</h2>
+        <p className="mb-3 text-xs leading-relaxed text-ink-500">
+          지금 쓰시는 무료 기능은 그대로 유지되고, 노출을 키우고 싶을 때만 선택하시면 돼요.
+          금액은 모두 {VAT_NOTE}, 최소 약정 없이 월 단위입니다.
+        </p>
+
+        <div className="space-y-2.5">
+          {BUSINESS_PLANS.filter((p) => p.id !== "free").map((plan) => {
+            const isCurrent = plan.id === facility.plan;
+            return (
+              <div
+                key={plan.id}
+                className={`rounded-xl border p-4 ${
+                  isCurrent
+                    ? "border-mint-300 bg-mint-50/50"
+                    : plan.highlight
+                    ? "border-primary-200"
+                    : "border-ink-100"
+                }`}
+              >
+                <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+                  <span className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-sm font-bold text-ink-900">{plan.name}</span>
+                    {isCurrent && (
+                      <span className="rounded-full bg-mint-600 px-2 py-0.5 text-[10px] font-bold text-white">
+                        이용 중
+                      </span>
+                    )}
+                    {!isCurrent && plan.highlight && (
+                      <span className="rounded-full bg-primary-500 px-2 py-0.5 text-[10px] font-bold text-white">
+                        가장 많이 선택
+                      </span>
+                    )}
+                  </span>
+                  <span className="text-sm font-extrabold text-ink-900">
+                    {formatPlanPrice(plan)}
+                    {plan.priceNote && (
+                      <span className="ml-1 text-[11px] font-normal text-ink-300">
+                        {plan.priceNote}
+                      </span>
+                    )}
+                  </span>
+                </div>
+                <p className="mb-2 text-xs leading-relaxed text-ink-500">{plan.tagline}</p>
+                <ul className="space-y-1">
+                  {plan.features.slice(0, 3).map((f) => (
+                    <li key={f} className="flex gap-1.5 text-xs leading-relaxed text-ink-500">
+                      <Check size={13} className="mt-0.5 shrink-0 text-mint-600" />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <a
+            href={`tel:010-2222-9943`}
+            className="flex min-h-[48px] items-center justify-center rounded-xl bg-primary-500 text-sm font-bold text-white shadow-soft transition-all hover:bg-primary-600"
+          >
+            전화로 상담하기
+          </a>
+          <a
+            href={`mailto:wkdgytls1201@gmail.com?subject=${encodeURIComponent(
+              `[확장 상품 문의] ${facility.facilityName}`
+            )}`}
+            className="flex min-h-[48px] items-center justify-center rounded-xl border border-ink-100 bg-white text-sm font-bold text-ink-700 transition-colors hover:bg-ink-100"
+          >
+            이메일로 문의하기
+          </a>
+        </div>
+        <p className="mt-2 text-center text-[11px] text-ink-300">
+          결제는 상담 후 세금계산서와 함께 진행돼요. 언제든 중단할 수 있습니다.
+        </p>
       </section>
 
       {error && (

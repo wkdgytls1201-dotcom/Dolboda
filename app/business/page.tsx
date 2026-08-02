@@ -1,33 +1,29 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Check, ShieldCheck, Megaphone, LineChart, Lock } from "lucide-react";
-import {
-  BUSINESS_PLANS,
-  SIGNUP_STEPS,
-  VAT_NOTE,
-  formatPlanPrice,
-} from "@/lib/businessPlans";
+import { SIGNUP_STEPS } from "@/lib/businessPlans";
 import { BusinessInquiryForm } from "./BusinessInquiryForm";
 import { SITE_URL, SITE_NAME, OG_IMAGE } from "@/lib/siteConfig";
 import { jsonLdHtml } from "@/lib/jsonLd";
 
 // 시설 운영자용 입점 안내 (B2B).
 //
-// 보호자용 화면과 톤이 달라야 한다 — 여기 오는 사람은 "우리 시설을 어떻게 알릴까"를
-// 이미 결정하고 온 사무국장·원장이다. 감성적인 설명보다 조건·가격·절차가 먼저다.
+// 앞단(이 페이지)은 **무료 인증의 혜택**만 말한다. 요금제·가격은 인증을 마친 담당자가
+// 시설 콘솔(/business/console)에서 본다 — 아직 신뢰가 없는 첫 방문에서 가격표부터
+// 내밀면 "결국 돈 내라는 거네"로 읽혀 신청 자체가 줄고, 무료 범위가 넓다는 사실이 묻힌다.
 //
 // 본문은 전부 서버 렌더다(폼만 클라이언트). "요양원 홍보"·"요양시설 마케팅" 같은
 // 검색어로 들어오는 페이지라 크롤러가 내용을 그대로 읽어야 한다.
 
 export const metadata: Metadata = {
-  title: "시설 운영자 입점 안내 — 우리 시설을 찾는 보호자에게",
+  title: "시설 운영자 무료 등록 — 우리 시설을 찾는 보호자에게",
   description:
-    "요양원·요양병원·주야간보호·방문요양 운영자를 위한 돌보다 입점 안내입니다. 시설 페이지 무료 인증부터 비즈니스 플러스(월 49,000원), 지역 스폰서(월 149,000원), 지역 프리미엄(월 299,000원)까지 요금과 절차를 안내합니다.",
+    "요양원·요양병원·주야간보호·방문요양 운영자를 위한 돌보다 무료 인증 안내입니다. 시설 페이지 직접 관리, 상담 신청 수신, 방문 통계까지 무료로 시작하세요.",
   alternates: { canonical: "/business" },
   openGraph: {
-    title: `${SITE_NAME} 시설 운영자 입점 안내`,
+    title: `${SITE_NAME} 시설 운영자 무료 등록`,
     description:
-      "시설 페이지 무료 인증부터 지역 스폰서·프리미엄까지. 스폰서 노출은 '광고'로 표시해 운영합니다.",
+      "시설 페이지 직접 관리, 상담 신청 수신, 방문 통계까지 무료로 시작하세요.",
     url: `${SITE_URL}/business`,
     type: "website",
     images: [OG_IMAGE],
@@ -55,31 +51,23 @@ const WHY = [
 const FAQ: { q: string; a: string }[] = [
   {
     q: "이미 등록돼 있다면 굳이 신청할 이유가 있나요?",
-    a: "공공데이터에는 시설의 분위기, 프로그램, 최근 소식 같은 것이 없습니다. 인증을 하시면 소개글과 사진을 직접 올리고 잘못된 정보를 고칠 수 있어요. 여기까지는 무료이고, 유료 상품은 그다음 선택입니다.",
+    a: "공공데이터에는 시설의 분위기, 프로그램, 최근 소식 같은 것이 없습니다. 인증을 하시면 소개글과 사진을 직접 올리고 잘못된 정보를 고칠 수 있어요.",
   },
   {
-    q: "스폰서 노출은 어디에 보이나요?",
-    a: "해당 지역에서 시설을 찾는 보호자의 화면 상단 전용 자리에 노출됩니다. 노출수·클릭수는 매월 리포트로 확인하실 수 있어요.",
+    q: "정말 무료인가요?",
+    a: "네. 인증, 시설 페이지 관리(소개글·사진), 상담 신청 수신, 기본 통계까지 무료입니다. 노출을 더 키우고 싶은 시설을 위한 확장 상품이 따로 있는데, 인증을 마치면 시설 콘솔에서 안내드려요. 확장 상품을 쓰지 않아도 무료 기능은 계속 그대로입니다.",
   },
   {
     q: "돌보다 안심지수는 어떻게 정해지나요?",
     a: "공개된 데이터(평가등급·인력·현원 등)로 계산하고 계산식을 데이터 출처 페이지에 공개하고 있어요. 인력 현황처럼 원본 데이터가 실제와 다르면 정정해 드리고, 그 결과로 점수가 달라질 수 있습니다.",
   },
   {
-    q: "약정 기간이 있나요?",
-    a: "월 단위이며 최소 약정이 없습니다. 다음 달 결제 전에 알려주시면 중단됩니다. 지역 스폰서는 슬롯 제한이 있어 중단하시면 대기 중인 시설에 자리가 넘어가요.",
-  },
-  {
-    q: "지역 스폰서는 왜 지역당 3곳뿐인가요?",
-    a: "광고 자리가 많아질수록 한 곳 한 곳의 주목도가 낮아지기 때문이에요. 자리가 차면 추가로 팔지 않고 대기로 안내드립니다.",
-  },
-  {
     q: "시설 정보가 실제와 다릅니다. 고치려면 유료인가요?",
     a: "아닙니다. 정보 정정은 언제나 무료이고 인증 전에도 요청하실 수 있어요. 공공데이터 갱신 시점 때문에 생기는 차이라 저희가 확인 후 반영합니다.",
   },
   {
-    q: "세금계산서 발행되나요?",
-    a: "발행됩니다. 표시된 금액은 모두 부가세 별도이며, 신청 시 사업자등록증을 확인한 뒤 매월 발행해 드립니다.",
+    q: "인증에 무엇이 필요한가요?",
+    a: "신청서에는 시설명·기관기호(또는 사업자등록번호)·담당자 연락처만 적으시면 됩니다. 이후 공단에 공개된 시설 대표번호로 확인 전화를 드리고, 장기요양기관 지정서 또는 사업자등록증 사본 한 건만 받아요.",
   },
 ];
 
@@ -96,29 +84,15 @@ const jsonLd = {
       ],
     },
     {
+      // 가격은 화면에서 뺐으므로 구조화 데이터에도 싣지 않는다 —
+      // 화면에 없는 가격이 검색 결과에 뜨면 그게 곧 어긋남이다.
       "@type": "Service",
       name: `${SITE_NAME} 시설 운영자 서비스`,
-      serviceType: "요양시설 온라인 노출·페이지 관리",
+      serviceType: "요양시설 페이지 관리·상담 연결",
       areaServed: "KR",
       provider: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
       url: PAGE_URL,
-      offers: BUSINESS_PLANS.map((p) => ({
-        "@type": "Offer",
-        name: p.name,
-        description: p.tagline,
-        ...(p.monthly !== null && {
-          price: p.monthly,
-          priceCurrency: "KRW",
-          // 부가세 별도임을 구조화 데이터에도 남긴다 — 화면 표기와 어긋나면 안 된다
-          priceSpecification: {
-            "@type": "UnitPriceSpecification",
-            price: p.monthly,
-            priceCurrency: "KRW",
-            valueAddedTaxIncluded: false,
-            unitCode: "MON",
-          },
-        }),
-      })),
+      offers: { "@type": "Offer", name: "시설 무료 인증·페이지 관리", price: 0, priceCurrency: "KRW" },
     },
     {
       "@type": "FAQPage",
@@ -163,10 +137,10 @@ export default function BusinessPage() {
           무료로 시설 인증 신청하기
         </a>
         <a
-          href="#plans"
+          href="#benefits"
           className="flex min-h-[52px] flex-1 items-center justify-center rounded-xl border border-ink-100 bg-white text-sm font-bold text-ink-700 transition-colors hover:bg-ink-100"
         >
-          요금제 먼저 보기
+          어떤 혜택이 있나요
         </a>
       </div>
       {/* 이미 인증한 담당자의 재방문 동선 — 이 페이지가 콘솔의 유일한 공식 입구다 */}
@@ -231,66 +205,57 @@ export default function BusinessPage() {
         </p>
       </section>
 
-      <section id="plans" className="mb-12 scroll-mt-20">
-        <h2 className="mb-1.5 text-lg font-bold text-ink-900">요금제</h2>
+      {/* 무료 혜택 — 요금제 대신 이 페이지의 중심. 가격은 인증 후 콘솔에서 안내한다. */}
+      <section id="benefits" className="mb-12 scroll-mt-20">
+        <h2 className="mb-1.5 text-lg font-bold text-ink-900">인증하면 무료로 받는 것들</h2>
         <p className="mb-4 text-sm text-ink-500">
-          표시 금액은 모두 <strong className="font-semibold text-ink-700">{VAT_NOTE}</strong>이며,
-          최소 약정 없이 월 단위로 이용하실 수 있어요.
+          전부 무료이고, 약정도 없습니다. 인증만 하시면 바로 시작돼요.
         </p>
 
-        <div className="space-y-3">
-          {BUSINESS_PLANS.map((plan) => (
-            <div
-              key={plan.id}
-              className={`rounded-2xl bg-white p-5 shadow-card ${
-                plan.highlight ? "border-2 border-primary-300" : "border border-transparent"
-              }`}
-            >
-              <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                <span className="flex flex-wrap items-center gap-2">
-                  <span className="text-[17px] font-bold text-ink-900">{plan.name}</span>
-                  {plan.highlight && (
-                    <span className="rounded-full bg-primary-500 px-2 py-0.5 text-[11px] font-bold text-white">
-                      가장 많이 선택
-                    </span>
-                  )}
+        <div className="rounded-2xl bg-white p-5 shadow-card">
+          <ul className="space-y-3">
+            {[
+              {
+                t: "시설 페이지 직접 관리",
+                d: "소개글과 시설 사진을 직접 올려, 공공데이터만으로는 전할 수 없는 우리 시설의 분위기를 보여줄 수 있어요.",
+              },
+              {
+                t: "상담 신청 수신",
+                d: "보호자가 우리 시설에 남긴 상담 신청이 시설 이메일로 바로 전달돼요. 전화를 놓쳐도 문의가 사라지지 않습니다.",
+              },
+              {
+                t: "우리 시설을 찾는 보호자 통계",
+                d: "몇 명이 페이지를 봤고 상담으로 얼마나 이어졌는지 콘솔에서 숫자로 확인할 수 있어요.",
+              },
+              {
+                t: "잘못된 정보 정정 우선 처리",
+                d: "공공데이터가 실제와 다르면 인증 시설의 정정 요청을 먼저 확인해 반영해 드려요.",
+              },
+            ].map((b) => (
+              <li key={b.t} className="flex gap-2.5">
+                <Check size={17} className="mt-0.5 shrink-0 text-mint-600" />
+                <span className="min-w-0">
+                  <span className="block text-[15px] font-bold text-ink-900">{b.t}</span>
+                  <span className="block text-sm leading-[1.7] text-ink-500">{b.d}</span>
                 </span>
-                <span className="text-right">
-                  <span className="text-lg font-extrabold text-ink-900">
-                    {formatPlanPrice(plan)}
-                  </span>
-                  {plan.priceNote && (
-                    <span className="ml-1 text-xs text-ink-300">{plan.priceNote}</span>
-                  )}
-                </span>
-              </div>
-
-              <p className="mb-1 text-sm leading-relaxed text-ink-700">{plan.tagline}</p>
-              <p className="mb-3 text-xs text-ink-300">{plan.audience}</p>
-
-              {plan.includesPrevious && (
-                <p className="mb-2.5 rounded-xl bg-ivory-100 px-3 py-2 text-xs font-semibold text-ink-500">
-                  + {plan.includesPrevious} 포함
-                </p>
-              )}
-
-              <ul className="space-y-1.5">
-                {plan.features.map((f) => (
-                  <li key={f} className="flex gap-2 text-sm leading-relaxed text-ink-500">
-                    <Check size={15} className="mt-1 shrink-0 text-mint-600" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+              </li>
+            ))}
+          </ul>
         </div>
+
+        {/* 유료 상품의 존재는 숨기지 않는다 — 나중에 알게 되면 "무료라더니"가 된다.
+            다만 가격·구성은 콘솔에서: 지금 필요한 건 신뢰지 가격표가 아니다. */}
+        <p className="mt-3 rounded-2xl bg-ivory-100 p-4 text-[13px] leading-relaxed text-ink-500">
+          입소자 모집을 위해 노출을 더 키우고 싶은 시설을 위한{" "}
+          <strong className="font-semibold text-ink-700">확장 상품</strong>도 준비돼 있어요.
+          인증을 마치면 시설 콘솔에서 안내드립니다 — 쓰지 않아도 무료 기능은 계속 그대로예요.
+        </p>
 
         <a
           href="#apply"
           className="mt-4 flex min-h-[52px] items-center justify-center rounded-xl bg-primary-500 text-sm font-bold text-white shadow-soft transition-all duration-200 hover:bg-primary-600"
         >
-          신청하고 상담받기
+          무료로 시작하기
         </a>
       </section>
 
@@ -382,7 +347,7 @@ export default function BusinessPage() {
           아래 정보만 남겨주시면 1영업일 안에 시설 대표번호로 연락드립니다. 서류와 결제는 통화
           이후에 진행하니, 지금은 결정하지 않으셔도 괜찮아요.
         </p>
-        <BusinessInquiryForm defaultPlan="free" />
+        <BusinessInquiryForm />
         <p className="mt-3 text-center text-[13px] text-ink-300">
           전화 문의 010-2222-9943 · 이메일 wkdgytls1201@gmail.com
         </p>
