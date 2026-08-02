@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { X, CheckCircle2 } from "lucide-react";
+import Link from "next/link";
+import { X, CheckCircle2, ChevronRight } from "lucide-react";
 import { useCareProfiles } from "@/lib/careProfileContext";
 
 export function ConsultModal({
@@ -73,13 +74,23 @@ export function ConsultModal({
             <CheckCircle2 size={40} className="animate-pop text-mint-500" />
             <p className="font-semibold text-ink-900">신청이 접수되었습니다</p>
             <p className="text-sm text-ink-500">{facilityName} 상담 담당자가 곧 연락드릴게요.</p>
-            <button
-              type="button"
-              onClick={onClose}
-              className="mt-2 rounded-xl bg-primary-500 px-5 py-2 text-sm font-bold text-white shadow-soft transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:bg-primary-600 hover:shadow-card-hover active:translate-y-0 active:scale-95"
-            >
-              확인
-            </button>
+            {/* 여러 곳을 견주는 사람이 많다 — 신청 직후에 "모아 보는 곳"을 알려준다 */}
+            <div className="mt-2 flex w-full flex-col gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="min-h-[48px] w-full rounded-xl bg-primary-500 px-5 text-sm font-bold text-white shadow-soft transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:bg-primary-600 hover:shadow-card-hover active:translate-y-0 active:scale-95"
+              >
+                확인
+              </button>
+              <Link
+                href="/mypage/consults"
+                className="flex min-h-[44px] w-full items-center justify-center gap-1 rounded-xl text-[13px] font-semibold text-ink-500 transition-colors hover:bg-ink-100/60 hover:text-ink-700"
+              >
+                신청 내역 보기
+                <ChevronRight size={14} />
+              </Link>
+            </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-3">

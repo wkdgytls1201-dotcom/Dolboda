@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   ChevronRight,
   Circle,
+  ClipboardList,
   Heart,
   HeartHandshake,
 } from "lucide-react";
@@ -63,6 +64,9 @@ export function MyPageDashboard() {
   const [request, setRequest] = useState<GuardianRequest | null | undefined>(undefined);
   const [applications, setApplications] = useState<MyApplication[] | null>(null);
   const [openJobs, setOpenJobs] = useState<number | null>(null);
+  // 상담 신청 내역 — 신청하고 며칠 뒤 "어디에 넣었더라" 하고 돌아오는 사람이 많다.
+  // 아직 입소를 정하지 않은 건이 있으면 대시보드에서 먼저 보여준다.
+  const [consults, setConsults] = useState<{ status: string | null }[] | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -74,6 +78,14 @@ export function MyPageDashboard() {
       })
       .catch(() => {
         if (!cancelled) setRequest(null);
+      });
+    fetch("/api/consult/mine")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!cancelled) setConsults(d?.items ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setConsults([]);
       });
     return () => {
       cancelled = true;
@@ -145,6 +157,43 @@ export function MyPageDashboard() {
         </span>
       </Link>
     );
+  }
+
+  /* ---------- 보호자: 진행 중인 상담 ---------- */
+  // 입소를 정하지 않은 건이 있을 때만 — 다 끝난 목록을 계속 띄우면 할 일처럼 보인다
+  if (consults && consults.length > 0) {
+    const pending = consults.filter((c) => c.status !== "입소결정").length;
+    const decided = consults.length - pending;
+    if (pending > 0) {
+      cards.push(
+        <Link
+          key="consults"
+          href="/mypage/consults"
+          className="animate-fade-up group flex items-center justify-between gap-3 rounded-2xl border border-royal-100 bg-white p-5 shadow-card transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:shadow-card-hover sm:p-6"
+          style={{ animationDelay: `${cards.length * 70}ms` }}
+        >
+          <span className="flex min-w-0 items-center gap-3.5">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-royal-50 text-royal-500">
+              <ClipboardList size={19} />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-[15px] font-bold text-ink-900">
+                상담 신청한 시설 {pending}곳
+              </span>
+              <span className="mt-0.5 block text-[13px] leading-snug text-ink-500">
+                {decided > 0
+                  ? `${decided}곳은 입소를 정하셨어요 · 나머지 진행 상황을 표시해두세요`
+                  : "연락받으셨다면 진행 상황을 표시해두세요"}
+              </span>
+            </span>
+          </span>
+          <ChevronRight
+            size={18}
+            className="shrink-0 text-ink-300 transition-transform duration-200 group-hover:translate-x-0.5"
+          />
+        </Link>
+      );
+    }
   }
 
   /* ---------- 매니저 위젯 ---------- */

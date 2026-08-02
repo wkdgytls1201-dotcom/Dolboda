@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardCheck,
+  ClipboardList,
   Heart,
   Scale,
   User,
@@ -48,6 +49,7 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
   const infoItems: NavItem[] = [
     { href: "/mypage", label: "계정 설정", icon: <Settings size={16} /> },
     { href: "/mypage/care-profile", label: "보호자 프로필", icon: <HeartHandshake size={16} /> },
+    { href: "/mypage/consults", label: "상담 신청 내역", icon: <ClipboardList size={16} /> },
     { href: "/mypage/edit", label: "정보 수정", icon: <ChevronRight size={16} /> },
   ];
 
@@ -250,16 +252,17 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
 
         {/* 모바일 빠른 메뉴 3종 — 케어닥의 공지/FAQ/고객센터 아이콘 줄 자리에,
             우리 앱에서 실제로 자주 오가는 화면(등급테스트·관심시설·시설비교)을 놓는다 */}
-        <div className="mb-5 grid grid-cols-3 overflow-hidden rounded-2xl bg-white shadow-card sm:hidden">
+        <div className="mb-5 grid grid-cols-4 overflow-hidden rounded-2xl bg-white shadow-card sm:hidden">
           {[
-            { href: "/grade-test", label: "등급테스트", icon: <ClipboardCheck size={20} /> },
-            { href: "/favorites", label: "관심시설", icon: <Heart size={20} /> },
-            { href: "/compare", label: "시설 비교", icon: <Scale size={20} /> },
+            { href: "/grade-test", label: "등급테스트", icon: <ClipboardCheck size={19} /> },
+            { href: "/mypage/consults", label: "상담내역", icon: <ClipboardList size={19} /> },
+            { href: "/favorites", label: "관심시설", icon: <Heart size={19} /> },
+            { href: "/compare", label: "시설비교", icon: <Scale size={19} /> },
           ].map((q, i) => (
             <Link
               key={q.href}
               href={q.href}
-              className={`flex min-h-[76px] flex-col items-center justify-center gap-1.5 text-[13px] font-semibold text-ink-700 transition-colors duration-150 active:bg-primary-50 ${
+              className={`flex min-h-[76px] flex-col items-center justify-center gap-1.5 text-[12px] font-semibold text-ink-700 transition-colors duration-150 active:bg-primary-50 ${
                 i > 0 ? "border-l border-ink-100/70" : ""
               }`}
             >
