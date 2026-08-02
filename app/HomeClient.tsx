@@ -8,11 +8,19 @@ import { CompareSelectBar } from "@/components/CompareSelectBar";
 import { StatsStrip } from "@/components/StatsStrip";
 import { Reveal } from "@/components/Reveal";
 import { LocationConsentModal } from "@/components/LocationConsentModal";
-import { useFacilities, useNearbyFacilities, type FacilityStats } from "@/lib/useFacilities";
+import { useNearbyFacilities, type FacilityStats } from "@/lib/useFacilities";
 import { DEFAULT_ORIGIN, haversineDistanceKm } from "@/lib/distance";
-import { isHospital } from "@/lib/types";
-import { PROMOTED_FACILITY_IDS } from "@/lib/promotedFacilities";
+import { isHospital, type Facility } from "@/lib/types";
 import { LOCATION_CONSENT_KEY, saveUserLocation, readUserLocation } from "@/lib/userLocation";
+
+// 홈 전용 경량 목록 — 추천 시설과 "가장 최근 설립"의 전국 대체 후보만 담겨 있다.
+// 예전엔 이 20여 건을 뽑으려고 전국 등록순 200건(약 150KB)을 통째로 받았다.
+interface HomeLists {
+  recommended: Facility[];
+  hospitals: Facility[];
+  others: Facility[];
+}
+const EMPTY_LISTS: HomeLists = { recommended: [], hospitals: [], others: [] };
 
 export default function HomeClient({
   initialStats,
@@ -21,8 +29,19 @@ export default function HomeClient({
   initialStats: FacilityStats;
   heroSlides: HeroSlide[];
 }) {
-  // 홈 카드들은 슬림 응답이면 충분 — 전체 응답은 평가 세부점수까지 실려 두 배 넘게 무겁다
-  const { facilities } = useFacilities({ cardView: true });
+  const [homeLists, setHomeLists] = useState<HomeLists>(EMPTY_LISTS);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/facilities/home")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!cancelled && d?.recommended) setHomeLists(d);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   // 통계는 서버(page.tsx)가 이미 넘겨줬다. 예전엔 여기서 /api/facilities/stats를 한 번 더
   // 불렀는데, 그 API도 같은 lib/facilityStats.ts 하루 캐시를 읽어서 값이 언제나 동일했다.
   // 방문마다 나가던 왕복 한 번을 그대로 없앤 것.
@@ -126,16 +145,9 @@ export default function HomeClient({
   });
   const nearbyFacilities = useMemo(() => nearbyPool.slice(0, 6), [nearbyPool]);
 
-  // 추천 시설: PROMOTED_FACILITY_IDS에 넣은 시설을 순서 그대로 맨 앞에 고정 노출하고,
-  // 남는 자리는 평가등급 1등급 시설로 채운다. (나중에 프리미엄 상품 구매 시 이 배열만 수정하면 됨)
-  const recommended = useMemo(() => {
-    const promoted = PROMOTED_FACILITY_IDS.map((id) => facilities.find((f) => f.id === id)).filter(
-      (f): f is NonNullable<typeof f> => f !== undefined
-    );
-    const promotedIdSet = new Set(promoted.map((f) => f.id));
-    const fallback = facilities.filter((f) => f.grade === 1 && !promotedIdSet.has(f.id));
-    return [...promoted, ...fallback].slice(0, 6);
-  }, [facilities]);
+  // 추천 시설: 서버(/api/facilities/home)가 프리미엄 고정 노출 + 1등급 채움까지
+  // 같은 기준으로 계산해서 6곳만 내려준다.
+  const recommended = homeLists.recommended;
 
   // 점수 높은 시설: 내 위치(또는 서울 기본값) 100km 이내로 좁힌 뒤 평가등급이 좋은(숫자가
   // 낮은) 순, 동점이면 정기평가 총점 순으로 정렬한다. 먼 지역의 고득점 시설은 의미가 적다.
@@ -166,11 +178,8 @@ export default function HomeClient({
     const nearbyHospitals = nearbyPool.filter(
       (f) => f.facilityType === "NURSING_HOSPITAL" && f.establishedYear !== undefined
     );
-    const hospitals = (
-      nearbyHospitals.length > 0
-        ? nearbyHospitals
-        : facilities.filter((f) => f.facilityType === "NURSING_HOSPITAL" && f.establishedYear !== undefined)
-    )
+    // 주변에 요양병원이 없으면 서버가 내려준 전국 최신 설립 후보(homeLists.hospitals)를 쓴다
+    const hospitals = (nearbyHospitals.length > 0 ? nearbyHospitals : homeLists.hospitals)
       .slice()
       .sort(byRecency)
       .slice(0, SLOTS);
@@ -180,17 +189,13 @@ export default function HomeClient({
 
     const otherTypes = new Set(["HOME_CARE", "NURSING_HOME", "DAY_NIGHT_CARE"]);
     const nearbyOthers = nearbyPool.filter((f) => otherTypes.has(f.facilityType) && f.grade !== null);
-    const others = (
-      nearbyOthers.length > 0
-        ? nearbyOthers
-        : facilities.filter((f) => otherTypes.has(f.facilityType) && f.grade !== null)
-    )
+    const others = (nearbyOthers.length > 0 ? nearbyOthers : homeLists.others)
       .slice()
       .sort(byGrade)
       .slice(0, remaining);
 
     return [...hospitals, ...others];
-  }, [nearbyPool, facilities]);
+  }, [nearbyPool, homeLists]);
 
   return (
     <main className="pb-24">
