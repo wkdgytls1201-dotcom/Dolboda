@@ -50,6 +50,23 @@ model Facility {
   @@index([dataSource])
 }
 
+// 시설 시계열 스냅샷 — 매일 새벽 공단 데이터를 자동 수집(scripts/daily-nhis-sync.mjs)하면서
+// 정원·현원·대기·등급이 "바뀐 시설만" 그날 값으로 적재한다(첫 실행일은 전체 기준선).
+// 쌓이면: 자리 난 시설 감지 → 찜한 시설 알림 → 대기 소진 속도 → 등급 변동 추적의 재료가 된다.
+// 어제 값이 필요하면 그 시설의 date <= 조회일 중 가장 최근 행을 읽으면 된다(변경분만 저장하므로).
+model FacilitySnapshot {
+  id               BigInt  @id @default(autoincrement())
+  facilityId       String
+  date             String // YYYY-MM-DD (KST 기준 수집일)
+  capacity         Int
+  currentOccupancy Int
+  waitlistCount    Int
+  grade            Int?
+
+  @@unique([facilityId, date])
+  @@index([date])
+}
+
 // 장기요양기관 업체 마스터 — 공단 "전국 장기요양기관 상세정보" 파일(11개 시트)을 병합한 원본.
 // 한 기관(instCode)이 방문요양·방문목욕·주야간보호처럼 급여종류별로 여러 행을 가진다.
 // Facility.extra를 채우는 소스이자, 나중에 업체 가입·프리미엄 노출과 연결할 기준 데이터.

@@ -1,0 +1,40 @@
+# 공단 장기요양기관 데이터 일일 자동 수집 — scripts/daily-nhis-sync.mjs 참고.
+# 매일 새벽 4시(KST, = 19:00 UTC)에 16개 지역 엑셀을 받아 변경분을 DB에 반영하고
+# FacilitySnapshot(시계열)을 적재한다. 실패하면 GitHub이 저장소 소유자에게 메일을 보낸다.
+#
+# 필요한 저장소 시크릿(Settings → Secrets and variables → Actions):
+#   DIRECT_URL — Supabase 직접 연결 문자열(.env.local의 DIRECT_URL 값 그대로)
+#   TELEGRAM_BOT_TOKEN·TELEGRAM_CHAT_ID — (선택) 매일 결과 요약·실패 알림을 텔레그램으로 받기
+name: daily-nhis-sync
+
+on:
+  schedule:
+    - cron: "0 19 * * *" # 19:00 UTC = 04:00 KST
+  workflow_dispatch: {} # 수동 실행 버튼 (테스트용)
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Prisma Client 생성
+        env:
+          # prisma.config.ts가 datasource url로 env("DIRECT_URL")을 평가한다
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+        run: npx prisma generate
+
+      - name: 수집·반영 실행
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: node scripts/daily-nhis-sync.mjs --write
