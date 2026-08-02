@@ -83,7 +83,9 @@ export function KakaoMap({
     return () => {
       cancelled = true;
     };
-  }, [lat, lng]);
+    // inView가 반드시 의존성에 있어야 한다 — 빠뜨리면 마운트 시 한 번(inView=false)만
+    // 실행되고 화면에 들어와도 다시 안 돌아 지도가 영영 안 그려진다(실제로 겪은 버그).
+  }, [lat, lng, inView]);
 
   if (lat === undefined || lng === undefined || failed) {
     return <MapPlaceholder label={failed ? "지도를 불러올 수 없어요" : label} />;
