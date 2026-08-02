@@ -73,8 +73,10 @@ function buildContent(
     ...(request.mealAssistLevel ? [`식사 도움(${request.mealAssistLevel})`] : []),
     ...(request.toiletAssistLevel ? [`배변 도움(${request.toiletAssistLevel})`] : []),
   ];
+  // 성함은 선택 항목이라 비어 있을 수 있다 — 그때 "미입력"을 서류에 박으면
+  // 빈칸을 강조하는 꼴이 된다. 아예 빼고 관계·성별·연령대로만 특정한다.
   const recipient = [
-    maskName(request.recipientName),
+    request.recipientName ? maskName(request.recipientName) : null,
     request.recipientRelation,
     request.recipientGender,
     request.recipientAgeBand,
