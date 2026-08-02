@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { requireAdmin } from "@/lib/admin";
+import { requireAdmin, currentSessionInfo } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 import { AdminClient } from "./AdminClient";
 
@@ -16,12 +16,31 @@ export const dynamic = "force-dynamic";
 export default async function AdminPage() {
   const admin = await requireAdmin();
   if (!admin) {
+    // 카카오 계정은 이메일이 없는 경우가 흔해서, 로그인한 본인에게만 계정 id를 보여준다.
+    // 운영자는 이 값을 Vercel의 ADMIN_USER_IDS에 넣으면 된다(제3자에겐 의미 없는 값이다).
+    const me = await currentSessionInfo();
     return (
       <main className="mx-auto max-w-md px-4 py-20 text-center">
         <h1 className="mb-2 text-xl font-bold text-ink-900">운영자 전용 화면이에요</h1>
-        <p className="text-sm leading-relaxed text-ink-500">
-          운영자 계정으로 로그인한 뒤 다시 열어주세요. 계정에 이메일이 없으면 접근할 수 없어요.
+        <p className="mb-4 text-sm leading-relaxed text-ink-500">
+          {me
+            ? "로그인은 됐지만 이 계정은 운영자로 등록돼 있지 않아요."
+            : "운영자 계정으로 로그인한 뒤 다시 열어주세요."}
         </p>
+        {me && (
+          <div className="rounded-2xl bg-white p-4 text-left shadow-card">
+            <p className="mb-1 text-xs text-ink-300">현재 로그인한 계정</p>
+            <p className="break-all font-mono text-sm font-bold text-ink-900">{me.userId}</p>
+            <p className="mt-0.5 text-xs text-ink-500">{me.email ?? "이메일 미제공(카카오)"}</p>
+            <p className="mt-3 text-xs leading-relaxed text-ink-500">
+              이 계정이 운영자 본인이라면, 위 id를 Vercel 환경변수{" "}
+              <code className="rounded bg-ink-100/60 px-1 font-mono text-[11px]">
+                ADMIN_USER_IDS
+              </code>
+              에 넣고 재배포하면 이 화면이 열려요.
+            </p>
+          </div>
+        )}
       </main>
     );
   }
