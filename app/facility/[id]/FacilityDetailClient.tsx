@@ -30,6 +30,7 @@ import { DetailSection } from "@/components/DetailSection";
 import { KakaoMap } from "@/components/KakaoMap";
 import { KakaoRoadview } from "@/components/KakaoRoadview";
 import { ConsultModal } from "@/components/ConsultModal";
+import { AuthModal } from "@/components/AuthModal";
 import { DataSourceNote } from "@/components/DataSourceNote";
 import { SimilarFacilities, type SimilarItem } from "@/components/SimilarFacilities";
 import { useCompare } from "@/lib/compareContext";
@@ -83,6 +84,8 @@ export default function FacilityDetailClient({
   const { data: session } = useSession();
   const user = session?.user;
   const [showConsult, setShowConsult] = useState(false);
+  // 비회원이 상담 신청을 누르면 먼저 뜨는 로그인/가입 창
+  const [showAuth, setShowAuth] = useState(false);
   // 의사·간호인력 등급 기준표 접기/펼치기
   const [showGradeCriteria, setShowGradeCriteria] = useState(false);
   // 프로그램 운영 아코디언 — null이면 첫 번째 종류만 열림, "__none__"이면 전부 접힘
@@ -1072,7 +1075,10 @@ export default function FacilityDetailClient({
           </button>
           <button
             type="button"
-            onClick={() => setShowConsult(true)}
+            // 비회원은 로그인부터 — 상담 신청은 이름·연락처를 남기는 일이라, 계정이 있어야
+            // 나중에 마이페이지에서 "내가 어디에 문의했는지"를 다시 볼 수 있다.
+            // (비로그인으로 받으면 진행 상황을 되짚어줄 방법이 없다)
+            onClick={() => (user ? setShowConsult(true) : setShowAuth(true))}
             className="flex-1 rounded-xl bg-primary-500 px-3 py-2.5 text-sm font-bold text-white shadow-soft transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:bg-primary-600 hover:shadow-card-hover active:translate-y-0 active:scale-95 sm:px-4"
           >
             상담 신청
@@ -1085,6 +1091,13 @@ export default function FacilityDetailClient({
           facilityId={facility.id}
           facilityName={facility.name}
           onClose={() => setShowConsult(false)}
+        />
+      )}
+
+      {showAuth && (
+        <AuthModal
+          onClose={() => setShowAuth(false)}
+          reason="상담 신청 내역을 마이페이지에서 다시 보실 수 있도록, 로그인 후 진행돼요."
         />
       )}
     </main>

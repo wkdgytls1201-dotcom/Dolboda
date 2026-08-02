@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { resend, CONSULT_NOTIFY_EMAIL, consultForwardEmailHtml } from "@/lib/resend";
+import { sendTelegram } from "@/lib/telegram";
 import { rateLimit, clientIp, tooManyRequests } from "@/lib/rateLimit";
 import { SITE_URL, SITE_NAME, MAIL_FROM } from "@/lib/siteConfig";
 
@@ -175,6 +176,33 @@ export async function POST(req: Request) {
       console.error("상담신청 운영자 알림 실패", err);
     }
   }
+
+  // 운영자 텔레그램 알림 — 메일함을 안 보고 있어도 폰으로 바로 뜬다.
+  // 이메일이 없어 직접 연락해야 하는 건은 몇 분이 지나면 문의자가 다른 곳을 알아보기 때문에,
+  // 도착 사실을 즉시 아는 게 실제로 중요하다.
+  //
+  // ⚠️ 어르신 건강 정보(profileLines)는 여기 담지 않는다 — 민감정보라 전달 경로를 늘리지
+  // 않는 게 원칙이다(§민감정보 동의는 사전 체크하지 않는다와 같은 계열의 판단).
+  // 상세 내용은 운영자 메일에 그대로 있으니 필요하면 거기서 본다.
+  await sendTelegram(
+    [
+      facilityNotified ? "📩 새 상담 신청" : "⚠️ 새 상담 신청 (직접 연락 필요)",
+      `· 시설: ${facility.name}`,
+      `· 문의자: ${name} / ${phone}`,
+      `· 접수: ${receivedAt}`,
+      `· 시설 자동안내: ${
+        facilityNotified
+          ? `발송됨 (${facilityEmail})`
+          : facilityEmail
+          ? "발송 실패 — 직접 연락 필요"
+          : "시설 이메일 없음 — 직접 연락 필요"
+      }`,
+      profileLines ? "· 어르신 정보 동의됨 — 메일 참고" : "",
+      `${SITE_URL}/facility/${facilityId}`,
+    ]
+      .filter(Boolean)
+      .join("\n")
+  );
 
   return NextResponse.json({ ok: true, facilityNotified });
 }

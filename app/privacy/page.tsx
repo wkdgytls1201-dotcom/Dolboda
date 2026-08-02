@@ -141,6 +141,14 @@ export default function PrivacyPage() {
             <td>클라우드/데이터베이스 인프라 제공업체</td>
             <td>서버 및 데이터베이스 호스팅</td>
           </tr>
+          <tr>
+            <td>Resend, Inc.</td>
+            <td>상담 신청 전달·돌봄 합의서 사본 등 이메일 발송</td>
+          </tr>
+          <tr>
+            <td>Telegram FZ-LLC</td>
+            <td>상담 신청 접수 사실의 운영자 알림 전송</td>
+          </tr>
         </tbody>
       </table>
 
