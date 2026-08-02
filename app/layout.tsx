@@ -9,13 +9,13 @@ import { ViewGateProvider } from "@/lib/viewGateContext";
 import { FavoritesProvider } from "@/lib/favoritesContext";
 import { CareProfileProvider } from "@/lib/careProfileContext";
 import { AlertPreferencesProvider } from "@/lib/alertPreferencesContext";
-import { SITE_URL, SITE_NAME, SITE_DESCRIPTION } from "@/lib/siteConfig";
+import { SITE_URL, SITE_NAME, SITE_TITLE, SITE_DESCRIPTION } from "@/lib/siteConfig";
 import { jsonLdHtml } from "@/lib/jsonLd";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "돌보다 — 전국 요양병원·요양시설 찾기·비교",
+    default: SITE_TITLE,
     template: "%s | 돌보다",
   },
   description: SITE_DESCRIPTION,
@@ -38,13 +38,13 @@ export const metadata: Metadata = {
     locale: "ko_KR",
     url: SITE_URL,
     siteName: SITE_NAME,
-    title: "돌보다 — 전국 요양병원·요양시설 찾기·비교",
+    title: SITE_TITLE,
     description: SITE_DESCRIPTION,
     images: [{ url: "/og.png", width: 1200, height: 630, alt: SITE_NAME }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "돌보다 — 전국 요양병원·요양시설 찾기·비교",
+    title: SITE_TITLE,
     description: SITE_DESCRIPTION,
     images: ["/og.png"],
   },

@@ -80,8 +80,10 @@ export const GUIDES: Guide[] = [
       },
     ],
     cta: [
-      { label: "전국 요양원 찾아보기", href: "/search?type=NURSING_HOME" },
-      { label: "전국 요양병원 찾아보기", href: "/search?type=NURSING_HOSPITAL" },
+      // "전국 ○○"는 검색 조건 URL(/search?type=…, noindex)이 아니라 전국 유형 허브로 보낸다.
+      // 그쪽이 실제 콘텐츠가 있는 페이지이고, 거기서 다시 지역별로 내려간다.
+      { label: "전국 요양원 찾아보기", href: "/요양원" },
+      { label: "전국 요양병원 찾아보기", href: "/요양병원" },
     ],
     related: ["nursing-home-cost", "grade-application", "checklist"],
   },
@@ -276,7 +278,7 @@ export const GUIDES: Guide[] = [
     ],
     cta: [
       { label: "등급 신청 방법 보기", href: "/guide/grade-application" },
-      { label: "요양병원 찾아보기", href: "/search?type=NURSING_HOSPITAL" },
+      { label: "요양병원 찾아보기", href: "/요양병원" },
     ],
     related: ["grade-application", "nursing-home-vs-hospital"],
   },
@@ -512,7 +514,7 @@ export const GUIDES: Guide[] = [
       },
     ],
     cta: [
-      { label: "방문요양센터 찾기", href: "/search?type=HOME_CARE" },
+      { label: "방문요양센터 찾기", href: "/방문요양" },
       { label: "돌봄 매니저에게 요청하기", href: "/services" },
     ],
     related: ["daycare-cost", "grade-application", "no-grade-admission"],

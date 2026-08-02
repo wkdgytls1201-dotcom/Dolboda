@@ -1,7 +1,7 @@
 import { prisma } from "./prisma";
 import { SITE_URL } from "./siteConfig";
 import { getRegionIndex } from "./regionData";
-import { findTypeSeoByType } from "./facilityTypeSeo";
+import { findTypeSeoByType, FACILITY_TYPE_SEO } from "./facilityTypeSeo";
 import { GUIDES } from "./guides";
 
 // 사이트맵을 종류별로 나눠 만든다. 한 파일에 3만 URL을 몰아넣으면 파일이 지나치게 크고,
@@ -33,10 +33,24 @@ export async function sitemapNames(): Promise<string[]> {
   ];
 }
 
-function staticEntries(): SitemapEntry[] {
+async function staticEntries(): Promise<SitemapEntry[]> {
+  // 전국 유형 허브(/요양원 등) — 시설이 0곳인 유형은 페이지 자체가 없으므로 넣지 않는다.
+  // 판단 기준을 app/[typeSlug]/page.tsx의 generateStaticParams와 똑같이 맞춰야
+  // 사이트맵에만 있고 열면 404인 URL이 생기지 않는다.
+  const index = await getRegionIndex();
+  const present = new Set(index.filter((r) => r.count > 0).map((r) => r.facilityType));
+  const hubEntries: SitemapEntry[] = FACILITY_TYPE_SEO.filter((t) => present.has(t.type)).map(
+    (t) => ({
+      loc: `${SITE_URL}/${encodeURIComponent(t.slug)}`,
+      changefreq: "weekly",
+      priority: 0.9,
+    })
+  );
+
   // 주의: /search는 noindex라 사이트맵에 넣지 않는다
   return [
     { loc: SITE_URL, changefreq: "daily", priority: 1 },
+    ...hubEntries,
     { loc: `${SITE_URL}/grade-test`, changefreq: "monthly", priority: 0.9 },
     { loc: `${SITE_URL}/grade-helper`, changefreq: "monthly", priority: 0.9 },
     { loc: `${SITE_URL}/services`, changefreq: "monthly", priority: 0.9 },
@@ -45,6 +59,7 @@ function staticEntries(): SitemapEntry[] {
     { loc: `${SITE_URL}/services/home`, changefreq: "monthly", priority: 0.85 },
     { loc: `${SITE_URL}/services/housekeeping`, changefreq: "monthly", priority: 0.85 },
     { loc: `${SITE_URL}/services/family`, changefreq: "monthly", priority: 0.85 },
+    { loc: `${SITE_URL}/business`, changefreq: "monthly", priority: 0.8 },
     { loc: `${SITE_URL}/about`, changefreq: "monthly", priority: 0.7 },
     { loc: `${SITE_URL}/data-policy`, changefreq: "monthly", priority: 0.7 },
     { loc: `${SITE_URL}/compare`, changefreq: "weekly", priority: 0.5 },

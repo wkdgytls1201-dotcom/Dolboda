@@ -10,7 +10,10 @@ export const FREE_VIEW_LIMIT = 5;
 export function getViewedIds(): string[] {
   if (typeof window === "undefined") return [];
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]");
+    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]");
+    // 배열인지까지 확인한다 — 예전 형식이나 다른 값이 이 키에 들어 있으면
+    // 아래 viewed.includes()에서 터져 시설 상세가 통째로 열리지 않는다.
+    return Array.isArray(parsed) ? parsed.filter((v) => typeof v === "string") : [];
   } catch {
     return [];
   }

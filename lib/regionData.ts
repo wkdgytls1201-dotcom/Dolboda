@@ -207,6 +207,119 @@ export const getTopFacilities = cache(
   }
 );
 
+export interface NationwideTypeSummary {
+  total: number;
+  /** 시/도별 시설 수 (내림차순) — 시/도 랜딩으로 내려보내는 내부 링크 */
+  bySido: { slug: string; label: string; count: number }[];
+  /** 이 유형이 많은 시/군/구 (내림차순) — 지역+유형 페이지로 바로 내려보낸다 */
+  topSigungu: { sidoSlug: string; sidoLabel: string; sigungu: string; count: number }[];
+}
+
+/**
+ * 전국 유형 허브(/요양원 등)가 쓰는 요약.
+ * 이미 하루 캐시된 getRegionIndex가 (시도·시군구·유형)별 개수를 전부 갖고 있어
+ * DB를 추가로 치지 않는다 — 허브 페이지를 붙이는 데 드는 쿼리 비용이 0이다.
+ */
+export const getNationwideTypeSummary = cache(
+  async (facilityType: FacilityType): Promise<NationwideTypeSummary> => {
+    const index = await getRegionIndex();
+    const sidoCounts = new Map<string, number>();
+    const sigunguRows: NationwideTypeSummary["topSigungu"] = [];
+    let total = 0;
+
+    for (const row of index) {
+      if (row.facilityType !== facilityType) continue;
+      total += row.count;
+      sidoCounts.set(row.sidoSlug, (sidoCounts.get(row.sidoSlug) ?? 0) + row.count);
+      const region = REGION_SEO.find((r) => r.slug === row.sidoSlug);
+      if (region) {
+        sigunguRows.push({
+          sidoSlug: row.sidoSlug,
+          sidoLabel: region.label,
+          sigungu: row.sigungu,
+          count: row.count,
+        });
+      }
+    }
+
+    return {
+      total,
+      bySido: REGION_SEO.filter((r) => (sidoCounts.get(r.slug) ?? 0) > 0)
+        .map((r) => ({ slug: r.slug, label: r.label, count: sidoCounts.get(r.slug)! }))
+        .sort((a, b) => b.count - a.count),
+      topSigungu: sigunguRows.sort((a, b) => b.count - a.count),
+    };
+  }
+);
+
+/**
+ * 전국 단위 유형별 통계 — 지역 통계와 같은 기준(mock 제외)으로 센다.
+ *
+ * total을 여기서 같이 세는 이유: getRegionIndex는 주소에서 시/군/구를 뽑지 못한 시설
+ * (전국 140곳)을 빼고 집계해서, 그 합을 그대로 쓰면 "전국 요양원 6,210곳"처럼 사이트의
+ * 실제 집계(28,834곳)와 어긋난 숫자가 제목·설명에 박힌다. 허브의 대표 숫자는 DB 실집계다.
+ */
+export const getNationwideTypeStats = unstable_cache(
+  async (
+    facilityType: string
+  ): Promise<
+    RegionStats & { total: number; gradeCounts: { grade: number; count: number }[] }
+  > => {
+    const rows = await prisma.$queryRaw<
+      {
+        total: bigint;
+        graded: bigint;
+        vacancy: bigint;
+        avg_capacity: number | null;
+        g1: bigint;
+        g2: bigint;
+        g3: bigint;
+        g4: bigint;
+        g5: bigint;
+      }[]
+    >`
+      SELECT
+        COUNT(*) AS total,
+        COUNT(*) FILTER (WHERE grade IS NOT NULL) AS graded,
+        COUNT(*) FILTER (WHERE grade = 1) AS g1,
+        COUNT(*) FILTER (WHERE grade = 2) AS g2,
+        COUNT(*) FILTER (WHERE grade = 3) AS g3,
+        COUNT(*) FILTER (WHERE grade = 4) AS g4,
+        COUNT(*) FILTER (WHERE grade = 5) AS g5,
+        COUNT(*) FILTER (
+          WHERE "facilityType" != 'HOME_CARE'
+            AND extra ? 'currentOccupancy'
+            AND (extra->>'capacity')::numeric > 0
+            AND (extra->>'capacity')::numeric - (extra->>'currentOccupancy')::numeric > 0
+        ) AS vacancy,
+        AVG((extra->>'capacity')::numeric) FILTER (
+          WHERE "facilityType" != 'HOME_CARE' AND (extra->>'capacity')::numeric > 0
+        ) AS avg_capacity
+      FROM "Facility"
+      WHERE "dataSource" != 'mock' AND "facilityType"::text = ${facilityType}
+    `;
+
+    const row = rows[0];
+    const n = (v: bigint | undefined) => Number(v ?? 0);
+    return {
+      total: n(row?.total),
+      graded: n(row?.graded),
+      topGrade: n(row?.g1),
+      vacancy: n(row?.vacancy),
+      avgCapacity: row?.avg_capacity != null ? Math.round(Number(row.avg_capacity)) : null,
+      gradeCounts: [
+        { grade: 1, count: n(row?.g1) },
+        { grade: 2, count: n(row?.g2) },
+        { grade: 3, count: n(row?.g3) },
+        { grade: 4, count: n(row?.g4) },
+        { grade: 5, count: n(row?.g5) },
+      ],
+    };
+  },
+  ["nationwide-type-stats"],
+  { revalidate: 86400 }
+);
+
 export interface RegionStats {
   /** 평가등급 1등급(A등급) 시설 수 */
   topGrade: number;

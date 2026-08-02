@@ -1,15 +1,17 @@
 # 돌보다 (Dolboda)
 
-> 전국 요양병원·요양원·주야간보호센터·방문요양센터 22,000여 곳의 정보를 제공하는 한국 요양시설 검색·비교 서비스. 건강보험심사평가원(HIRA)·국민건강보험공단(NHIS) 공공데이터를 기반으로 평가등급, 비급여 비용, 인력 현황을 한눈에 비교할 수 있다.
+> 전국 요양병원·요양원·주야간보호센터·방문요양센터 2만8천여 곳의 정보를 제공하는 한국 요양시설 검색·비교 서비스. 건강보험심사평가원(HIRA)·국민건강보험공단(NHIS) 공공데이터를 기반으로 평가등급, 비급여 비용, 인력 현황을 한눈에 비교할 수 있다.
 
 ## 주요 페이지
 
-- [홈](https://dolboda-rho.vercel.app/): 내 주변 시설, 추천 시설, 평가등급 우수 시설
-- [시설 검색](https://dolboda-rho.vercel.app/search): 지역·시설 유형·평가등급 필터 검색
-- [돌봄 서비스](https://dolboda-rho.vercel.app/services): 병원 간병·집에서 돌봄·가사 돌봄·가족 간병 비교와 요청
-- [장기요양등급 예상 테스트](https://dolboda-rho.vercel.app/grade-test): 인정조사표 52개 항목 기반 자가진단, 등급별 이용 서비스와 신청 절차 안내
-- [지역별 요양시설](https://dolboda-rho.vercel.app/region/서울): 시/도 → 시/군/구 → 서비스 유형 단위 목록·비교 (예: /region/경남/사천시/방문요양)
-- [시설 비교](https://dolboda-rho.vercel.app/compare): 최대 3곳 나란히 비교
+- [홈](https://www.dolboda.kr/): 내 주변 시설, 추천 시설, 평가등급 우수 시설
+- [시설 검색](https://www.dolboda.kr/search): 지역·시설 유형·평가등급 필터 검색
+- [돌봄 서비스](https://www.dolboda.kr/services): 병원 간병·집에서 돌봄·가사 돌봄·가족 간병 비교와 요청
+- [장기요양등급 예상 테스트](https://www.dolboda.kr/grade-test): 인정조사표 52개 항목 기반 자가진단, 등급별 이용 서비스와 신청 절차 안내
+- [지역별 요양시설](https://www.dolboda.kr/region/서울): 시/도 → 시/군/구 → 서비스 유형 단위 목록·비교 (예: /region/경남/사천시/방문요양)
+- [시설 비교](https://www.dolboda.kr/compare): 최대 3곳 나란히 비교
+- [요양 가이드](https://www.dolboda.kr/guide): 요양원과 요양병원의 차이, 비용, 등급 신청 등 보호자 질문형 콘텐츠
+- [데이터 출처·안심지수 계산 방식](https://www.dolboda.kr/data-policy): 어떤 공공데이터를 어떻게 쓰는지, 안심지수 산출 방법
 
 ## 서비스 특징
 
@@ -20,6 +22,7 @@
 
 ## 참고
 
+- 정식 도메인은 https://www.dolboda.kr 하나이며, 다른 주소로 소개된 링크는 이곳으로 영구 이동한다
 - 데이터 출처: 건강보험심사평가원, 국민건강보험공단 공공데이터 (시설 정보는 실제와 다를 수 있음)
 - 운영: 돌보다 (개인 프로젝트)
-- 사이트맵: https://dolboda-rho.vercel.app/sitemap.xml
+- 사이트맵: https://www.dolboda.kr/sitemap.xml

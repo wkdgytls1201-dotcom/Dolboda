@@ -24,11 +24,14 @@ export default function SearchPage() {
   return (
     <>
       <SearchPageClient />
-      {/* 검색봇용 서버 렌더 안내 — 화면에서도 검색 결과 아래에 유형 설명으로 보인다 */}
+      {/* 검색봇용 서버 렌더 안내 — 화면에서도 검색 결과 아래에 유형 설명으로 보인다.
+          이 제목이 페이지의 h1이다: 검색 UI 쪽은 검색창부터 시작해 제목 자리가 없고,
+          그대로 두면 색인이 허용된 /search에 h1이 하나도 없게 된다(실측으로 확인).
+          위치가 아래라도 문서에 h1이 있는 편이 낫고, 보이는 크기는 그대로 둔다. */}
       <section className="mx-auto max-w-6xl px-4 pb-24 pt-4">
-        <h2 className="mb-2 text-base font-bold text-ink-900">
+        <h1 className="mb-2 text-base font-bold text-ink-900">
           전국 요양병원·요양원·주야간보호·방문요양 검색
-        </h2>
+        </h1>
         <p className="mb-4 text-sm leading-relaxed text-ink-500">
           돌보다는 국민건강보험공단·건강보험심사평가원 공공데이터 기반으로 전국 28,000여 개
           요양시설의 평가등급, 비급여 비용, 인력 현황, 프로그램 정보를 비교할 수 있는

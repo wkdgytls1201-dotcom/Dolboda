@@ -20,10 +20,14 @@ export function unsubscribeToken(email: string): string {
 }
 
 export function verifyUnsubscribeToken(email: string, token: string): boolean {
-  const expected = unsubscribeToken(email);
-  if (token.length !== expected.length) return false;
-  // 문자열 비교 시간으로 토큰을 한 글자씩 맞춰가는 공격을 막는다
-  return timingSafeEqual(Buffer.from(expected), Buffer.from(token));
+  const expected = Buffer.from(unsubscribeToken(email));
+  const given = Buffer.from(token);
+  // 길이는 반드시 **바이트**로 비교한다. 글자 수로 보면 한글 32글자(96바이트)짜리 토큰이
+  // 32글자 검사를 통과해 timingSafeEqual까지 내려가고, 거기서 길이가 다르다며 예외를 던져
+  // 400이어야 할 잘못된 요청이 500이 된다(실측: ERR_CRYPTO_TIMING_SAFE_EQUAL_LENGTH).
+  if (given.length !== expected.length) return false;
+  // 비교에 걸리는 시간으로 토큰을 한 바이트씩 맞춰가는 공격을 막는다
+  return timingSafeEqual(expected, given);
 }
 
 /** 발송 직전에 부른다. 한 번 거부한 주소로는 두 번 다시 보내지 않는다. */

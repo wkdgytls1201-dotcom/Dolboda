@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { MapPin, ChevronRight } from "lucide-react";
 import { FACILITY_TYPE_LABEL, type FacilityType } from "@/lib/types";
+import type { FacilityTypeSeo } from "@/lib/facilityTypeSeo";
+import { withParticle } from "@/lib/korean";
 
 // 지역 SEO 랜딩 페이지(/region/...)에서 쓰는 서버 렌더링 조각들.
 // 클라이언트 훅 없이 순수 마크업이라 검색엔진·AI 크롤러가 그대로 읽는다.
@@ -80,11 +82,38 @@ export interface RegionFaqContext {
   total?: number;
   /** 유형별 시설 수 — 요양원 수 등 구체 숫자를 답에 넣는다 */
   typeCounts?: Partial<Record<FacilityType, number>>;
+  /**
+   * 유형 페이지(/region/[시도]/[시군구]/[유형])일 때만 넘긴다.
+   * 넘기면 질문·답이 통째로 그 유형에 맞는 것으로 바뀐다.
+   */
+  typeSeo?: FacilityTypeSeo;
 }
 
 export function buildRegionFaq(ctx: RegionFaqContext = {}): { q: string; a: string }[] {
   const at = ctx.regionName ? `${ctx.regionName}에서 ` : "";
   const faq: { q: string; a: string }[] = [];
+
+  // 유형 페이지 — 여기서 넘어오는 total은 "그 유형"의 시설 수다.
+  // 공통 FAQ를 그대로 쓰면 "김해시에는 요양시설이 몇 곳 있나요?"에 요양원 수만 답해
+  // 전체 요양시설이 22곳뿐인 것처럼 읽혔다(실제 김해시 전체는 그보다 훨씬 많다).
+  if (ctx.typeSeo) {
+    const { label, faq: typeFaq } = ctx.typeSeo;
+    if (ctx.regionName && ctx.total) {
+      faq.push({
+        q: `${ctx.regionName}에는 ${withParticle(label, "이", "가")} 몇 곳 있나요?`,
+        a: `돌보다에 등록된 ${ctx.regionName} ${withParticle(
+          label,
+          "은",
+          "는"
+        )} 총 ${ctx.total.toLocaleString()}곳이에요. 국민건강보험공단·건강보험심사평가원 공공데이터 기준이라 실제 운영 여부와 입소 가능 여부는 시설에 확인해 주세요.`,
+      });
+    }
+    // {지역} 자리를 실제 지역명으로 채운다. 지역명이 없으면 자연스럽게 문장에서 걷어낸다.
+    const fill = (s: string) =>
+      ctx.regionName ? s.replaceAll("{지역}", ctx.regionName) : s.replaceAll("{지역} ", "");
+    faq.push(...typeFaq.map((item) => ({ q: fill(item.q), a: fill(item.a) })));
+    return faq;
+  }
 
   if (ctx.regionName && ctx.total) {
     const parts = ctx.typeCounts
