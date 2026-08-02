@@ -66,6 +66,44 @@ export function consultForwardEmailHtml(params: {
                 <p style="margin:20px 0 0;font-size:13px;line-height:1.6;color:#6B647F;">
                   문의자에게 직접 연락해 상담을 진행해 주세요.
                 </p>
+
+                <hr style="border:none;border-top:1px solid #EFECF6;margin:22px 0 18px;" />
+
+                <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#1B1730;">
+                  ${SITE_NAME}는 어떤 서비스인가요
+                </p>
+                <p style="margin:0 0 14px;font-size:12px;line-height:1.75;color:#6B647F;">
+                  전국 요양병원·요양원·주야간보호·방문요양 <strong>28,000여 곳</strong>의 정보를
+                  한 화면에서 비교할 수 있게 정리한 서비스입니다.
+                  <strong>국민건강보험공단</strong>과 <strong>건강보험심사평가원</strong>이 공개한
+                  자료를 사용하며, 평가등급·인력 현황·비급여 비용·프로그램 운영처럼 여러 곳에
+                  흩어져 있던 정보를 보호자가 한 번에 확인할 수 있게 합니다.
+                </p>
+                <p style="margin:0 0 14px;font-size:12px;line-height:1.75;color:#6B647F;">
+                  가족을 모실 곳을 갑자기 찾아야 하는 보호자는 대개 어디서부터 알아봐야 할지
+                  모르는 상태에서 시작합니다. 저희는 시설과 보호자 사이의
+                  <strong>정보 비대칭을 줄이는 일</strong>을 합니다 — 발품과 입소문에 기대던 과정을,
+                  공개된 데이터로 먼저 비교하고 방문할 곳을 좁히는 과정으로 바꾸는 것입니다.
+                  어느 시설을 선택할지는 보호자와 시설이 직접 상담해 정하는 일이며,
+                  ${SITE_NAME}는 그 사이에 개입하지 않습니다.
+                </p>
+
+                <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#1B1730;">
+                  정보가 실제와 다르다면 알려주세요
+                </p>
+                <p style="margin:0 0 14px;font-size:12px;line-height:1.75;color:#6B647F;">
+                  표시되는 정보는 공공데이터를 기준으로 하기 때문에 갱신 시점 차이로 실제와 다를 수
+                  있습니다. 정정이 필요한 내용이 있으면 <strong>이 메일에 회신</strong>해 주시면
+                  확인 후 반영하겠습니다.
+                </p>
+
+                <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#1B1730;">
+                  문의 전달을 원하지 않으시면
+                </p>
+                <p style="margin:0;font-size:12px;line-height:1.75;color:#6B647F;">
+                  앞으로 상담 문의 전달을 받지 않으시려면 이 메일에 <strong>“수신거부”</strong>라고
+                  회신해 주세요. 이후 귀 시설로는 전달하지 않습니다.
+                </p>
               </td>
             </tr>
             <tr>
@@ -73,7 +111,10 @@ export function consultForwardEmailHtml(params: {
                 <p style="margin:0;font-size:11px;line-height:1.6;color:#A9A3BC;">
                   이 메일은 ${SITE_NAME} 이용자가 귀 시설에 남긴 상담 신청을 전달하는
                   안내 메일이며, 광고성 정보가 아니에요.<br />
-                  문의사항은 <a href="${SITE_URL}/about" style="color:#FF6250;">${SITE_URL}/about</a>
+                  <a href="${SITE_URL}" style="color:#FF6250;">${SITE_URL.replace(/^https?:\/\//, "")}</a>
+                  · 운영 주체와 데이터 출처는
+                  <a href="${SITE_URL}/about" style="color:#FF6250;">/about</a>,
+                  <a href="${SITE_URL}/data-policy" style="color:#FF6250;">/data-policy</a>
                   에서 확인하실 수 있어요.
                 </p>
               </td>
