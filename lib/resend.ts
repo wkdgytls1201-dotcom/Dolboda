@@ -37,9 +37,9 @@ export function consultForwardEmailHtml(params: {
               <td bgcolor="#FF6250" style="padding:32px 28px 26px;text-align:center;background:#FF6250;background-image:linear-gradient(135deg,#FF6250 0%,#FF8A73 55%,#FFB48C 100%);">
                 <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 14px;">
                   <tr>
-                    <td bgcolor="#FFFFFF" width="68" height="68" align="center" valign="middle" style="width:68px;height:68px;background:#ffffff;border-radius:34px;text-align:center;vertical-align:middle;">
+                    <td bgcolor="#FFFFFF" width="92" height="92" align="center" valign="middle" style="width:92px;height:92px;background:#ffffff;border-radius:46px;text-align:center;vertical-align:middle;">
                       <a href="${SITE_URL}" style="text-decoration:none;display:block;">
-                        <img src="${SITE_URL}/logo.png" alt="${SITE_NAME}" width="42" height="42" style="display:block;margin:0 auto;border:0;" />
+                        <img src="${SITE_URL}/logo.png" alt="${SITE_NAME}" width="60" height="60" style="display:block;margin:0 auto;border:0;" />
                       </a>
                     </td>
                   </tr>
@@ -90,31 +90,66 @@ export function consultForwardEmailHtml(params: {
 
                 <hr style="border:none;border-top:1px solid #EFECF6;margin:22px 0 18px;" />
 
-                <p style="margin:0 0 7px;font-size:15px;font-weight:700;color:#1B1730;">
+                <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1B1730;">
                   ${SITE_NAME}는 어떤 서비스인가요
                 </p>
-                <p style="margin:0 0 16px;font-size:14px;line-height:1.75;color:#6B647F;">
+                <p style="margin:0 0 12px;font-size:14px;line-height:1.85;color:#5B5470;">
+                  ${SITE_NAME}는 <strong>고령화 시대의 돌봄 정보 격차를 해소하는 시니어 케어
+                  플랫폼</strong>입니다.
+                </p>
+                <p style="margin:0 0 12px;font-size:14px;line-height:1.85;color:#5B5470;">
+                  노인 돌봄 시장은 빠르게 성장하고 있지만, 보호자가 믿을 수 있는 요양시설과 돌봄
+                  서비스를 찾는 과정은 여전히 어렵고 복잡합니다. 시설마다 안내하는 정보의 기준이
+                  다르고, 실제 서비스의 내용이나 비용을 객관적으로 비교하기도 쉽지 않습니다.
+                </p>
+                <p style="margin:0 0 12px;font-size:14px;line-height:1.85;color:#5B5470;">
+                  ${SITE_NAME}는 이러한 <strong>돌봄 시장의 정보 비대칭을 해소하고, 보호자의
+                  합리적인 의사결정을 돕기 위해</strong> 만들어졌습니다.
                   <strong>국민건강보험공단</strong>·<strong>건강보험심사평가원</strong>이 공개한
-                  자료로 전국 요양시설 <strong>28,000여 곳</strong>의 평가등급·인력·비용을 한 화면에서
-                  비교하는 서비스입니다. 시설과 보호자 사이의
-                  <strong>정보 비대칭을 줄이는 것</strong>이 저희가 하는 일이며, 상담과 선택은
-                  두 분이 직접 하시고 ${SITE_NAME}는 개입하지 않습니다.
+                  자료를 바탕으로 전국 요양시설 <strong>28,000여 곳</strong>의 위치·비용·인력 현황·
+                  평가 정보·제공 서비스를 한곳에 모아, 보호자가 쉽고 투명하게 확인할 수 있도록
+                  제공합니다.
+                </p>
+                <p style="margin:0 0 18px;font-size:14px;line-height:1.85;color:#5B5470;">
+                  어느 시설을 선택할지는 보호자와 시설이 직접 상담해 정하시며, ${SITE_NAME}는
+                  그 사이에 개입하거나 순위를 임의로 바꾸지 않습니다.
                 </p>
 
-                <p style="margin:0 0 7px;font-size:15px;font-weight:700;color:#1B1730;">
-                  정보가 실제와 다르다면
+                <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1B1730;">
+                  혹시 정보가 실제와 다르다면
                 </p>
-                <p style="margin:0 0 16px;font-size:14px;line-height:1.75;color:#6B647F;">
-                  공공데이터 기준이라 갱신 시점 차이가 있을 수 있습니다.
-                  <strong>이 메일에 회신</strong>해 주시면 확인 후 바로잡겠습니다.
+                <p style="margin:0 0 18px;font-size:14px;line-height:1.85;color:#5B5470;">
+                  공공데이터를 기준으로 하다 보니 갱신 시점에 따라 현황과 차이가 생길 수 있습니다.
+                  귀 시설을 찾는 보호자에게 정확한 정보가 닿는 일이 무엇보다 중요하기에,
+                  바로잡을 내용이 있으시면 <strong>이 메일에 회신</strong>해 주십시오.
+                  확인 후 신속히 반영하겠습니다.
                 </p>
 
-                <p style="margin:0 0 7px;font-size:15px;font-weight:700;color:#1B1730;">
+                <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1B1730;">
                   문의 전달을 원하지 않으시면
                 </p>
-                <p style="margin:0;font-size:14px;line-height:1.75;color:#6B647F;">
-                  <strong>“수신거부”</strong>라고 회신해 주시면 이후 전달하지 않습니다.
+                <p style="margin:0;font-size:14px;line-height:1.85;color:#5B5470;">
+                  <strong>“수신거부”</strong>라고 회신해 주시면 이후 귀 시설로는 문의를 전달하지
+                  않습니다. 번거롭게 해 드리지 않겠습니다.
                 </p>
+
+                <!-- 맺음말 — 광고가 아니라 인사다. 제안·권유·혜택 문구는 넣지 않는다. -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0 0;background:#FFF7E9;border-radius:14px;">
+                  <tr>
+                    <td style="padding:20px 22px;">
+                      <p style="margin:0 0 10px;font-size:14px;line-height:1.85;color:#7A5B3A;">
+                        요양의 하루는 밖에서 잘 보이지 않습니다. 새벽에 불을 켜고, 식사를 챙기고,
+                        밤사이 몇 번씩 살피는 일들은 기록에도 잘 남지 않지요.
+                        저희는 그 보이지 않는 시간이 쌓여 우리 사회를 조금씩 더 따뜻하게 만들고
+                        있다고 믿습니다.
+                      </p>
+                      <p style="margin:0;font-size:14px;line-height:1.85;color:#7A5B3A;">
+                        오늘 도착한 이 문의도, 그 시간을 믿고 문을 두드린 한 가족의 마음입니다.
+                        <strong style="color:#B15E13;">귀 시설이 걸어가시는 길을 진심으로 응원합니다.</strong>
+                      </p>
+                    </td>
+                  </tr>
+                </table>
               </td>
             </tr>
             <tr>
