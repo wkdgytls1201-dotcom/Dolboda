@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { Pencil, Plus, X, User } from "lucide-react";
+import { Camera, Pencil, Plus, X, User } from "lucide-react";
 import { MyPageShell } from "@/components/MyPageShell";
 import { PageLoader } from "@/components/PageLoader";
 import { REGIONS } from "@/lib/regions";
 import { useSitterProfileContext, SitterProfileData } from "@/lib/sitterProfileContext";
 import { sitterProgress } from "@/lib/sitterProgress";
 import { maskAccount } from "@/lib/maskAccount";
+import { toSquareImage } from "@/lib/squareImage";
 
 type SitterProfile = SitterProfileData;
 
@@ -36,6 +37,9 @@ export default function SitterProfilePage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   // photoUrl이 깨진 링크일 때 브라우저 기본 "깨진 이미지" 아이콘 대신 기본 아바타로 대체
   const [photoFailed, setPhotoFailed] = useState(false);
+  // 업로드가 끝나기 전에도 고른 사진을 바로 보여준다(저장 후 서버 URL로 교체된다)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
 
   useEffect(() => {
     if (contextProfile === undefined) return; // 아직 로딩 중
@@ -74,6 +78,53 @@ export default function SitterProfilePage() {
       return null;
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function uploadPhoto(file: File) {
+    setSaveError(null);
+    setPhotoBusy(true);
+    try {
+      // 원본 그대로 보내면 폰 사진 한 장이 몇 MB다 — 브라우저에서 정사각 512px로 줄인다.
+      const { blob, previewUrl } = await toSquareImage(file);
+      setPhotoPreview(previewUrl);
+      const res = await fetch("/api/sitter-profile/photo", {
+        method: "POST",
+        headers: { "Content-Type": blob.type },
+        body: blob,
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(body?.error ?? "사진을 저장하지 못했어요.");
+      }
+      const updated: SitterProfileData = await res.json();
+      setProfile(updated);
+      updateContextProfile(updated);
+      setPhotoFailed(false);
+      setPhotoPreview(null);
+    } catch (e) {
+      setPhotoPreview(null);
+      setSaveError(e instanceof Error ? e.message : "사진을 저장하지 못했어요.");
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
+
+  async function removePhoto() {
+    if (!confirm("프로필 사진을 삭제할까요?")) return;
+    setSaveError(null);
+    setPhotoBusy(true);
+    try {
+      const res = await fetch("/api/sitter-profile/photo", { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      const updated: SitterProfileData = await res.json();
+      setProfile(updated);
+      updateContextProfile(updated);
+      setPhotoPreview(null);
+    } catch {
+      setSaveError("사진을 삭제하지 못했어요.");
+    } finally {
+      setPhotoBusy(false);
     }
   }
 
@@ -210,26 +261,76 @@ export default function SitterProfilePage() {
           </div>
 
           <div className="mb-4 flex items-center gap-3">
-            {profile.photoUrl && !photoFailed ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={profile.photoUrl}
-                alt=""
-                onError={() => setPhotoFailed(true)}
-                className="h-14 w-14 rounded-full object-cover"
-              />
-            ) : (
-              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-50 text-primary-500">
-                <User size={22} />
-              </span>
-            )}
-            <div>
+            {/* 사진은 보호자가 매니저를 고를 때 가장 먼저 보는 정보라, 아바타 자체를
+                누르면 바로 바꿀 수 있게 한다(별도 "수정" 진입 없이). */}
+            <div className="relative shrink-0">
+              {photoPreview ?? (profile.photoUrl && !photoFailed ? profile.photoUrl : null) ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={photoPreview ?? profile.photoUrl!}
+                  alt=""
+                  onError={() => setPhotoFailed(true)}
+                  className="h-16 w-16 rounded-full object-cover"
+                />
+              ) : (
+                <span className="flex h-16 w-16 items-center justify-center rounded-full bg-primary-50 text-primary-500">
+                  <User size={24} />
+                </span>
+              )}
+              <label
+                className={`absolute -bottom-1 -right-1 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-primary-500 text-white shadow-soft transition-transform active:scale-90 ${
+                  photoBusy ? "opacity-60" : "hover:bg-primary-600"
+                }`}
+              >
+                <Camera size={14} aria-hidden />
+                <span className="sr-only">프로필 사진 {profile.photoUrl ? "바꾸기" : "올리기"}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  disabled={photoBusy}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = ""; // 같은 파일을 다시 골라도 onChange가 오게
+                    if (file) uploadPhoto(file);
+                  }}
+                  className="sr-only"
+                />
+              </label>
+            </div>
+            <div className="min-w-0">
               <p className="font-bold text-ink-900">{profile.nickname}</p>
               <p className="text-xs text-ink-300">
                 {profile.nationality} · 경력 {profile.experienceYears}년
               </p>
+              <div className="mt-1 flex items-center gap-2 text-[12px]">
+                {photoBusy ? (
+                  <span className="font-semibold text-primary-600">사진 올리는 중…</span>
+                ) : (
+                  <>
+                    <span className="text-ink-300">
+                      {profile.photoUrl ? "얼굴이 잘 보이는 사진일수록 좋아요" : "얼굴 사진을 올려주세요"}
+                    </span>
+                    {profile.photoUrl && (
+                      <button
+                        type="button"
+                        onClick={removePhoto}
+                        className="font-semibold text-ink-400 underline underline-offset-2 hover:text-ink-700"
+                      >
+                        삭제
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           </div>
+
+          {!profile.photoUrl && (
+            <p className="mb-4 rounded-xl bg-ink-100/40 px-3.5 py-2.5 text-[12px] leading-relaxed text-ink-500">
+              보호자는 어르신을 맡길 사람을 고르는 중이에요. 밝은 곳에서 정면으로 찍은 얼굴
+              사진 한 장이 자기소개보다 먼저 신뢰를 만듭니다. 사진은 512px로 줄여 저장돼요.
+            </p>
+          )}
 
           {editSection === "basic" ? (
             <div className="space-y-2.5">
