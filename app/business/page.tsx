@@ -43,8 +43,8 @@ const WHY = [
   },
   {
     icon: Megaphone,
-    title: "찾고 있는 보호자에게만 닿습니다",
-    desc: "우리 시·군·구에서 시설을 알아보는 사람에게 노출됩니다. 불특정 다수에게 뿌리는 광고와 달리, 이미 입소를 고민 중인 보호자예요.",
+    title: "찾고 있는 보호자에게 닿습니다",
+    desc: "우리 시·군·구에서 시설을 알아보는 보호자가 매일 돌보다를 봅니다. 이미 입소를 고민 중인 가족에게 정확한 정보로 닿을 수 있어요.",
   },
 ];
 
@@ -55,15 +55,15 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "정말 무료인가요?",
-    a: "네. 인증, 시설 페이지 관리(소개글·사진), 상담 신청 수신, 기본 통계까지 무료입니다. 노출을 더 키우고 싶은 시설을 위한 확장 상품이 따로 있는데, 인증을 마치면 시설 콘솔에서 안내드려요. 확장 상품을 쓰지 않아도 무료 기능은 계속 그대로입니다.",
+    a: "네. 인증, 시설 페이지 관리(소개글·사진), 상담 신청 수신, 기본 통계까지 모두 무료입니다. 약정이나 자동 결제 같은 것도 없어요.",
   },
   {
     q: "돌보다 안심지수는 어떻게 정해지나요?",
     a: "공개된 데이터(평가등급·인력·현원 등)로 계산하고 계산식을 데이터 출처 페이지에 공개하고 있어요. 인력 현황처럼 원본 데이터가 실제와 다르면 정정해 드리고, 그 결과로 점수가 달라질 수 있습니다.",
   },
   {
-    q: "시설 정보가 실제와 다릅니다. 고치려면 유료인가요?",
-    a: "아닙니다. 정보 정정은 언제나 무료이고 인증 전에도 요청하실 수 있어요. 공공데이터 갱신 시점 때문에 생기는 차이라 저희가 확인 후 반영합니다.",
+    q: "시설 정보가 실제와 다르면 어떻게 하나요?",
+    a: "정정 요청을 주시면 확인 후 반영해 드려요. 인증 전에도 요청하실 수 있습니다. 공공데이터 갱신 시점 때문에 생기는 차이라, 바로잡는 데 비용은 들지 않아요.",
   },
   {
     q: "인증에 무엇이 필요한가요?",
@@ -243,14 +243,6 @@ export default function BusinessPage() {
           </ul>
         </div>
 
-        {/* 유료 상품의 존재는 숨기지 않는다 — 나중에 알게 되면 "무료라더니"가 된다.
-            다만 가격·구성은 콘솔에서: 지금 필요한 건 신뢰지 가격표가 아니다. */}
-        <p className="mt-3 rounded-2xl bg-ivory-100 p-4 text-[13px] leading-relaxed text-ink-500">
-          입소자 모집을 위해 노출을 더 키우고 싶은 시설을 위한{" "}
-          <strong className="font-semibold text-ink-700">확장 상품</strong>도 준비돼 있어요.
-          인증을 마치면 시설 콘솔에서 안내드립니다 — 쓰지 않아도 무료 기능은 계속 그대로예요.
-        </p>
-
         <a
           href="#apply"
           className="mt-4 flex min-h-[52px] items-center justify-center rounded-xl bg-primary-500 text-sm font-bold text-white shadow-soft transition-all duration-200 hover:bg-primary-600"
@@ -284,8 +276,8 @@ export default function BusinessPage() {
 
           <div className="mb-3 flex items-center justify-between">
             <span className="text-sm font-bold text-ink-900">햇살요양원</span>
-            <span className="rounded-full bg-royal-50 px-2 py-0.5 text-[10px] font-bold text-royal-700">
-              비즈니스 플러스
+            <span className="rounded-full bg-mint-100 px-2 py-0.5 text-[10px] font-bold text-mint-700">
+              인증 시설
             </span>
           </div>
 

@@ -148,6 +148,6 @@ export const SIGNUP_STEPS: { title: string; desc: string; badge: string }[] = [
   {
     badge: "바로",
     title: "계정 연결 후 페이지 관리 시작",
-    desc: "카카오 계정에 시설이 연결됩니다. 소개글·사진·연락처를 직접 고치고 상담 신청을 받아보세요. 유료 상품은 이때 선택하셔도 됩니다.",
+    desc: "카카오 계정에 시설이 연결됩니다. 소개글·사진·연락처를 직접 고치고 상담 신청을 받아보세요.",
   },
 ];
