@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { resend, CONSULT_NOTIFY_EMAIL, consultForwardEmailHtml } from "@/lib/resend";
 import { rateLimit, clientIp, tooManyRequests } from "@/lib/rateLimit";
-import { SITE_URL, SITE_NAME } from "@/lib/siteConfig";
+import { SITE_URL, SITE_NAME, MAIL_FROM } from "@/lib/siteConfig";
 
 // 로그인 없이 부를 수 있는 유일한 쓰기 엔드포인트다(DB 저장 + 메일 발송).
 // 그대로 두면 스크립트 한 번에 수만 건이 쌓이고 메일도 그만큼 나간다.
@@ -124,7 +124,7 @@ export async function POST(req: Request) {
   if (resend && facilityEmail) {
     try {
       await resend.emails.send({
-        from: `${SITE_NAME} 상담신청 <onboarding@resend.dev>`,
+        from: `${SITE_NAME} 상담신청 <${MAIL_FROM}>`,
         to: facilityEmail,
         subject: `[${SITE_NAME}] ${facility.name}에 상담 문의가 접수됐어요`,
         // 거래성 정보만 담는다(광고 문구 없음) — lib/resend.ts 상단 주석 참고
@@ -161,7 +161,7 @@ export async function POST(req: Request) {
   if (resend) {
     try {
       await resend.emails.send({
-        from: "돌보다 상담신청 <onboarding@resend.dev>",
+        from: `돌보다 상담신청 <${MAIL_FROM}>`,
         to: CONSULT_NOTIFY_EMAIL,
         subject: `[상담신청] ${facility.name}${facilityNotified ? "" : " (시설 자동안내 실패 — 직접 연락 필요)"}`,
         text:

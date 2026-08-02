@@ -11,7 +11,7 @@ import {
 } from "@/lib/careAgreement";
 import { hashAgreement } from "@/lib/careAgreementHash";
 import { resend, agreementCopyEmailHtml } from "@/lib/resend";
-import { SITE_URL, SITE_NAME } from "@/lib/siteConfig";
+import { SITE_URL, SITE_NAME, MAIL_FROM } from "@/lib/siteConfig";
 
 // 돌봄 합의서 — 보호자와 매니저가 직접 맺는 합의의 기록.
 // 회사는 당사자가 아니라 양식 제공·기록 보관만 한다(lib/careAgreement.ts 참고).
@@ -214,7 +214,7 @@ async function sendCopies(agreement: {
     await Promise.all(
       to.map((addr) =>
         mailer.emails.send({
-          from: `${SITE_NAME} 합의서 <onboarding@resend.dev>`,
+          from: `${SITE_NAME} 합의서 <${MAIL_FROM}>`,
           to: addr,
           subject: `[${SITE_NAME}] 돌봄 합의서가 완성되었습니다`,
           html,
