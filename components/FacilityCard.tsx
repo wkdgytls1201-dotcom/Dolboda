@@ -6,6 +6,7 @@ import { Facility, FACILITY_TYPE_LABEL, isHospital } from "@/lib/types";
 import { formatDistance } from "@/lib/distance";
 import { shortAddress } from "@/lib/shortAddress";
 import { GradeBadge, TypeBadge } from "./GradeBadge";
+import { SCORE_LEVEL_THRESHOLDS } from "@/lib/dolbodaScore";
 import { useCompare } from "@/lib/compareContext";
 import { useFavorites } from "@/lib/favoritesContext";
 import { FacilityThumbnail } from "./FacilityThumbnail";
@@ -119,9 +120,9 @@ export function FacilityCard({
             <span
               aria-label={`안심지수 ${facility.dolbodaTotal}점`}
               className={`flex shrink-0 items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-bold ${
-                facility.dolbodaTotal >= 85
+                facility.dolbodaTotal >= SCORE_LEVEL_THRESHOLDS.veryGood
                   ? "bg-mint-100 text-mint-700"
-                  : facility.dolbodaTotal >= 70
+                  : facility.dolbodaTotal >= SCORE_LEVEL_THRESHOLDS.good
                   ? "bg-royal-50 text-royal-600"
                   : "bg-ink-100/70 text-ink-500"
               }`}

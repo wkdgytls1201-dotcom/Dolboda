@@ -42,7 +42,7 @@ export interface FacilityFilters {
   verifiedOnly: boolean;
   /** 프로그램 태그 — 공단 프로그램 12만 건을 분류해 만든 필터 */
   programTags: ProgramTag[];
-  /** 안심지수 70점(우수) 이상만 — 돌보다의 핵심 지표를 필터 첫 자리에 내세운다 */
+  /** 안심지수 "우수"(전국 상위 25%) 이상만 — 돌보다의 핵심 지표를 필터 첫 자리에 내세운다 */
   goodScoreOnly: boolean;
 }
 

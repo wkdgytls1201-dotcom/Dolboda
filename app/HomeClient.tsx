@@ -13,6 +13,7 @@ import { LocationConsentModal } from "@/components/LocationConsentModal";
 import { useNearbyFacilities, type FacilityStats } from "@/lib/useFacilities";
 import { DEFAULT_ORIGIN, haversineDistanceKm } from "@/lib/distance";
 import { isHospital, type Facility } from "@/lib/types";
+import { SCORE_LEVEL_THRESHOLDS } from "@/lib/dolbodaScore";
 import { LOCATION_CONSENT_KEY, saveUserLocation, readUserLocation } from "@/lib/userLocation";
 
 // 홈 전용 경량 목록 — 추천 시설과 "가장 최근 설립"의 전국 대체 후보만 담겨 있다.
@@ -173,12 +174,12 @@ export default function HomeClient({
   // 안심지수는 등급·인력·현원·행정처분까지 묶은 값이라 같은 1등급 안에서도 순위가 갈린다.
   //
   // 표본이 적으면 "TOP"이 의미가 없어서(주변에 몇 곳뿐인 지역) 50곳 이상일 때만 내보내고,
-  // 80점 미만은 넣지 않는다 — 주변이 전부 낮은 지역에서 60점대 시설이 "1위"로 걸리면
-  // 보호자가 안심해도 되는 곳으로 오해할 수 있다.
+  // "우수" 문턱(전국 상위 25%) 아래는 넣지 않는다 — 주변이 전부 낮은 지역에서 60점대
+  // 시설이 "1위"로 걸리면 보호자가 안심해도 되는 곳으로 오해할 수 있다.
   const regionTop = useMemo(() => {
     if (nearbyPool.length < 50) return [];
     return nearbyPool
-      .filter((f) => (f.dolbodaTotal ?? 0) >= 80)
+      .filter((f) => (f.dolbodaTotal ?? 0) >= SCORE_LEVEL_THRESHOLDS.good)
       .slice()
       .sort((a, b) => (b.dolbodaTotal ?? 0) - (a.dolbodaTotal ?? 0) || a.distanceKm - b.distanceKm)
       .slice(0, 6);

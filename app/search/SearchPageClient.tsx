@@ -13,6 +13,7 @@ import { useFacilities, useNearbyFacilities } from "@/lib/useFacilities";
 import { haversineDistanceKm } from "@/lib/distance";
 import { useUserOrigin } from "@/lib/userLocation";
 import { FACILITY_TYPE_LABEL, FacilityType, isHospital } from "@/lib/types";
+import { SCORE_LEVEL_THRESHOLDS } from "@/lib/dolbodaScore";
 import { PROGRAM_TAG_META, type ProgramTag } from "@/lib/programTaxonomy";
 
 function gradeText(grade: number | null, gradeSource?: "HIRA" | "NHIS") {
@@ -237,9 +238,10 @@ function SearchContent() {
     if (filters.verifiedOnly) {
       list = list.filter((x) => x.f.dataSource === "public");
     }
-    // 안심지수 우수만(70점 이상) — 점수가 안 나오는 시설(데이터 부족)은 제외된다
+    // 안심지수 우수만 — 문턱은 라벨과 같은 값을 쓴다(전국 상위 25%).
+    // 점수가 안 나오는 시설(데이터 부족)은 제외된다.
     if (filters.goodScoreOnly) {
-      list = list.filter((x) => (x.f.dolbodaTotal ?? 0) >= 70);
+      list = list.filter((x) => (x.f.dolbodaTotal ?? 0) >= SCORE_LEVEL_THRESHOLDS.good);
     }
 
     list.sort((a, b) => {

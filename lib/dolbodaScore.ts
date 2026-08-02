@@ -462,9 +462,20 @@ export function calcDolbodaScore(f: Facility, extras?: ScoreExtras): DolbodaScor
   return { total, coverage, areas };
 }
 
+// 라벨 문턱은 전국 실제 분포(2026-08-02 실측, 점수가 산출된 28,118곳)에서 뽑았다.
+// p25=62 · p50=70 · p75=79 · p90=86.
+// 예전 기준(70+ 우수)은 전체의 50.1%가 "우수"라 사실상 평균을 우수라고 부르는 셈이었고,
+// 그래서 "국가 평가등급 3등급인데 안심지수는 우수"처럼 보이는 조합이 흔했다.
+// 지금은 상위 25%부터 우수, 상위 10%부터 매우 우수, 하위 25% 미만이 확인 필요다.
+// (가중치·신호 매핑은 그대로 — 점수 자체는 바뀌지 않고 부르는 이름만 바뀐다)
+export const SCORE_LEVEL_THRESHOLDS = { veryGood: 86, good: 79, fair: 62 } as const;
+
 export function scoreLevel(total: number): { label: string; colorClassName: string } {
-  if (total >= 85) return { label: "매우 우수", colorClassName: "text-mint-700" };
-  if (total >= 70) return { label: "우수", colorClassName: "text-primary-600" };
-  if (total >= 55) return { label: "보통", colorClassName: "text-accent-600" };
+  if (total >= SCORE_LEVEL_THRESHOLDS.veryGood)
+    return { label: "매우 우수", colorClassName: "text-mint-700" };
+  if (total >= SCORE_LEVEL_THRESHOLDS.good)
+    return { label: "우수", colorClassName: "text-primary-600" };
+  if (total >= SCORE_LEVEL_THRESHOLDS.fair)
+    return { label: "보통", colorClassName: "text-accent-600" };
   return { label: "확인 필요", colorClassName: "text-ink-500" };
 }
