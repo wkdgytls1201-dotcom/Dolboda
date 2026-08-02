@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { FACILITY_TYPE_LABEL, type FacilityType } from "@/lib/types";
-import { SITE_URL } from "@/lib/siteConfig";
+import { SITE_URL, OG_IMAGE } from "@/lib/siteConfig";
 import { findRegionByAddress, sigunguOf } from "@/lib/regionSeo";
 import { jsonLdHtml } from "@/lib/jsonLd";
 
@@ -61,6 +61,7 @@ export async function generateMetadata({
     description,
     alternates: { canonical: `/facility/${facility.id}` },
     openGraph: {
+      images: [OG_IMAGE],
       title,
       description,
       url: `${SITE_URL}/facility/${facility.id}`,

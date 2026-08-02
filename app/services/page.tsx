@@ -4,7 +4,7 @@ import { ArrowRight, Clover } from "lucide-react";
 import { CareServicesHero } from "@/components/CareServicesHero";
 import { ServicesShowcase } from "@/components/ServicesShowcase";
 import { CARE_SERVICES, SERVICE_STEPS } from "@/lib/careServices";
-import { SITE_URL } from "@/lib/siteConfig";
+import { SITE_URL, OG_IMAGE } from "@/lib/siteConfig";
 import { jsonLdHtml } from "@/lib/jsonLd";
 
 export const metadata: Metadata = {
@@ -24,6 +24,7 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: "/services" },
   openGraph: {
+    images: [OG_IMAGE],
     title: "돌봄 서비스 — 상황에 맞는 돌봄 찾기",
     description: "병원 간병, 집에서 돌봄, 가사 돌봄, 가족 간병을 한눈에 비교해보세요.",
     url: `${SITE_URL}/services`,

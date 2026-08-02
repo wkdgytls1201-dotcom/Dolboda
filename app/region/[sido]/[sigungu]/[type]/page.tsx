@@ -11,7 +11,7 @@ import {
   RegionStatStrip,
   regionFaqJsonLd,
 } from "@/components/RegionSeoParts";
-import { SITE_URL } from "@/lib/siteConfig";
+import { SITE_URL, OG_IMAGE } from "@/lib/siteConfig";
 import { jsonLdHtml } from "@/lib/jsonLd";
 
 export const revalidate = 86400;
@@ -67,7 +67,7 @@ export async function generateMetadata({
     description,
     // 페이지별 self-canonical — 2페이지를 1페이지로 몰면 뒤쪽 시설이 색인되지 않는다
     alternates: { canonical: page > 1 ? `${path}?page=${page}` : path },
-    openGraph: { title, description, url: `${SITE_URL}${path}`, type: "website" },
+    openGraph: { title, description, url: `${SITE_URL}${path}`, type: "website", images: [OG_IMAGE] },
   };
 }
 

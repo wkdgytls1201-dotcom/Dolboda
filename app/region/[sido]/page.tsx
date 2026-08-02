@@ -11,7 +11,7 @@ import {
   GuideLinkStrip,
   regionFaqJsonLd,
 } from "@/components/RegionSeoParts";
-import { SITE_URL } from "@/lib/siteConfig";
+import { SITE_URL, OG_IMAGE } from "@/lib/siteConfig";
 import { jsonLdHtml } from "@/lib/jsonLd";
 
 // 지역별 시설 수는 자주 안 바뀌므로 하루 단위로 재생성(ISR)
@@ -46,6 +46,7 @@ export async function generateMetadata({
     description,
     alternates: { canonical: `/region/${encodeURIComponent(region.slug)}` },
     openGraph: {
+      images: [OG_IMAGE],
       title,
       description,
       url: `${SITE_URL}/region/${encodeURIComponent(region.slug)}`,

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { GradeHelperChat } from "@/components/GradeHelperChat";
-import { SITE_URL } from "@/lib/siteConfig";
+import { SITE_URL, OG_IMAGE } from "@/lib/siteConfig";
 import { jsonLdHtml } from "@/lib/jsonLd";
 
 export const metadata: Metadata = {
@@ -17,6 +17,7 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: "/grade-helper" },
   openGraph: {
+    images: [OG_IMAGE],
     title: "AI 장기요양등급 도우미 — 1분 대화로 확인",
     description: "버튼만 눌러 답하는 13개 질문으로 예상 등급 범위를 확인하세요.",
     url: `${SITE_URL}/grade-helper`,

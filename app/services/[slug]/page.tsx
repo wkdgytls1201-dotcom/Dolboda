@@ -5,7 +5,7 @@ import { ArrowRight, ChevronRight } from "lucide-react";
 import { SERVICE_LANDINGS, findServiceLanding } from "@/lib/serviceLanding";
 import { CARE_SERVICES } from "@/lib/careServices";
 import { findGuide } from "@/lib/guides";
-import { SITE_URL } from "@/lib/siteConfig";
+import { SITE_URL, OG_IMAGE } from "@/lib/siteConfig";
 import { jsonLdHtml } from "@/lib/jsonLd";
 
 // 서비스별 독립 랜딩 — /services 종합 페이지는 그대로 두고, "병원 간병" "가사 돌봄" 같은
@@ -22,6 +22,7 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
     description: landing.metaDescription,
     alternates: { canonical: `/services/${landing.slug}` },
     openGraph: {
+      images: [OG_IMAGE],
       title: landing.metaTitle,
       description: landing.metaDescription,
       url: `${SITE_URL}/services/${landing.slug}`,

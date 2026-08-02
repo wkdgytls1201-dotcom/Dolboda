@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { GradeTest } from "@/components/GradeTest";
 import { TEST_AREAS, TOTAL_ITEMS, APPLY_STEPS } from "@/lib/gradeTest";
-import { SITE_URL } from "@/lib/siteConfig";
+import { SITE_URL, OG_IMAGE } from "@/lib/siteConfig";
 import { jsonLdHtml } from "@/lib/jsonLd";
 
 export const metadata: Metadata = {
@@ -18,6 +18,7 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: "/grade-test" },
   openGraph: {
+    images: [OG_IMAGE],
     title: "장기요양등급 예상 테스트 — 3분이면 확인",
     description: `인정조사표 ${TOTAL_ITEMS}개 항목으로 예상 등급과 이용 가능한 서비스를 확인하세요.`,
     url: `${SITE_URL}/grade-test`,

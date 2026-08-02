@@ -12,7 +12,7 @@ import {
   GuideLinkStrip,
   regionFaqJsonLd,
 } from "@/components/RegionSeoParts";
-import { SITE_URL } from "@/lib/siteConfig";
+import { SITE_URL, OG_IMAGE } from "@/lib/siteConfig";
 import { jsonLdHtml } from "@/lib/jsonLd";
 
 export const revalidate = 86400;
@@ -63,7 +63,7 @@ export async function generateMetadata({
     title,
     description,
     alternates: { canonical: path },
-    openGraph: { title, description, url: `${SITE_URL}${path}`, type: "website" },
+    openGraph: { title, description, url: `${SITE_URL}${path}`, type: "website", images: [OG_IMAGE] },
   };
 }
 

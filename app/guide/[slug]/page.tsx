@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowRight, ChevronRight } from "lucide-react";
 import { GUIDES, findGuide } from "@/lib/guides";
 import { GuideIllustration } from "@/components/GuideIllustration";
-import { SITE_URL } from "@/lib/siteConfig";
+import { SITE_URL, OG_IMAGE } from "@/lib/siteConfig";
 import { jsonLdHtml } from "@/lib/jsonLd";
 
 // 전부 정적 콘텐츠 — 빌드 때 생성해 온전한 HTML로 서빙한다
@@ -20,6 +20,7 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
     description: guide.description,
     alternates: { canonical: `/guide/${guide.slug}` },
     openGraph: {
+      images: [OG_IMAGE],
       title: guide.title,
       description: guide.description,
       url: `${SITE_URL}/guide/${guide.slug}`,
