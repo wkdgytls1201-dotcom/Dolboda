@@ -30,85 +30,96 @@ export function consultForwardEmailHtml(params: {
       <tr>
         <td align="center">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 4px 16px rgba(27,23,48,0.06);">
+            <!-- 헤더 — 메일 클라이언트는 CSS를 많이 걷어낸다. 그라데이션이 지워져도
+                 괜찮도록 bgcolor로 코랄 단색 바탕을 깔고 그 위에 그라데이션을 얹는다.
+                 로고가 코랄색 꽃이라 코랄 배경에 그냥 두면 묻힌다 → 흰 원 위에 올린다. -->
             <tr>
-              <td style="padding:28px 28px 20px;text-align:center;background:linear-gradient(135deg,#FF6250,#FF9F8C);">
-                <img src="${SITE_URL}/logo.png" alt="${SITE_NAME}" width="40" height="40" style="border-radius:10px;display:block;margin:0 auto 10px;" />
-                <p style="margin:0;color:#ffffff;font-size:20px;font-weight:800;">${SITE_NAME}</p>
-                <p style="margin:4px 0 0;color:rgba(255,255,255,0.9);font-size:13px;">정보 비대칭 없는 투명한 돌봄</p>
+              <td bgcolor="#FF6250" style="padding:32px 28px 26px;text-align:center;background:#FF6250;background-image:linear-gradient(135deg,#FF6250 0%,#FF8A73 55%,#FFB48C 100%);">
+                <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 14px;">
+                  <tr>
+                    <td bgcolor="#FFFFFF" width="68" height="68" align="center" valign="middle" style="width:68px;height:68px;background:#ffffff;border-radius:34px;text-align:center;vertical-align:middle;">
+                      <a href="${SITE_URL}" style="text-decoration:none;display:block;">
+                        <img src="${SITE_URL}/logo.png" alt="${SITE_NAME}" width="42" height="42" style="display:block;margin:0 auto;border:0;" />
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+                <p style="margin:0;color:#ffffff;font-size:24px;font-weight:800;letter-spacing:-0.4px;">${SITE_NAME}</p>
+                <!-- 태그라인은 알약 배경으로 — 흰 글씨만 두면 그라데이션 밝은 쪽에서 흐릿해진다 -->
+                <table role="presentation" cellpadding="0" cellspacing="0" style="margin:10px auto 0;">
+                  <tr>
+                    <td bgcolor="#E8442F" style="padding:6px 14px;background:#E8442F;border-radius:999px;">
+                      <span style="color:#ffffff;font-size:13px;font-weight:600;letter-spacing:-0.2px;">정보 비대칭 없는 투명한 돌봄</span>
+                    </td>
+                  </tr>
+                </table>
+                <p style="margin:12px 0 0;font-size:12px;letter-spacing:0.2px;">
+                  <a href="${SITE_URL}" style="color:#FFEDE8;text-decoration:underline;">
+                    ${SITE_URL.replace(/^https?:\/\//, "")}
+                  </a>
+                </p>
               </td>
             </tr>
             <tr>
               <td style="padding:28px;">
-                <p style="margin:0 0 6px;font-size:16px;font-weight:700;color:#1B1730;">
+                <p style="margin:0 0 8px;font-size:18px;font-weight:700;color:#1B1730;">
                   ${esc(facilityName)} 담당자님, 상담 문의가 도착했어요
                 </p>
-                <p style="margin:0 0 20px;font-size:13px;line-height:1.6;color:#6B647F;">
-                  ${SITE_NAME}는 전국 요양시설의 공공데이터(평가등급·인력현황·비급여비용 등)를
-                  비교해 보여드리는 서비스예요. 귀 시설 정보를 보신 이용자가 아래와 같이
-                  상담을 신청해 안내드립니다.
+                <p style="margin:0 0 20px;font-size:14px;line-height:1.7;color:#6B647F;">
+                  귀 시설 정보를 보신 이용자가 아래와 같이 상담을 신청해 안내드립니다.
                 </p>
 
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FFF7E9;border-radius:14px;">
-                  <tr><td style="padding:16px 18px;">
-                    <p style="margin:0 0 8px;font-size:14px;color:#1B1730;"><strong>문의자</strong> · ${esc(requesterName)}</p>
-                    <p style="margin:0 0 8px;font-size:14px;color:#1B1730;"><strong>연락처</strong> · ${esc(requesterPhone)}</p>
-                    <p style="margin:0;font-size:12px;color:#A9A3BC;">접수 ${esc(receivedAt)}</p>
+                  <tr><td style="padding:18px 20px;">
+                    <p style="margin:0 0 9px;font-size:16px;color:#1B1730;"><strong>문의자</strong> · ${esc(requesterName)}</p>
+                    <p style="margin:0 0 9px;font-size:16px;color:#1B1730;"><strong>연락처</strong> · ${esc(requesterPhone)}</p>
+                    <p style="margin:0;font-size:13px;color:#A9A3BC;">접수 ${esc(receivedAt)}</p>
                     ${
                       profileLines
-                        ? `<hr style="border:none;border-top:1px solid #FFE3CC;margin:12px 0;" />
-                           <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#6B647F;">문의자가 전달에 동의한 어르신 정보</p>
-                           <p style="margin:0;font-size:13px;line-height:1.7;color:#3A3452;white-space:pre-line;">${esc(profileLines)}</p>`
+                        ? `<hr style="border:none;border-top:1px solid #FFE3CC;margin:13px 0;" />
+                           <p style="margin:0 0 5px;font-size:13px;font-weight:700;color:#6B647F;">문의자가 전달에 동의한 어르신 정보</p>
+                           <p style="margin:0;font-size:14px;line-height:1.75;color:#3A3452;white-space:pre-line;">${esc(profileLines)}</p>`
                         : ""
                     }
                   </td></tr>
                 </table>
 
-                <p style="margin:20px 0 0;font-size:13px;line-height:1.6;color:#6B647F;">
+                <p style="margin:20px 0 0;font-size:14px;line-height:1.7;color:#6B647F;">
                   문의자에게 직접 연락해 상담을 진행해 주세요.
                 </p>
 
                 <hr style="border:none;border-top:1px solid #EFECF6;margin:22px 0 18px;" />
 
-                <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#1B1730;">
+                <p style="margin:0 0 7px;font-size:15px;font-weight:700;color:#1B1730;">
                   ${SITE_NAME}는 어떤 서비스인가요
                 </p>
-                <p style="margin:0 0 14px;font-size:12px;line-height:1.75;color:#6B647F;">
-                  전국 요양병원·요양원·주야간보호·방문요양 <strong>28,000여 곳</strong>의 정보를
-                  한 화면에서 비교할 수 있게 정리한 서비스입니다.
-                  <strong>국민건강보험공단</strong>과 <strong>건강보험심사평가원</strong>이 공개한
-                  자료를 사용하며, 평가등급·인력 현황·비급여 비용·프로그램 운영처럼 여러 곳에
-                  흩어져 있던 정보를 보호자가 한 번에 확인할 수 있게 합니다.
-                </p>
-                <p style="margin:0 0 14px;font-size:12px;line-height:1.75;color:#6B647F;">
-                  가족을 모실 곳을 갑자기 찾아야 하는 보호자는 대개 어디서부터 알아봐야 할지
-                  모르는 상태에서 시작합니다. 저희는 시설과 보호자 사이의
-                  <strong>정보 비대칭을 줄이는 일</strong>을 합니다 — 발품과 입소문에 기대던 과정을,
-                  공개된 데이터로 먼저 비교하고 방문할 곳을 좁히는 과정으로 바꾸는 것입니다.
-                  어느 시설을 선택할지는 보호자와 시설이 직접 상담해 정하는 일이며,
-                  ${SITE_NAME}는 그 사이에 개입하지 않습니다.
+                <p style="margin:0 0 16px;font-size:14px;line-height:1.75;color:#6B647F;">
+                  <strong>국민건강보험공단</strong>·<strong>건강보험심사평가원</strong>이 공개한
+                  자료로 전국 요양시설 <strong>28,000여 곳</strong>의 평가등급·인력·비용을 한 화면에서
+                  비교하는 서비스입니다. 시설과 보호자 사이의
+                  <strong>정보 비대칭을 줄이는 것</strong>이 저희가 하는 일이며, 상담과 선택은
+                  두 분이 직접 하시고 ${SITE_NAME}는 개입하지 않습니다.
                 </p>
 
-                <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#1B1730;">
-                  정보가 실제와 다르다면 알려주세요
+                <p style="margin:0 0 7px;font-size:15px;font-weight:700;color:#1B1730;">
+                  정보가 실제와 다르다면
                 </p>
-                <p style="margin:0 0 14px;font-size:12px;line-height:1.75;color:#6B647F;">
-                  표시되는 정보는 공공데이터를 기준으로 하기 때문에 갱신 시점 차이로 실제와 다를 수
-                  있습니다. 정정이 필요한 내용이 있으면 <strong>이 메일에 회신</strong>해 주시면
-                  확인 후 반영하겠습니다.
+                <p style="margin:0 0 16px;font-size:14px;line-height:1.75;color:#6B647F;">
+                  공공데이터 기준이라 갱신 시점 차이가 있을 수 있습니다.
+                  <strong>이 메일에 회신</strong>해 주시면 확인 후 바로잡겠습니다.
                 </p>
 
-                <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#1B1730;">
+                <p style="margin:0 0 7px;font-size:15px;font-weight:700;color:#1B1730;">
                   문의 전달을 원하지 않으시면
                 </p>
-                <p style="margin:0;font-size:12px;line-height:1.75;color:#6B647F;">
-                  앞으로 상담 문의 전달을 받지 않으시려면 이 메일에 <strong>“수신거부”</strong>라고
-                  회신해 주세요. 이후 귀 시설로는 전달하지 않습니다.
+                <p style="margin:0;font-size:14px;line-height:1.75;color:#6B647F;">
+                  <strong>“수신거부”</strong>라고 회신해 주시면 이후 전달하지 않습니다.
                 </p>
               </td>
             </tr>
             <tr>
               <td style="padding:16px 28px;background:#F7F5FB;text-align:center;">
-                <p style="margin:0;font-size:11px;line-height:1.6;color:#A9A3BC;">
+                <p style="margin:0;font-size:12px;line-height:1.7;color:#A9A3BC;">
                   이 메일은 ${SITE_NAME} 이용자가 귀 시설에 남긴 상담 신청을 전달하는
                   안내 메일이며, 광고성 정보가 아니에요.<br />
                   <a href="${SITE_URL}" style="color:#FF6250;">${SITE_URL.replace(/^https?:\/\//, "")}</a>
