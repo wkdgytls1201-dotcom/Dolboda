@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Crosshair } from "lucide-react";
 import { MapPlaceholder } from "./MapPlaceholder";
+import { useInViewOnce } from "@/lib/useInViewOnce";
 
 declare global {
   interface Window {
@@ -57,10 +58,13 @@ export function KakaoMap({
   label: string;
   height?: number;
 }) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  // 상세페이지의 "위치" 섹션은 화면 한참 아래에 있는데도 페이지를 열자마자 카카오 SDK와
+  // 지도 타일 6장을 받아왔다 — 스크롤해서 가까워질 때만 받는다.
+  const { ref: containerRef, inView } = useInViewOnce<HTMLDivElement>();
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
+    if (!inView) return;
     if (lat === undefined || lng === undefined || !containerRef.current) return;
     let cancelled = false;
     loadKakaoSdk()

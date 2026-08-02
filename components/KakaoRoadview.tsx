@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { MapPlaceholder } from "./MapPlaceholder";
 import { loadKakaoSdk } from "./KakaoMap";
 import { pointRoadviewAt, useRoadviewPano } from "@/lib/useRoadviewPano";
+import { useInViewOnce } from "@/lib/useInViewOnce";
 
 // 실제 거리뷰 사진 — 스톡사진과 달리 그 좌표의 진짜 모습이라 시설-사진 오매칭 위험이 없다.
 // 상세페이지 "미리보기"용이라 촬영지점이 멀어도(fallback) 일단 보여준다.
@@ -16,8 +17,10 @@ export function KakaoRoadview({
   lng?: number;
   height?: number;
 }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const pano = useRoadviewPano(lat, lng);
+  // 지도와 마찬가지로 화면 아래에 있는 미리보기라, 가까워질 때만 파노라마를 받는다.
+  // (pano 조회 자체도 SDK를 로드하므로 inView를 조회 단계부터 넘긴다)
+  const { ref: containerRef, inView } = useInViewOnce<HTMLDivElement>();
+  const pano = useRoadviewPano(lat, lng, inView);
 
   useEffect(() => {
     if (pano.status !== "good" && pano.status !== "fallback") return;
