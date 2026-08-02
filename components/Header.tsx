@@ -39,6 +39,20 @@ export function Header() {
     setMenuOpen(false);
   }, [pathname]);
 
+  // 메뉴를 열어둔 채 본문을 스크롤하면 닫는다 — 메뉴가 헤더 아래 붙어 있어서, 열어놓고
+  // 아래로 내리면 화면 위쪽을 계속 가린 채 따라다닌다("닫는 법"을 찾게 만든다).
+  // 40px 여유를 두는 이유: 메뉴가 열리며 레이아웃이 밀릴 때 스크롤 이벤트가 한 번 튀는데,
+  // 그걸로 즉시 닫히면 열자마자 사라지는 것처럼 보인다.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const from = window.scrollY;
+    const onScroll = () => {
+      if (Math.abs(window.scrollY - from) > 40) setMenuOpen(false);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [menuOpen]);
+
   const navItems = NAV.filter((item) => !item.authOnly || user);
   // 모바일은 하단 탭바(홈·시설찾기·등급테스트·마이페이지)가 따로 있어서 햄버거에서 겹치는
   // 항목은 뺀다. 로그인 상태면 돌봄 서비스도 상단 버튼으로 빠지니 같이 뺀다.
@@ -258,8 +272,24 @@ export function Header() {
                 알림
               </Link>
 
-              {/* 마이페이지 링크는 하단 탭바로 옮겼지만, 로그아웃은 몇 번 눌러야 닿는
-                  마이페이지 화면까지 안 가도 여기서 바로 되게 남겨둔다. */}
+              {/* 마이페이지는 보통 하단 탭바로 가지만, 시설 상세·등급테스트·돌봄요청처럼
+                  자체 하단 CTA 바가 있는 화면에서는 탭바가 숨겨진다(MobileTabBar의
+                  HIDDEN_PREFIXES). 그 화면에서 햄버거에도 없으면 마이페이지로 갈 방법이
+                  아예 없어져서 — 실제로 시설 상세에서 막혔다 — 여기에도 항상 둔다. */}
+              {user && (
+                <Link
+                  href="/mypage"
+                  className={`flex min-h-[52px] items-center justify-end rounded-xl px-4 py-3 text-base transition-colors duration-200 ${
+                    pathname?.startsWith("/mypage") || pathname === "/account"
+                      ? "bg-primary-50 font-bold text-primary-700"
+                      : "font-medium text-ink-700 hover:bg-ink-100"
+                  }`}
+                >
+                  마이페이지
+                </Link>
+              )}
+
+              {/* 로그아웃은 몇 번 눌러야 닿는 마이페이지 화면까지 안 가도 여기서 바로 되게. */}
               {user && (
                 <button
                   type="button"
