@@ -59,6 +59,8 @@ export function CareRequestDetail({
   const [busy, setBusy] = useState<string | null>(null);
   // "돌봄이 끝났어요"는 되돌릴 수 없는 액션 — 바로 실행하지 않고 확인을 한 번 거친다
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
+  // 취소도 마찬가지 — 특히 지원자가 있거나 매칭이 확정된 뒤에는 상대방에게 영향이 간다
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const meta = typeMeta(careRequest.locationType);
   const timeRange = formatTimeRange(
     careRequest.roundTheClock,
@@ -68,6 +70,8 @@ export function CareRequestDetail({
   const days = daysBetween(careRequest.startDate, careRequest.endDate);
   const isOpen = careRequest.status === "OPEN";
   const isMatched = careRequest.status === "MATCHED";
+  // 취소 경고에 "몇 분에게 안내가 가는지"를 정확히 적기 위해 대기 중인 지원만 센다
+  const pendingCount = careRequest.applications.filter((a) => a.status === "지원완료").length;
 
   async function refresh() {
     const res = await fetch("/api/care-requests");
@@ -78,6 +82,7 @@ export function CareRequestDetail({
   }
 
   async function handleCancel() {
+    setShowCancelConfirm(false);
     setBusy("cancel");
     await fetch(`/api/care-requests/${careRequest.id}`, { method: "DELETE" });
     await refresh();
@@ -338,7 +343,7 @@ export function CareRequestDetail({
           <button
             type="button"
             disabled={busy === "cancel"}
-            onClick={handleCancel}
+            onClick={() => setShowCancelConfirm(true)}
             className="min-h-[48px] flex-1 rounded-xl border border-primary-200 text-sm font-bold text-primary-600 transition-colors duration-150 hover:bg-primary-50 active:scale-[0.98] disabled:opacity-60"
           >
             {busy === "cancel" ? "취소 중..." : "요청 취소"}
@@ -347,15 +352,29 @@ export function CareRequestDetail({
       )}
 
       {isMatched && (
-        <button
-          type="button"
-          disabled={busy === "complete"}
-          onClick={() => setShowCompleteConfirm(true)}
-          className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl border border-ink-100 py-3 text-sm font-semibold text-ink-700 transition-colors duration-150 hover:bg-ink-100 disabled:opacity-60"
-        >
-          <CheckCircle2 size={16} />
-          {busy === "complete" ? "처리 중..." : "돌봄이 끝났어요"}
-        </button>
+        <>
+          <button
+            type="button"
+            disabled={busy === "complete"}
+            onClick={() => setShowCompleteConfirm(true)}
+            className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl border border-ink-100 py-3 text-sm font-semibold text-ink-700 transition-colors duration-150 hover:bg-ink-100 disabled:opacity-60"
+          >
+            <CheckCircle2 size={16} />
+            {busy === "complete" ? "처리 중..." : "돌봄이 끝났어요"}
+          </button>
+
+          {/* 확정 뒤에도 사정이 생길 수 있다(어르신 입원·상황 변화). 예전에는 이 자리에
+              취소 경로가 아예 없어서, 매니저에게 알리지도 못한 채 방치될 수밖에 없었다.
+              정상 흐름이 아니므로 눈에 덜 띄게 두되, 누르면 영향을 분명히 알린다. */}
+          <button
+            type="button"
+            disabled={busy === "cancel"}
+            onClick={() => setShowCancelConfirm(true)}
+            className="mt-6 w-full text-center text-[13px] text-ink-300 underline underline-offset-2 transition-colors hover:text-primary-600 disabled:opacity-60"
+          >
+            {busy === "cancel" ? "취소 중..." : "사정이 생겨 돌봄을 취소해야 해요"}
+          </button>
+        </>
       )}
 
       {/* 완료 확인 — 누르는 순간 요청이 종료되고 되돌릴 수 없으므로,
@@ -389,6 +408,61 @@ export function CareRequestDetail({
                 className="min-h-[48px] flex-[1.4] rounded-xl bg-primary-500 text-sm font-bold text-white shadow-soft transition-all duration-150 ease-snappy hover:bg-primary-600 active:scale-[0.98]"
               >
                 네, 돌봄이 끝났어요
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 취소 확인 — 상대방에게 미치는 영향이 상황마다 달라서 문구도 다르게 보여준다.
+          지원자가 이미 있거나 매칭이 확정된 뒤라면 그 사실을 먼저 알려준다. */}
+      {showCancelConfirm && (
+        <div
+          className="animate-overlay-in fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 px-4"
+          onClick={() => setShowCancelConfirm(false)}
+        >
+          <div
+            className="animate-modal-in w-full max-w-sm rounded-2xl bg-white p-5 shadow-card-hover"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="mb-1.5 text-base font-bold text-ink-900">
+              {isMatched ? "확정된 돌봄을 취소할까요?" : "돌봄 요청을 취소할까요?"}
+            </h2>
+            <ul className="mb-5 space-y-1.5 text-sm leading-relaxed text-ink-500">
+              {isMatched ? (
+                <>
+                  <li>· 함께하기로 한 매니저에게 취소 안내가 전달돼요</li>
+                  <li>· 매니저는 이미 그 날짜를 비워두었을 수 있어요</li>
+                  <li>
+                    · 합의서에 서명하셨다면 미리 알리기로 한 약속(제7조)이 있어요.
+                    가능하면 먼저 연락해 사정을 알려주세요
+                  </li>
+                  <li>· 취소한 요청은 되돌릴 수 없어요</li>
+                </>
+              ) : (
+                <>
+                  {pendingCount > 0 && (
+                    <li>· 지원해주신 매니저 {pendingCount}명에게 취소 안내가 전달돼요</li>
+                  )}
+                  <li>· 이 요청은 매니저 목록에서 사라져요</li>
+                  <li>· 취소한 요청은 되돌릴 수 없어요</li>
+                </>
+              )}
+            </ul>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setShowCancelConfirm(false)}
+                className="min-h-[48px] flex-[1.4] rounded-xl bg-primary-500 text-sm font-bold text-white shadow-soft transition-all duration-150 ease-snappy hover:bg-primary-600 active:scale-[0.98]"
+              >
+                아니요, 유지할게요
+              </button>
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="min-h-[48px] flex-1 rounded-xl border border-ink-100 text-sm font-semibold text-ink-500 transition-colors duration-150 hover:bg-ink-100/60"
+              >
+                취소할게요
               </button>
             </div>
           </div>
