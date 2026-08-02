@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
@@ -38,6 +39,7 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { data: session } = useSession();
   const { isSitter, profile: sitterProfile } = useSitterProfileContext();
+  const [photoFailed, setPhotoFailed] = useState(false);
   // 카카오 이름 미동의 계정은 name이 없다 — 매니저 닉네임이 있으면 그걸로 부르는 게
   // "회원님"보다 훨씬 자기 계정답다.
   const displayName = session?.user?.name ?? sitterProfile?.nickname ?? "회원";
@@ -203,11 +205,14 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
             "내 계정에 잘 들어왔다"는 안심이 생기고, 가장 자주 갈 두 곳을 큰 버튼으로 둔다 */}
         <div className="mb-4 rounded-3xl bg-gradient-to-b from-white to-ivory-100 p-5 shadow-card sm:hidden">
           <div className="mb-4 flex items-center gap-3">
-            {session?.user?.image ? (
+            {session?.user?.image && !photoFailed ? (
+              // 카카오 프로필 URL이 깨졌을 때 브라우저 기본 "깨진 이미지"가 뜨지 않게
+              // 기본 아바타로 대체한다(매니저 프로필 화면과 같은 처리)
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={session.user.image}
                 alt=""
+                onError={() => setPhotoFailed(true)}
                 className="h-12 w-12 rounded-full object-cover ring-2 ring-primary-100"
               />
             ) : (

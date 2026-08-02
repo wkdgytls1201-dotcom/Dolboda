@@ -12,6 +12,7 @@ export default function MyPageAccountPage() {
   const { data: session, status } = useSession();
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [photoFailed, setPhotoFailed] = useState(false);
 
   if (status === "loading") return <PageLoader />;
 
@@ -47,9 +48,15 @@ export default function MyPageAccountPage() {
 
       <div className="rounded-2xl border border-ink-100 bg-white p-5 shadow-card">
         <div className="mb-5 flex items-center gap-3">
-          {user.image ? (
+          {user.image && !photoFailed ? (
+            // 카카오 프로필 URL이 깨져도 기본 아바타로 대체(깨진 이미지 아이콘 방지)
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={user.image} alt="" className="h-14 w-14 rounded-full object-cover" />
+            <img
+              src={user.image}
+              alt=""
+              onError={() => setPhotoFailed(true)}
+              className="h-14 w-14 rounded-full object-cover"
+            />
           ) : (
             <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-50 text-primary-500">
               <User size={24} />
