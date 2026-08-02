@@ -293,9 +293,14 @@ function CareProfileContent() {
               onChange={(e) => setConsent(e.target.checked)}
               className="mt-0.5 h-5 w-5 shrink-0 accent-[#FF6250]"
             />
+            {/* 민감정보(건강 상태) 동의라 미리 체크해두지 않는다 — 사전 체크된 동의는
+                개인정보 보호법상 유효한 명시적 동의로 인정받기 어렵다(직접 체크해야 함) */}
             <span className="text-[13px] leading-relaxed text-ink-700">
-              <strong className="font-bold">건강 정보 저장에 동의해요.</strong>{" "}
-              <span className="text-ink-500">
+              <strong className="font-bold">
+                건강 정보 저장에 동의해요{" "}
+                <span className="font-extrabold text-primary-600">(필수)</span>
+              </strong>
+              <span className="mt-1.5 block leading-relaxed text-ink-500">
                 입력한 건강 상태 정보는 시설 추천과 돌봄 요청 작성에만 쓰이고, 프로필을
                 삭제하면 즉시 지워져요. 자세한 내용은 개인정보처리방침을 확인하세요.
               </span>

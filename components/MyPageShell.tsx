@@ -26,6 +26,8 @@ interface NavItem {
   icon: React.ReactNode;
   /** 모바일 그리드 카드에서 라벨 아래 보여줄 한 줄 설명 */
   hint?: string;
+  /** 카드 우상단에 붙는 작은 강조 띠 (예: "추천") */
+  ribbon?: string;
 }
 
 // 시터 프로필 데이터(SitterProfileProvider)는 app/mypage/layout.tsx에서 한 번만
@@ -54,8 +56,8 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
   const sitterItems: NavItem[] = [
     { href: "/mypage/sitter/jobs", label: "일자리 관리", icon: <Briefcase size={20} />, hint: "새 일자리와 지원·매칭 현황" },
     { href: "/mypage/sitter/profile", label: "프로필 관리", icon: <HeartHandshake size={18} />, hint: "보호자에게 보이는 내 정보" },
-    { href: "/mypage/sitter/workplaces", label: "일하기 좋은 시설", icon: <Building2 size={18} />, hint: "근무환경 지수 순" },
-    { href: "/mypage/sitter/tips", label: "매니저 가이드", icon: <BookOpen size={18} />, hint: "지원 성공률 높이기" },
+    { href: "/mypage/sitter/workplaces", label: "일하기 좋은 시설", icon: <Building2 size={18} />, hint: "근무환경 지수 순", ribbon: "돌보다 단독" },
+    { href: "/mypage/sitter/tips", label: "매니저 가이드", icon: <BookOpen size={18} />, hint: "지원 성공률 높이기", ribbon: "꿀팁" },
     { href: "/mypage/sitter/settlements", label: "정산 관리", icon: <Wallet size={18} />, hint: "계좌 등록" },
     { href: "/mypage/sitter/notifications", label: "알림 설정", icon: <Bell size={18} />, hint: "받을 알림 고르기" },
   ];
@@ -141,12 +143,18 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
         href={item.href}
         // 높이는 그리드의 auto-rows-fr가 맞춰준다 — 예전엔 h-[112px]로 못박아뒀는데
         // 글자를 키우면 설명이 잘려나가서, 가장 긴 카드에 맞춰 같이 자라게 바꿨다.
-        className={`flex flex-col rounded-2xl p-4 transition-all duration-150 active:scale-[0.98] ${
+        className={`relative flex flex-col overflow-hidden rounded-2xl p-4 transition-all duration-150 active:scale-[0.98] ${
           active
             ? "bg-primary-50 ring-1 ring-primary-200"
             : "bg-white shadow-card hover:shadow-card-hover"
         }`}
       >
+        {/* 우상단 강조 띠 — 새로 만든 메뉴가 6개 사이에 묻히지 않게 */}
+        {item.ribbon && (
+          <span className="absolute right-0 top-0 rounded-bl-xl bg-gradient-to-r from-royal-500 to-primary-500 px-2.5 py-1 text-[10px] font-extrabold text-white">
+            {item.ribbon}
+          </span>
+        )}
         <span
           className={`mb-2.5 flex h-10 w-10 items-center justify-center rounded-xl ${
             active ? "bg-white text-primary-600 shadow-soft" : "bg-ivory-100 text-ink-400"
@@ -233,11 +241,11 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* 보호자 섹션 헤더 — 아래 매니저 섹션과 같은 문법(아이콘+라벨)으로 영역을 나눈다 */}
-        <div className="mb-2.5 flex items-center gap-2 px-1 sm:hidden">
-          <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-royal-50 text-royal-500">
-            <HeartHandshake size={13} />
+        <div className="mb-3 flex items-center gap-2.5 px-1 sm:hidden">
+          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-royal-50 text-royal-500">
+            <HeartHandshake size={17} />
           </span>
-          <p className="text-[13px] font-bold text-ink-500">보호자</p>
+          <p className="text-lg font-extrabold text-ink-900">보호자</p>
         </div>
 
         {/* 모바일 빠른 메뉴 3종 — 케어닥의 공지/FAQ/고객센터 아이콘 줄 자리에,
@@ -271,15 +279,15 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
 
         {/* 매니저 섹션 헤더 — 케어닥처럼 회색 글자 한 줄이 아니라, 아이콘+설명이 있는
             섹션 타이틀로 "여기서부터는 매니저 영역"이 한눈에 구분되게 한다 */}
-        <div className="mb-2.5 mt-6 flex items-center gap-2 px-1 sm:mt-5">
-          <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-primary-50 text-primary-500 sm:hidden">
-            <Briefcase size={13} />
+        <div className="mb-3 mt-7 flex items-center gap-2.5 px-1 sm:mt-5">
+          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary-50 text-primary-500 sm:hidden">
+            <Briefcase size={17} />
           </span>
-          <p className="text-[13px] font-bold text-ink-500 sm:font-semibold sm:text-ink-300">
+          <p className="text-lg font-extrabold text-ink-900 sm:text-[13px] sm:font-semibold sm:text-ink-300">
             돌보다 매니저
           </p>
           {isSitter && (
-            <span className="rounded-full bg-mint-100 px-2 py-0.5 text-[11px] font-bold text-mint-700 sm:hidden">
+            <span className="rounded-full bg-mint-100 px-2.5 py-1 text-[12px] font-bold text-mint-700 sm:hidden">
               활동 중
             </span>
           )}

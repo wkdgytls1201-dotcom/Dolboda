@@ -110,6 +110,22 @@ export function GradeTest() {
 
   function pick(itemId: string, score: number) {
     setAnswers((prev) => ({ ...prev, [itemId]: score }));
+    // 답을 고르면 다음 미답변 문항으로 부드럽게 이동 — 52문항을 손으로 일일이
+    // 내리지 않아도 흐름이 이어진다. 방금 고른 답이 반영된 상태 기준으로 찾는다.
+    const idx = area.items.findIndex((it) => it.id === itemId);
+    const next = area.items.find(
+      (it, i) => i > idx && it.id !== itemId && answers[it.id] === undefined
+    );
+    if (next) {
+      // setState 직후라 DOM은 아직 그대로지만, 문항 요소 자체는 이미 존재하므로
+      // 살짝 뒤에 스크롤하면 선택 표시가 그려진 뒤 자연스럽게 이동한다.
+      // (rAF는 화면이 백그라운드면 실행이 밀린다 — setTimeout이 어느 상황에서든 돈다)
+      setTimeout(() => {
+        document
+          .getElementById(`grade-q-${next.id}`)
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 120);
+    }
   }
 
   function start() {
@@ -502,7 +518,9 @@ export function GradeTest() {
           return (
             <div
               key={item.id}
-              className={`rounded-2xl border p-4 transition-colors duration-200 ${
+              id={`grade-q-${item.id}`}
+              // scroll-margin: 자동 스크롤로 이동했을 때 sticky 진행률 바에 가리지 않게
+              className={`rounded-2xl border p-4 transition-colors duration-200 [scroll-margin-top:calc(3rem+var(--safe-top)+96px)] sm:[scroll-margin-top:calc(4rem+var(--safe-top)+96px)] ${
                 value !== undefined ? "border-ink-100 bg-white" : "border-primary-100 bg-white"
               }`}
             >

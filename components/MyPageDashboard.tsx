@@ -230,16 +230,22 @@ export function MyPageDashboard() {
             </Link>
           )}
         </div>
+        {/* 숫자를 누르면 일자리 관리(지원·매칭 내역이 있는 곳)로 — 숫자만 보여주고
+            끝나면 "그래서 어디서 보는데?"가 된다 */}
         <div className="grid grid-cols-3 gap-2.5">
           {[
             { label: "지원", value: applied },
             { label: "매칭", value: matched },
             { label: "완료", value: completed },
           ].map((s) => (
-            <div key={s.label} className="rounded-xl bg-ivory-100 py-3.5 text-center">
+            <Link
+              key={s.label}
+              href="/mypage/sitter/jobs"
+              className="rounded-xl bg-ivory-100 py-3.5 text-center transition-all duration-150 ease-snappy hover:-translate-y-0.5 hover:bg-primary-50 hover:shadow-soft active:translate-y-0 active:scale-[0.97]"
+            >
               <p className="text-xl font-extrabold text-ink-900">{s.value}</p>
               <p className="mt-0.5 text-[12px] font-medium text-ink-400">{s.label}</p>
-            </div>
+            </Link>
           ))}
         </div>
         {level.next && (
@@ -252,7 +258,7 @@ export function MyPageDashboard() {
       <Link
         key="tips"
         href="/mypage/sitter/tips"
-        className="animate-fade-up group flex items-center justify-between gap-3 rounded-2xl border border-royal-100 bg-royal-50/60 p-4 transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:bg-royal-50 hover:shadow-card-hover sm:p-5"
+        className="animate-fade-up group flex items-center justify-between gap-3 rounded-2xl border-2 border-royal-200 bg-royal-50/60 p-4 shadow-card transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:border-royal-300 hover:bg-royal-50 hover:shadow-card-hover sm:p-5"
         style={{ animationDelay: `${cards.length * 70}ms` }}
       >
         <span className="flex items-center gap-3">

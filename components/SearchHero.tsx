@@ -1,8 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { Search } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ChevronDown, Search } from "lucide-react";
 import { FACILITY_TYPE_LABEL, FacilityType } from "@/lib/types";
 import { HeroBanner, type HeroSlide } from "./HeroBanner";
 import { InfoTooltip } from "./InfoTooltip";
@@ -19,6 +19,15 @@ const CHIPS: FacilityType[] = [
 export function SearchHero({ heroSlides }: { heroSlides: HeroSlide[] }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
+
+  // 히어로가 첫 화면을 다 차지해 아래 시설 목록의 존재를 모르는 문제 —
+  // 스크롤을 시작하기 전까지만 하단에 "더 있어요" 힌트를 띄운다(등급테스트 intro와 같은 패턴).
+  const [showScrollHint, setShowScrollHint] = useState(true);
+  useEffect(() => {
+    const onScroll = () => setShowScrollHint(window.scrollY < 40);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -54,27 +63,29 @@ export function SearchHero({ heroSlides }: { heroSlides: HeroSlide[] }) {
 
         {/* 모바일은 배너 아래로 살짝 띄우기만 한다 — 겹치게 하면 배너 하단 캡션(시설명·주소)이
             가려진다. 데스크톱은 배너 세로폭이 넉넉해서 기존처럼 살짝 겹쳐도 안 가려진다. */}
+        {/* 검색바는 한 줄 컴팩트 — 히어로가 화면을 다 차지하면 아래 시설 목록의
+            존재를 모른다. 줄인 만큼 아래 "더 있어요" 힌트로 스크롤을 유도한다. */}
         <form
           onSubmit={handleSubmit}
-          className="relative z-10 mx-auto mt-3 flex max-w-xl items-center gap-2 rounded-2xl bg-white p-2 shadow-soft sm:-mt-7"
+          className="relative z-10 mx-auto mt-3 flex h-12 max-w-xl items-center gap-1.5 rounded-2xl bg-white px-2 shadow-soft sm:-mt-7"
         >
-          <Search size={20} className="ml-2 shrink-0 text-ink-300" />
+          <Search size={18} className="ml-1.5 shrink-0 text-ink-300" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="지역, 시설명으로 검색"
-            className="w-full bg-transparent px-1 py-2 text-sm text-ink-900 placeholder:text-ink-300 focus:outline-none sm:text-base"
+            className="h-full w-full bg-transparent px-1 text-sm text-ink-900 placeholder:text-ink-300 focus:outline-none sm:text-base"
           />
           <button
             type="submit"
-            className="shrink-0 rounded-xl bg-primary-500 px-5 py-2.5 text-sm font-bold text-white transition hover:scale-105 hover:bg-primary-600 active:scale-95"
+            className="shrink-0 rounded-xl bg-primary-500 px-4 py-2 text-sm font-bold text-white transition hover:scale-105 hover:bg-primary-600 active:scale-95"
           >
             검색
           </button>
         </form>
       </div>
 
-      <div className="mx-auto mt-6 flex max-w-2xl flex-wrap items-center justify-center gap-2">
+      <div className="mx-auto mt-5 flex max-w-2xl flex-wrap items-center justify-center gap-2">
         {CHIPS.map((type) => (
           <button
             key={type}
@@ -86,6 +97,18 @@ export function SearchHero({ heroSlides }: { heroSlides: HeroSlide[] }) {
         ))}
         <InfoTooltip text={TOOLTIPS.facilityTypes} />
       </div>
+
+      {/* 아래에 내 주변 시설·통계가 이어진다는 신호 — 히어로가 첫 화면을 다 차지해
+          아래 내용의 존재를 모르는 문제. 흐름 안에 두면 그것조차 화면 밖이라(실측 863px),
+          스크롤 전까지만 탭바 위에 고정으로 띄우고 내리기 시작하면 치운다. */}
+      {showScrollHint && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-[72px] z-30 flex justify-center pb-2 sm:hidden">
+          <span className="flex items-center gap-1 rounded-full bg-ink-900/85 px-3.5 py-2 text-xs font-semibold text-white shadow-card backdrop-blur">
+            아래로 내려 시설을 둘러보세요
+            <ChevronDown size={14} className="animate-bounce" aria-hidden />
+          </span>
+        </div>
+      )}
     </section>
   );
 }

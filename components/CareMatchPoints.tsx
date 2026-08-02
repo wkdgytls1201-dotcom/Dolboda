@@ -102,11 +102,13 @@ export function CareMatchPoints({ facility }: { facility: Facility }) {
   if (points.length === 0) return null;
 
   return (
-    <section className="animate-fade-up mb-6 rounded-2xl border border-primary-100 bg-primary-50/40 p-4 sm:p-5">
+    <section className="animate-fade-up mb-6 rounded-2xl border-2 border-primary-200 bg-primary-50/40 p-4 shadow-card sm:p-5">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        {/* "배우자 기준"처럼 호칭을 앞세우면 어색하게 읽힌다 — 제목은 고정 워딩으로 하고,
+            어느 프로필 기준인지는 아래 프로필 전환 칩(2개 이상일 때)이 말해준다 */}
         <h3 className="flex items-center gap-2 text-[15px] font-bold text-ink-900">
           <HeartHandshake size={16} className="text-primary-500" />
-          {active.relation} 기준 체크포인트
+          보호자 맞춤형 체크포인트
         </h3>
         {profiles.length > 1 && (
           <div className="flex gap-1.5">
