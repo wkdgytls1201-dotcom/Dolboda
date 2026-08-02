@@ -74,10 +74,13 @@ const NURSE_GRADE_TABLE = [
 export default function FacilityDetailClient({
   facility,
   initialSimilar,
+  ownerContent,
 }: {
   facility: Facility;
   /** 서버에서 미리 계산한 "비슷한 곳" 첫 화면분 — 초기 HTML에 링크가 실려야 크롤러가 탄다 */
   initialSimilar: SimilarItem[];
+  /** 시설이 콘솔에서 직접 쓴 소개·사진 — 대부분 null(아직 인증 안 한 시설) */
+  ownerContent?: { intro: string | null; photos: string[]; updatedAt: string } | null;
 }) {
   const { toggle, isSelected, canAddMore } = useCompare();
   const { isFavorite, toggleFavorite } = useFavorites();
@@ -255,6 +258,42 @@ export default function FacilityDetailClient({
 
         {/* 사진 갤러리 — 사진이 2장 이상이면 옆으로 넘겨볼 수 있고, 그 외엔 기존 썸네일 그대로 */}
         <FacilityPhotoGallery facility={facility} />
+
+        {/* 시설이 직접 쓴 소개 — 공공데이터와 출처가 다르므로 "시설 제공"임을 명확히 표시.
+            대부분의 시설엔 아직 없고, 콘솔(/business/console)에서 인증 시설만 쓸 수 있다. */}
+        {ownerContent && (
+          <section className="mt-6 rounded-2xl border border-mint-200/70 bg-mint-50/40 p-5">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-[15px] font-bold text-ink-900">시설이 직접 소개해요</h2>
+              <span className="rounded-full bg-mint-600 px-2 py-0.5 text-[11px] font-bold text-white">
+                시설 제공 · {ownerContent.updatedAt}
+              </span>
+            </div>
+            {ownerContent.intro && (
+              <p className="whitespace-pre-line text-sm leading-[1.8] text-ink-700">
+                {ownerContent.intro}
+              </p>
+            )}
+            {ownerContent.photos.length > 0 && (
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                {ownerContent.photos.map((url) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={url}
+                    src={url}
+                    alt={`${facility.name} 시설 사진`}
+                    loading="lazy"
+                    className="aspect-square w-full rounded-xl object-cover"
+                  />
+                ))}
+              </div>
+            )}
+            <p className="mt-2.5 text-[11px] leading-relaxed text-ink-300">
+              이 내용은 시설 운영자가 직접 작성했어요. 평가등급·인력 등 공공데이터 항목과는
+              출처가 다릅니다.
+            </p>
+          </section>
+        )}
 
         {/* 행정처분 이력 경고 — 공표 데이터가 있는 시설만 */}
         {facility.adminActions && facility.adminActions.length > 0 && (

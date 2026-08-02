@@ -20,6 +20,24 @@ export default async function FacilityDetailPage({ params }: { params: { id: str
 
   const facility = rowToFacility(row);
 
+  // 시설이 콘솔에서 직접 쓴 소개·사진 (없으면 null — 대부분의 시설이 아직 없다).
+  // 공단 데이터와 별개 테이블(FacilityContent)이라 따로 읽는다.
+  // 조회 실패(테이블 미생성 등)가 상세 페이지 2만 8천 장을 죽이면 안 되므로 조용히 무시한다.
+  const ownerRow = await prisma.facilityContent
+    .findUnique({
+      where: { facilityId: row.id },
+      select: { intro: true, photos: true, updatedAt: true },
+    })
+    .catch(() => null);
+  const ownerContent =
+    ownerRow && (ownerRow.intro || (Array.isArray(ownerRow.photos) && ownerRow.photos.length > 0))
+      ? {
+          intro: ownerRow.intro,
+          photos: Array.isArray(ownerRow.photos) ? (ownerRow.photos as string[]) : [],
+          updatedAt: ownerRow.updatedAt.toISOString().slice(0, 10),
+        }
+      : null;
+
   // "이 시설과 비슷한 곳" 첫 화면분을 서버에서 미리 계산해 넘긴다.
   // 클라이언트에서만 불러오면 (1) 인접 시설 링크가 초기 HTML에 없어 크롤러가 타고 갈 수 없고
   // (2) 첫 진입 때 스켈레톤이 한 번 깜빡인다. 탭을 바꿀 때만 추가로 조회한다.
@@ -47,5 +65,11 @@ export default async function FacilityDetailPage({ params }: { params: { id: str
       deltas: s.deltas,
     }));
 
-  return <FacilityDetailClient facility={facility} initialSimilar={initialSimilar} />;
+  return (
+    <FacilityDetailClient
+      facility={facility}
+      initialSimilar={initialSimilar}
+      ownerContent={ownerContent}
+    />
+  );
 }

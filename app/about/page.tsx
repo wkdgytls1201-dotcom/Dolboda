@@ -14,8 +14,11 @@ export const metadata: Metadata = {
 const PRINCIPLES = [
   {
     icon: Database,
-    title: "공공데이터를 원본 그대로",
-    desc: "국민건강보험공단·건강보험심사평가원이 공개한 자료를 가공 없이 보여드립니다. 없는 값은 비워두고 '아직 공개되지 않았어요'라고 밝힙니다. 추정치를 만들어 채우지 않습니다.",
+    title: "공공데이터를 왜곡하지 않습니다",
+    // "가공 없이 그대로"라고 쓰면 사실과 다르다 — 우리는 실제로 정제·표준화하고,
+    // 안심지수는 미공개 항목을 전국 평균으로 보정해 계산한다. 원칙은 "손대지 않는다"가
+    // 아니라 "무엇을 어떻게 손댔는지 밝힌다"여야 한다.
+    desc: "국민건강보험공단·건강보험심사평가원이 공개한 자료를 임의로 바꾸지 않고, 보호자가 비교할 수 있도록 정제·표준화해 보여드립니다. 없는 값은 비워두고 '아직 공개되지 않았어요'라고 밝히며, 안심지수처럼 계산이 들어가는 지표는 산출 방식을 전부 공개합니다.",
   },
   {
     icon: ShieldCheck,
@@ -24,8 +27,10 @@ const PRINCIPLES = [
   },
   {
     icon: HeartHandshake,
-    title: "광고비로 순위를 바꾸지 않습니다",
-    desc: "검색 결과와 안심지수는 공개 데이터로만 계산합니다. 추천 영역에 노출되는 시설이 생기면 '추천'임을 명확히 표시합니다.",
+    // 시설 운영자용 광고 상품(/business)과 앞뒤가 맞아야 하는 문장.
+    // 단정형 약속("~하지 않습니다")보다, 어떻게 운영되는지의 사실 서술로 쓴다.
+    title: "광고와 정보를 구분해 보여드립니다",
+    desc: "일반 목록의 순서는 거리·평가등급·안심지수 기준으로 매겨지고, 시설이 구매하는 스폰서 노출은 분리된 자리에 '광고'로 표시합니다. 안심지수는 공개 데이터로만 계산하며 계산식을 전부 공개합니다.",
   },
 ];
 
@@ -130,20 +135,30 @@ export default function AboutPage() {
           ))}
         </dl>
 
+        {/* 두 버튼이 나란히 있는데 왼쪽은 "이메일 문의"라는 이름만, 오른쪽은 번호만 있어서
+            텍스트로 읽으면 "이메일 문의 010-2222-9943"으로 붙어 전화번호가 이메일 주소처럼
+            읽혔다(검색엔진·AI 크롤러가 실제로 그렇게 뽑아갔다). 각 버튼에 무엇인지와 값을
+            함께 적어 그 자체로 뜻이 닫히게 한다. */}
         <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
           <a
             href="mailto:wkdgytls1201@gmail.com"
-            className="flex min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-white text-sm font-bold text-ink-700 shadow-card transition-transform hover:-translate-y-0.5"
+            className="flex min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-white px-3 py-2.5 text-ink-700 shadow-card transition-transform hover:-translate-y-0.5"
           >
-            <Mail size={16} className="text-primary-500" />
-            이메일 문의
+            <Mail size={16} className="shrink-0 text-primary-500" />
+            <span className="min-w-0">
+              <span className="block text-[11px] leading-tight text-ink-300">이메일 문의</span>
+              <span className="block truncate text-sm font-bold">wkdgytls1201@gmail.com</span>
+            </span>
           </a>
           <a
             href="tel:010-2222-9943"
-            className="flex min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-white text-sm font-bold text-ink-700 shadow-card transition-transform hover:-translate-y-0.5"
+            className="flex min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-white px-3 py-2.5 text-ink-700 shadow-card transition-transform hover:-translate-y-0.5"
           >
-            <Phone size={16} className="text-mint-600" />
-            010-2222-9943
+            <Phone size={16} className="shrink-0 text-mint-600" />
+            <span className="min-w-0">
+              <span className="block text-[11px] leading-tight text-ink-300">전화 문의</span>
+              <span className="block truncate text-sm font-bold">010-2222-9943</span>
+            </span>
           </a>
         </div>
         <p className="mt-2 text-[12px] leading-relaxed text-ink-300">

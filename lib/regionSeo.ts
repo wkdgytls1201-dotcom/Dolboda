@@ -43,6 +43,21 @@ export function findRegionByAddress(address: string): RegionSeo | undefined {
 }
 
 // 주소 두 번째 토큰 = 시/군/구 (예: "경상남도 사천시 ..." → "사천시")
+/**
+ * 스폰서 슬롯 등에서 쓰는 지역 정규 키 — "경남 김해시"처럼 `시도 slug + 시군구`.
+ *
+ * 주소 표기("경상남도")와 slug("경남")가 섞여 저장되면 같은 지역이 두 키로 갈라져
+ * 슬롯 상한도 노출 조회도 어긋난다. 저장하는 쪽(관리자 승인)과 읽는 쪽(지역 페이지)이
+ * 반드시 이 함수를 함께 쓴다. 클라이언트에서도 안전하다(순수 데이터만 사용).
+ */
+export function canonicalRegionKey(address: string): string | null {
+  const sido = address.split(/\s+/)[0] ?? "";
+  const region = REGION_SEO.find((r) => r.prefixes.some((p) => sido.startsWith(p)));
+  const sigungu = sigunguOf(address);
+  if (!region || !sigungu) return null;
+  return `${region.slug} ${sigungu}`;
+}
+
 export function sigunguOf(address: string): string | null {
   const token = address.split(/\s+/)[1];
   if (!token) return null;

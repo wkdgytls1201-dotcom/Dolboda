@@ -14,6 +14,8 @@ import {
 } from "@/components/RegionSeoParts";
 import { SITE_URL, OG_IMAGE } from "@/lib/siteConfig";
 import { jsonLdHtml } from "@/lib/jsonLd";
+import { getSponsorsForSigungu } from "@/lib/sponsor";
+import { SponsorSlots } from "@/components/SponsorSlots";
 
 export const revalidate = 86400;
 
@@ -77,6 +79,7 @@ export default async function RegionSigunguPage({
 
   const summary = await getSigunguSummary(region, sigungu);
   const stats = await getRegionStats(region, sigungu);
+  const sponsors = await getSponsorsForSigungu(region.slug, sigungu);
   if (summary.total === 0) notFound();
 
   const topFacilities = await getTopFacilities(region, sigungu, 20);
@@ -164,6 +167,9 @@ export default async function RegionSigunguPage({
       )}
       <RegionStatStrip stats={stats} total={summary.total} regionName={sigungu} />
 
+
+      {/* 스폰서(광고)는 일반 목록과 분리된 자리에만 — 아래 목록의 정렬에는 관여하지 않는다 */}
+      <SponsorSlots facilities={sponsors} regionLabel={sigungu} />
 
       <section className="mb-8">
         <h2 className="mb-3 font-bold text-ink-900">{sigungu} 시설 목록 (평가등급순)</h2>

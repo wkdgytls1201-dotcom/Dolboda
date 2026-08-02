@@ -13,6 +13,8 @@ import {
 } from "@/components/RegionSeoParts";
 import { SITE_URL, OG_IMAGE } from "@/lib/siteConfig";
 import { jsonLdHtml } from "@/lib/jsonLd";
+import { getSponsorsForSigungu } from "@/lib/sponsor";
+import { SponsorSlots } from "@/components/SponsorSlots";
 
 export const revalidate = 86400;
 
@@ -96,6 +98,11 @@ export default async function RegionTypePage({
     (page - 1) * PER_PAGE
   );
   const stats = await getRegionStats(region, sigungu, typeSeo.type);
+  // 스폰서는 유형 페이지에서도 그 시·군·구 계약분을 그대로 보여준다(유형별로 따로 팔지 않는다 —
+  // 지역당 3곳 상한을 유형까지 쪼개면 상한의 의미가 없어진다). 해당 유형만 거른다.
+  const sponsors = (await getSponsorsForSigungu(region.slug, sigungu)).filter(
+    (s) => s.facilityType === typeSeo.type
+  );
 
   const sidoUrl = `${SITE_URL}/region/${encodeURIComponent(region.slug)}`;
   const sigunguUrl = `${sidoUrl}/${encodeURIComponent(sigungu)}`;
@@ -129,7 +136,8 @@ export default async function RegionTypePage({
           url: `${SITE_URL}/facility/${f.id}`,
         })),
       },
-      regionFaqJsonLd({ regionName: sigungu, total: summary.total }),
+      // total은 이 유형의 시설 수다 — typeSeo를 함께 넘겨야 질문도 그 유형으로 나온다
+      regionFaqJsonLd({ regionName: sigungu, total: summary.total, typeSeo }),
     ],
   };
 
@@ -193,6 +201,8 @@ export default async function RegionTypePage({
 
       <RegionStatStrip stats={stats} total={summary.total} regionName={`${sigungu} ${typeSeo.short}`} />
 
+      <SponsorSlots facilities={sponsors} regionLabel={`${sigungu} ${typeSeo.short}`} />
+
       <section className="mb-8">
         <h2 className="mb-3 font-bold text-ink-900">
           {sigungu} {typeSeo.short} 목록 (평가등급순)
@@ -239,7 +249,19 @@ export default async function RegionTypePage({
       </section>
       )}
 
-      <RegionFaq regionName={sigungu} total={summary.total} />
+      {/* 전국 허브로 올려보내는 링크 — 지역 페이지가 수천 개라 여기서 모이는 신호가 크다.
+          보호자에게도 "이 동네 말고 전체는 어떤가"를 볼 통로가 된다. */}
+      <Link
+        href={`/${encodeURIComponent(typeSeo.slug)}`}
+        className="mb-8 flex items-center justify-between gap-3 rounded-2xl border border-ink-100 bg-white px-4 py-3.5 text-sm font-semibold text-ink-700 transition-colors hover:bg-ink-100"
+      >
+        전국 {typeSeo.label} 현황 한눈에 보기
+        <span aria-hidden className="shrink-0 text-ink-300">
+          ›
+        </span>
+      </Link>
+
+      <RegionFaq regionName={sigungu} total={summary.total} typeSeo={typeSeo} />
     </main>
   );
 }

@@ -99,9 +99,13 @@ export function consultForwardEmailHtml(params: {
                   평가 정보·제공 서비스를 한곳에 모아, 보호자가 쉽고 투명하게 확인할 수 있도록
                   제공합니다.
                 </p>
+                <!-- ⚠️ 이 문장은 /business의 광고 상품 안내와 앞뒤가 맞아야 한다.
+                     단정형 약속 대신 운영 방식의 사실 서술로 쓴다(app/about/page.tsx와 동일 기조). -->
                 <p style="margin:0 0 18px;font-size:14px;line-height:1.85;color:#5B5470;word-break:keep-all;">
                   어느 시설을 선택할지는 보호자와 시설이 직접 상담해 정하시며, ${SITE_NAME}는
-                  그 사이에 개입하거나 순위를 임의로 바꾸지 않습니다.
+                  그 사이에 개입하지 않습니다. 목록의 순서는 거리·평가등급·안심지수 기준으로
+                  매겨지고, 별도로 운영하는 스폰서 노출은 일반 목록과 분리된 자리에
+                  <strong>'광고'로 표시</strong>해 보호자가 바로 구분할 수 있게 합니다.
                 </p>
 
                 <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#1B1730;">
