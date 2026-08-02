@@ -103,7 +103,7 @@ export function DateRangeCalendar({
             key={p.label}
             type="button"
             onClick={() => applyPreset(p.days)}
-            className="min-h-[36px] rounded-full border border-ink-100 px-3 text-xs font-bold text-ink-500 transition-colors duration-150 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700 active:scale-95"
+            className="min-h-[44px] rounded-full border border-ink-100 px-3.5 text-xs font-bold text-ink-500 transition-colors duration-150 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700 active:scale-95"
           >
             {p.label}
           </button>
@@ -116,7 +116,7 @@ export function DateRangeCalendar({
           disabled={!canGoPrev}
           onClick={() => setView(new Date(view.getFullYear(), view.getMonth() - 1, 1))}
           aria-label="이전 달"
-          className="flex h-10 w-10 items-center justify-center rounded-full text-ink-500 transition-colors duration-150 hover:bg-ink-100 active:scale-95 disabled:opacity-30"
+          className="flex h-11 w-11 items-center justify-center rounded-full text-ink-500 transition-colors duration-150 hover:bg-ink-100 active:scale-95 disabled:opacity-30"
         >
           <ChevronLeft size={18} />
         </button>
@@ -125,7 +125,7 @@ export function DateRangeCalendar({
           type="button"
           onClick={() => setView(new Date(view.getFullYear(), view.getMonth() + 1, 1))}
           aria-label="다음 달"
-          className="flex h-10 w-10 items-center justify-center rounded-full text-ink-500 transition-colors duration-150 hover:bg-ink-100 active:scale-95"
+          className="flex h-11 w-11 items-center justify-center rounded-full text-ink-500 transition-colors duration-150 hover:bg-ink-100 active:scale-95"
         >
           <ChevronRight size={18} />
         </button>

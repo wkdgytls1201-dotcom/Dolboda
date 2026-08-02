@@ -488,7 +488,7 @@ export function GradeTest() {
             type="button"
             onClick={back}
             aria-label="이전"
-            className="-ml-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink-500 transition-colors duration-150 hover:bg-ink-100 active:scale-95"
+            className="-ml-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-ink-500 transition-colors duration-150 hover:bg-ink-100 active:scale-95"
           >
             <ChevronLeft size={20} />
           </button>

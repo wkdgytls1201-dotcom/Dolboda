@@ -117,7 +117,7 @@ export function CareMatchPoints({ facility }: { facility: Facility }) {
                 key={p.id}
                 type="button"
                 onClick={() => setActiveId(p.id)}
-                className={`flex min-h-[40px] items-center rounded-full px-3.5 text-[12px] font-bold transition-all duration-200 ease-snappy active:scale-95 ${
+                className={`flex min-h-[44px] items-center rounded-full px-3.5 text-[12px] font-bold transition-all duration-200 ease-snappy active:scale-95 ${
                   p.id === active.id
                     ? "bg-primary-500 text-white"
                     : "bg-white text-ink-500 shadow-card hover:-translate-y-0.5"

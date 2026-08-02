@@ -68,53 +68,30 @@ export function MyPageDashboard() {
   // 아직 입소를 정하지 않은 건이 있으면 대시보드에서 먼저 보여준다.
   const [consults, setConsults] = useState<{ status: string | null }[] | null>(null);
 
+  // 예전엔 이 네 가지를 각각 불렀다(care-requests, consult/mine,
+  // care-request-applications/mine, care-requests/open?count=1). 페이로드는 다 합쳐
+  // 3KB도 안 되는데 왕복마다 1.3~2.6초가 걸렸다 — 서버리스 함수가 각자 깨어나
+  // 각자 세션을 검사하고 각자 DB에 붙는 비용이다. 한 번의 왕복으로 합쳤다.
   useEffect(() => {
     let cancelled = false;
-    // 보호자용: 내 돌봄 요청 (없으면 404)
-    fetch("/api/care-requests")
+    fetch("/api/mypage/summary")
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
-        if (!cancelled) setRequest(d && !d.error ? d : null);
+        if (cancelled) return;
+        setRequest(d?.careRequest ?? null);
+        setConsults(d?.consults ?? []);
+        setApplications(d?.applications ?? []);
+        setOpenJobs(typeof d?.openJobs === "number" ? d.openJobs : null);
       })
       .catch(() => {
-        if (!cancelled) setRequest(null);
-      });
-    fetch("/api/consult/mine")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (!cancelled) setConsults(d?.items ?? []);
-      })
-      .catch(() => {
-        if (!cancelled) setConsults([]);
+        if (cancelled) return;
+        setRequest(null);
+        setConsults([]);
       });
     return () => {
       cancelled = true;
     };
   }, []);
-
-  // 매니저용: 지원 현황·새 일자리 수 (매니저로 확인된 후에만 요청)
-  useEffect(() => {
-    if (!isSitter) return;
-    let cancelled = false;
-    fetch("/api/care-request-applications/mine")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (!cancelled) setApplications(d?.items ?? []);
-      })
-      .catch(() => {
-        if (!cancelled) setApplications([]);
-      });
-    // 배지에 쓸 숫자만 받는다(count=1) — 예전엔 공고 100건을 통째로 받아 length를 셌다
-    fetch("/api/care-requests/open?count=1")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (!cancelled) setOpenJobs(typeof d?.count === "number" ? d.count : null);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [isSitter]);
 
   const cards: React.ReactNode[] = [];
 

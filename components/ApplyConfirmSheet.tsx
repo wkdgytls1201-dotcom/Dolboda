@@ -70,7 +70,7 @@ export function ApplyConfirmSheet({
             type="button"
             aria-label="닫기"
             onClick={onClose}
-            className="-mr-2 -mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink-300 transition-colors duration-150 hover:bg-ink-100 hover:text-ink-700"
+            className="-mr-2 -mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-ink-300 transition-colors duration-150 hover:bg-ink-100 hover:text-ink-700"
           >
             <X size={20} />
           </button>
@@ -106,7 +106,7 @@ export function ApplyConfirmSheet({
                 </p>
                 <Link
                   href="/mypage/sitter/profile"
-                  className="mt-2 inline-flex min-h-[40px] items-center gap-1 text-xs font-bold text-primary-600 hover:text-primary-700"
+                  className="mt-2 inline-flex min-h-[44px] items-center gap-1 text-xs font-bold text-primary-600 hover:text-primary-700"
                 >
                   <Pencil size={12} />
                   소개글 쓰러 가기

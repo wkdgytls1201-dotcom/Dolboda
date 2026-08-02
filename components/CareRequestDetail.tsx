@@ -297,7 +297,7 @@ export function CareRequestDetail({
                       type="button"
                       disabled={busy === app.id}
                       onClick={() => handleConfirm(app.id)}
-                      className="min-h-[42px] w-full rounded-xl bg-primary-500 px-3 text-sm font-bold text-white transition-all duration-150 hover:bg-primary-600 active:scale-[0.98] disabled:opacity-60"
+                      className="min-h-[44px] w-full rounded-xl bg-primary-500 px-3 text-sm font-bold text-white transition-all duration-150 hover:bg-primary-600 active:scale-[0.98] disabled:opacity-60"
                     >
                       {busy === app.id ? "처리 중..." : "이 분과 함께할래요"}
                     </button>

@@ -151,7 +151,7 @@ export function ConsultModal({
                         key={p.id}
                         type="button"
                         onClick={() => setShareProfileId(p.id)}
-                        className={`flex min-h-[40px] items-center rounded-full px-3 text-[11px] font-bold ${
+                        className={`flex min-h-[44px] items-center rounded-full px-3 text-[11px] font-bold ${
                           shareProfileId === p.id
                             ? "bg-primary-500 text-white"
                             : "bg-white text-ink-500 shadow-card"

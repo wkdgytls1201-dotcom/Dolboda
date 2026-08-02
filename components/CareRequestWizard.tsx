@@ -316,7 +316,7 @@ export function CareRequestWizard({
               type="button"
               onClick={() => setStep((s) => s - 1)}
               aria-label="이전 단계"
-              className="-ml-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink-500 transition-colors duration-150 hover:bg-ink-100 active:scale-95"
+              className="-ml-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-ink-500 transition-colors duration-150 hover:bg-ink-100 active:scale-95"
             >
               <ChevronLeft size={20} />
             </button>
