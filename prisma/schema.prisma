@@ -50,6 +50,58 @@ model Facility {
   @@index([dataSource])
 }
 
+// 돌봄 합의서 — 보호자와 돌보다 매니저가 직접 맺는 합의의 기록.
+//
+// ★ 포지션: 돌보다는 이 합의의 당사자가 아니다. 표준 양식을 제공하고 서명 사실을
+//   기록·보관할 뿐이며, 계약 내용과 이행 책임은 두 당사자에게 있다(약관과 동일한 입장).
+//   이 선을 넘으면 직업안정법상 유료직업소개사업 등록 문제가 생긴다.
+//
+// 위변조 방지: 서명 시점의 합의 내용을 content(jsonb)에 통째로 박아두고 그 정규화
+// 문자열의 SHA-256을 contentHash에 남긴다. 나중에 원본 돌봄 요청이 수정되더라도
+// 서명된 합의서는 그대로 남고, 해시를 다시 계산해 대조하면 위변조가 드러난다.
+// ★ 관계(@relation)를 일부러 걸지 않았다. User·CareRequest에 Cascade로 묶으면 한쪽이
+//   탈퇴하는 순간 합의서가 사라지는데, 그러면 남은 당사자가 자기 권리를 증명할 자료를
+//   잃는다. content에 서명 시점 내용이 통째로 들어 있어 원본 요청이 없어져도 문서는
+//   온전하다. 보관 기간(3년)과 파기 조건은 개인정보처리방침 3항에 명시.
+model CareAgreement {
+  id            String   @id @default(cuid())
+  careRequestId String   @unique // 요청 한 건당 합의서 하나
+  applicationId String // 확정된 지원(= 어느 매니저와 맺은 합의인지)
+  guardianId    String
+  sitterProfileId String
+
+  /** 서명 시점에 확정된 합의 내용 전문(당사자·기간·업무범위·사례비 등) */
+  content     Json
+  /** content의 정규화 JSON에 대한 SHA-256 — 위변조 대조용 */
+  contentHash String
+
+  // 서명 기록 — 누가 언제 어떤 이름으로 동의했는지. 이미지 서명은 dataURL로 보관한다.
+  // 서명 증거 — 전자서명은 "누가 서명했는지"를 다투게 되므로, 서명 순간의 정황을
+  // 함께 남긴다(전자문서법상 작성자 확인 자료). 로그인 계정 + 서버 시각 + 접속 IP +
+  // 기기 정보를 묶어두면 사후에 서명 사실을 설명할 수 있다.
+  guardianName      String?
+  guardianSignature String? // data:image/png;base64,...
+  guardianSignedAt  DateTime?
+  guardianSignedIp  String?
+  guardianSignedUa  String?
+  guardianEmail     String? // 서명 시점의 계정 이메일(사본 발송 대상)
+  sitterName        String?
+  sitterSignature   String?
+  sitterSignedAt    DateTime?
+  sitterSignedIp    String?
+  sitterSignedUa    String?
+  sitterEmail       String?
+
+  /** 양측 서명 완료 후 사본을 이메일로 보낸 시각 */
+  copySentAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([guardianId])
+  @@index([sitterProfileId])
+}
+
 // 시설 시계열 스냅샷 — 매일 새벽 공단 데이터를 자동 수집(scripts/daily-nhis-sync.mjs)하면서
 // 정원·현원·대기·등급이 "바뀐 시설만" 그날 값으로 적재한다(첫 실행일은 전체 기준선).
 // 쌓이면: 자리 난 시설 감지 → 찜한 시설 알림 → 대기 소진 속도 → 등급 변동 추적의 재료가 된다.

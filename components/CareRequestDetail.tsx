@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { FileText, CheckCircle2 } from "lucide-react";
+import { FileText, FileSignature, CheckCircle2 } from "lucide-react";
 import { typeMeta } from "@/lib/careLocationTypes";
 import { formatTimeRange, daysBetween } from "@/lib/careOptions";
 import type { CareRequestData } from "@/lib/careRequestTypes";
@@ -160,20 +160,37 @@ export function CareRequestDetail({
       </div>
 
       {isMatched && (
-        <Link
-          href="/care-request/confirmation"
-          className="mb-4 flex items-center gap-3 rounded-2xl border border-mint-200 bg-mint-50 p-4 transition-colors duration-150 hover:bg-mint-100"
-        >
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-mint-100 text-mint-700">
-            <FileText size={18} />
-          </span>
-          <span className="flex-1">
-            <span className="block text-sm font-bold text-ink-900">돌봄 확인서 보기</span>
-            <span className="block text-xs text-ink-500">
-              확정된 내용을 한 장으로 정리했어요. 인쇄하거나 PDF로 저장할 수 있어요.
+        <div className="mb-4 space-y-2.5">
+          {/* 합의서를 확인서보다 앞에 둔다 — 확정 직후 해야 할 일이 서명이기 때문 */}
+          <Link
+            href="/care-request/agreement"
+            className="flex items-center gap-3 rounded-2xl border-2 border-royal-200 bg-royal-50 p-4 shadow-card transition-all duration-150 hover:-translate-y-0.5 hover:bg-royal-100"
+          >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-royal-600">
+              <FileSignature size={19} />
             </span>
-          </span>
-        </Link>
+            <span className="flex-1">
+              <span className="block text-sm font-bold text-ink-900">돌봄 합의서 작성·서명</span>
+              <span className="block text-xs leading-snug text-ink-500">
+                기간·업무 범위·사례비를 문서로 남기고 두 분이 서명해요
+              </span>
+            </span>
+          </Link>
+          <Link
+            href="/care-request/confirmation"
+            className="flex items-center gap-3 rounded-2xl border border-mint-200 bg-mint-50 p-4 transition-colors duration-150 hover:bg-mint-100"
+          >
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-mint-100 text-mint-700">
+              <FileText size={18} />
+            </span>
+            <span className="flex-1">
+              <span className="block text-sm font-bold text-ink-900">돌봄 확인서 보기</span>
+              <span className="block text-xs text-ink-500">
+                확정된 내용을 한 장으로 정리했어요. 인쇄하거나 PDF로 저장할 수 있어요.
+              </span>
+            </span>
+          </Link>
+        </div>
       )}
 
       <div className="space-y-4">

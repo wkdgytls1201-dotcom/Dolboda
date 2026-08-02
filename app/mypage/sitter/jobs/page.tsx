@@ -10,6 +10,7 @@ import {
   User,
   Wallet,
   FileText,
+  FileSignature,
   SlidersHorizontal,
   Search,
   MapPinned,
@@ -575,13 +576,23 @@ export default function SitterJobsPage() {
                   </span>
                 }
                 footer={
-                  <Link
-                    href="/care-request/confirmation"
-                    className="flex min-h-[48px] items-center justify-center gap-1.5 rounded-xl border border-mint-200 bg-mint-50 text-sm font-bold text-mint-700 transition-colors duration-150 hover:bg-mint-100 active:scale-[0.98]"
-                  >
-                    <FileText size={15} />
-                    돌봄 확인서 보기
-                  </Link>
+                  <div className="space-y-2">
+                    {/* 확정 직후 해야 할 일이 서명이라 합의서를 위에 둔다 */}
+                    <Link
+                      href="/care-request/agreement"
+                      className="flex min-h-[48px] items-center justify-center gap-1.5 rounded-xl border-2 border-royal-200 bg-royal-50 text-sm font-bold text-royal-700 transition-colors duration-150 hover:bg-royal-100 active:scale-[0.98]"
+                    >
+                      <FileSignature size={15} />
+                      합의서 확인·서명
+                    </Link>
+                    <Link
+                      href="/care-request/confirmation"
+                      className="flex min-h-[48px] items-center justify-center gap-1.5 rounded-xl border border-mint-200 bg-mint-50 text-sm font-bold text-mint-700 transition-colors duration-150 hover:bg-mint-100 active:scale-[0.98]"
+                    >
+                      <FileText size={15} />
+                      돌봄 확인서 보기
+                    </Link>
+                  </div>
                 }
               />
             ))

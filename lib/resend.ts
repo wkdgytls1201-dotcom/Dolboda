@@ -85,3 +85,95 @@ export function consultForwardEmailHtml(params: {
   </body>
 </html>`;
 }
+
+// 돌봄 합의서 사본 메일 — 양측이 서명을 마치면 각자에게 같은 사본을 보낸다.
+//
+// 왜 이메일인가: 합의서가 우리 서버에만 있으면 "돌보다가 보관한 문서"에 머무른다.
+// 각자 자기 메일함에 사본을 갖고 있어야 나중에 다투게 됐을 때 당사자가 직접
+// 제시할 수 있다(서비스 탈퇴·서버 사고와 무관하게 남는다).
+//
+// 광고성 문구는 넣지 않는다 — 본인이 서명한 문서의 사본을 전달하는 거래성 정보다.
+export function agreementCopyEmailHtml(params: {
+  docNo: string;
+  contentHash: string;
+  guardianName: string;
+  guardianSignedAt: string;
+  sitterName: string;
+  sitterSignedAt: string;
+  terms: { label: string; value: string }[];
+  clauses: { title: string; body: string }[];
+  viewUrl: string;
+}): string {
+  const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const row = (label: string, value: string) => `
+    <tr>
+      <td style="padding:8px 0;color:#6B647F;font-size:13px;width:110px;">${esc(label)}</td>
+      <td style="padding:8px 0;color:#1B1730;font-size:13px;font-weight:600;">${esc(value)}</td>
+    </tr>`;
+
+  return `
+<!doctype html>
+<html lang="ko">
+  <body style="margin:0;padding:0;background:#FFFBF3;font-family:-apple-system,BlinkMacSystemFont,'Malgun Gothic',sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FFFBF3;padding:28px 14px;">
+      <tr><td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden;">
+          <tr><td style="padding:24px 24px 16px;border-bottom:1px solid #EFEDF3;">
+            <p style="margin:0 0 4px;color:#FF6250;font-size:13px;font-weight:800;">돌보다</p>
+            <h1 style="margin:0;color:#1B1730;font-size:20px;font-weight:800;">돌봄 합의서</h1>
+            <p style="margin:6px 0 0;color:#9C97AC;font-size:12px;">문서번호 ${esc(params.docNo)}</p>
+          </td></tr>
+
+          <tr><td style="padding:18px 24px;">
+            <p style="margin:0 0 14px;color:#3A3452;font-size:13px;line-height:1.7;">
+              보호자와 돌보다 매니저 두 분이 모두 서명을 마쳐 합의서가 완성되었습니다.
+              이 메일은 <b>본인이 서명한 문서의 사본</b>이며, 각자 보관하실 수 있도록 양측에 동일하게 보내드립니다.
+            </p>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+              ${params.terms.map((t) => row(t.label, t.value)).join("")}
+            </table>
+          </td></tr>
+
+          <tr><td style="padding:0 24px 18px;">
+            <div style="background:#F5F4F9;border-radius:12px;padding:14px;">
+              <p style="margin:0 0 8px;color:#1B1730;font-size:13px;font-weight:700;">서명 기록</p>
+              <p style="margin:0 0 4px;color:#3A3452;font-size:12px;">보호자 ${esc(params.guardianName)} · ${esc(params.guardianSignedAt)}</p>
+              <p style="margin:0;color:#3A3452;font-size:12px;">돌보다 매니저 ${esc(params.sitterName)} · ${esc(params.sitterSignedAt)}</p>
+            </div>
+          </td></tr>
+
+          <tr><td style="padding:0 24px 18px;">
+            <p style="margin:0 0 10px;color:#1B1730;font-size:13px;font-weight:700;">합의 조항</p>
+            ${params.clauses
+              .map(
+                (c) => `
+              <p style="margin:0 0 3px;color:#1B1730;font-size:12px;font-weight:700;">${esc(c.title)}</p>
+              <p style="margin:0 0 10px;color:#6B647F;font-size:12px;line-height:1.7;">${esc(c.body)}</p>`
+              )
+              .join("")}
+          </td></tr>
+
+          <tr><td style="padding:0 24px 24px;">
+            <a href="${params.viewUrl}" style="display:block;background:#FF6250;color:#ffffff;text-decoration:none;text-align:center;padding:14px;border-radius:12px;font-size:14px;font-weight:700;">
+              합의서 원본 열기 (인쇄·PDF 저장)
+            </a>
+            <p style="margin:10px 0 0;color:#9C97AC;font-size:11px;line-height:1.6;">
+              위 버튼으로 원본을 열어 브라우저의 인쇄 기능에서 &lsquo;PDF로 저장&rsquo;을 고르면 PDF 파일로 보관하실 수 있어요.
+            </p>
+          </td></tr>
+
+          <tr><td style="padding:16px 24px;background:#FAFAFC;border-top:1px solid #EFEDF3;">
+            <p style="margin:0 0 6px;color:#6B647F;font-size:11px;line-height:1.7;">
+              이 합의는 <b>보호자와 돌보다 매니저 두 분 사이의 합의</b>입니다. 돌보다는 합의의 당사자가 아니며,
+              표준 양식을 제공하고 서명 사실을 기록·보관할 뿐 사례비 결정·지급이나 돌봄 이행에 관여하지 않습니다.
+            </p>
+            <p style="margin:0;color:#9C97AC;font-size:10px;word-break:break-all;">
+              문서 지문(SHA-256): ${esc(params.contentHash)}
+            </p>
+          </td></tr>
+        </table>
+      </td></tr>
+    </table>
+  </body>
+</html>`;
+}
