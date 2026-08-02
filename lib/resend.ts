@@ -37,9 +37,9 @@ export function consultForwardEmailHtml(params: {
               <td bgcolor="#FF6250" style="padding:32px 28px 26px;text-align:center;background:#FF6250;background-image:linear-gradient(135deg,#FF6250 0%,#FF8A73 55%,#FFB48C 100%);">
                 <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 14px;">
                   <tr>
-                    <td bgcolor="#FFFFFF" width="92" height="92" align="center" valign="middle" style="width:92px;height:92px;background:#ffffff;border-radius:46px;text-align:center;vertical-align:middle;">
+                    <td bgcolor="#FFFFFF" width="116" height="116" align="center" valign="middle" style="width:116px;height:116px;background:#ffffff;border-radius:58px;text-align:center;vertical-align:middle;">
                       <a href="${SITE_URL}" style="text-decoration:none;display:block;">
-                        <img src="${SITE_URL}/logo.png" alt="${SITE_NAME}" width="60" height="60" style="display:block;margin:0 auto;border:0;" />
+                        <img src="${SITE_URL}/logo.png" alt="${SITE_NAME}" width="78" height="78" style="display:block;margin:0 auto;border:0;" />
                       </a>
                     </td>
                   </tr>
