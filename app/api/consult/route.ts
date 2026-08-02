@@ -139,6 +139,17 @@ export async function POST(req: Request) {
         // 정정 요청·수신거부를 "회신"으로 받으려면 답장이 닿을 주소가 있어야 한다 —
         // 발신 주소(noreply@)는 수신함이 없어서 회신이 사라진다.
         replyTo: CONSULT_NOTIFY_EMAIL,
+        // List-Unsubscribe — Gmail이 발신자 평판을 매길 때 보는 항목이라 수신함 도달률에
+        // 도움이 되고, 수신자는 본문을 읽지 않아도 메일 상단에서 바로 수신거부할 수 있다.
+        //
+        // mailto 방식만 쓴다. 원클릭(List-Unsubscribe-Post)은 RFC 8058상 HTTPS POST를
+        // 받아 즉시 처리하는 엔드포인트가 있어야 하는데, 아직 차단 목록이 없어서
+        // 선언만 해두면 "눌러도 아무 일이 없는" 상태가 된다 — 그건 안 하느니만 못하다.
+        headers: {
+          "List-Unsubscribe": `<mailto:${CONSULT_NOTIFY_EMAIL}?subject=${encodeURIComponent(
+            `수신거부 ${facility.name}`
+          )}>`,
+        },
         text:
           `안녕하세요, ${facility.name} 담당자님.\n` +
           `장기요양시설 정보 서비스 ${SITE_NAME}(${SITE_URL})을 통해 아래와 같이 상담 문의가 접수되어 안내드립니다.\n\n` +
