@@ -14,8 +14,9 @@ import {
 } from "@/components/RegionSeoParts";
 import { SITE_URL, OG_IMAGE } from "@/lib/siteConfig";
 import { jsonLdHtml } from "@/lib/jsonLd";
-import { getSponsorsForSigungu } from "@/lib/sponsor";
+import { getSponsorsForSigungu, getBannerForSigungu } from "@/lib/sponsor";
 import { SponsorSlots } from "@/components/SponsorSlots";
+import { RegionBanner } from "@/components/RegionBanner";
 
 export const revalidate = 86400;
 
@@ -80,6 +81,7 @@ export default async function RegionSigunguPage({
   const summary = await getSigunguSummary(region, sigungu);
   const stats = await getRegionStats(region, sigungu);
   const sponsors = await getSponsorsForSigungu(region.slug, sigungu);
+  const banner = await getBannerForSigungu(region.slug, sigungu);
   if (summary.total === 0) notFound();
 
   const topFacilities = await getTopFacilities(region, sigungu, 20);
@@ -136,6 +138,8 @@ export default async function RegionSigunguPage({
         <strong className="font-bold text-ink-700">{summary.total}곳</strong>의 평가등급과 비급여
         비용, 인력 현황을 비교해볼 수 있어요.
       </p>
+
+      <RegionBanner banner={banner} />
 
       <div className="mb-4">
         <TypeCountChips typeCounts={summary.typeCounts} />

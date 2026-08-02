@@ -15,6 +15,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { toSquareImage } from "@/lib/squareImage";
+import { toWideImage } from "@/lib/wideImage";
 import { BUSINESS_PLANS, VAT_NOTE, formatPlanPrice } from "@/lib/businessPlans";
 
 // 시설 콘솔 화면.
@@ -49,6 +50,8 @@ interface ConsoleFacility {
   planName: string;
   photoLimit: number;
   canPostNews: boolean;
+  canManageBanner: boolean;
+  bannerImageUrl: string | null;
   intro: string;
   photos: string[];
   consultTotal: number;
@@ -120,6 +123,8 @@ function FacilityPanel({ facility }: { facility: ConsoleFacility }) {
   const [intro, setIntro] = useState(facility.intro);
   const [savedIntro, setSavedIntro] = useState(facility.intro);
   const [photos, setPhotos] = useState(facility.photos);
+  const [bannerUrl, setBannerUrl] = useState(facility.bannerImageUrl);
+  const bannerFileRef = useRef<HTMLInputElement>(null);
   const [posts, setPosts] = useState(facility.posts);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -402,6 +407,17 @@ function FacilityPanel({ facility }: { facility: ConsoleFacility }) {
         )}
       </section>
 
+      {/* 지역 배너 — 지역 프리미엄 이상 */}
+      <BannerSection
+        facility={facility}
+        bannerUrl={bannerUrl}
+        setBannerUrl={setBannerUrl}
+        bannerFileRef={bannerFileRef}
+        busy={busy}
+        setBusy={setBusy}
+        report={report}
+      />
+
       {/* 시설 소식 — 비즈니스 플러스 이상 */}
       <NewsSection
         facility={facility}
@@ -512,6 +528,134 @@ type CallFn = (
   init: RequestInit | undefined,
   okMessage: string | null
 ) => Promise<Record<string, unknown> | null>;
+
+function BannerSection({
+  facility,
+  bannerUrl,
+  setBannerUrl,
+  bannerFileRef,
+  busy,
+  setBusy,
+  report,
+}: {
+  facility: ConsoleFacility;
+  bannerUrl: string | null;
+  setBannerUrl: React.Dispatch<React.SetStateAction<string | null>>;
+  bannerFileRef: React.RefObject<HTMLInputElement>;
+  busy: boolean;
+  setBusy: React.Dispatch<React.SetStateAction<boolean>>;
+  report: (err: string | null, ok: string | null) => void;
+}) {
+  async function upload(file: File) {
+    setBusy(true);
+    report(null, null);
+    try {
+      // 가로 4:1로 미리 잘라서 올린다 — 배너 자리는 크기가 정해져 있어 원본을
+      // 그대로 보내면 서버가 다시 잘라야 하고, 전송량도 커진다.
+      const { blob } = await toWideImage(file);
+      const res = await fetch(
+        `/api/business/banner?facilityId=${encodeURIComponent(facility.facilityId)}`,
+        { method: "POST", headers: { "Content-Type": blob.type }, body: blob }
+      );
+      const json = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        banner?: { imageUrl: string | null };
+      };
+      if (!res.ok) {
+        report(json.error ?? "배너를 올리지 못했어요.", null);
+        return;
+      }
+      setBannerUrl(json.banner?.imageUrl ?? null);
+      report(null, "배너를 올렸어요. 지역 페이지에 바로 보입니다.");
+    } catch (e) {
+      report(e instanceof Error ? e.message : "이미지를 처리하지 못했어요.", null);
+    } finally {
+      setBusy(false);
+      if (bannerFileRef.current) bannerFileRef.current.value = "";
+    }
+  }
+
+  async function remove() {
+    setBusy(true);
+    report(null, null);
+    try {
+      const res = await fetch(
+        `/api/business/banner?facilityId=${encodeURIComponent(facility.facilityId)}`,
+        { method: "DELETE" }
+      );
+      const json = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        report(json.error ?? "배너를 지우지 못했어요.", null);
+        return;
+      }
+      setBannerUrl(null);
+    } catch {
+      report("네트워크 상태를 확인해주세요.", null);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!facility.canManageBanner) return null; // 무료·플러스·스폰서 단계에서는 아예 보이지 않는다
+
+  return (
+    <section className={CARD}>
+      <h2 className="mb-1 text-[15px] font-bold text-ink-900">지역 배너</h2>
+      <p className="mb-3 text-xs leading-relaxed text-ink-500">
+        시설이 속한 지역 페이지 상단에 가로로 넓게 노출돼요. 가로가 긴 사진(외관·로비 전경 등)이
+        잘 어울립니다.
+      </p>
+
+      {bannerUrl ? (
+        <div className="relative overflow-hidden rounded-xl">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={bannerUrl} alt="지역 배너 미리보기" className="aspect-[4/1] w-full object-cover" />
+          <button
+            type="button"
+            disabled={busy}
+            onClick={remove}
+            className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full bg-ink-900/60 text-white transition-colors hover:bg-ink-900"
+            aria-label="배너 삭제"
+          >
+            <Trash2 size={15} />
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => bannerFileRef.current?.click()}
+          className="flex aspect-[4/1] w-full flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-ink-100 text-ink-300 transition-colors hover:border-primary-300 hover:text-primary-500"
+        >
+          <Camera size={22} />
+          <span className="text-xs font-semibold">
+            {busy ? "처리 중…" : "배너 이미지 올리기"}
+          </span>
+        </button>
+      )}
+      <input
+        ref={bannerFileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) upload(file);
+        }}
+      />
+      {bannerUrl && (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => bannerFileRef.current?.click()}
+          className="mt-2 min-h-[40px] w-full rounded-xl border border-ink-100 text-xs font-semibold text-ink-700 transition-colors hover:bg-ink-100"
+        >
+          다른 이미지로 바꾸기
+        </button>
+      )}
+    </section>
+  );
+}
 
 function NewsSection({
   facility,

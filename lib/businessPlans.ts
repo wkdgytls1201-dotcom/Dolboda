@@ -17,6 +17,16 @@ export const VAT_NOTE = "부가세 별도";
  */
 export const SPONSOR_SLOTS_PER_SIGUNGU = 3;
 
+/**
+ * 지역 배너를 한 시·군·구에 몇 곳까지 파는지의 상한. 스폰서(3곳)보다 희소하게 둔다 —
+ * 배너는 지역 프리미엄 이상의 대표 혜택이라, 여러 시설이 나눠 가지면 "프리미엄"의
+ * 의미가 옅어진다. 1곳만 팔아 그 지역에서 가장 눈에 띄는 자리로 유지한다.
+ */
+export const BANNER_SLOTS_PER_SIGUNGU = 1;
+
+/** 지역 배너가 포함된 상품 — /admin 승인·슬롯 검사·콘솔 노출 조건이 전부 이 집합을 본다. */
+export const BANNER_PLANS = new Set(["premium", "silvertown"]);
+
 export interface BusinessPlan {
   id: string;
   name: string;

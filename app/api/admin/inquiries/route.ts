@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
-import { findPlan } from "@/lib/businessPlans";
+import { findPlan, BANNER_PLANS, BANNER_SLOTS_PER_SIGUNGU } from "@/lib/businessPlans";
 import { remainingSlots } from "@/lib/sponsor";
 import { canonicalRegionKey } from "@/lib/regionSeo";
 
@@ -106,23 +106,39 @@ export async function PATCH(req: Request) {
 
   const plan = findPlan(inquiry.plan);
   const needsSponsor = SPONSOR_PLANS.has(inquiry.plan);
+  const needsBanner = BANNER_PLANS.has(inquiry.plan);
 
-  // 스폰서 상품이면 지역 슬롯이 남아 있는지 먼저 본다 —
+  // 스폰서·배너 상품이면 지역 슬롯이 남아 있는지 먼저 본다 —
   // 상한을 넘겨 팔면 /business에 적어둔 "지역당 N곳" 약속이 즉시 거짓이 된다.
   let sponsorRegion = regionKey;
-  if (needsSponsor) {
+  if (needsSponsor || needsBanner) {
     if (!sponsorRegion) {
       // 정규 키("경남 김해시")로 저장한다 — 지역 페이지 조회와 같은 함수를 써야
       // 같은 지역이 두 키로 갈라져 상한·노출이 어긋나는 일이 없다
       sponsorRegion = canonicalRegionKey(facility.address ?? "") ?? "";
     }
     if (!sponsorRegion.trim()) {
-      return NextResponse.json({ error: "스폰서 노출 지역을 지정해주세요." }, { status: 400 });
+      return NextResponse.json({ error: "노출 지역을 지정해주세요." }, { status: 400 });
     }
+  }
+  if (needsSponsor) {
     const left = await remainingSlots("sigungu", sponsorRegion);
     if (left <= 0) {
       return NextResponse.json(
         { error: `${sponsorRegion}의 스폰서 슬롯이 모두 찼어요. 대기로 안내해주세요.` },
+        { status: 409 }
+      );
+    }
+  }
+  if (needsBanner) {
+    // 배너는 시설당 1행(PK)이라 카운트도 단순하다 — 이 시설 자신의 행은 아직
+    // 없을 것이므로(첫 승인) 그대로 세면 된다.
+    const bannerUsed = await prisma.facilityBanner.count({
+      where: { regionKey: sponsorRegion, active: true },
+    });
+    if (bannerUsed >= BANNER_SLOTS_PER_SIGUNGU) {
+      return NextResponse.json(
+        { error: `${sponsorRegion}의 배너 자리가 이미 찼어요. 대기로 안내해주세요.` },
         { status: 409 }
       );
     }
@@ -164,6 +180,16 @@ export async function PATCH(req: Request) {
           // 구독이 pending인 동안은 노출하지 않는다. 입금 확인 후 켠다.
           active: false,
         },
+      });
+    }
+
+    if (needsBanner) {
+      // 이미지는 시설이 콘솔에서 나중에 올린다 — 여기서는 지역 슬롯만 예약해 둔다.
+      // upsert인 이유: 재승인·요금제 변경 같은 드문 경로에서 이미 행이 있을 수 있다.
+      await tx.facilityBanner.upsert({
+        where: { facilityId: targetFacilityId },
+        update: { regionKey: sponsorRegion },
+        create: { facilityId: targetFacilityId, regionKey: sponsorRegion, active: false },
       });
     }
 

@@ -75,6 +75,12 @@ export async function PATCH(req: Request) {
           ? { active: false }
           : { active: false, endsAt: now },
     });
+    // 배너도 같은 규칙 — 있으면(지역 프리미엄 이상) 같이 켜고 끈다.
+    // FacilityBanner에는 endsAt이 없다(active만으로 노출을 판단하는 단순한 모델).
+    await tx.facilityBanner.updateMany({
+      where: { facilityId: sub.facilityId },
+      data: { active: status === "active" },
+    });
     return next;
   });
 

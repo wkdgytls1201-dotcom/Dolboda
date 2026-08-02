@@ -384,6 +384,25 @@ model FacilityCorrection {
   @@index([status])
 }
 
+// 지역 배너 — 지역 프리미엄 이상 전용, 시·군·구당 1곳(SponsorPlacement의 3곳보다 희소).
+//
+// SponsorPlacement와 같은 regionKey를 쓰지만 별도 모델이다: 배너는 이미지 콘텐츠가
+// 있어야 성립하고(스폰서는 카드 정보만 재사용), 상한도 다르다(1 vs 3).
+// facilityId를 PK로 둔 이유는 시설당 배너가 하나뿐이면 충분하고, 소유권 조회가
+// FacilityOwner처럼 간단한 upsert 하나로 끝나기 때문이다.
+model FacilityBanner {
+  facilityId String  @id
+  regionKey  String
+  imageUrl   String?
+  // 구독 확인 전까지는 false — SponsorPlacement.active와 같은 규칙(입금 확인 후 admin이 켠다)
+  active     Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([regionKey, active])
+}
+
 // 지역 스폰서 노출 슬롯.
 //
 // 구독과 따로 두는 이유: 한 시설이 여러 지역을 살 수도 있고, 같은 지역을 두 시설이

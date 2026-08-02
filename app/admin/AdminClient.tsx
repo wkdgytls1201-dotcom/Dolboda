@@ -49,6 +49,13 @@ interface FacilityLite {
   address: string;
 }
 
+interface BannerLite {
+  facilityId: string;
+  regionKey: string;
+  hasImage: boolean;
+  active: boolean;
+}
+
 interface Correction {
   id: string;
   facilityId: string;
@@ -86,6 +93,7 @@ export function AdminClient({
   inquiries: initialInquiries,
   subscriptions: initialSubs,
   placements: initialPlacements,
+  banners,
   facilities,
   statusCounts,
   corrections: initialCorrections,
@@ -95,6 +103,7 @@ export function AdminClient({
   inquiries: Inquiry[];
   subscriptions: Subscription[];
   placements: Placement[];
+  banners: BannerLite[];
   facilities: FacilityLite[];
   statusCounts: { status: string | null; count: number }[];
   corrections: Correction[];
@@ -339,6 +348,7 @@ export function AdminClient({
               {subs.map((s) => {
                 const f = facilityById.get(s.facilityId);
                 const mine = placements.filter((p) => p.facilityId === s.facilityId);
+                const banner = banners.find((b) => b.facilityId === s.facilityId);
                 return (
                   <li key={s.id} className={CARD}>
                     <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-2">
@@ -354,6 +364,16 @@ export function AdminClient({
                         <>
                           {" · "}광고 지역 {mine.map((p) => p.regionKey).join(", ")}{" "}
                           {mine.some((p) => p.active) ? "(노출 중)" : "(꺼짐)"}
+                        </>
+                      )}
+                      {banner && (
+                        <>
+                          {" · "}배너{" "}
+                          {!banner.hasImage
+                            ? "(시설이 아직 이미지를 안 올렸어요)"
+                            : banner.active
+                            ? "(노출 중)"
+                            : "(꺼짐)"}
                         </>
                       )}
                     </p>

@@ -68,6 +68,9 @@ export default async function AdminPage() {
   const placements = await prisma.sponsorPlacement.findMany({
     where: { facilityId: { in: facilityIds } },
   });
+  const banners = await prisma.facilityBanner.findMany({
+    where: { facilityId: { in: facilityIds } },
+  });
 
   return (
     <AdminClient
@@ -90,6 +93,12 @@ export default async function AdminPage() {
         scope: p.scope,
         regionKey: p.regionKey,
         active: p.active,
+      }))}
+      banners={banners.map((b) => ({
+        facilityId: b.facilityId,
+        regionKey: b.regionKey,
+        hasImage: b.imageUrl != null,
+        active: b.active,
       }))}
       facilities={facilities}
       statusCounts={counts.map((c) => ({ status: c.status, count: c._count._all }))}

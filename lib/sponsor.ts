@@ -94,3 +94,42 @@ export async function remainingSlots(scope: SponsorScope, regionKey: string): Pr
   });
   return Math.max(0, SPONSOR_SLOTS_PER_SIGUNGU - used);
 }
+
+// ---- 지역 배너 (지역 프리미엄 이상, 시·군·구당 1곳) ----
+// 스폰서와 같은 regionKey 체계를 쓰지만 별도 테이블이다(lib/businessPlans.ts의
+// BANNER_SLOTS_PER_SIGUNGU 참고 — 상한이 스폰서보다 훨씬 좁다).
+
+export interface RegionBanner {
+  facilityId: string;
+  facilityName: string;
+  imageUrl: string;
+}
+
+async function loadBannerUnsafe(regionKey: string): Promise<RegionBanner | null> {
+  const row = await prisma.facilityBanner.findFirst({
+    where: { regionKey, active: true, imageUrl: { not: null } },
+    orderBy: { createdAt: "asc" },
+  });
+  if (!row || !row.imageUrl) return null;
+  const facility = await prisma.facility.findUnique({
+    where: { id: row.facilityId },
+    select: { name: true },
+  });
+  if (!facility) return null;
+  return { facilityId: row.facilityId, facilityName: facility.name, imageUrl: row.imageUrl };
+}
+
+/** 지역 페이지에서 부른다. 계약 반영 지연을 감안해 스폰서와 같은 5분 캐시. */
+export const getBannerForSigungu = unstable_cache(
+  async (regionSlug: string, sigungu: string) => {
+    try {
+      return await loadBannerUnsafe(`${regionSlug} ${sigungu}`);
+    } catch (e) {
+      // 부가 기능 — 실패해도 지역 페이지 전체가 죽으면 안 된다
+      console.error("배너 조회 실패:", e);
+      return null;
+    }
+  },
+  ["region-banner-sigungu"],
+  { revalidate: 300 }
+);

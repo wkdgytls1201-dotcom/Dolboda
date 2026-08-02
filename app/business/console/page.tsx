@@ -43,7 +43,7 @@ export default async function ConsolePage() {
   const monthAgo = new Date(now - 30 * DAY);
   const weekAgo = new Date(now - 7 * DAY);
 
-  const [contents, consultTotals, consultRecents, latestConsults, posts, views, placements] =
+  const [contents, consultTotals, consultRecents, latestConsults, posts, views, placements, banners] =
     await Promise.all([
       prisma.facilityContent.findMany({ where: { facilityId: { in: ids } } }),
       prisma.consultRequest.groupBy({
@@ -79,7 +79,9 @@ export default async function ConsolePage() {
         where: { facilityId: { in: ids }, date: { gte: monthAgo } },
       }),
       prisma.sponsorPlacement.findMany({ where: { facilityId: { in: ids } } }),
+      prisma.facilityBanner.findMany({ where: { facilityId: { in: ids } } }),
     ]);
+  const bannerById = new Map(banners.map((b) => [b.facilityId, b]));
 
   const contentById = new Map(contents.map((c) => [c.facilityId, c]));
   const totalById = new Map(consultTotals.map((c) => [c.facilityId, c._count._all]));
@@ -98,6 +100,8 @@ export default async function ConsolePage() {
           planName: findPlan(f.plan)?.name ?? "시설 기본 등록",
           photoLimit: cap.photoLimit,
           canPostNews: cap.canPostNews,
+          canManageBanner: cap.hasBanner,
+          bannerImageUrl: bannerById.get(f.facilityId)?.imageUrl ?? null,
           intro: content?.intro ?? "",
           photos: Array.isArray(content?.photos) ? (content.photos as string[]) : [],
           consultTotal: totalById.get(f.facilityId) ?? 0,

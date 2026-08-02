@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { prisma } from "./prisma";
-import { findPlan, type BusinessPlan } from "./businessPlans";
+import { findPlan, BANNER_PLANS, type BusinessPlan } from "./businessPlans";
 
 // 시설 소유권·구독 조회 (서버 전용).
 //
@@ -99,6 +99,7 @@ export interface PlanCapability {
   canUseVideo: boolean;
   hasStats: boolean;
   hasReport: boolean;
+  hasBanner: boolean;
 }
 
 export function capabilityOf(planId: string): PlanCapability {
@@ -114,5 +115,6 @@ export function capabilityOf(planId: string): PlanCapability {
     canUseVideo: paid,
     hasStats: paid,
     hasReport: premium,
+    hasBanner: BANNER_PLANS.has(planId),
   };
 }
