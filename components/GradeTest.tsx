@@ -367,7 +367,7 @@ export function GradeTest() {
               </span>
               <span className="min-w-0 flex-1">
                 <span className="flex flex-wrap items-center gap-1.5 text-base font-extrabold leading-snug text-white">
-                  이 결과를 보호자로 저장하기
+                  이 결과를 저장하기
                   <Sparkles size={15} className="shrink-0" />
                 </span>
                 <span className="mt-1 block text-[13px] leading-snug text-white/85">
