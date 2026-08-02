@@ -330,14 +330,10 @@ export function GradeTest() {
             ))}
             {/* 돌보다 매니저는 등급과 무관하게 항상 보여준다 — 공단 급여 서비스는 등급별로
                 갈리지만, 집에서 곁을 지켜줄 사람이 필요한 상황은 어느 등급에서나 생긴다.
-                우리만 연결해줄 수 있는 것이라 다른 칩과 색을 달리해 눈에 띄게 둔다. */}
-            <Link
-              href="/care-request"
-              className="flex min-h-[44px] items-center gap-1 rounded-full bg-royal-500 px-3.5 text-xs font-bold text-white shadow-royal transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:bg-royal-600 hover:shadow-royal-hover active:translate-y-0 active:scale-95"
-            >
-              <HeartHandshake size={13} className="shrink-0" aria-hidden />
+                다른 서비스와 같은 칩 모양으로 둔다(누르는 것이 아니라 "이런 선택지도 있다"는 안내). */}
+            <span className={`rounded-full px-3 py-1.5 text-xs font-bold ${tone.chip}`}>
               돌보다 매니저
-            </Link>
+            </span>
           </div>
           <p className="mt-2.5 text-[11px] leading-relaxed text-ink-400">
             등급과 상관없이, 집에서 어르신 곁을 지켜드릴 돌보다 매니저를 연결해드려요.
