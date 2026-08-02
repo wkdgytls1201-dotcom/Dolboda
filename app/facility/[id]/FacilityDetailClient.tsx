@@ -181,6 +181,10 @@ export default function FacilityDetailClient({
 
   const tenureRows = (nhis?.tenure ?? []).filter((t) => t.total > 0).slice(0, 5);
 
+  // 상담 신청이 시설로 자동 전달되는지 여부 — 서버(/api/consult)가 institutionInfo.email로
+  // 판단하는 것과 같은 기준이다. 요양병원(HIRA 소스)에는 이 항목 자체가 없다.
+  const facilityHasEmail = Boolean(info?.email?.trim());
+
   return (
     <main className="pb-28">
       <div className="mx-auto max-w-3xl px-4 py-8">
@@ -1045,8 +1049,16 @@ export default function FacilityDetailClient({
 
       {/* 하단 고정 CTA */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-ink-100 bg-white/95 px-4 py-3 backdrop-blur">
+        {/* 전화 걸기 버튼은 기본적으로 두지 않는다 — 상담 신청과 역할이 겹치고, 전화로 새면
+            문의가 접수·전달·이력으로 남지 않아 보호자도 나중에 되짚을 수 없다
+            (상담 내역 화면에 "전화 걸기"를 두지 않은 것과 같은 원칙).
+            연락처 자체는 본문 정보에 그대로 있다.
+
+            단 하나 예외: 시설 이메일이 공공데이터에 없는 경우(전체의 약 19%). 이때는 상담
+            신청이 시설로 자동 전달되지 않고 운영자가 사람 손으로 옮겨야 해서 하루 이상 걸릴 수
+            있다. 급한 보호자에게 그 사이 아무 수단도 주지 않는 건 과하다 — 그 시설에서만 남긴다. */}
         <div className="mx-auto flex max-w-3xl items-center gap-2">
-          {facility.phone ? (
+          {!facilityHasEmail && facility.phone && (
             <a
               href={`tel:${facility.phone}`}
               aria-label="전화 문의"
@@ -1055,11 +1067,6 @@ export default function FacilityDetailClient({
               <Phone size={16} />
               <span className="hidden sm:inline">전화 문의</span>
             </a>
-          ) : (
-            <span className="flex shrink-0 items-center gap-1.5 rounded-xl border border-ink-100 px-3 py-2.5 text-sm font-semibold text-ink-300 sm:px-4">
-              <Phone size={16} />
-              <span className="hidden sm:inline">연락처 미제공</span>
-            </span>
           )}
           <button
             type="button"

@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { Heart, MapPin, Phone, ShieldCheck, Trophy } from "lucide-react";
+import { DoorClosed, DoorOpen, Heart, MapPin, ShieldCheck, Trophy } from "lucide-react";
 import { Facility, FACILITY_TYPE_LABEL, isHospital } from "@/lib/types";
 import { formatDistance } from "@/lib/distance";
 import { shortAddress } from "@/lib/shortAddress";
 import { GradeBadge, TypeBadge } from "./GradeBadge";
 import { SCORE_LEVEL_THRESHOLDS } from "@/lib/dolbodaScore";
+import { PROGRAM_TAG_META } from "@/lib/programTaxonomy";
 import { useCompare } from "@/lib/compareContext";
 import { useFavorites } from "@/lib/favoritesContext";
 import { FacilityThumbnail } from "./FacilityThumbnail";
@@ -43,6 +44,24 @@ export function FacilityCard({
     : `정원 ${facility.capacity}명`;
 
   const isTopGrade = facility.grade === 1;
+
+  // 전화번호가 있던 줄을 대신할 정보.
+  //
+  // 전화번호는 카드에서 누를 일이 없다(상담 신청으로 흐름을 모았다). 그 자리에는 보호자가
+  // 카드만 보고 "여기 더 볼까"를 판단하는 데 실제로 쓰이는 것 — 자리가 있는지, 어떤
+  // 프로그램을 하는지 — 를 넣는다.
+  const vacancy =
+    !isHospital(facility) &&
+    facility.facilityType !== "HOME_CARE" &&
+    facility.capacity > 0 &&
+    facility.currentOccupancy !== undefined
+      ? facility.capacity - facility.currentOccupancy
+      : null;
+  // 프로그램 태그는 종류가 많아도 카드에선 2개까지만 — 그 이상은 줄이 밀리고 눈에도 안 들어온다
+  const programTags = (isHospital(facility) ? [] : facility.programTags ?? [])
+    .slice(0, 2)
+    .map((t) => PROGRAM_TAG_META[t.tag]?.label)
+    .filter(Boolean) as string[];
 
   return (
     <div
@@ -172,10 +191,34 @@ export function FacilityCard({
           )}
         </div>
 
-        {facility.phone && (
-          <div className="flex items-center gap-1 text-sm text-ink-500">
-            <Phone size={14} className="shrink-0" />
-            <span>{facility.phone}</span>
+        {/* 자리 여부 — 보호자가 카드에서 가장 먼저 확인하고 싶어 하는 것.
+            정원·현원은 아래 줄에 있지만, 뺄셈을 대신 해줘야 한눈에 들어온다. */}
+        {vacancy !== null && (
+          <div className="flex items-center gap-1 text-sm">
+            {vacancy > 0 ? (
+              <>
+                <DoorOpen size={14} className="shrink-0 text-mint-600" />
+                <span className="font-semibold text-mint-700">지금 {vacancy}자리 가능</span>
+              </>
+            ) : (
+              <>
+                <DoorClosed size={14} className="shrink-0 text-ink-300" />
+                <span className="text-ink-400">정원 마감 · 대기 문의</span>
+              </>
+            )}
+          </div>
+        )}
+
+        {programTags.length > 0 && (
+          <div className="mt-1 flex flex-wrap items-center gap-1">
+            {programTags.map((label) => (
+              <span
+                key={label}
+                className="rounded-md bg-royal-50 px-1.5 py-0.5 text-[11px] font-semibold text-royal-600"
+              >
+                {label}
+              </span>
+            ))}
           </div>
         )}
 
