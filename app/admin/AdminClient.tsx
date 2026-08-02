@@ -49,11 +49,25 @@ interface FacilityLite {
   address: string;
 }
 
+interface Correction {
+  id: string;
+  facilityId: string;
+  message: string;
+  status: string | null;
+  createdAt: string;
+}
+
 const STATUS_LABEL: Record<string, string> = {
   new: "처리 대기",
   contacted: "확인전화 완료",
   verified: "승인됨",
   rejected: "거절",
+};
+
+const CORRECTION_STATUS_LABEL: Record<string, string> = {
+  new: "확인 필요",
+  done: "반영 완료",
+  rejected: "반영 불가",
 };
 
 const SUB_STATUS_LABEL: Record<string, string> = {
@@ -74,6 +88,8 @@ export function AdminClient({
   placements: initialPlacements,
   facilities,
   statusCounts,
+  corrections: initialCorrections,
+  correctionCounts,
 }: {
   adminEmail: string;
   inquiries: Inquiry[];
@@ -81,12 +97,16 @@ export function AdminClient({
   placements: Placement[];
   facilities: FacilityLite[];
   statusCounts: { status: string | null; count: number }[];
+  corrections: Correction[];
+  correctionCounts: { status: string | null; count: number }[];
 }) {
-  const [tab, setTab] = useState<"inquiries" | "subs">("inquiries");
+  const [tab, setTab] = useState<"inquiries" | "subs" | "corrections">("inquiries");
   const [filter, setFilter] = useState<string>("new");
+  const [correctionFilter, setCorrectionFilter] = useState<string>("new");
   const [inquiries, setInquiries] = useState(initialInquiries);
   const [subs, setSubs] = useState(initialSubs);
   const [placements, setPlacements] = useState(initialPlacements);
+  const [corrections, setCorrections] = useState(initialCorrections);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -117,6 +137,17 @@ export function AdminClient({
     key === "new"
       ? statusCounts.find((c) => c.status === null)?.count ?? 0
       : statusCounts.find((c) => c.status === key)?.count ?? 0;
+
+  const shownCorrections = useMemo(() => {
+    if (correctionFilter === "all") return corrections;
+    if (correctionFilter === "new") return corrections.filter((c) => !c.status);
+    return corrections.filter((c) => c.status === correctionFilter);
+  }, [corrections, correctionFilter]);
+
+  const correctionCountOf = (key: string) =>
+    key === "new"
+      ? correctionCounts.find((c) => c.status === null)?.count ?? 0
+      : correctionCounts.find((c) => c.status === key)?.count ?? 0;
 
   async function patchInquiry(id: string, payload: Record<string, unknown>) {
     setBusy(id);
@@ -193,6 +224,34 @@ export function AdminClient({
     }
   }
 
+  async function patchCorrection(id: string, status: string) {
+    setBusy(id);
+    setError(null);
+    setNotice(null);
+    try {
+      const res = await fetch("/api/admin/corrections", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status }),
+      });
+      const json = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        correction?: Correction;
+      };
+      if (!res.ok) {
+        setError(json.error ?? "처리하지 못했어요.");
+        return;
+      }
+      if (json.correction) {
+        setCorrections((prev) => prev.map((c) => (c.id === id ? { ...c, ...json.correction } : c)));
+      }
+    } catch {
+      setError("네트워크 상태를 확인해주세요.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
   return (
     <main className="mx-auto max-w-3xl px-4 py-6 pb-20">
       <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
@@ -205,6 +264,7 @@ export function AdminClient({
           [
             ["inquiries", "입점 신청"],
             ["subs", "구독·광고"],
+            ["corrections", `정정 요청${correctionCountOf("new") > 0 ? ` (${correctionCountOf("new")})` : ""}`],
           ] as const
         ).map(([key, label]) => (
           <button
@@ -323,6 +383,90 @@ export function AdminClient({
                         <X size={13} /> 해지
                       </button>
                     </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </>
+      )}
+
+      {tab === "corrections" && (
+        <>
+          <div className="mb-3 flex flex-wrap gap-1.5">
+            {["new", "done", "rejected", "all"].map((key) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setCorrectionFilter(key)}
+                className={`min-h-[36px] rounded-full px-3 text-xs font-semibold transition-colors ${
+                  correctionFilter === key
+                    ? "bg-primary-500 text-white"
+                    : "bg-white text-ink-500 shadow-card"
+                }`}
+              >
+                {key === "all" ? "전체" : CORRECTION_STATUS_LABEL[key]}
+                {key !== "all" && correctionCountOf(key) > 0 && (
+                  <span className="ml-1 opacity-70">{correctionCountOf(key)}</span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {shownCorrections.length === 0 ? (
+            <p className={`${CARD} text-center text-sm text-ink-300`}>
+              해당하는 정정 요청이 없어요.
+            </p>
+          ) : (
+            <ul className="space-y-3">
+              {shownCorrections.map((c) => {
+                const f = facilityById.get(c.facilityId);
+                return (
+                  <li key={c.id} className={CARD}>
+                    <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-2">
+                      {f ? (
+                        <a
+                          href={`/facility/${f.id}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 font-bold text-royal-600 hover:underline"
+                        >
+                          {f.name} <ExternalLink size={11} />
+                        </a>
+                      ) : (
+                        <span className="font-bold text-ink-900">{c.facilityId}</span>
+                      )}
+                      <span className="text-xs text-ink-300">
+                        {new Date(c.createdAt).toLocaleString("ko-KR")}
+                      </span>
+                    </div>
+                    {f && <p className="mb-2 text-xs text-ink-300">{f.address}</p>}
+                    <p className="mb-3 rounded-xl bg-ivory-100 p-3 text-sm leading-relaxed text-ink-700">
+                      {c.message}
+                    </p>
+                    <p className="mb-2 text-xs font-semibold text-ink-700">
+                      상태: {c.status ? CORRECTION_STATUS_LABEL[c.status] ?? c.status : "확인 필요"}
+                    </p>
+                    {!c.status && (
+                      <div className="flex flex-wrap gap-1.5">
+                        <button
+                          type="button"
+                          disabled={busy === c.id}
+                          onClick={() => patchCorrection(c.id, "done")}
+                          className={`${BTN} bg-mint-100 text-mint-700 hover:bg-mint-200`}
+                        >
+                          <Check size={13} /> 반영 완료로 표시
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busy === c.id}
+                          onClick={() => patchCorrection(c.id, "rejected")}
+                          className={`${BTN} bg-primary-50 text-primary-700 hover:bg-primary-100`}
+                        >
+                          <X size={13} /> 반영 불가
+                        </button>
+                      </div>
+                    )}
                   </li>
                 );
               })}

@@ -46,16 +46,19 @@ export default async function AdminPage() {
   }
 
   // 첫 화면에 필요한 것만 서버에서 실어 보낸다 — 열자마자 빈 화면에서 로딩이 도는 걸 피한다
-  const [inquiries, subs, counts] = await Promise.all([
+  const [inquiries, subs, counts, corrections, correctionCounts] = await Promise.all([
     prisma.businessInquiry.findMany({ orderBy: { createdAt: "desc" }, take: 100 }),
     prisma.facilitySubscription.findMany({ orderBy: { createdAt: "desc" }, take: 100 }),
     prisma.businessInquiry.groupBy({ by: ["status"], _count: { _all: true } }),
+    prisma.facilityCorrection.findMany({ orderBy: { createdAt: "desc" }, take: 100 }),
+    prisma.facilityCorrection.groupBy({ by: ["status"], _count: { _all: true } }),
   ]);
 
   const facilityIds = [
     ...new Set([
       ...inquiries.map((i) => i.facilityId).filter((v): v is string => !!v),
       ...subs.map((s) => s.facilityId),
+      ...corrections.map((c) => c.facilityId),
     ]),
   ];
   const facilities = await prisma.facility.findMany({
@@ -90,6 +93,15 @@ export default async function AdminPage() {
       }))}
       facilities={facilities}
       statusCounts={counts.map((c) => ({ status: c.status, count: c._count._all }))}
+      corrections={corrections.map((c) => ({
+        ...c,
+        createdAt: c.createdAt.toISOString(),
+        updatedAt: c.updatedAt.toISOString(),
+      }))}
+      correctionCounts={correctionCounts.map((c) => ({
+        status: c.status,
+        count: c._count._all,
+      }))}
     />
   );
 }
