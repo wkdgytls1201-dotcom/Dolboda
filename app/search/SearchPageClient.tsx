@@ -38,6 +38,9 @@ interface PersistedSearchState {
   filters: FacilityFilters;
   sortKey: SortKey;
   view: "list" | "map";
+  /** 상세 갔다 돌아왔을 때 보던 자리로 되돌리기 위한 값들 (없으면 처음부터) */
+  visibleCount?: number;
+  scrollY?: number;
 }
 
 function readPersistedState(): PersistedSearchState | null {
@@ -84,6 +87,10 @@ function SearchContent() {
   });
   // 복원이 끝나기 전에는 저장 effect가 돌지 않게 막는다(초기값으로 덮어쓰는 것 방지)
   const [restoredDone, setRestoredDone] = useState(false);
+  // 상세 갔다 돌아온 경우 "보던 자리"(펼친 개수·스크롤 위치)를 데이터 도착 후 되돌린다.
+  // 검색어·필터만 복원하면 목록이 30장으로 접히고 맨 위로 튕겨서, 200번째 시설을 보다
+  // 돌아온 사람이 처음부터 다시 내려야 했다.
+  const pendingRestoreRef = useRef<{ count: number; y: number } | null>(null);
 
   useEffect(() => {
     if (!fromUrl) {
@@ -93,12 +100,24 @@ function SearchContent() {
         setView(saved.view);
         setSortKey(saved.sortKey);
         setFilters(saved.filters);
+        if (saved.visibleCount || saved.scrollY) {
+          pendingRestoreRef.current = {
+            count: saved.visibleCount ?? 30,
+            y: saved.scrollY ?? 0,
+          };
+        }
       }
     }
     setRestoredDone(true);
     // 최초 1회만 — 이후 사용자의 조작을 되돌리면 안 된다
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // 300장을 한 번에 그리면 첫 화면이 늦다 — 처음엔 30장만 그리고, 스크롤이 아래에
+  // 가까워지면 30장씩 이어서 그린다(데이터는 이미 받아둔 것이라 추가 요청 없음).
+  const PAGE_SIZE = 30;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   // 홈에서 위치를 허용했다면 그 좌표를 그대로 쓰고, 아직 없으면 직접 요청할 수 있게 한다.
   const { origin, hasLocation, locating, requestLocation } = useUserOrigin();
@@ -128,14 +147,28 @@ function SearchContent() {
   useEffect(() => {
     if (!restoredDone) return;
     try {
+      // scrollY는 별도 스크롤 리스너가 저장한다 — 여기서 지우지 않게 이전 값을 이어받는다
+      let prevScrollY: number | undefined;
+      try {
+        prevScrollY = (JSON.parse(sessionStorage.getItem(SEARCH_STATE_KEY) ?? "{}") as PersistedSearchState).scrollY;
+      } catch {
+        /* 이전 값 없으면 그대로 */
+      }
       sessionStorage.setItem(
         SEARCH_STATE_KEY,
-        JSON.stringify({ query, filters, sortKey, view } satisfies PersistedSearchState)
+        JSON.stringify({
+          query,
+          filters,
+          sortKey,
+          view,
+          visibleCount,
+          scrollY: prevScrollY,
+        } satisfies PersistedSearchState)
       );
     } catch {
       // 저장 실패해도 검색 자체에는 지장 없음
     }
-  }, [restoredDone, query, filters, sortKey, view]);
+  }, [restoredDone, query, filters, sortKey, view, visibleCount]);
 
   const results = useMemo(() => {
     let list = facilities.map((f) => ({
@@ -213,15 +246,50 @@ function SearchContent() {
     return list;
   }, [facilities, query, filters, sortKey, origin]);
 
-  // 300장을 한 번에 그리면 첫 화면이 늦다 — 처음엔 30장만 그리고, 스크롤이 아래에
-  // 가까워지면 30장씩 이어서 그린다(데이터는 이미 받아둔 것이라 추가 요청 없음).
-  const PAGE_SIZE = 30;
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  const sentinelRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
-    setVisibleCount(PAGE_SIZE);
+    // 상세에서 돌아오는 길이면 30장으로 접지 않고 보던 만큼 다시 펼친다.
+    // (이 effect는 복원된 검색어·필터가 반영될 때도 발화하므로, 여기서 지워버리면
+    //  아래 스크롤 복원이 목적지를 잃는다 — 스크롤까지 끝난 뒤에 지운다)
+    setVisibleCount(pendingRestoreRef.current?.count ?? PAGE_SIZE);
   }, [query, filters, sortKey, facilities]);
+
+  // 데이터가 도착해 카드가 실제로 그려질 만큼 쌓이면, 보던 스크롤 위치로 한 번만 되돌린다.
+  useEffect(() => {
+    const pending = pendingRestoreRef.current;
+    if (!pending || loading || results.length === 0) return;
+    pendingRestoreRef.current = null;
+    // 전역 scroll-behavior:smooth가 끼어들면 복원이 애니메이션으로 보인다 — 즉시 이동
+    setTimeout(() => {
+      window.scrollTo({ top: pending.y, left: 0, behavior: "instant" as ScrollBehavior });
+    }, 0);
+  }, [loading, results.length]);
+
+  // 스크롤 위치는 상태 변화 없이도 계속 바뀐다 — 300ms 간격으로 저장분에 덧씌운다.
+  useEffect(() => {
+    if (!restoredDone) return;
+    let timer = 0;
+    const onScroll = () => {
+      if (timer) return;
+      timer = window.setTimeout(() => {
+        timer = 0;
+        try {
+          const raw = sessionStorage.getItem(SEARCH_STATE_KEY);
+          if (!raw) return;
+          sessionStorage.setItem(
+            SEARCH_STATE_KEY,
+            JSON.stringify({ ...JSON.parse(raw), scrollY: window.scrollY })
+          );
+        } catch {
+          /* 저장 실패는 무시 */
+        }
+      }, 300);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (timer) clearTimeout(timer);
+    };
+  }, [restoredDone]);
 
   useEffect(() => {
     const el = sentinelRef.current;
