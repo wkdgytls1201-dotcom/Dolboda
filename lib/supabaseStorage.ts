@@ -54,10 +54,15 @@ export async function uploadPublicObject(
     });
 
   let res = await put();
-  // 버킷이 아직 없는 첫 실행이면 만들고 한 번만 다시 시도한다
-  if (res.status === 404) {
-    await ensureBucket(bucket);
-    res = await put();
+  // 버킷이 아직 없는 첫 실행이면 만들고 한 번만 다시 시도한다.
+  // 주의: Supabase는 "버킷 없음"을 HTTP 404가 아니라 **400 + 본문의 NoSuchBucket**으로
+  // 돌려준다(실측). 상태코드만 보고 판단하면 자동 생성이 영영 안 걸린다.
+  if (!res.ok) {
+    const body = await res.clone().text();
+    if (res.status === 404 || body.includes("NoSuchBucket") || body.includes("Bucket not found")) {
+      await ensureBucket(bucket);
+      res = await put();
+    }
   }
   if (!res.ok) {
     throw new Error(`업로드 실패(${res.status}): ${(await res.text()).slice(0, 200)}`);
