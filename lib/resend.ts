@@ -36,14 +36,14 @@ export function consultForwardEmailHtml(params: {
               <td style="padding:18px 28px 14px;border-bottom:1px solid #F0EDF6;">
                 <table role="presentation" cellpadding="0" cellspacing="0">
                   <tr>
-                    <td width="30" valign="middle" style="width:30px;">
+                    <td width="48" valign="middle" style="width:48px;">
                       <a href="${SITE_URL}" style="text-decoration:none;">
-                        <img src="${SITE_URL}/logo.png" alt="${SITE_NAME}" width="26" height="26" style="display:block;border:0;" />
+                        <img src="${SITE_URL}/logo.png" alt="${SITE_NAME}" width="44" height="44" style="display:block;border:0;" />
                       </a>
                     </td>
-                    <td valign="middle" style="padding-left:8px;">
-                      <a href="${SITE_URL}" style="text-decoration:none;color:#FF6250;font-size:16px;font-weight:800;letter-spacing:-0.3px;">${SITE_NAME}</a>
-                      <span style="color:#C8C3D6;font-size:13px;"> · ${SITE_URL.replace(/^https?:\/\//, "")}</span>
+                    <td valign="middle" style="padding-left:10px;">
+                      <a href="${SITE_URL}" style="text-decoration:none;color:#FF6250;font-size:20px;font-weight:800;letter-spacing:-0.3px;">${SITE_NAME}</a>
+                      <span style="color:#C8C3D6;font-size:14px;"> · ${SITE_URL.replace(/^https?:\/\//, "")}</span>
                     </td>
                   </tr>
                 </table>
