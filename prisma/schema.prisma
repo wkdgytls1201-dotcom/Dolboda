@@ -342,6 +342,48 @@ model FacilityContent {
   createdAt  DateTime @default(now())
 }
 
+// 시설 소식 (비즈니스 플러스 이상). 행사·공지·채용 같은 짧은 글.
+//
+// FacilityContent(소개글)와 분리한 이유: 소개글은 시설당 1개를 덮어쓰는 값이고
+// 소식은 쌓이는 목록이라 수명이 다르다. 상세 페이지에는 최신 몇 개만 싣는다.
+model FacilityPost {
+  id         String @id @default(cuid())
+  facilityId String
+  title      String // 최대 80자 — API에서 자름
+  body       String // 최대 1,000자
+  createdBy  String // 작성한 userId
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([facilityId, createdAt])
+}
+
+// 시설 상세 페이지 일일 조회수. 상세 방문 시 클라이언트 비컨이 하루 단위로 +1 한다.
+// 개인 식별 정보는 아무것도 없다 — 시설별 날짜별 합계뿐이다.
+model FacilityDailyView {
+  facilityId String
+  date       DateTime @db.Date
+  count      Int      @default(0)
+
+  @@id([facilityId, date])
+}
+
+// 시설 담당자의 정보 정정 요청 (콘솔에서 접수).
+// 운영자가 확인 후 반영한다 — 시설이 공공데이터 원본을 직접 고치게 하면 안 된다.
+model FacilityCorrection {
+  id         String @id @default(cuid())
+  facilityId String
+  message    String // 무엇이 어떻게 다른지 (최대 1,000자)
+  createdBy  String // 요청한 userId
+  // null=접수 / "done"=반영 완료 / "rejected"=반영 불가
+  status    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([facilityId])
+  @@index([status])
+}
+
 // 지역 스폰서 노출 슬롯.
 //
 // 구독과 따로 두는 이유: 한 시설이 여러 지역을 살 수도 있고, 같은 지역을 두 시설이

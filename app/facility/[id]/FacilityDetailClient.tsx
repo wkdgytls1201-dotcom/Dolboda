@@ -75,12 +75,15 @@ export default function FacilityDetailClient({
   facility,
   initialSimilar,
   ownerContent,
+  ownerPosts,
 }: {
   facility: Facility;
   /** 서버에서 미리 계산한 "비슷한 곳" 첫 화면분 — 초기 HTML에 링크가 실려야 크롤러가 탄다 */
   initialSimilar: SimilarItem[];
   /** 시설이 콘솔에서 직접 쓴 소개·사진 — 대부분 null(아직 인증 안 한 시설) */
   ownerContent?: { intro: string | null; photos: string[]; updatedAt: string } | null;
+  /** 시설이 올린 소식 최신 3개 — 없으면 빈 배열 */
+  ownerPosts?: { id: string; title: string; body: string; date: string }[];
 }) {
   const { toggle, isSelected, canAddMore } = useCompare();
   const { isFavorite, toggleFavorite } = useFavorites();
@@ -100,6 +103,14 @@ export default function FacilityDetailClient({
     regionCount: number;
     nearestHospitalKm: number | null;
   } | null>(null);
+
+  // 조회수 비컨 — 시설 콘솔의 "페이지 조회" 숫자가 여기서 쌓인다.
+  // sendBeacon은 페이지 로드를 조금도 막지 않고, 실패해도 아무 일도 일어나지 않는다.
+  useEffect(() => {
+    const url = `/api/facilities/view?id=${encodeURIComponent(facility.id)}`;
+    if (navigator.sendBeacon) navigator.sendBeacon(url);
+    else fetch(url, { method: "POST", keepalive: true }).catch(() => {});
+  }, [facility.id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -292,6 +303,31 @@ export default function FacilityDetailClient({
               이 내용은 시설 운영자가 직접 작성했어요. 평가등급·인력 등 공공데이터 항목과는
               출처가 다릅니다.
             </p>
+          </section>
+        )}
+
+        {/* 시설 소식 — 시설이 콘솔에서 올린 행사·공지. 최신 3개만 (서버에서 잘라 옴) */}
+        {ownerPosts && ownerPosts.length > 0 && (
+          <section className="mt-6 rounded-2xl border border-royal-100 bg-royal-50/30 p-5">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-[15px] font-bold text-ink-900">시설 소식</h2>
+              <span className="rounded-full bg-royal-500 px-2 py-0.5 text-[11px] font-bold text-white">
+                시설 제공
+              </span>
+            </div>
+            <ul className="space-y-3">
+              {ownerPosts.map((p) => (
+                <li key={p.id} className="rounded-xl bg-white p-3.5">
+                  <p className="mb-0.5 flex flex-wrap items-baseline justify-between gap-x-2">
+                    <span className="text-sm font-bold text-ink-900">{p.title}</span>
+                    <span className="text-[11px] text-ink-300">{p.date}</span>
+                  </p>
+                  <p className="whitespace-pre-line text-xs leading-relaxed text-ink-500">
+                    {p.body}
+                  </p>
+                </li>
+              ))}
+            </ul>
           </section>
         )}
 

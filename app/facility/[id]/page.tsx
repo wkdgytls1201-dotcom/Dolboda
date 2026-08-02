@@ -29,6 +29,16 @@ export default async function FacilityDetailPage({ params }: { params: { id: str
       select: { intro: true, photos: true, updatedAt: true },
     })
     .catch(() => null);
+  // 시설 소식(비즈니스 플러스) — 최신 3개만 싣는다. 페이로드를 지키면서도
+  // "살아 있는 시설"이라는 인상을 주기엔 충분하다.
+  const ownerPosts = await prisma.facilityPost
+    .findMany({
+      where: { facilityId: row.id },
+      orderBy: { createdAt: "desc" },
+      take: 3,
+      select: { id: true, title: true, body: true, createdAt: true },
+    })
+    .catch(() => []);
   const ownerContent =
     ownerRow && (ownerRow.intro || (Array.isArray(ownerRow.photos) && ownerRow.photos.length > 0))
       ? {
@@ -70,6 +80,12 @@ export default async function FacilityDetailPage({ params }: { params: { id: str
       facility={facility}
       initialSimilar={initialSimilar}
       ownerContent={ownerContent}
+      ownerPosts={ownerPosts.map((p) => ({
+        id: p.id,
+        title: p.title,
+        body: p.body,
+        date: p.createdAt.toISOString().slice(0, 10),
+      }))}
     />
   );
 }

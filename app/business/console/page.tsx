@@ -14,6 +14,8 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
+const DAY = 24 * 60 * 60 * 1000;
+
 export default async function ConsolePage() {
   const facilities = await myFacilities();
 
@@ -35,22 +37,50 @@ export default async function ConsolePage() {
     );
   }
 
-  // 시설별 콘텐츠·상담 통계를 한 번에 실어 보낸다 — 콘솔이 열리자마자 다 보이게.
+  // 첫 화면에 필요한 것을 전부 병렬로 실어 보낸다 — 콘솔이 열리자마자 다 보이게.
   const ids = facilities.map((f) => f.facilityId);
-  const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-  const [contents, consultTotals, consultRecents] = await Promise.all([
-    prisma.facilityContent.findMany({ where: { facilityId: { in: ids } } }),
-    prisma.consultRequest.groupBy({
-      by: ["facilityId"],
-      where: { facilityId: { in: ids } },
-      _count: { _all: true },
-    }),
-    prisma.consultRequest.groupBy({
-      by: ["facilityId"],
-      where: { facilityId: { in: ids }, createdAt: { gte: monthAgo } },
-      _count: { _all: true },
-    }),
-  ]);
+  const now = Date.now();
+  const monthAgo = new Date(now - 30 * DAY);
+  const weekAgo = new Date(now - 7 * DAY);
+
+  const [contents, consultTotals, consultRecents, latestConsults, posts, views, placements] =
+    await Promise.all([
+      prisma.facilityContent.findMany({ where: { facilityId: { in: ids } } }),
+      prisma.consultRequest.groupBy({
+        by: ["facilityId"],
+        where: { facilityId: { in: ids } },
+        _count: { _all: true },
+      }),
+      prisma.consultRequest.groupBy({
+        by: ["facilityId"],
+        where: { facilityId: { in: ids }, createdAt: { gte: monthAgo } },
+        _count: { _all: true },
+      }),
+      prisma.consultRequest.findMany({
+        where: { facilityId: { in: ids } },
+        orderBy: { createdAt: "desc" },
+        take: 10 * ids.length,
+        select: {
+          id: true,
+          facilityId: true,
+          name: true,
+          phone: true,
+          status: true,
+          profileSummary: true,
+          facilityNotifiedAt: true,
+          createdAt: true,
+        },
+      }),
+      prisma.facilityPost.findMany({
+        where: { facilityId: { in: ids } },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.facilityDailyView.findMany({
+        where: { facilityId: { in: ids }, date: { gte: monthAgo } },
+      }),
+      prisma.sponsorPlacement.findMany({ where: { facilityId: { in: ids } } }),
+    ]);
+
   const contentById = new Map(contents.map((c) => [c.facilityId, c]));
   const totalById = new Map(consultTotals.map((c) => [c.facilityId, c._count._all]));
   const recentById = new Map(consultRecents.map((c) => [c.facilityId, c._count._all]));
@@ -60,16 +90,45 @@ export default async function ConsolePage() {
       facilities={facilities.map((f) => {
         const cap = capabilityOf(f.plan);
         const content = contentById.get(f.facilityId);
+        const myViews = views.filter((v) => v.facilityId === f.facilityId);
         return {
           facilityId: f.facilityId,
           facilityName: f.facilityName,
           plan: f.plan,
           planName: findPlan(f.plan)?.name ?? "시설 기본 등록",
           photoLimit: cap.photoLimit,
+          canPostNews: cap.canPostNews,
           intro: content?.intro ?? "",
           photos: Array.isArray(content?.photos) ? (content.photos as string[]) : [],
           consultTotal: totalById.get(f.facilityId) ?? 0,
           consultRecent30d: recentById.get(f.facilityId) ?? 0,
+          views30d: myViews.reduce((s, v) => s + v.count, 0),
+          views7d: myViews
+            .filter((v) => v.date >= weekAgo)
+            .reduce((s, v) => s + v.count, 0),
+          consults: latestConsults
+            .filter((c) => c.facilityId === f.facilityId)
+            .slice(0, 10)
+            .map((c) => ({
+              id: c.id,
+              name: c.name,
+              phone: c.phone,
+              status: c.status,
+              hasProfile: c.profileSummary != null,
+              emailed: c.facilityNotifiedAt != null,
+              createdAt: c.createdAt.toISOString(),
+            })),
+          posts: posts
+            .filter((p) => p.facilityId === f.facilityId)
+            .map((p) => ({
+              id: p.id,
+              title: p.title,
+              body: p.body,
+              createdAt: p.createdAt.toISOString(),
+            })),
+          sponsorRegions: placements
+            .filter((p) => p.facilityId === f.facilityId && p.active)
+            .map((p) => p.regionKey),
         };
       })}
     />
