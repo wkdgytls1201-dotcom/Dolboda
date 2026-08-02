@@ -144,7 +144,7 @@ export async function POST(req: Request) {
           `장기요양시설 정보 서비스 ${SITE_NAME}(${SITE_URL})을 통해 아래와 같이 상담 문의가 접수되어 안내드립니다.\n\n` +
           `문의자: ${name}\n연락처: ${phone}\n접수시각: ${receivedAt}` +
           (profileLines ? `\n\n[문의자가 전달에 동의한 어르신 정보]\n${profileLines}` : "") +
-          `\n\n문의자에게 직접 연락해 상담을 진행해 주시면 됩니다.\n\n` +
+          `\n\n문의자가 상담을 하길 원해요.\n\n` +
           `[${SITE_NAME}는 어떤 서비스인가요]\n` +
           `${SITE_NAME}는 고령화 시대의 돌봄 정보 격차를 해소하는 시니어 케어 플랫폼입니다.\n\n` +
           `노인 돌봄 시장은 빠르게 성장하고 있지만, 보호자가 믿을 수 있는 요양시설과 돌봄 서비스를 ` +

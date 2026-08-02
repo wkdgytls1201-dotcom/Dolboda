@@ -85,7 +85,7 @@ export function consultForwardEmailHtml(params: {
                 </table>
 
                 <p style="margin:20px 0 0;font-size:14px;line-height:1.7;color:#6B647F;">
-                  문의자에게 직접 연락해 상담을 진행해 주세요.
+                  문의자가 상담을 하길 원해요.
                 </p>
 
                 <hr style="border:none;border-top:1px solid #EFECF6;margin:22px 0 18px;" />
