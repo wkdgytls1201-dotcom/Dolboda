@@ -45,20 +45,24 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
 
   const infoItems: NavItem[] = [
     { href: "/mypage", label: "계정 설정", icon: <Settings size={16} /> },
+    { href: "/care-request", label: "돌봄 신청 내역", icon: <HeartHandshake size={16} /> },
     { href: "/mypage/care-profile", label: "보호자 프로필", icon: <HeartHandshake size={16} /> },
     { href: "/mypage/consults", label: "상담 신청 내역", icon: <ClipboardList size={16} /> },
     { href: "/mypage/edit", label: "정보 수정", icon: <ChevronRight size={16} /> },
   ];
 
   // 보호자 메뉴 — 매니저 쪽과 **같은 문법**(대표 카드 → 2×2 그리드 → 얇은 줄)으로 맞췄다.
-  // 예전엔 보호자에게 아이콘 4개짜리 한 줄만 있어서, 역할을 전환하면 한쪽이 눈에 띄게
-  // 빈약해 보였다. 순서는 자주 쓰는 순: 상담 내역(연락 왔나 확인) → 프로필·찜·비교 → 계정.
+  //
+  // 대표 카드는 돌봄 신청(매칭) 내역이다. 시설 상담은 대부분 검색하고 바로 전화해버려서
+  // "상담 신청 내역"을 다시 보러 오는 일이 드물다 — 반면 돌봄 요청은 매니저 지원·매칭이
+  // 이 안에서 진행되므로 돌아와서 확인할 이유가 실제로 있다. 상담 내역은 지우지 않고
+  // 얇은 줄로 내렸다(기존 기능 제거 아님).
   const guardianItems: NavItem[] = [
     {
-      href: "/mypage/consults",
-      label: "상담 신청 내역",
-      icon: <ClipboardList size={20} />,
-      hint: "연락 온 시설과 진행 상황",
+      href: "/care-request",
+      label: "돌봄 신청 내역",
+      icon: <HeartHandshake size={20} />,
+      hint: "매니저 지원·매칭 현황",
     },
     {
       href: "/mypage/care-profile",
@@ -74,6 +78,12 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
       icon: <ClipboardCheck size={18} />,
       hint: "1분 자가진단",
       ribbon: "무료",
+    },
+    {
+      href: "/mypage/consults",
+      label: "상담 신청 내역",
+      icon: <ClipboardList size={18} />,
+      hint: "시설에 남긴 상담",
     },
     { href: "/mypage/edit", label: "정보 수정", icon: <Settings size={18} />, hint: "계정 정보" },
   ];
