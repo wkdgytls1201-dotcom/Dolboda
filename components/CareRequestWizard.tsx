@@ -124,7 +124,7 @@ function HospitalLocationInput({
                 onChange(f.name);
                 setOpen(false);
               }}
-              className="flex w-full items-start gap-2 px-3.5 py-2.5 text-left transition-colors duration-150 hover:bg-ink-100/60"
+              className="flex min-h-[44px] w-full items-start gap-2 px-3.5 py-2.5 text-left transition-colors duration-150 hover:bg-ink-100/60 active:bg-ink-100"
             >
               <Building2 size={14} className="mt-0.5 shrink-0 text-ink-300" />
               <span className="min-w-0">
@@ -296,7 +296,7 @@ export function CareRequestWizard({
         <button
           type="button"
           onClick={() => location.reload()}
-          className="rounded-xl bg-primary-500 px-5 py-2.5 text-sm font-bold text-white hover:bg-primary-600"
+          className="min-h-[44px] rounded-xl bg-primary-500 px-5 text-sm font-bold text-white transition-all duration-150 ease-snappy hover:bg-primary-600 active:scale-[0.98]"
         >
           기존 요청 보러 가기
         </button>
@@ -333,7 +333,7 @@ export function CareRequestWizard({
             <button
               type="button"
               onClick={onCancelEdit}
-              className="shrink-0 rounded-full px-3 py-2 text-xs font-semibold text-ink-300 transition-colors duration-150 hover:bg-ink-100 hover:text-ink-500"
+              className="flex min-h-[44px] shrink-0 items-center rounded-full px-3.5 text-xs font-semibold text-ink-300 transition-all duration-150 ease-snappy hover:bg-ink-100 hover:text-ink-500 active:scale-95"
             >
               취소
             </button>

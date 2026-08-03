@@ -92,7 +92,7 @@ export default function CareConfirmationPage() {
         </p>
         <Link
           href="/care-request"
-          className="inline-block rounded-xl bg-primary-500 px-5 py-2.5 text-sm font-bold text-white hover:bg-primary-600"
+          className="inline-flex min-h-[44px] items-center rounded-xl bg-primary-500 px-5 text-sm font-bold text-white transition-all duration-150 ease-snappy hover:bg-primary-600 active:scale-[0.98]"
         >
           돌봄 요청 보러 가기
         </Link>
@@ -156,7 +156,7 @@ export default function CareConfirmationPage() {
       <div className="no-print mb-4 flex items-center justify-between">
         <Link
           href="/care-request"
-          className="flex items-center gap-1 rounded-full px-2 py-1.5 text-sm font-semibold text-ink-500 transition-colors duration-150 hover:bg-ink-100"
+          className="flex min-h-[44px] items-center gap-1 rounded-full px-2 text-sm font-semibold text-ink-500 transition-all duration-150 ease-snappy hover:bg-ink-100 active:scale-95"
         >
           <ChevronLeft size={18} />
           돌봄 요청

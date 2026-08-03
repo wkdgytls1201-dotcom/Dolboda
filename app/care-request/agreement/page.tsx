@@ -138,7 +138,7 @@ export default function CareAgreementPage() {
           <button
             type="button"
             onClick={() => window.print()}
-            className="no-print flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-xl border border-ink-100 px-3.5 text-sm font-bold text-ink-700 transition-colors hover:bg-ink-100"
+            className="no-print flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-xl border border-ink-100 px-3.5 text-sm font-bold text-ink-700 transition-all duration-150 ease-snappy hover:bg-ink-100 active:scale-95"
           >
             <Printer size={15} />
             인쇄

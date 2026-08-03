@@ -72,9 +72,16 @@ export async function GET(req: Request) {
   });
 
   return NextResponse.json({
-    // guardianId는 화면에서 안 쓰는데 나가고 있었다 — 보호자 식별자를 시터에게 줄 이유가 없다
-    items: openRequests.map(({ applications, guardianId, ...r }) => {
+    // guardianId는 화면에서 안 쓰는데 나가고 있었다 — 보호자 식별자를 시터에게 줄 이유가 없다.
+    //
+    // recipientName도 같은 이유로 뺀다(2026-08-04). 아직 매칭되지도 않은 매니저 전원에게
+    // 돌봄 받으실 분의 성함이 나가고 있었다 — 화면(JobCard·ApplyConfirmSheet)은 이 값을
+    // 쓰지 않으므로 보이지만 않았을 뿐, 응답에는 그대로 실려 있었다. 지원 여부를 정하는 데
+    // 필요한 건 연령대·성별·체중대·업무 범위이지 이름이 아니다.
+    // 매칭이 확정된 뒤에는 돌봄 확인서에서 정상적으로 보인다(그때는 알아야 한다).
+    items: openRequests.map(({ applications, guardianId, recipientName, ...r }) => {
       void guardianId;
+      void recipientName;
       return {
         ...r,
         alreadyApplied: applications.length > 0,
