@@ -26,6 +26,10 @@ export function Reveal({
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    // 움직임에 민감한 사용자는 처음부터 숨기지 않는다 — app/globals.css의 애니메이션
+    // 일괄 해제는 .animate-* 클래스만 잡는데, 이 컴포넌트는 그 클래스 대신 순수
+    // Tailwind transition 유틸을 자바스크립트로 켜고 끄기 때문에 거기 안 걸린다.
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     // 이미 화면 안(또는 그 위)에 있으면 숨겼다 보여줄 이유가 없다 — 그대로 둔다
     if (el.getBoundingClientRect().top < window.innerHeight) return;
 
