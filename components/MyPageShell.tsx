@@ -85,7 +85,8 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
       icon: <ClipboardList size={18} />,
       hint: "시설에 남긴 상담",
     },
-    { href: "/mypage/edit", label: "정보 수정", icon: <Settings size={18} />, hint: "계정 정보" },
+    // 정보 수정은 여기 두지 않는다 — 역할 카드 앞면에 이미 버튼이 있어 한 화면에
+    // 같은 링크가 두 번 나왔다. 데스크톱 사이드바(infoItems)에도 그대로 남아 있다.
   ];
   const [guardianPrimary, ...guardianRest] = guardianItems;
   const guardianGrid = guardianRest.slice(0, 4);
