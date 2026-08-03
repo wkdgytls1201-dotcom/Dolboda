@@ -330,7 +330,7 @@ function SitterView({
               type="button"
               disabled={sending !== null}
               onClick={() => sendQuickNote(q.kind)}
-              className="flex min-h-[44px] items-center gap-1.5 rounded-full bg-ivory-100 px-3.5 text-[13px] font-bold text-ink-700 transition-colors hover:bg-ink-100 disabled:opacity-50"
+              className="flex min-h-[44px] items-center gap-1.5 rounded-full bg-ivory-100 px-3.5 text-[13px] font-bold text-ink-700 transition-all duration-150 ease-snappy hover:bg-ink-100 active:scale-90 disabled:opacity-50"
             >
               <span>{q.emoji}</span>
               {sending === q.kind ? "보내는 중…" : q.label}
@@ -371,7 +371,7 @@ function SitterView({
         <div className="mb-3 flex items-center justify-between">
           <p className="text-sm font-bold text-ink-900">오늘 하루 정리</p>
           {todayLog && !correcting && (
-            <span className="flex items-center gap-1 rounded-full bg-mint-100 px-2.5 py-1 text-[11px] font-bold text-mint-700">
+            <span className="animate-pop flex items-center gap-1 rounded-full bg-mint-100 px-2.5 py-1 text-[11px] font-bold text-mint-700">
               <Check size={11} />
               작성 완료
             </span>
@@ -544,7 +544,7 @@ function QuickAlertButton({ onSend, busy }: { onSend: (body: string) => void; bu
         type="button"
         disabled={busy}
         onClick={() => setOpen(true)}
-        className="flex min-h-[44px] items-center gap-1.5 rounded-full bg-primary-50 px-3.5 text-[13px] font-bold text-primary-700 transition-colors hover:bg-primary-100 disabled:opacity-50"
+        className="flex min-h-[44px] items-center gap-1.5 rounded-full bg-primary-50 px-3.5 text-[13px] font-bold text-primary-700 transition-all duration-150 ease-snappy hover:bg-primary-100 active:scale-90 disabled:opacity-50"
       >
         <AlertTriangle size={13} />
         알려드릴 일
@@ -569,7 +569,7 @@ function QuickAlertButton({ onSend, busy }: { onSend: (body: string) => void; bu
           setText("");
           setOpen(false);
         }}
-        className="shrink-0 rounded-xl bg-primary-500 px-3.5 py-2 text-sm font-bold text-white disabled:opacity-50"
+        className="shrink-0 rounded-xl bg-primary-500 px-3.5 py-2 text-sm font-bold text-white transition-transform duration-150 ease-snappy active:scale-90 disabled:opacity-50"
       >
         전송
       </button>
@@ -604,7 +604,7 @@ function OptionRow({
               key={o}
               type="button"
               onClick={() => onChange(o)}
-              className={`flex items-center justify-center rounded-xl font-bold transition-colors ${
+              className={`flex items-center justify-center rounded-xl font-bold transition-all duration-150 ease-snappy active:scale-90 ${
                 small ? "min-h-[40px] px-3 text-[12px]" : "min-h-[48px] flex-1 px-3 text-[13px]"
               } ${
                 active
@@ -630,12 +630,16 @@ function PastLogs({ logs }: { logs: CareLogRow[] }) {
     <section>
       <p className="mb-2 px-1 text-[13px] font-semibold text-ink-300">지난 기록</p>
       <ul className="space-y-2">
-        {groups.map(({ careDate, entries }) => {
+        {groups.map(({ careDate, entries }, i) => {
           // 화면에는 최신 버전만 보여준다 — 정정했다는 사실은 배지로 알리고,
           // 원본까지 나란히 펼치는 건 분쟁이 생겼을 때 필요한 상세 보기(추후)로 남겨둔다.
           const current = entries[entries.length - 1];
           return (
-            <li key={careDate} className="rounded-2xl bg-white p-3.5 text-[12px] shadow-card">
+            <li
+              key={careDate}
+              className="animate-fade-up rounded-2xl bg-white p-3.5 text-[12px] shadow-card"
+              style={{ animationDelay: `${(i % 6) * 50}ms` }}
+            >
               <p className="mb-1 flex items-center gap-1.5 font-bold text-ink-900">
                 {fmtDate(careDate)}
                 {entries.length > 1 && (
@@ -706,10 +710,14 @@ function GuardianView({ data }: { data: ApiResponse }) {
         </p>
       ) : (
         <ul className="space-y-2.5">
-          {dayGroups.map(({ careDate, entries }) => {
+          {dayGroups.map(({ careDate, entries }, i) => {
             const l = entries[entries.length - 1]; // 정정이 있으면 최신 버전을 보여준다
             return (
-              <li key={careDate} className="rounded-2xl bg-white p-4 shadow-card">
+              <li
+                key={careDate}
+                className="animate-fade-up rounded-2xl bg-white p-4 shadow-card"
+                style={{ animationDelay: `${(i % 6) * 50}ms` }}
+              >
                 <p className="mb-2 flex items-center justify-between">
                   <span className="flex items-center gap-1.5 text-sm font-bold text-ink-900">
                     {fmtDate(careDate)}
