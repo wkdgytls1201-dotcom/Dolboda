@@ -1,15 +1,55 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Mail, Phone, ShieldCheck, Database, HeartHandshake } from "lucide-react";
-import { SITE_URL } from "@/lib/siteConfig";
+import {
+  Activity,
+  Database,
+  HeartHandshake,
+  Mail,
+  Phone,
+  Search,
+  ShieldCheck,
+} from "lucide-react";
+import { SITE_URL, OG_IMAGE, SITE_NAME } from "@/lib/siteConfig";
 import { jsonLdHtml } from "@/lib/jsonLd";
 
+const ONE_LINER =
+  "돌보다는 정보 비대칭으로 생기는 돌봄 공백을 해결하고, 보호자가 신뢰할 수 있는 요양시설과 돌봄 서비스를 투명하게 비교·선택할 수 있도록 돕는 에이지테크(AgeTech) 플랫폼입니다.";
+
 export const metadata: Metadata = {
-  title: "돌보다 소개 — 정보 비대칭 없는 투명한 돌봄",
-  description:
-    "돌보다는 전국 요양병원·요양원·주야간보호·방문요양 시설 정보를 공공데이터 기반으로 정리해 보호자가 비교할 수 있게 돕는 서비스입니다. 운영 주체와 연락처, 서비스 원칙을 안내합니다.",
+  title: "돌보다 소개 — 돌봄 정보 격차를 없애는 에이지테크 플랫폼",
+  description: ONE_LINER,
   alternates: { canonical: "/about" },
+  openGraph: {
+    title: `${SITE_NAME} 소개`,
+    description: ONE_LINER,
+    url: `${SITE_URL}/about`,
+    type: "website",
+    images: [OG_IMAGE],
+  },
 };
+
+// 돌봄의 전 과정 — 지금 되는 것과 앞으로 만들 것을 배지로 구분한다.
+// "없는 것을 있는 것처럼 보여주지 않는다"는 프로젝트 원칙을 소개 페이지에서도 지킨다.
+const JOURNEY = [
+  {
+    icon: Search,
+    step: "찾는다",
+    status: "제공 중",
+    desc: "전국 요양병원·요양원·주야간보호·방문요양의 위치·비용·인력 현황·평가 정보를 한자리에서 비교합니다.",
+  },
+  {
+    icon: HeartHandshake,
+    step: "연결한다",
+    status: "제공 중",
+    desc: "집에서 모시기로 했다면, 돌봄이 필요한 조건을 남기고 돌보다 매니저의 지원을 받아 직접 정하실 수 있습니다.",
+  },
+  {
+    icon: Activity,
+    step: "이어서 돌본다",
+    status: "준비 중",
+    desc: "시설을 정한 뒤에도 끝이 아닙니다. 어르신의 건강과 일상을 이어서 살피는 기능을 만들어가고 있습니다.",
+  },
+];
 
 const PRINCIPLES = [
   {
@@ -40,10 +80,11 @@ const jsonLd = {
     {
       "@type": "Organization",
       name: "돌보다",
+      alternateName: "Dolboda",
       url: SITE_URL,
       logo: `${SITE_URL}/logo.png`,
-      description:
-        "전국 요양병원·요양시설 정보를 공공데이터 기반으로 비교하는 서비스",
+      slogan: "기술로 더 나은 노후와 돌봄의 기준을 만듭니다",
+      description: ONE_LINER,
       email: "wkdgytls1201@gmail.com",
       contactPoint: {
         "@type": "ContactPoint",
@@ -70,17 +111,94 @@ export default function AboutPage() {
         dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }}
       />
 
-      <h1 className="mb-3 text-2xl font-bold leading-snug text-ink-900">
+      <span className="mb-4 inline-flex items-center gap-1.5 rounded-full bg-primary-50 px-3.5 py-1.5 text-[12px] font-bold text-primary-700">
+        <ShieldCheck size={13} />
+        에이지테크 · 시니어 케어 플랫폼
+      </span>
+      <h1 className="mb-4 text-[26px] font-extrabold leading-snug text-ink-900 sm:text-3xl">
         정보 비대칭 없는
         <br />
         투명한 돌봄을 만듭니다
       </h1>
-      <p className="mb-8 text-[16px] leading-[1.8] text-ink-700">
-        부모님을 모실 요양시설을 알아보는 일은 대부분 갑자기 시작됩니다. 정보는 여러 기관에 흩어져
-        있고, 평가등급이 무엇을 뜻하는지, 한 달에 얼마가 드는지 알기 어렵습니다. 돌보다는 공개된
-        자료를 한자리에 모아 <strong className="font-bold text-ink-900">비교할 수 있게</strong>{" "}
-        만드는 일을 합니다.
+      <p className="mb-10 text-[16px] leading-[1.85] text-ink-700">
+        돌보다는{" "}
+        <strong className="font-bold text-ink-900">고령화 시대의 돌봄 정보 격차를 해소하는</strong>{" "}
+        시니어 케어 플랫폼입니다. 흩어져 있는 요양시설 정보를 한자리에 모아, 보호자가 스스로
+        비교하고 판단할 수 있게 합니다.
       </p>
+
+      {/* 문제 정의 — 왜 이 서비스가 필요한지부터 말한다 */}
+      <section className="mb-10">
+        <h2 className="mb-4 text-lg font-bold text-ink-900">왜 만들었나요</h2>
+        <div className="space-y-3 text-[15px] leading-[1.85] text-ink-600">
+          <p>
+            대한민국은 이미 초고령사회에 들어섰지만, 가족이 부모님의 돌봄을 준비하는 과정은
+            여전히 막막합니다. 대부분 준비할 겨를도 없이 갑자기 시작되고요.
+          </p>
+          <p>
+            어떤 요양시설이 좋은지, 비용은 적절한지, 실제 돌봄 환경은 어떤지 확인할 수 있는
+            정보는 부족하고 복잡하게 흩어져 있습니다. 시설마다 안내하는 기준이 다르고, 서비스
+            품질이나 비용을 객관적으로 견주기도 쉽지 않습니다.
+          </p>
+          <p className="font-semibold text-ink-800">
+            돌보다는 이 돌봄 시장의 정보 비대칭을 해소하고, 보호자의 합리적인 의사결정을 돕기
+            위해 만들어졌습니다.
+          </p>
+        </div>
+      </section>
+
+      {/* 돌봄의 전 과정 — 현재 제공과 준비 중을 배지로 구분해서 과장 없이 */}
+      <section className="mb-10">
+        <h2 className="mb-1 text-lg font-bold text-ink-900">돌봄의 전 과정을 하나로</h2>
+        <p className="mb-4 text-sm leading-relaxed text-ink-500">
+          돌봄이 필요한 순간부터 시설을 찾고, 돌봄 인력을 연결하고, 일상을 이어서 살피는 일까지
+          하나의 흐름으로 잇는 것이 돌보다가 그리는 모습입니다.
+        </p>
+        <ol className="relative space-y-3 border-l-2 border-primary-100 pl-6">
+          {JOURNEY.map(({ icon: Icon, step, status, desc }, i) => {
+            const ready = status === "제공 중";
+            return (
+              <li key={step} className="relative">
+                <span
+                  className={`absolute -left-[35px] flex h-6 w-6 items-center justify-center rounded-full text-white ${
+                    ready ? "bg-primary-500" : "bg-ink-200"
+                  }`}
+                >
+                  <Icon size={13} />
+                </span>
+                <div className="rounded-2xl bg-white p-4 shadow-card">
+                  <p className="mb-1 flex flex-wrap items-center gap-1.5">
+                    <span className="text-[15px] font-bold text-ink-900">
+                      {i + 1}. {step}
+                    </span>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                        ready ? "bg-mint-100 text-mint-700" : "bg-ink-100 text-ink-400"
+                      }`}
+                    >
+                      {status}
+                    </span>
+                  </p>
+                  <p className="text-[14px] leading-[1.75] text-ink-500">{desc}</p>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      </section>
+
+      {/* 지향점 — 소개 페이지에서 가장 오래 읽히는 자리라 본문보다 한 단계 크게 */}
+      <section className="mb-10 rounded-3xl bg-gradient-to-br from-primary-500 to-peach-500 p-7 text-center shadow-soft">
+        <p className="mb-4 space-y-1 text-[15px] font-semibold leading-[1.9] text-white/90">
+          <span className="block">정보 부족으로 좋은 돌봄의 기회를 놓치는 사람이 없도록,</span>
+          <span className="block">보호자는 더 안심하고 선택할 수 있도록,</span>
+          <span className="block">돌봄 제공자는 더 투명하게 신뢰받을 수 있도록.</span>
+        </p>
+        <p className="text-[17px] font-extrabold leading-snug text-white">
+          돌보다는 기술로
+          <br />더 나은 노후와 돌봄의 기준을 만들어갑니다
+        </p>
+      </section>
 
       <section className="mb-10">
         <h2 className="mb-4 text-lg font-bold text-ink-900">우리가 지키는 원칙</h2>

@@ -235,6 +235,50 @@ p {
   }
 }
 
+/* 동전 스티커가 가끔 한 번씩 휙 뒤집히는 동작. 회전 없이 위아래로만 8초 주기로
+   움직이던 이전 버전은 진폭(10px)이 작고 주기가 길어 "안 움직인다"는 피드백을 받았다 —
+   같은 자리에서 더 잘 보이면서도 계속 정신없지 않은 쪽을 골랐다: 대부분 시간(0~82%)은
+   가만히 있다가 순간적으로 한 바퀴 휙 돈다(동전 소재와도 맞아떨어진다). perspective 없이
+   rotateY만 쓰면 옆에서 본 동전처럼 폭이 좁아졌다 넓어지는 착시가 생긴다. */
+@keyframes coin-flip {
+  0%,
+  82% {
+    transform: rotateY(0deg);
+  }
+  100% {
+    transform: rotateY(360deg);
+  }
+}
+.animate-coin-flip {
+  animation: coin-flip 4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-coin-flip {
+    animation: none;
+  }
+}
+
+/* 아주 느리고 낮은 진폭의 위아래 움직임 — 무한 반복이지만 4px·3초 주기라 산만하지
+   않다("가끔 숨쉬는" 느낌). 회전은 넣지 않는다(float-slow와 달리 버튼처럼 넓은
+   사각형에 회전을 주면 어색해 보인다). */
+@keyframes bob-slow {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+.animate-bob-slow {
+  animation: bob-slow 3s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-bob-slow {
+    animation: none;
+  }
+}
+
 /* 마이페이지 역할 전환(보호자↔매니저) 카드 뒤집기.
    Tailwind에 transform-style·backface-visibility 유틸이 없어 여기서 직접 만든다.
 

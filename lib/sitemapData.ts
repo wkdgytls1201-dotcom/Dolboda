@@ -3,6 +3,7 @@ import { SITE_URL } from "./siteConfig";
 import { getRegionIndex } from "./regionData";
 import { findTypeSeoByType, FACILITY_TYPE_SEO } from "./facilityTypeSeo";
 import { GUIDES } from "./guides";
+import { allEquipmentItems } from "./welfareEquipment";
 
 // 사이트맵을 종류별로 나눠 만든다. 한 파일에 3만 URL을 몰아넣으면 파일이 지나치게 크고,
 // 서치콘솔에서 어느 묶음이 색인에 문제가 있는지 구분할 수 없다.
@@ -61,6 +62,11 @@ async function staticEntries(): Promise<SitemapEntry[]> {
     { loc: `${SITE_URL}/services/family`, changefreq: "monthly", priority: 0.85 },
     { loc: `${SITE_URL}/business`, changefreq: "monthly", priority: 0.8 },
     { loc: `${SITE_URL}/welfare-equipment`, changefreq: "monthly", priority: 0.85 },
+    ...allEquipmentItems().map((item) => ({
+      loc: `${SITE_URL}/welfare-equipment/${encodeURIComponent(item.slug)}`,
+      changefreq: "monthly" as const,
+      priority: 0.6,
+    })),
     { loc: `${SITE_URL}/about`, changefreq: "monthly", priority: 0.7 },
     { loc: `${SITE_URL}/data-policy`, changefreq: "monthly", priority: 0.7 },
     { loc: `${SITE_URL}/compare`, changefreq: "weekly", priority: 0.5 },

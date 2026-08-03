@@ -3,11 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { ArrowRight, ChevronRight, MapPin, Phone, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, ChevronRight, Coins, MapPin, Phone, ShieldCheck, Sparkles } from "lucide-react";
 import { MyPageShell } from "@/components/MyPageShell";
 import { PageLoader } from "@/components/PageLoader";
-import { CountUpNumber, CopayCompareBars } from "@/components/WelfareBenefitVisuals";
+import { BenefitGauge, CopayCompareBars } from "@/components/WelfareBenefitVisuals";
 import { WelfareItemTabs } from "@/components/WelfareItemTabs";
+import { WelfareConsultForm } from "@/components/WelfareConsultForm";
 import { useCareProfiles, type CareProfileSummary } from "@/lib/careProfileContext";
 import { ANNUAL_LIMIT, BASE_YEAR, PURCHASE_ITEMS, RENTAL_ITEMS } from "@/lib/welfareEquipment";
 import { maskAccount } from "@/lib/maskAccount";
@@ -130,16 +131,107 @@ function ProfileFlow({
       {/* 요양인정번호는 여기서 막지 않는다 — 대부분의 보호자는 그 번호를 아직
           모르거나 서류를 찾아봐야 한다. 등급만 있으면 혜택 정보(한도·비교·품목·
           사업소)는 바로 보여주고, 번호 등록은 대시보드 안의 선택 사항으로 둔다. */}
-      {!eligible ? <NoGradeState relation={selected.relation} /> : <BenefitDashboard profile={selected} />}
+      {!eligible ? <NoGradeState profile={selected} /> : <BenefitDashboard profile={selected} />}
     </div>
   );
 }
 
-function NoGradeState({ relation }: { relation: string }) {
+// 등급테스트 밴드 id → 화면에 짧게 쓸 등급 이름.
+//
+// GRADE_BANDS의 label("3등급이 예상돼요")과 다른 짧은 표기라 여기 따로 둔다.
+// lib/gradeTest.ts를 통째로 import하지 않는 이유도 있다 — 이 화면은 테스트를 실행하지
+// 않는데 문항 데이터(TEST_AREAS)까지 번들에 끌려 들어온다.
+const ESTIMATED_GRADE_LABEL: Record<string, string> = {
+  "1": "1등급",
+  "2": "2등급",
+  "3": "3등급",
+  "4": "4등급",
+  "5": "5등급(치매 특별등급)",
+  cognitive: "인지지원등급",
+  none: "등급 판정이 어려울 수 있어요",
+};
+
+function formatEstimatedAt(iso: string | null): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(
+    d.getDate()
+  ).padStart(2, "0")}`;
+}
+
+function NoGradeState({ profile }: { profile: CareProfileSummary }) {
+  const estimated = profile.estimatedBand
+    ? ESTIMATED_GRADE_LABEL[profile.estimatedBand] ?? null
+    : null;
+  // "none"은 "대상이 아닐 수 있다"는 결과다 — 등급을 받은 것처럼 보이면 안 되므로
+  // 같은 카드를 쓰되 톤과 문구를 나눈다.
+  const isNone = profile.estimatedBand === "none";
+  const testedAt = formatEstimatedAt(profile.estimatedAt);
+
+  // 이미 테스트를 해본 사람에게 다시 테스트를 권하지 않는다 — 그 사람에게 남은
+  // 다음 행동은 "실제 등급이 나오면 등록하기" 하나뿐이다.
+  if (estimated) {
+    return (
+      <div className="animate-fade-up overflow-hidden rounded-2xl bg-white shadow-card">
+        <div
+          className={`px-6 py-7 text-center ${
+            isNone ? "bg-ivory-100" : "bg-gradient-to-br from-royal-50 to-primary-50"
+          }`}
+        >
+          <span className="mb-2.5 inline-flex items-center gap-1 rounded-full bg-white/80 px-3 py-1 text-[11px] font-bold text-royal-700 shadow-soft backdrop-blur">
+            <Sparkles size={12} />
+            등급테스트 예상 결과
+          </span>
+          <p
+            className={`font-extrabold text-ink-900 ${
+              isNone ? "text-[17px] leading-snug" : "text-[26px]"
+            }`}
+          >
+            {estimated}
+          </p>
+          {testedAt && <p className="mt-1.5 text-[12px] text-ink-400">{testedAt} 테스트</p>}
+        </div>
+
+        <div className="px-6 py-5">
+          <p className="mb-4 text-[13px] leading-relaxed text-ink-500">
+            {isNone ? (
+              <>
+                예상 결과로는 복지용구 대상이 아닐 수 있어요. 다만 이 테스트는 참고용이라
+                실제 판정과 다를 수 있으니, 공단에 인정 신청을 해보시는 것도 방법이에요.
+              </>
+            ) : (
+              <>
+                아직 <strong className="font-bold text-ink-700">공단의 공식 판정</strong>은
+                아니에요. 실제로 등급을 받으시면 인정번호와 함께 등록해주세요 — 그때부터 연
+                160만원 혜택 정보를 볼 수 있어요.
+              </>
+            )}
+          </p>
+          <div className="flex flex-col gap-2">
+            <Link
+              href="/mypage/welfare-benefit/cert"
+              className="flex min-h-[50px] items-center justify-center gap-1.5 rounded-xl bg-primary-500 px-5 text-sm font-bold text-white shadow-soft transition-colors hover:bg-primary-600"
+            >
+              등급을 받았어요 · 인정번호 등록
+              <ArrowRight size={15} />
+            </Link>
+            <Link
+              href="/guide/grade-application"
+              className="flex min-h-[46px] items-center justify-center gap-1.5 rounded-xl border border-ink-100 bg-white px-5 text-[13px] font-bold text-ink-600 transition-colors hover:bg-ink-100/60"
+            >
+              등급 신청 방법 보기
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="animate-fade-up rounded-2xl bg-white p-6 text-center shadow-card">
       <p className="mb-1.5 text-[15px] font-bold text-ink-900">
-        {relation}은 아직 장기요양등급이 없어요
+        {profile.relation}은 아직 장기요양등급이 없어요
       </p>
       <p className="mb-5 text-[13px] leading-relaxed text-ink-500">
         복지용구는 장기요양등급(1~5등급·인지지원등급)을 받은 분만 이용할 수 있어요. 예상
@@ -153,7 +245,7 @@ function NoGradeState({ relation }: { relation: string }) {
           1분 등급 예상 테스트
         </Link>
         <Link
-          href="/mypage/care-profile"
+          href="/mypage/welfare-benefit/cert"
           className="flex min-h-[48px] items-center justify-center gap-1.5 rounded-xl border border-ink-100 bg-white px-5 text-sm font-bold text-ink-700 transition-colors hover:bg-ink-100"
         >
           이미 등급이 있어요
@@ -164,16 +256,11 @@ function NoGradeState({ relation }: { relation: string }) {
 }
 
 function BenefitDashboard({ profile }: { profile: CareProfileSummary }) {
-  const { replace } = useCareProfiles();
-  // 등록된 번호를 고치는 중인지, 아직 없는 번호를 처음 적는 중인지 — 둘 다
-  // 같은 인라인 폼(RegisterCertNumberInline)을 쓰되 열림 상태만 다르다.
-  // 미등록 상태의 기본값을 false로 둔 이유: 이 필드는 "몰라도 되는" 선택 항목이라
-  // 처음부터 입력창을 펼쳐두면 마치 필수처럼 보인다 — 먼저 안내 카드로 권하고,
-  // 원할 때 펼치게 한다.
-  const [editingCert, setEditingCert] = useState(false);
-
   return (
     <div className="space-y-4">
+      {/* 등록·수정 모두 전용 화면(/mypage/welfare-benefit/cert)이 맡는다 —
+          번호가 어디 적혀 있는지, 없으면 무엇을 하면 되는지까지 함께 안내해야 해서
+          대시보드 안의 인라인 폼으로는 자리가 부족했다. 여기엔 진입점만 둔다. */}
       {profile.ltcCertNumber ? (
         // 등록됨 — 마스킹해서 보여준다(계좌번호와 같은 규칙)
         <div className="animate-fade-up flex items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3.5 shadow-card">
@@ -183,64 +270,54 @@ function BenefitDashboard({ profile }: { profile: CareProfileSummary }) {
               {profile.relation} · 요양인정번호 {maskAccount(profile.ltcCertNumber)} 등록됨
             </span>
           </span>
-          <button
-            type="button"
-            onClick={() => setEditingCert((v) => !v)}
+          <Link
+            href="/mypage/welfare-benefit/cert"
             className="shrink-0 text-xs font-semibold text-ink-300 hover:text-ink-500"
           >
             다시 등록
-          </button>
+          </Link>
         </div>
       ) : (
         // 미등록 — 콘텐츠를 막지는 않되(대부분 이 번호를 지금은 모른다), 등록하면
-        // 좋다는 건 적극적으로 알린다. 회색 아코디언 대신 눈에 띄는 카드 + 명확한
-        // 버튼으로 "지금 등록해두면 좋다"는 신호를 준다.
-        !editingCert && (
-          <button
-            type="button"
-            onClick={() => setEditingCert(true)}
-            className="animate-fade-up group flex w-full items-center gap-3.5 rounded-2xl border-2 border-royal-200 bg-royal-50/60 p-4 text-left shadow-card transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:border-royal-300 hover:bg-royal-50 hover:shadow-card-hover active:translate-y-0 active:scale-[0.99]"
-          >
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-royal-500 shadow-soft transition-transform duration-200 group-hover:scale-110">
-              <ShieldCheck size={20} />
+        // 좋다는 건 적극적으로 알린다.
+        <Link
+          href="/mypage/welfare-benefit/cert"
+          className="animate-fade-up group flex w-full items-center gap-3.5 rounded-2xl border-2 border-royal-200 bg-royal-50/60 p-4 text-left shadow-card transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:border-royal-300 hover:bg-royal-50 hover:shadow-card-hover active:translate-y-0 active:scale-[0.99]"
+        >
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-royal-500 shadow-soft transition-transform duration-200 group-hover:scale-110">
+            <ShieldCheck size={20} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[15px] font-bold text-ink-900">
+              요양인정번호를 등록해두세요
             </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-[15px] font-bold text-ink-900">
-                요양인정번호를 등록해두세요
-              </span>
-              <span className="mt-0.5 block text-[13px] leading-snug text-ink-500">
-                다음에 다시 찾아볼 필요 없이 이 화면에 저장돼요. 없어도 아래 혜택 정보는
-                지금 바로 볼 수 있어요.
-              </span>
+            <span className="mt-0.5 block text-[13px] leading-snug text-ink-500">
+              다음에 다시 찾아볼 필요 없이 이 화면에 저장돼요. 없어도 아래 혜택 정보는
+              지금 바로 볼 수 있어요.
             </span>
-            <ChevronRight
-              size={18}
-              className="shrink-0 text-royal-300 transition-transform duration-200 group-hover:translate-x-0.5"
-            />
-          </button>
-        )
-      )}
-      {editingCert && (
-        <RegisterCertNumberInline
-          profile={profile}
-          onDone={(p) => {
-            replace(p);
-            setEditingCert(false);
-          }}
-          onCancel={() => setEditingCert(false)}
-        />
+          </span>
+          <ChevronRight
+            size={18}
+            className="shrink-0 text-royal-300 transition-transform duration-200 group-hover:translate-x-0.5"
+          />
+        </Link>
       )}
 
       {/* 한도 카드 */}
       <div
-        className="animate-fade-up rounded-3xl bg-gradient-to-br from-primary-500 to-peach-500 p-6 text-center text-white shadow-soft"
+        className="animate-fade-up relative rounded-3xl bg-gradient-to-br from-primary-500 to-peach-500 p-6 text-center text-white shadow-soft"
         style={{ animationDelay: "60ms" }}
       >
-        <p className="mb-1 text-[13px] font-semibold text-white/85">{BASE_YEAR}년 연간 한도</p>
-        <p className="text-4xl font-extrabold">
-          <CountUpNumber value={ANNUAL_LIMIT} suffix="원" />
-        </p>
-        <p className="mt-1.5 text-[12px] leading-relaxed text-white/80">
+        {/* 동전이 가끔 한 번씩 휙 뒤집힌다 — app/globals.css .animate-coin-flip 참고 */}
+        <span
+          aria-hidden
+          className="animate-coin-flip absolute -right-2.5 -top-3.5 flex h-11 w-11 items-center justify-center rounded-full bg-white text-primary-500 shadow-soft"
+        >
+          <Coins size={20} />
+        </span>
+        <p className="mb-3 text-[13px] font-semibold text-white/85">{BASE_YEAR}년 연간 한도</p>
+        <BenefitGauge value={ANNUAL_LIMIT} />
+        <p className="mt-2 text-[12px] leading-relaxed text-white/80">
           정확한 남은 금액은 아래 사업소 상담으로 확인해보세요
         </p>
       </div>
@@ -257,78 +334,90 @@ function BenefitDashboard({ profile }: { profile: CareProfileSummary }) {
         <WelfareItemTabs purchase={PURCHASE_ITEMS} rental={RENTAL_ITEMS} />
       </div>
 
+      {/* 상담 신청 */}
+      <div className="animate-fade-up" style={{ animationDelay: "210ms" }}>
+        <WelfareConsultForm compact />
+      </div>
+
       {/* 사업소 찾기 */}
       <div className="animate-fade-up" style={{ animationDelay: "240ms" }}>
         <ProviderFinder />
+      </div>
+
+      {/* 내 상담 신청 내역 */}
+      <div className="animate-fade-up" style={{ animationDelay: "270ms" }}>
+        <WelfareConsultHistory />
       </div>
     </div>
   );
 }
 
-function RegisterCertNumberInline({
-  profile,
-  onDone,
-  onCancel,
-}: {
-  profile: CareProfileSummary;
-  onDone: (p: CareProfileSummary) => void;
-  onCancel: () => void;
-}) {
-  const [value, setValue] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+interface WelfareConsultHistoryItem {
+  id: string;
+  sido: string;
+  sigungu: string;
+  items: string[];
+  status: string | null;
+  createdAt: string;
+}
 
-  async function submit() {
-    const trimmed = value.trim();
-    if (!/^[0-9-]{4,20}$/.test(trimmed)) {
-      setError("형식을 확인해주세요.");
-      return;
-    }
-    setSaving(true);
-    setError(null);
+function WelfareConsultHistory() {
+  const [items, setItems] = useState<WelfareConsultHistoryItem[] | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/welfare-consult/mine")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setItems(Array.isArray(d?.items) ? d.items : []))
+      .catch(() => setItems([]));
+  }, []);
+
+  async function toggleReceived(id: string, current: string | null) {
+    setBusyId(id);
+    const next = current ? null : "연락받음";
+    setItems((list) => list?.map((i) => (i.id === id ? { ...i, status: next } : i)) ?? null);
     try {
-      const res = await fetch("/api/care-profile", {
+      await fetch("/api/welfare-consult/mine", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: profile.id, ltcCertNumber: trimmed }),
+        body: JSON.stringify({ id, status: next }),
       });
-      const data = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(data?.error ?? "");
-      onDone(data);
-    } catch (e) {
-      setError((e instanceof Error && e.message) || "저장하지 못했어요.");
     } finally {
-      setSaving(false);
+      setBusyId(null);
     }
   }
 
+  if (!items || items.length === 0) return null;
+
   return (
-    <div className="animate-fade-up rounded-2xl border border-ink-100 bg-white p-4">
-      <input
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        inputMode="numeric"
-        placeholder="새 요양인정번호"
-        className="w-full rounded-xl border border-ink-100 px-3.5 py-3 text-sm outline-none focus:border-primary-400"
-      />
-      {error && <p className="mt-1.5 text-xs font-semibold text-primary-600">{error}</p>}
-      <div className="mt-3 flex gap-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="min-h-[44px] flex-1 rounded-xl border border-ink-100 text-sm font-semibold text-ink-500"
-        >
-          취소
-        </button>
-        <button
-          type="button"
-          disabled={saving}
-          onClick={submit}
-          className="min-h-[44px] flex-[2] rounded-xl bg-primary-500 text-sm font-bold text-white disabled:opacity-60"
-        >
-          {saving ? "저장 중…" : "저장"}
-        </button>
-      </div>
+    <div className="rounded-2xl bg-white p-5 shadow-card">
+      <h2 className="mb-3 text-[15px] font-bold text-ink-900">내 상담 신청 내역</h2>
+      <ul className="space-y-2.5">
+        {items.map((item) => (
+          <li key={item.id} className="rounded-xl border border-ink-100 p-3.5">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-[13px] font-bold text-ink-900">
+                  {item.sido} {item.sigungu}
+                </p>
+                {item.items.length > 0 && (
+                  <p className="mt-0.5 truncate text-[12px] text-ink-400">{item.items.join(", ")}</p>
+                )}
+              </div>
+              <button
+                type="button"
+                disabled={busyId === item.id}
+                onClick={() => toggleReceived(item.id, item.status)}
+                className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold transition-colors disabled:opacity-60 ${
+                  item.status ? "bg-mint-100 text-mint-700" : "bg-ivory-100 text-ink-400"
+                }`}
+              >
+                {item.status ?? "대기중"}
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, PhoneCall, ShieldCheck } from "lucide-react";
+import { ArrowRight, Coins, PhoneCall, ShieldCheck } from "lucide-react";
 import {
   ANNUAL_LIMIT,
   BASE_YEAR,
@@ -8,11 +8,18 @@ import {
   PURCHASE_ITEMS,
   RENTAL_ITEMS,
   STEPS,
+  daysLeftInYear,
 } from "@/lib/welfareEquipment";
-import { CountUpNumber, CopayCompareBars } from "@/components/WelfareBenefitVisuals";
+import { BenefitGauge, CopayCompareBars } from "@/components/WelfareBenefitVisuals";
 import { WelfareItemTabs } from "@/components/WelfareItemTabs";
+import { WelfareConsultForm } from "@/components/WelfareConsultForm";
+import { WelfareLoginCta } from "@/components/WelfareLoginCta";
 import { SITE_URL, SITE_NAME, OG_IMAGE } from "@/lib/siteConfig";
 import { jsonLdHtml } from "@/lib/jsonLd";
+
+// 남은 날짜는 매일 값이 바뀌어야 의미가 있다 — 정적 빌드 시점에 굳어버리면 배포
+// 사이 며칠은 실제와 다른 숫자가 노출된다.
+export const revalidate = 86400;
 
 // 복지용구 혜택 안내 — 공개 랜딩페이지.
 //
@@ -67,6 +74,7 @@ const jsonLd = {
 };
 
 export default function WelfareEquipmentPage() {
+  const daysLeft = daysLeftInYear();
   return (
     <main className="pb-20">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }} />
@@ -97,23 +105,27 @@ export default function WelfareEquipmentPage() {
             있어요.
           </p>
 
-          <div className="mx-auto mb-7 max-w-xs rounded-3xl bg-white/90 p-6 shadow-card backdrop-blur">
-            <p className="mb-1 text-[13px] font-semibold text-ink-400">{BASE_YEAR}년 연간 한도</p>
-            <p className="text-4xl font-extrabold text-primary-600">
-              <CountUpNumber value={ANNUAL_LIMIT} suffix="원" />
-            </p>
-            <p className="mt-1.5 text-[12px] leading-relaxed text-ink-400">
-              쓰지 않으면 그해가 지나며 사라져요
+          <div className="relative mx-auto mb-7 max-w-xs rounded-3xl bg-gradient-to-br from-primary-500 to-peach-500 p-6 shadow-card">
+            {/* 위아래로 살짝 흔드는 버전은 진폭이 작아 "안 움직인다"는 피드백을 받아
+                동전이 가끔 한 번씩 휙 뒤집히는 쪽으로 바꿨다(app/globals.css 참고) */}
+            <span
+              aria-hidden
+              className="animate-coin-flip absolute -right-2.5 -top-3.5 flex h-11 w-11 items-center justify-center rounded-full bg-white text-primary-500 shadow-soft"
+            >
+              <Coins size={20} />
+            </span>
+            <p className="mb-3 text-[13px] font-semibold text-white/85">{BASE_YEAR}년 우리 어르신 몫</p>
+            <BenefitGauge value={ANNUAL_LIMIT} />
+            <p className="mt-3 flex items-center justify-center gap-1.5 text-[12px] font-bold text-white/90">
+              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
+              올해 {daysLeft}일 남음 · 안 쓰면 사라져요
             </p>
           </div>
 
-          <Link
-            href="/mypage/welfare-benefit"
-            className="animate-shimmer group relative inline-flex min-h-[56px] w-full max-w-xs items-center justify-center gap-1.5 overflow-hidden rounded-2xl bg-gradient-to-r from-primary-500 to-peach-500 px-6 text-[15px] font-bold text-white shadow-soft transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:shadow-card-hover active:translate-y-0 active:scale-[0.98]"
-          >
+          <WelfareLoginCta className="animate-bob-slow group relative inline-flex min-h-[56px] w-full max-w-xs items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-r from-primary-500 to-peach-500 px-6 text-[15px] font-bold text-white shadow-soft transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:shadow-card-hover active:translate-y-0 active:scale-[0.98]">
             로그인하고 우리 어르신 혜택 확인하기
-            <ArrowRight size={16} className="animate-nudge-x" />
-          </Link>
+            <ArrowRight size={16} />
+          </WelfareLoginCta>
         </div>
       </section>
 
@@ -183,6 +195,15 @@ export default function WelfareEquipmentPage() {
           </dl>
         </section>
 
+        {/* 상담 신청 — 로그인 없이도 접수할 수 있는 유일한 자리 */}
+        <section id="consult" className="mt-10 scroll-mt-6">
+          <h2 className="mb-1 text-lg font-bold text-ink-900">지금 바로 상담받고 싶다면</h2>
+          <p className="mb-4 text-sm leading-relaxed text-ink-500">
+            회원가입 없이도 신청할 수 있어요. 확인 후 순차적으로 연락드려요.
+          </p>
+          <WelfareConsultForm />
+        </section>
+
         {/* 마무리 CTA */}
         <section className="mt-10 rounded-3xl bg-gradient-to-br from-royal-500 to-royal-600 p-6 text-center shadow-royal">
           <p className="mb-1.5 text-lg font-extrabold text-white">
@@ -191,16 +212,16 @@ export default function WelfareEquipmentPage() {
           <p className="mb-5 text-[13px] leading-relaxed text-white/80">
             로그인하고 요양인정번호를 등록하면 마이페이지에서 바로 확인할 수 있어요.
           </p>
-          <Link
-            href="/mypage/welfare-benefit"
-            className="inline-flex min-h-[52px] w-full max-w-xs items-center justify-center gap-1.5 rounded-xl bg-white text-sm font-bold text-royal-700 shadow-soft transition-all duration-200 ease-snappy hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
-          >
+          <WelfareLoginCta className="animate-bob-slow inline-flex min-h-[52px] w-full max-w-xs items-center justify-center gap-1.5 rounded-xl bg-white text-sm font-bold text-royal-700 shadow-soft transition-all duration-200 ease-snappy hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]">
             로그인하고 확인하기
             <ArrowRight size={15} />
-          </Link>
+          </WelfareLoginCta>
           <p className="mt-4 flex items-center justify-center gap-1.5 text-[12px] text-white/70">
             <PhoneCall size={12} />
-            바로 상담하고 싶다면 가까운 복지용구 사업소로 전화 문의도 가능해요
+            <a href="#consult" className="underline underline-offset-2">
+              위 상담 신청
+            </a>
+            으로 바로 문의할 수도 있어요
           </p>
         </section>
       </div>
