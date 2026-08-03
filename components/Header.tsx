@@ -80,7 +80,7 @@ export function Header() {
         <div className="mx-auto flex h-12 max-w-6xl items-center justify-between px-4 sm:h-16">
           <Link
             href="/"
-            className="flex items-center gap-1 transition hover:opacity-80"
+            className="flex items-center gap-1 transition-all duration-150 hover:opacity-80 active:scale-95 active:opacity-80"
             aria-label="돌보다 홈"
           >
             <Logo className="h-10 w-10 sm:h-16 sm:w-16" priority />
@@ -240,7 +240,7 @@ export function Header() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex min-h-[52px] items-center justify-end gap-2 rounded-xl px-4 py-3 text-right text-base transition-colors duration-200 ${
+                    className={`flex min-h-[52px] items-center justify-end gap-2 rounded-xl px-4 py-3 text-right text-base transition-all duration-150 active:scale-[0.98] active:bg-ink-100 ${
                       active
                         ? "bg-primary-50 font-bold text-primary-700"
                         : item.highlight
@@ -263,7 +263,7 @@ export function Header() {
 
               <Link
                 href="/notifications"
-                className={`flex min-h-[52px] items-center justify-end rounded-xl px-4 py-3 text-base transition-colors duration-200 ${
+                className={`flex min-h-[52px] items-center justify-end rounded-xl px-4 py-3 text-base transition-all duration-150 active:scale-[0.98] active:bg-ink-100 ${
                   pathname?.startsWith("/notifications")
                     ? "bg-primary-50 font-bold text-primary-700"
                     : "font-medium text-ink-700 hover:bg-ink-100"
@@ -279,7 +279,7 @@ export function Header() {
               {user && (
                 <Link
                   href="/mypage"
-                  className={`flex min-h-[52px] items-center justify-end rounded-xl px-4 py-3 text-base transition-colors duration-200 ${
+                  className={`flex min-h-[52px] items-center justify-end rounded-xl px-4 py-3 text-base transition-all duration-150 active:scale-[0.98] active:bg-ink-100 ${
                     pathname?.startsWith("/mypage") || pathname === "/account"
                       ? "bg-primary-50 font-bold text-primary-700"
                       : "font-medium text-ink-700 hover:bg-ink-100"

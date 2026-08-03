@@ -51,7 +51,7 @@ export function MobileTabBar() {
               <Link
                 key={href}
                 href={href}
-                className={`flex min-h-[64px] flex-col items-center justify-center gap-1 py-2 text-xs font-semibold transition-colors duration-150 ${
+                className={`flex min-h-[64px] flex-col items-center justify-center gap-1 py-2 text-xs font-semibold transition-all duration-150 active:scale-90 active:bg-ink-100/60 ${
                   active ? "text-primary-600" : "text-ink-400"
                 }`}
               >
@@ -64,7 +64,7 @@ export function MobileTabBar() {
           {session?.user ? (
             <Link
               href="/mypage"
-              className={`flex min-h-[64px] flex-col items-center justify-center gap-1 py-2 text-xs font-semibold transition-colors duration-150 ${
+              className={`flex min-h-[64px] flex-col items-center justify-center gap-1 py-2 text-xs font-semibold transition-all duration-150 active:scale-90 active:bg-ink-100/60 ${
                 myPageActive ? "text-primary-600" : "text-ink-400"
               }`}
             >
@@ -75,7 +75,7 @@ export function MobileTabBar() {
             <button
               type="button"
               onClick={() => setShowAuth(true)}
-              className="flex min-h-[64px] flex-col items-center justify-center gap-1 py-2 text-xs font-semibold text-ink-400 transition-colors duration-150 active:text-primary-600"
+              className="flex min-h-[64px] flex-col items-center justify-center gap-1 py-2 text-xs font-semibold text-ink-400 transition-all duration-150 active:scale-90 active:bg-ink-100/60 active:text-primary-600"
             >
               <User size={23} />
               마이페이지
