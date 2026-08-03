@@ -304,6 +304,50 @@ model User {
   consultRequests        ConsultRequest[]
   welfareConsultRequests WelfareConsultRequest[]
   facilityOwners         FacilityOwner[]
+  facilityFavorites      FacilityFavorite[]
+  regionInterests        RegionInterest[]
+}
+
+// 관심시설(찜) + 그 시설에 대한 알림 설정.
+//
+// 예전엔 둘 다 localStorage에만 있었다(mosim-favorite-ids / mosim-alert-prefs).
+// 그래서 (1) 기기를 바꾸면 찜이 사라졌고 (2) 서버가 수신자를 몰라 알림을 보낼 수 없었다.
+// 일일 수집(scripts/daily-nhis-sync.mjs)이 빈자리·등급 변동을 이미 매일 감지하고 있는데도
+// 보낼 대상이 없어 로그만 찍고 버리던 상태였다. 설계는 docs/favorite-alert-spec.md.
+//
+// 찜과 알림 설정을 한 행에 두는 이유: 화면(app/notifications)이 "찜한 시설에만 알림을
+// 걸 수 있다"는 구조라 찜 없이 알림만 있는 상태가 없다. 나누면 항상 조인해야 하고
+// 찜을 지울 때 고아 행이 남는다.
+model FacilityFavorite {
+  id         String @id @default(cuid())
+  userId     String
+  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  facilityId String
+
+  // 알림 스위치 — 기본은 둘 다 꺼둔다(찜은 "저장"이지 "알림 신청"이 아니다)
+  vacancyAlert     Boolean @default(false)
+  gradeChangeAlert Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, facilityId])
+  // 알림 발송은 사용자가 아니라 시설에서 출발한다("이 시설에 자리가 났다 → 누구에게 보낼까")
+  @@index([facilityId, vacancyAlert])
+  @@index([userId])
+}
+
+// 관심 지역 — 시설과 달리 대상이 특정되지 않아 별도 테이블로 둔다.
+model RegionInterest {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // lib/regionSeo.ts의 시도 slug (예: "경남")
+  region String
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, region])
+  @@index([region])
 }
 
 // 시설 담당자 ↔ 계정 연결. 운영자가 확인 전화를 마치고 승인했을 때만 생긴다.
