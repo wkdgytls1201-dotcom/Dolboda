@@ -272,7 +272,7 @@ function BenefitDashboard({ profile }: { profile: CareProfileSummary }) {
           </span>
           <Link
             href="/mypage/welfare-benefit/cert"
-            className="shrink-0 text-xs font-semibold text-ink-300 hover:text-ink-500"
+            className="-my-3 -mr-2 inline-flex min-h-[44px] shrink-0 items-center px-2 text-xs font-semibold text-ink-300 transition-colors duration-150 hover:text-ink-500 active:text-ink-700"
           >
             다시 등록
           </Link>

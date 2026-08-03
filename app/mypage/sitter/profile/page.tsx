@@ -223,7 +223,9 @@ export default function SitterProfilePage() {
   return (
     <MyPageShell>
       <h2 className="mb-2 text-xl font-bold text-ink-900">프로필 관리</h2>
-      <p className="mb-6 text-sm text-ink-500">시설·업체에게 보여지는 내 프로필이에요.</p>
+      {/* 보호자를 앞에 둔다 — 지금 실제로 이 프로필을 보고 고르는 쪽은 돌봄 요청에
+          지원했을 때의 보호자다(가입 화면 닉네임 문구도 같은 이유로 보호자 기준). */}
+      <p className="mb-6 text-sm text-ink-500">보호자와 시설·업체에게 보여지는 내 프로필이에요.</p>
 
       {/* 저장이 실패하면 조용히 넘어가지 않고 알린다 — 예전엔 실패해도 화면상으론
           저장된 것처럼 보였고, 실패 응답이 프로필 자리에 들어가 화면이 죽기도 했다 */}
@@ -319,27 +321,31 @@ export default function SitterProfilePage() {
               <p className="text-xs text-ink-300">
                 {profile.nationality} · 경력 {profile.experienceYears}년
               </p>
-              <div className="mt-1 flex items-center gap-2 text-[12px]">
-                {photoBusy ? (
-                  <span className="font-semibold text-primary-600">사진 올리는 중…</span>
-                ) : (
-                  <>
-                    <span className="text-ink-300">
-                      {profile.photoUrl ? "얼굴이 잘 보이는 사진일수록 좋아요" : "얼굴 사진을 올려주세요"}
-                    </span>
-                    {profile.photoUrl && (
-                      <button
-                        type="button"
-                        onClick={removePhoto}
-                        className="-my-2 inline-flex min-h-[44px] items-center font-semibold text-ink-400 underline underline-offset-2 transition-colors duration-150 hover:text-ink-700 active:scale-95"
-                      >
-                        삭제
-                      </button>
-                    )}
-                  </>
-                )}
-              </div>
             </div>
+          </div>
+
+          {/* 사진 안내·삭제는 아바타 옆이 아니라 카드 폭 전체를 쓰는 줄로 뺐다.
+              아바타(64px)+간격을 빼면 옆 칸이 ~170px뿐이라 안내 문구가 두 줄로 감기고
+              그 옆에 붙은 "삭제"가 혼자 떠 있는 모양이 됐다(375px 실측). */}
+          <div className="mb-4 flex min-h-[44px] items-center justify-between gap-2 text-[12px]">
+            {photoBusy ? (
+              <span className="font-semibold text-primary-600">사진 올리는 중…</span>
+            ) : (
+              <>
+                <span className="min-w-0 text-ink-300">
+                  {profile.photoUrl ? "얼굴이 잘 보이는 사진일수록 좋아요" : "얼굴 사진을 올려주세요"}
+                </span>
+                {profile.photoUrl && (
+                  <button
+                    type="button"
+                    onClick={removePhoto}
+                    className="-my-2 inline-flex min-h-[44px] shrink-0 items-center px-2 font-semibold text-ink-400 underline underline-offset-2 transition-colors duration-150 hover:text-ink-700 active:scale-95"
+                  >
+                    삭제
+                  </button>
+                )}
+              </>
+            )}
           </div>
 
           {!profile.photoUrl && (

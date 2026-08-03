@@ -341,7 +341,8 @@ export function MyPageDashboard() {
             </p>
             <Link
               href="/mypage/care-profile"
-              className="text-[12px] font-semibold text-ink-300 transition-colors hover:text-ink-500"
+              // 26×23이던 걸 44px로 — 글자 크기는 그대로, 누를 면적만 넓힌다
+              className="-my-3 -mr-2 inline-flex min-h-[44px] shrink-0 items-center px-2 text-[12px] font-semibold text-ink-300 transition-colors duration-150 hover:text-ink-500 active:text-ink-700"
             >
               관리
             </Link>

@@ -128,7 +128,9 @@ export default function MyPageAccountPage() {
           <button
             type="button"
             onClick={() => setConfirming(true)}
-            className="text-[10px] text-ink-100 transition-colors duration-150 hover:text-ink-300"
+            // 시각적 무게는 최소로 두되(위 주석의 의도) 누를 수 있는 면적은 44px을 지킨다 —
+            // 흐린 글씨 20px짜리는 "찾는 사람도 못 누르는" 크기였다(실측 45×20).
+            className="-my-3 inline-flex min-h-[44px] items-center px-2 text-[10px] text-ink-100 transition-colors duration-150 hover:text-ink-300 active:text-ink-500"
           >
             회원탈퇴
           </button>
