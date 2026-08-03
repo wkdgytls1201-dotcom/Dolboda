@@ -44,30 +44,61 @@ const gradeLabel = (g) => (g == null || g < 1 || g > 5 ? "미공개" : `${GRADE_
 
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-function mailBody(ev) {
-  const url = `${SITE_URL}/facility/${ev.facilityId}`;
-  const headline =
-    ev.kind === "vacancy"
+/**
+ * 한 사람에게 갈 사건들을 **메일 한 통**으로 묶는다.
+ * 시설마다 따로 보내면 찜을 여러 곳 해둔 사람은 아침에 메일 폭탄을 맞는다.
+ */
+function mailBody(events) {
+  const many = events.length > 1;
+  const headline = many
+    ? `관심시설 ${events.length}곳에 소식이 있어요.`
+    : events[0].kind === "vacancy"
       ? "관심시설로 저장하신 곳에 입소 가능한 자리가 생겼어요."
       : "관심시설로 저장하신 곳의 평가등급이 바뀌었어요.";
+
   const text =
-    `${ev.facilityName}\n${headline}\n\n${ev.detail}\n\n시설 자세히 보기: ${url}\n\n` +
-    `국민건강보험공단 공개자료 기준이라 실제와 다를 수 있어요. 입소 가능 여부는 시설에 직접 확인해 주세요.\n\n` +
+    `${headline}\n\n` +
+    events
+      .map((e) => `· ${e.facilityName}\n  ${e.detail}\n  ${SITE_URL}/facility/${e.facilityId}`)
+      .join("\n\n") +
+    `\n\n국민건강보험공단 공개자료 기준이라 실제와 다를 수 있어요. 입소 가능 여부는 시설에 직접 확인해 주세요.\n\n` +
     `알림 설정 변경: ${SITE_URL}/notifications`;
+
+  const cards = events
+    .map(
+      (e) => `
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:12px;border:1px solid #F0EDF6;border-radius:14px;">
+  <tr><td style="padding:16px 18px;">
+    <p style="margin:0 0 6px;font-size:17px;font-weight:800;color:#1B1730;">${esc(e.facilityName)}</p>
+    <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#3A3452;">${esc(e.detail)}</p>
+    <a href="${SITE_URL}/facility/${e.facilityId}" style="color:#FF6250;font-size:14px;font-weight:700;text-decoration:none;">시설 자세히 보기 →</a>
+  </td></tr>
+</table>`
+    )
+    .join("");
+
   const html = `<!doctype html><html lang="ko"><body style="margin:0;padding:0;background:#FFFBF3;font-family:-apple-system,BlinkMacSystemFont,'Malgun Gothic',sans-serif;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FFFBF3;padding:32px 16px;"><tr><td align="center">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:460px;background:#fff;border-radius:20px;overflow:hidden;">
 <tr><td style="padding:18px 24px;border-bottom:1px solid #F0EDF6;"><a href="${SITE_URL}" style="text-decoration:none;color:#FF6250;font-size:19px;font-weight:800;">${SITE_NAME}</a></td></tr>
-<tr><td style="padding:26px 24px;">
-<p style="margin:0 0 6px;font-size:13px;color:#9C97AC;">${esc(headline)}</p>
-<p style="margin:0 0 16px;font-size:19px;font-weight:800;color:#1B1730;">${esc(ev.facilityName)}</p>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FFF7E9;border-radius:12px;"><tr><td style="padding:14px 16px;font-size:15px;color:#3A3452;">${esc(ev.detail)}</td></tr></table>
-<a href="${url}" style="display:block;margin-top:18px;background:#FF6250;color:#fff;text-decoration:none;text-align:center;padding:14px;border-radius:12px;font-size:15px;font-weight:700;">시설 자세히 보기</a>
-<p style="margin:16px 0 0;font-size:12px;line-height:1.7;color:#9C97AC;">국민건강보험공단 공개자료 기준이라 실제와 다를 수 있어요. 입소 가능 여부는 시설에 직접 확인해 주세요.</p>
+<tr><td style="padding:24px;">
+<p style="margin:0 0 16px;font-size:15px;font-weight:700;color:#1B1730;">${esc(headline)}</p>
+${cards}
+<p style="margin:14px 0 0;font-size:12px;line-height:1.7;color:#9C97AC;">국민건강보험공단 공개자료 기준이라 실제와 다를 수 있어요. 입소 가능 여부는 시설에 직접 확인해 주세요.</p>
 </td></tr>
 <tr><td style="padding:14px 24px;background:#F7F5FB;text-align:center;"><a href="${SITE_URL}/notifications" style="color:#9C97AC;font-size:12px;">알림 설정 변경·수신 거부</a></td></tr>
 </table></td></tr></table></body></html>`;
   return { text, html };
+}
+
+function subjectOf(events) {
+  if (events.length > 1) {
+    return `[${SITE_NAME}] 관심시설 ${events.length}곳에 소식이 있어요`;
+  }
+  const e = events[0];
+  return e.kind === "vacancy"
+    ? `[${SITE_NAME}] ${e.facilityName}에 자리가 났어요`
+    : `[${SITE_NAME}] ${e.facilityName}의 평가등급이 바뀌었어요`;
 }
 
 async function sendMail(to, subject, body) {
@@ -125,11 +156,17 @@ async function main() {
       });
     }
     if (r.grade_now != null && r.grade_prev != null && r.grade_now !== r.grade_prev) {
+      // 등급은 숫자가 작을수록 좋다(1=A). 오른 것과 내린 것을 같은 문구로 알리면
+      // 보호자가 방향을 오해한다 — 내려간 경우가 오히려 더 알아야 할 소식이다.
+      const prev = Number(r.grade_prev), now = Number(r.grade_now);
+      const improved = now < prev;
       events.push({
         facilityId: r.facilityId,
         facilityName: r.name,
         kind: "gradeChange",
-        detail: `평가등급이 ${gradeLabel(Number(r.grade_prev))}에서 ${gradeLabel(Number(r.grade_now))}(으)로 바뀌었어요`,
+        detail: improved
+          ? `평가등급이 ${gradeLabel(prev)}에서 ${gradeLabel(now)}(으)로 올랐어요`
+          : `평가등급이 ${gradeLabel(prev)}에서 ${gradeLabel(now)}(으)로 내려갔어요`,
       });
     }
   }
@@ -156,7 +193,21 @@ async function main() {
     },
   });
 
-  let targeted = 0, sent = 0, skipped = 0, failed = 0, noEmail = 0;
+  // 4) 사람별로 묶는다 — 시설마다 따로 보내면 여러 곳 찜한 사람은 메일 폭탄을 맞는다.
+  //    같은 시설은 COOLDOWN_DAYS 안에 다시 보내지 않는다: 만실↔여유를 오가는 시설이면
+  //    매일 알림이 가서 결국 알림을 꺼버리게 된다.
+  const COOLDOWN_DAYS = 7;
+  const cooldownFrom = new Date(Date.now() - COOLDOWN_DAYS * 86400 * 1000);
+
+  const recent = await prisma.alertDelivery.findMany({
+    where: { facilityId: { in: facilityIds }, sentAt: { gte: cooldownFrom } },
+    select: { userId: true, facilityId: true, kind: true },
+  });
+  const recentKeys = new Set(recent.map((r) => `${r.userId}:${r.facilityId}:${r.kind}`));
+
+  /** userId → { email, events[], keys[] } */
+  const byUser = new Map();
+  let targeted = 0, cooled = 0, noEmail = 0;
 
   for (const sub of subs) {
     for (const kind of ["vacancy", "gradeChange"]) {
@@ -166,47 +217,61 @@ async function main() {
       if (!ev) continue;
       targeted++;
 
+      if (recentKeys.has(`${sub.user.id}:${sub.facilityId}:${kind}`)) { cooled++; continue; }
+
       // 카카오 로그인은 이메일 동의가 꺼져 있으면 이메일을 안 준다 — 보낼 곳이 없으면 건너뛴다
       if (!sub.user.email) { noEmail++; continue; }
-      if (!WRITE) continue;
 
-      // ★ 중복 방지: 기록을 먼저 만든다. unique 제약에 걸리면 이미 보낸 것이다.
-      //   발송 후에 기록하면 그 사이 재실행에서 중복이 난다.
-      let deliveryId;
+      const entry = byUser.get(sub.user.id) ?? { email: sub.user.email, events: [], keys: [] };
+      entry.events.push(ev);
+      entry.keys.push({ facilityId: sub.facilityId, kind });
+      byUser.set(sub.user.id, entry);
+    }
+  }
+
+  let sent = 0, skipped = 0, failed = 0;
+
+  for (const [userId, entry] of byUser) {
+    if (!WRITE) continue;
+
+    // ★ 중복 방지: 보내기 **전에** 기록을 만든다. unique 제약에 걸리면 이미 보낸 것이다.
+    //   발송 후에 기록하면 그 사이 재실행에서 중복이 난다.
+    //   한 통에 여러 사건이 들어가므로 사건마다 행을 만들고, 하나라도 새로 만들어졌을 때만 보낸다.
+    const created = [];
+    for (const k of entry.keys) {
       try {
         const d = await prisma.alertDelivery.create({
-          data: { userId: sub.user.id, facilityId: sub.facilityId, kind, date, channel: "email" },
+          data: { userId, facilityId: k.facilityId, kind: k.kind, date, channel: "email" },
           select: { id: true },
         });
-        deliveryId = d.id;
+        created.push(d.id);
       } catch {
-        skipped++;
-        continue;
+        // 이 사건은 이미 보냈다 — 묶음에서 빼고 나머지만 보낸다
       }
+    }
+    if (created.length === 0) { skipped++; continue; }
+    if (!RESEND_KEY) { skipped++; continue; }
 
-      if (!RESEND_KEY) { skipped++; continue; }
-
-      const subject =
-        kind === "vacancy"
-          ? `[${SITE_NAME}] ${ev.facilityName}에 자리가 났어요`
-          : `[${SITE_NAME}] ${ev.facilityName}의 평가등급이 바뀌었어요`;
-      try {
-        await sendMail(sub.user.email, subject, mailBody(ev));
-        await prisma.alertDelivery.update({ where: { id: deliveryId }, data: { sentAt: new Date() } });
-        sent++;
-      } catch (err) {
-        // 행은 남긴다 — 재시도 때 같은 사람에게 또 보내지 않기 위해서다
-        await prisma.alertDelivery.update({
-          where: { id: deliveryId },
-          data: { error: String(err).slice(0, 300) },
-        });
-        failed++;
-      }
+    try {
+      await sendMail(entry.email, subjectOf(entry.events), mailBody(entry.events));
+      await prisma.alertDelivery.updateMany({
+        where: { id: { in: created } },
+        data: { sentAt: new Date() },
+      });
+      sent++;
+    } catch (err) {
+      // 행은 남긴다 — 재시도 때 같은 사람에게 또 보내지 않기 위해서다
+      await prisma.alertDelivery.updateMany({
+        where: { id: { in: created } },
+        data: { error: String(err).slice(0, 300) },
+      });
+      failed++;
     }
   }
 
   console.log(
-    `대상 ${targeted}명 · 발송 ${sent} · 건너뜀 ${skipped} · 이메일없음 ${noEmail} · 실패 ${failed}`
+    `대상 ${targeted}건 · 수신자 ${byUser.size}명 · 발송 ${sent}통 · ` +
+      `${COOLDOWN_DAYS}일내 재발송 제외 ${cooled} · 이메일없음 ${noEmail} · 건너뜀 ${skipped} · 실패 ${failed}`
   );
   if (!WRITE) console.log("드라이런 종료 — 실제 발송하려면 --write");
 

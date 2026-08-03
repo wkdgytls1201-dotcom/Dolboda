@@ -1,0 +1,53 @@
+# 관심시설 알림 발송 — scripts/send-facility-alerts.mjs 참고.
+#
+# 수집(daily-nhis-sync, 새벽 4시)과 **일부러 분리했다**:
+#   - 새벽에 알림을 보내면 알림음이 울려 불쾌하다. 사람이 볼 만한 오전 9시에 보낸다.
+#   - 수집이 실패한 날에도 이 워크플로만 따로 돌릴 수 있다(중복은 AlertDelivery가 막는다).
+#
+# 필요한 저장소 시크릿(Settings → Secrets and variables → Actions):
+#   DIRECT_URL      — Supabase 직접 연결 문자열 (수집 워크플로와 같은 값)
+#   RESEND_API_KEY  — 메일 발송. 없으면 사건만 세고 건너뛴다(워크플로는 깨지지 않음)
+#   MAIL_FROM       — (선택) 발신 주소. 없으면 onboarding@resend.dev
+name: send-facility-alerts
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # 00:00 UTC = 09:00 KST
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "발송할 수집일 (YYYY-MM-DD, 비우면 오늘 KST)"
+        required: false
+        type: string
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # postinstall의 prisma generate가 prisma.config.ts를 읽고 env("DIRECT_URL")을
+      # 평가하므로 설치 단계에도 값이 있어야 한다(수집 워크플로와 같은 이유).
+      - name: 의존성 설치 (postinstall에서 Prisma Client 생성)
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+        run: npm ci
+
+      - name: 알림 발송
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          MAIL_FROM: ${{ secrets.MAIL_FROM }}
+          NEXT_PUBLIC_SITE_URL: https://www.dolboda.kr
+        run: |
+          if [ -n "${{ inputs.date }}" ]; then
+            node scripts/send-facility-alerts.mjs --write --date=${{ inputs.date }}
+          else
+            node scripts/send-facility-alerts.mjs --write
+          fi

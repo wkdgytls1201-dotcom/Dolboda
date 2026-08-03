@@ -5,8 +5,7 @@
 # 필요한 저장소 시크릿(Settings → Secrets and variables → Actions):
 #   DIRECT_URL — Supabase 직접 연결 문자열(.env.local의 DIRECT_URL 값 그대로)
 #   TELEGRAM_BOT_TOKEN·TELEGRAM_CHAT_ID — (선택) 매일 결과 요약·실패 알림을 텔레그램으로 받기
-#   RESEND_API_KEY·MAIL_FROM — (선택) 관심시설 빈자리·등급변동 알림 메일 발송.
-#     없으면 사건만 세고 발송은 건너뛴다(워크플로는 깨지지 않음).
+#   (알림 발송 시크릿은 send-facility-alerts.yml 참고 — 이 워크플로는 수집만 한다)
 name: daily-nhis-sync
 
 on:
@@ -43,20 +42,5 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: node scripts/daily-nhis-sync.mjs --write
 
-      # 관심시설 알림 — 위 수집이 적재한 오늘 스냅샷에서 사건을 다시 계산해 발송한다.
-      # 수집이 넘겨주는 값에 기대지 않아서, 실패하면 이 단계만 따로 재실행해도 된다
-      # (중복 발송은 AlertDelivery의 unique 제약이 막는다).
-      #
-      # RESEND_API_KEY가 없으면 사건만 세고 발송은 건너뛴다 — 그래서 시크릿을
-      # 넣기 전에도 워크플로가 깨지지 않는다.
-      #
-      # continue-on-error: 알림은 부가 기능이다. 발송이 실패했다고 해서 이미 성공한
-      # 데이터 수집까지 실패로 표시되면 진짜 문제를 놓친다.
-      - name: 관심시설 알림 발송
-        continue-on-error: true
-        env:
-          DIRECT_URL: ${{ secrets.DIRECT_URL }}
-          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-          MAIL_FROM: ${{ secrets.MAIL_FROM }}
-          NEXT_PUBLIC_SITE_URL: https://www.dolboda.kr
-        run: node scripts/send-facility-alerts.mjs --write
+      # 알림 발송은 여기서 하지 않는다 — 새벽 4시에 보내면 알림음이 울려 불쾌하다.
+      # 별도 워크플로(send-facility-alerts.yml)가 같은 날 오전 9시에 보낸다.
