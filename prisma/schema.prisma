@@ -336,6 +336,36 @@ model FacilityFavorite {
   @@index([userId])
 }
 
+// 보낸 알림 기록 — 같은 사건을 두 번 보내지 않기 위한 것이자 발송 이력이다.
+//
+// ⚠️ 이 표가 없으면 수집이 재실행될 때(수동 재시도·부분 실패 복구) 같은 알림이 다시 나간다.
+// 알림은 되돌릴 수 없으므로 중복 방지는 선택이 아니다.
+//
+// @@unique([userId, facilityId, kind, date])가 그 자체로 잠금 역할을 한다 —
+// 발송 전에 create를 시도해서 성공한 건만 실제로 보낸다(중복이면 P2002로 걸린다).
+model AlertDelivery {
+  id         String @id @default(cuid())
+  userId     String
+  facilityId String
+  // "vacancy" | "gradeChange"
+  kind       String
+  // 사건이 감지된 수집일 (YYYY-MM-DD, KST) — 하루 한 사건당 한 번만 보낸다
+  date       String
+  // "email" | "push"
+  channel    String
+
+  // 발송 성공 시각. null이면 시도했지만 실패한 것 —
+  // 행은 남겨 재시도 때 같은 사람에게 또 보내지 않게 한다.
+  sentAt DateTime?
+  // 실패 사유(운영자가 원인을 볼 수 있게)
+  error  String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, facilityId, kind, date])
+  @@index([createdAt])
+}
+
 // 관심 지역 — 시설과 달리 대상이 특정되지 않아 별도 테이블로 둔다.
 model RegionInterest {
   id     String @id @default(cuid())
