@@ -31,6 +31,12 @@ export async function GET(req: Request) {
 
   const where: Prisma.CareRequestWhereInput = {
     status: "OPEN",
+    // 내가 보호자로 올린 요청은 일자리 목록에서 뺀다.
+    // 한 계정이 보호자이자 매니저일 수 있어(마이페이지 역할 전환) 그냥 두면 자기 글이
+    // "새 일자리"에 뜨고 자기 글에 지원까지 된다. 실제로 그렇게 지원된 데이터가 나왔다.
+    // 지원 자체는 API에서도 막지만(care-request-applications POST), 목록에서 안 보이게
+    // 해야 애초에 그 상황이 생기지 않는다.
+    guardianId: { not: session.user.id },
     ...(type && { locationType: type }),
     // "시작일이 지난 공고 제외" — 이미 시작한 돌봄은 사실상 마감된 것으로 본다.
     ...(hideClosed && { startDate: { gte: new Date() } }),
