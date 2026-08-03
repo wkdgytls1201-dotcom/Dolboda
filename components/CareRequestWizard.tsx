@@ -50,6 +50,25 @@ const STEPS = [
   "마지막으로 확인해주세요",
 ];
 
+// 새로 작성 중인 요청만 임시 저장한다(app/search/SearchPageClient.tsx의 검색 상태
+// 보존과 같은 원칙 — sessionStorage라 이 탭이 열려 있는 동안만 살고, 브라우저를
+// 완전히 닫으면 사라진다). 실수로 새로고침하거나 뒤로 갔다 오면 5단계 중 몇 단계를
+// 다시 눌러야 했던 걸 막는다.
+//
+// 수정 모드(initial)·재요청(template)은 대상에서 뺀다 — 그 화면들은 매번 서버의
+// 실제 데이터로 새로 채워져야 하는데, 여기에 남은 옛 임시저장을 덮어씌우면 위험하다.
+const DRAFT_KEY = "dolboda-care-request-draft";
+
+function loadDraft(): { step: number; form: CareRequestForm } | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(DRAFT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 interface HospitalSuggestion {
   id: string;
   name: string;
@@ -154,11 +173,21 @@ export function CareRequestWizard({
   onSaved: (r: CareRequestData) => void;
   onCancelEdit?: () => void;
 }) {
+  // 새로 작성하는 경우에만 임시 저장을 살린다(위 DRAFT_KEY 주석 참고).
+  const persistDraft = !initial && !template;
+  const draft = persistDraft ? loadDraft() : null;
+
   // 유형을 정해서 들어왔으면 1단계(유형 선택)를 건너뛰고 바로 2단계에서 시작한다.
   // 재요청(template)도 내용은 이미 차 있으니 유형 단계는 건너뛰고 일정부터 고르게 한다.
-  const [step, setStep] = useState(!initial && (presetType || template) ? 1 : 0);
+  // 임시 저장이 있으면 그 단계부터 이어서 — presetType/template보다 우선한다
+  // (이미 몇 단계를 진행한 사람에게 처음으로 되돌리면 더 혼란스럽다).
+  const [step, setStep] = useState(
+    draft ? draft.step : !initial && (presetType || template) ? 1 : 0
+  );
   const [form, setForm] = useState<CareRequestForm>(
-    initial
+    draft
+      ? draft.form
+      : initial
       ? formFromRequest(initial)
       : template
       ? formFromTemplate(template)
@@ -166,6 +195,16 @@ export function CareRequestWizard({
       ? { ...EMPTY_FORM, locationType: presetType }
       : EMPTY_FORM
   );
+
+  // 바뀔 때마다 저장 — 폼 전체를 통째로 넣어도 몇 KB 수준이라 매번 써도 무겁지 않다.
+  useEffect(() => {
+    if (!persistDraft) return;
+    try {
+      sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ step, form }));
+    } catch {
+      /* 저장소가 꽉 찼거나 막혀 있어도 작성 자체는 계속돼야 한다 */
+    }
+  }, [persistDraft, step, form]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [duplicate, setDuplicate] = useState(false);
@@ -278,6 +317,13 @@ export function CareRequestWizard({
         throw new Error(data?.error ?? "");
       }
       const saved = await res.json();
+      if (persistDraft) {
+        try {
+          sessionStorage.removeItem(DRAFT_KEY);
+        } catch {
+          /* 지우기 실패해도 제출 자체는 이미 끝났다 */
+        }
+      }
       onSaved(initial ? { ...initial, ...saved } : saved);
     } catch (e) {
       setError(e instanceof Error && e.message ? e.message : "처리에 실패했어요. 다시 시도해주세요.");
