@@ -27,8 +27,7 @@ function maskName(name: string | null | undefined): string {
 }
 
 /** 확정된 돌봄 건 + 매칭된 매니저를 가져온다. 보호자·매니저 어느 쪽이든 자기 건만 본다. */
-async function findMatchedContext(userId: string) {
-  // 보호자 쪽
+async function findGuardianContext(userId: string) {
   const asGuardian = await prisma.careRequest.findFirst({
     where: { guardianId: userId, status: { in: ["MATCHED", "COMPLETED"] } },
     orderBy: { createdAt: "desc" },
@@ -39,11 +38,11 @@ async function findMatchedContext(userId: string) {
       },
     },
   });
-  if (asGuardian?.applications[0]) {
-    return { request: asGuardian, application: asGuardian.applications[0], viewer: "guardian" as const };
-  }
+  if (!asGuardian?.applications[0]) return null;
+  return { request: asGuardian, application: asGuardian.applications[0], viewer: "guardian" as const };
+}
 
-  // 매니저 쪽
+async function findSitterContext(userId: string) {
   const profile = await prisma.sitterProfile.findUnique({ where: { userId }, select: { id: true } });
   if (!profile) return null;
   const app = await prisma.careRequestApplication.findFirst({
@@ -56,6 +55,42 @@ async function findMatchedContext(userId: string) {
   });
   if (!app) return null;
   return { request: app.careRequest, application: app, viewer: "sitter" as const };
+}
+
+/**
+ * 이 사용자가 지금 다뤄야 할 합의서를 고른다.
+ *
+ * ⚠️ 예전에는 보호자 쪽을 먼저 찾고 있으면 매니저 쪽은 아예 보지 않았다. 그런데 이 앱은
+ * 한 계정이 보호자이자 돌보다 매니저일 수 있다(마이페이지 역할 전환). 그래서 보호자로
+ * 서명을 마친 사람이 매니저로 서명하려 하면 계속 보호자 합의서가 잡혀
+ * "이미 서명하셨어요"(409)로 막혔다 — 매니저 서명이 영영 불가능했다.
+ *
+ * 이제 양쪽을 다 조회하고, **아직 내 서명이 비어 있는 쪽**을 우선한다.
+ * 둘 다 비었으면 보호자 쪽(요청을 만든 당사자)을 먼저 보여준다.
+ */
+async function findMatchedContext(userId: string) {
+  const [guardianCtx, sitterCtx] = await Promise.all([
+    findGuardianContext(userId),
+    findSitterContext(userId),
+  ]);
+  if (!guardianCtx) return sitterCtx;
+  if (!sitterCtx) return guardianCtx;
+
+  const [guardianAgreement, sitterAgreement] = await Promise.all([
+    prisma.careAgreement.findUnique({
+      where: { careRequestId: guardianCtx.request.id },
+      select: { guardianSignedAt: true },
+    }),
+    prisma.careAgreement.findUnique({
+      where: { careRequestId: sitterCtx.request.id },
+      select: { sitterSignedAt: true },
+    }),
+  ]);
+
+  const guardianDone = Boolean(guardianAgreement?.guardianSignedAt);
+  const sitterDone = Boolean(sitterAgreement?.sitterSignedAt);
+  if (guardianDone && !sitterDone) return sitterCtx;
+  return guardianCtx;
 }
 
 /** 돌봄 요청 데이터 → 합의서 본문 */

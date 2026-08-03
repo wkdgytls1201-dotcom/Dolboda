@@ -133,7 +133,7 @@ export default function WelfareEquipmentPage() {
         {/* 본인부담금 비교 — 실제로 얼마 내는지가 가장 궁금한 숫자다 */}
         <section className="mt-10">
           <h2 className="mb-1 text-lg font-bold text-ink-900">
-            100만원어치 복지용구를 살 때
+            10만원어치 복지용구를 살 때
           </h2>
           <p className="mb-4 text-sm leading-relaxed text-ink-500">
             대상자 구분에 따라 실제로 내는 돈이 이렇게 달라져요.
@@ -205,7 +205,7 @@ export default function WelfareEquipmentPage() {
         </section>
 
         {/* 마무리 CTA */}
-        <section className="mt-10 rounded-3xl bg-gradient-to-br from-royal-500 to-royal-600 p-6 text-center shadow-royal">
+        <section className="mt-10 rounded-3xl bg-gradient-to-br from-royal-600 via-royal-500 to-royal-400 p-6 text-center shadow-royal">
           <p className="mb-1.5 text-lg font-extrabold text-white">
             우리 어르신은 얼마나 받을 수 있을까요?
           </p>

@@ -244,8 +244,9 @@ export function allEquipmentItems(): (EquipmentItem & { kind: "구입" | "대여
   ];
 }
 
-/** 100만원어치를 살 때 각 구간이 실제로 내는 돈 — 비교 그래픽의 기본 예시 */
-export const EXAMPLE_AMOUNT = 1_000_000;
+/** 10만원어치를 살 때 각 구간이 실제로 내는 돈 — 비교 그래픽의 기본 예시.
+ * 100만원으로 두면 연 한도(160만원)의 3분의 2를 한 번에 쓰는 예시라 체감이 안 맞는다. */
+export const EXAMPLE_AMOUNT = 100_000;
 
 export function copayOf(amount: number, rate: number): number {
   return Math.round(amount * rate);

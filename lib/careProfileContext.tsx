@@ -27,6 +27,10 @@ export interface CareProfileSummary {
   estimatedAt: string | null;
   /** 요양인정번호(본인 신고값) — 복지용구 혜택 화면에서만 쓴다. 실시간 조회 연동 아님 */
   ltcCertNumber: string | null;
+  /** 어르신 생년월일 YYYY-MM-DD — 요양인정번호 등록 화면에서만 받는다 */
+  birthDate: string | null;
+  /** 장기요양 인정유효기간 시작일 YYYY-MM-DD */
+  ltcCertValidFrom: string | null;
 }
 
 interface CareProfileContextValue {

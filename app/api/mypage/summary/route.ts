@@ -19,14 +19,16 @@ export async function GET() {
   }
   const userId = session.user.id;
 
-  // 매니저 여부를 알아야 매니저 쪽 집계를 할지 정해지는데, 그 판단조차 쿼리라서
-  // 먼저 한 번 읽고(가벼운 select) 나머지를 병렬로 돌린다.
-  const sitterProfile = await prisma.sitterProfile.findUnique({
-    where: { userId },
-    select: { id: true },
-  });
-
-  const [careRequest, consults, applications, openJobs] = await Promise.all([
+  // ⚠️ 예전엔 매니저 여부(sitterProfile)를 **먼저 await한 뒤** 나머지를 병렬로 돌렸다.
+  // DB가 원격(Supabase 서울 풀러)이라 그 한 번이 통째로 직렬 왕복이 되어 응답이 그만큼
+  // 늦어졌다. 매니저 지원 내역은 관계 필터(sitterProfile: { userId })로 id 없이 바로
+  // 조회할 수 있고, 새 일자리 수는 애초에 매니저 여부와 무관한 집계다 —
+  // 그래서 다섯 쿼리를 전부 한 번에 띄운다(총 시간 = 합이 아니라 가장 느린 하나).
+  //
+  // 매니저가 아닌 사용자는 쿼리 두 개가 헛돌지만, 둘 다 인덱스로 즉시 끝나고 병렬이라
+  // 체감 시간이 늘지 않는다. 직렬 왕복 하나를 없애는 편이 확실히 이득이다.
+  const [sitterProfile, careRequest, consults, applications, openJobs] = await Promise.all([
+    prisma.sitterProfile.findUnique({ where: { userId }, select: { id: true } }),
     // 보호자: 진행 중인 돌봄 요청 (카드에 쓰는 필드만)
     prisma.careRequest.findFirst({
       where: { guardianId: userId, status: { in: ["OPEN", "MATCHED"] } },
@@ -46,17 +48,14 @@ export async function GET() {
       select: { status: true },
       take: 50,
     }),
-    // 매니저: 지원 현황 — 지원/매칭/완료 개수 계산용 상태만
-    sitterProfile
-      ? prisma.careRequestApplication.findMany({
-          where: { sitterProfileId: sitterProfile.id },
-          select: { status: true },
-        })
-      : Promise.resolve([]),
+    // 매니저: 지원 현황 — 지원/매칭/완료 개수 계산용 상태만.
+    // 관계 필터라 sitterProfile.id를 먼저 받아올 필요가 없다(매니저가 아니면 빈 배열).
+    prisma.careRequestApplication.findMany({
+      where: { sitterProfile: { userId } },
+      select: { status: true },
+    }),
     // 매니저: 새 일자리 배지 숫자
-    sitterProfile
-      ? prisma.careRequest.count({ where: { status: "OPEN" } })
-      : Promise.resolve(0),
+    prisma.careRequest.count({ where: { status: "OPEN" } }),
   ]);
 
   return NextResponse.json({
@@ -71,7 +70,8 @@ export async function GET() {
     },
     consults: consults.map((c) => ({ status: c.status })),
     isSitter: Boolean(sitterProfile),
-    applications: applications.map((a) => ({ status: a.status })),
-    openJobs,
+    // 매니저가 아니면 화면에서 안 쓰는 값이라 굳이 내려보내지 않는다(응답도 그만큼 작아진다)
+    applications: sitterProfile ? applications.map((a) => ({ status: a.status })) : [],
+    openJobs: sitterProfile ? openJobs : 0,
   });
 }

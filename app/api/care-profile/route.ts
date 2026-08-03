@@ -68,7 +68,27 @@ function cleanFields(body: Record<string, unknown>) {
   setIfPresent("toiletAssistLevel", TOILET_ASSIST_LEVELS);
   setIfPresent("ltcGrade", LTC_GRADE_OPTIONS);
   if ("conditions" in body) out.conditions = pickConditions(body.conditions);
+  // 날짜 두 개는 화이트리스트가 없는 자유 입력이라 형식(YYYY-MM-DD)과 실재하는 날짜인지만 본다
+  if ("birthDate" in body) out.birthDate = pickDate(body.birthDate);
+  if ("ltcCertValidFrom" in body) out.ltcCertValidFrom = pickDate(body.ltcCertValidFrom);
   return out;
+}
+
+/**
+ * YYYY-MM-DD 형식이면서 실제로 존재하는 날짜만 통과시킨다.
+ * 형식만 보면 2026-02-31 같은 값이 그대로 저장돼 나중에 화면에서 깨진다.
+ */
+function pickDate(v: unknown): string | null {
+  if (typeof v !== "string") return null;
+  const s = v.trim();
+  if (!s) return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
+  const d = new Date(`${s}T00:00:00Z`);
+  if (Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== s) return null;
+  // 미래 생년월일이나 200년 전 같은 값은 오타로 본다
+  const year = Number(s.slice(0, 4));
+  if (year < 1900 || year > new Date().getFullYear() + 10) return null;
+  return s;
 }
 
 export async function GET() {

@@ -481,7 +481,10 @@ model SponsorPlacement {
 // 보호자가 저장해두는 "어르신 돌봄 프로필" — 검색 개인화·돌봄 요청 자동 채움에 재사용한다.
 //
 // 민감정보(건강 상태) 최소 수집 원칙:
-//  - 이름·생년월일·주민번호는 아예 받지 않는다. 호칭(어머니 등)이 이름을 대신한다.
+//  - 이름·주민번호는 아예 받지 않는다. 호칭(어머니 등)이 이름을 대신한다.
+//    ⚠️ 생년월일은 2026-08-03 사용자 결정으로 예외가 됐다 — 요양인정번호 등록 화면에서만
+//    받고(birthDate), 그 외 화면은 여전히 연령대 구간(ageBand)만 쓴다.
+//    수집 항목이 늘었으므로 app/privacy/page.tsx도 함께 갱신해야 한다.
 //  - 전부 구간값(연령대·체중대·상태 단계)만 받는다 — CareRequest의 recipient 필드와 같은 선택지.
 //  - consentAt(민감정보 수집·이용 동의 시각)이 필수라, 동의 없는 저장은 스키마 수준에서 불가능.
 //  - 보호자가 언제든 삭제할 수 있고, 회원 탈퇴 시 함께 삭제된다(Cascade).
@@ -500,14 +503,19 @@ model CareProfile {
   conditions        String[] // 질환·상태 (치매·인지저하 등, 선택지 기반)
 
   // 실제 장기요양등급 (본인 신고값) — "없음/신청 준비 중/1~5등급/인지지원등급"
-  ltcGrade      String?
+  ltcGrade         String?
   // 요양인정번호(공단 발급) — 본인 신고값이며 공단 실시간 조회와 연동돼 있지 않다.
   // 복지용구 혜택 화면(마이페이지)에서 "등록"만 하고, 남은 한도 같은 실제 급여 현황은
   // 이 번호로 조회하지 않는다 — 화면에 "정보 확인용"이라고 항상 밝힐 것.
-  ltcCertNumber String?
+  ltcCertNumber    String?
+  // 어르신 생년월일 (YYYY-MM-DD). 요양인정번호 등록 화면에서만 받는다.
+  birthDate        String?
+  // 장기요양 인정유효기간 시작일 (YYYY-MM-DD). 인정서에 적힌 값을 그대로 옮겨 적는 것이며
+  // 만료일을 우리가 계산하지는 않는다 — 갱신 주기가 등급·판정에 따라 달라서 추정하면 틀린다.
+  ltcCertValidFrom String?
   // 등급테스트 추정 구간 — 실제 등급이 아니므로 화면에서 항상 "예상"으로 구분 표시
-  estimatedBand String?
-  estimatedAt   DateTime?
+  estimatedBand    String?
+  estimatedAt      DateTime?
 
   consentAt DateTime // 민감정보(건강정보) 수집·이용 동의 시각
   createdAt DateTime @default(now())

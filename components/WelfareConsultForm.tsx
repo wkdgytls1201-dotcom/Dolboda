@@ -96,7 +96,7 @@ export function WelfareConsultForm({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex min-h-[52px] w-full items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-r from-royal-500 to-royal-600 text-sm font-bold text-white shadow-royal transition-all duration-200 ease-snappy hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
+        className="flex min-h-[52px] w-full items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-r from-royal-600 via-royal-500 to-royal-400 text-sm font-bold text-white shadow-royal transition-all duration-200 ease-snappy hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
       >
         <PhoneCall size={16} />
         무료로 복지용구 상담 신청하기
@@ -163,7 +163,7 @@ export function WelfareConsultForm({
                   key={item.name}
                   type="button"
                   onClick={() => toggleItem(item.name)}
-                  className={`min-h-[36px] rounded-full px-3 text-[12px] font-bold transition-colors ${
+                  className={`min-h-[44px] rounded-full px-3.5 text-[13px] font-bold transition-colors ${
                     active ? "bg-royal-500 text-white" : "bg-ivory-100 text-ink-500 hover:bg-ink-100"
                   }`}
                 >
@@ -175,7 +175,7 @@ export function WelfareConsultForm({
               <button
                 type="button"
                 onClick={() => setShowAllItems(true)}
-                className="flex min-h-[36px] items-center gap-0.5 rounded-full bg-ivory-100 px-3 text-[12px] font-bold text-ink-400"
+                className="flex min-h-[44px] items-center gap-0.5 rounded-full bg-ivory-100 px-3.5 text-[13px] font-bold text-ink-400"
               >
                 더보기
                 <ChevronDown size={12} />

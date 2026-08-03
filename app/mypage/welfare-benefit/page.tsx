@@ -324,7 +324,7 @@ function BenefitDashboard({ profile }: { profile: CareProfileSummary }) {
 
       {/* 비교 그래픽 */}
       <div className="animate-fade-up rounded-2xl bg-white p-5 shadow-card" style={{ animationDelay: "120ms" }}>
-        <h2 className="mb-3 text-[15px] font-bold text-ink-900">100만원어치 구매 시 본인부담금</h2>
+        <h2 className="mb-3 text-[15px] font-bold text-ink-900">10만원어치 구매 시 본인부담금</h2>
         <CopayCompareBars />
       </div>
 
@@ -361,6 +361,13 @@ interface WelfareConsultHistoryItem {
   createdAt: string;
 }
 
+// WelfareConsultRequest.items는 Json 컬럼이라 타입이 배열임을 DB가 보장해주지 않는다.
+// 문자열 배열만 남기고 나머지는 버린다 — lib/viewLimit.ts에서 localStorage 값이 배열이
+// 아닐 때 시설 상세가 통째로 죽었던 것과 같은 계열의 사고를 막는다.
+function normalizeItems(v: unknown): string[] {
+  return Array.isArray(v) ? v.filter((s): s is string => typeof s === "string") : [];
+}
+
 function WelfareConsultHistory() {
   const [items, setItems] = useState<WelfareConsultHistoryItem[] | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -368,7 +375,16 @@ function WelfareConsultHistory() {
   useEffect(() => {
     fetch("/api/welfare-consult/mine")
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => setItems(Array.isArray(d?.items) ? d.items : []))
+      .then((d) =>
+        setItems(
+          Array.isArray(d?.items)
+            ? d.items.map((row: WelfareConsultHistoryItem) => ({
+                ...row,
+                items: normalizeItems(row.items),
+              }))
+            : []
+        )
+      )
       .catch(() => setItems([]));
   }, []);
 

@@ -90,24 +90,29 @@ function JobCard({
     ? `주 ${job.visitsPerWeek}회${job.visitHours ? ` · 1회 ${job.visitHours}시간` : ""}`
     : null;
 
+  // 카드 하나가 한 화면에 들어오는 게 목표다 — 스크롤을 내려야 버튼이 보이면
+  // 지원 현황을 훑는 일이 번거로워진다. 그래서 지역은 오른쪽 위(1시 방향)로 빼서
+  // 배지 줄이 여러 줄로 접히지 않게 하고, 안쪽 간격도 한 단계씩 줄였다.
   return (
-    <div className="rounded-2xl border border-ink-100 bg-white p-5 shadow-card transition-shadow duration-150 active:shadow-none sm:p-6">
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        <span className={`rounded-full px-3 py-1.5 text-[13px] font-bold ${meta.badgeClass}`}>
-          {meta.label}
-        </span>
-        <span className="flex items-center gap-1.5 rounded-full bg-ink-100/60 px-3 py-1.5 text-[13px] font-semibold text-ink-700">
-          <MapPin size={12} />
+    <div className="rounded-2xl border border-ink-100 bg-white p-4 shadow-card transition-shadow duration-150 active:shadow-none sm:p-5">
+      <div className="mb-2.5 flex items-start justify-between gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+          <span className={`rounded-full px-2.5 py-1 text-[12px] font-bold ${meta.badgeClass}`}>
+            {meta.label}
+          </span>
+          {badge}
+        </div>
+        <span className="flex shrink-0 items-center gap-1 rounded-full bg-ink-100/60 px-2.5 py-1 text-[12px] font-semibold text-ink-700">
+          <MapPin size={11} />
           {job.region}
         </span>
-        {badge}
       </div>
 
       {job.locationNote && (
-        <p className="mb-2 text-base font-bold leading-snug text-ink-900">{job.locationNote}</p>
+        <p className="mb-2 text-[15px] font-bold leading-snug text-ink-900">{job.locationNote}</p>
       )}
 
-      <dl className="mb-3 space-y-2 text-[13px] text-ink-500">
+      <dl className="mb-2.5 space-y-1.5 text-[13px] text-ink-500">
         <div className="flex gap-2">
           <dt className="flex w-16 shrink-0 items-center gap-1.5 text-ink-300">
             <Calendar size={13} />
@@ -187,10 +192,15 @@ function JobCard({
       )}
 
       {job.situation && (
-        <p className="mb-3 line-clamp-2 text-sm leading-relaxed text-ink-500">{job.situation}</p>
+        <p className="mb-2.5 line-clamp-2 text-[13px] leading-relaxed text-ink-500">
+          {job.situation}
+        </p>
       )}
 
-      {footer}
+      {/* 조건 칩과 행동 버튼 사이를 확실히 띄운다 — 붙어 있으면 칩이 버튼의 일부처럼
+          읽혀서 "다른 일자리 둘러보기"·"합의서 확인·서명"이 눈에 안 들어온다.
+          선까지 그어 정보(위)와 행동(아래)을 시각적으로 분리한다. */}
+      {footer && <div className="mt-4 border-t border-ink-100/70 pt-3.5">{footer}</div>}
     </div>
   );
 }
@@ -232,6 +242,18 @@ function BrowseJobsButton({ onClick }: { onClick: () => void }) {
 
 export default function SitterJobsPage() {
   const [tab, setTab] = useState<Tab>("open");
+
+  // ?tab=applied|matched|done 으로 들어오면 그 탭을 연다 — 마이페이지 대시보드의
+  // "지원 중·매칭·완료" 숫자가 각자 제 탭으로 바로 꽂히게 하기 위한 것.
+  //
+  // useSearchParams 대신 window.location을 읽는다: 이 라우트는 정적 프리렌더 대상이라
+  // useSearchParams를 쓰면 Suspense 경계를 요구해 빌드가 깨진다.
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get("tab");
+    if (requested && TABS.some((t) => t.key === requested)) {
+      setTab(requested as Tab);
+    }
+  }, []);
   const [isSitter, setIsSitter] = useState<boolean | null>(null);
   const [jobs, setJobs] = useState<JobRequest[]>([]);
   const [applications, setApplications] = useState<MyApplication[]>([]);
@@ -337,10 +359,7 @@ export default function SitterJobsPage() {
 
   return (
     <MyPageShell>
-      <h2 className="mb-2 text-xl font-bold text-ink-900">일자리 관리</h2>
-      <p className="mb-5 text-sm leading-relaxed text-ink-500">
-        내 활동 지역에 올라온 돌봄 요청과 내 지원 현황을 한곳에서 확인하세요.
-      </p>
+      <h2 className="mb-4 text-xl font-bold text-ink-900">일자리 관리</h2>
 
       <div className="mb-5 flex gap-1 overflow-x-auto border-b border-ink-100">
         {TABS.map((t) => (

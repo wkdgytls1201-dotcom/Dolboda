@@ -108,7 +108,7 @@ export function MyPageRoleCard() {
         <div className={`flip-card h-[168px] ${flipped ? "is-flipped" : ""}`}>
           {/* 앞면 — 보호자 (보라 계열, 기존 보호자 섹션 헤더와 같은 색 문법) */}
           <div
-            className={`flip-face ${FACE} h-full bg-gradient-to-br from-royal-500 to-royal-600`}
+            className={`flip-face ${FACE} h-full bg-gradient-to-br from-royal-600 via-royal-500 to-royal-400`}
             aria-hidden={flipped}
           >
             <div className="flex items-center gap-3">

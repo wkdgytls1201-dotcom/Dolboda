@@ -110,7 +110,7 @@ export function MyPageDashboard() {
       <Link
         key="request"
         href="/care-request"
-        className="animate-fade-up block rounded-2xl bg-gradient-to-br from-royal-500 to-royal-600 p-5 text-white shadow-royal transition-transform hover:-translate-y-0.5 sm:p-6"
+        className="animate-fade-up block rounded-2xl bg-gradient-to-br from-royal-600 via-royal-500 to-royal-400 p-5 text-white shadow-royal transition-transform hover:-translate-y-0.5 sm:p-6"
         style={{ animationDelay: `${cards.length * 70}ms` }}
       >
         <p className="mb-1.5 flex items-center gap-1.5 text-[13px] font-bold text-white/80">
@@ -272,13 +272,15 @@ export function MyPageDashboard() {
             끝나면 "그래서 어디서 보는데?"가 된다 */}
         <div className="grid grid-cols-3 gap-2.5">
           {[
-            { label: "지원 중", value: pending },
-            { label: "매칭", value: matched },
-            { label: "완료", value: completed },
+            // 숫자마다 제 탭으로 보낸다 — 셋 다 같은 곳으로 가면 눌러도 원하는 목록이
+            // 안 열려서 한 번 더 찾아 들어가야 했다
+            { label: "지원 중", value: pending, tab: "applied" },
+            { label: "매칭", value: matched, tab: "matched" },
+            { label: "완료", value: completed, tab: "done" },
           ].map((s) => (
             <Link
               key={s.label}
-              href="/mypage/sitter/jobs"
+              href={`/mypage/sitter/jobs?tab=${s.tab}`}
               className="rounded-xl bg-ivory-100 py-3.5 text-center transition-all duration-150 ease-snappy hover:-translate-y-0.5 hover:bg-primary-50 hover:shadow-soft active:translate-y-0 active:scale-[0.97]"
             >
               <p className="text-xl font-extrabold text-ink-900">{s.value}</p>

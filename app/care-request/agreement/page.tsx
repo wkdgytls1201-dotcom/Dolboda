@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { FileSignature, Printer, ShieldCheck, Check, AlertTriangle } from "lucide-react";
+import { FileSignature, Printer, ShieldCheck, Check, AlertTriangle, ChevronDown } from "lucide-react";
 import { PageLoader } from "@/components/PageLoader";
 import { SignaturePad } from "@/components/SignaturePad";
 import { agreementDocNo, type AgreementContent } from "@/lib/careAgreement";
@@ -146,16 +146,33 @@ export default function CareAgreementPage() {
         )}
       </div>
 
-      {/* 돌보다의 위치를 문서 맨 앞에 분명히 밝힌다 */}
-      <div className="mb-6 flex gap-2.5 rounded-2xl bg-ink-100/40 p-4">
-        <ShieldCheck size={16} className="mt-0.5 shrink-0 text-ink-300" />
-        <p className="text-xs leading-relaxed text-ink-500">
-          이 합의는 <strong className="text-ink-700">보호자와 돌보다 매니저 두 분 사이의 합의</strong>예요.
-          돌보다는 합의의 당사자가 아니며, 표준 양식을 제공하고 서명 사실을 기록·보관할 뿐
-          사례비 결정이나 지급, 돌봄 이행에 관여하지 않아요. 상대방의 신원·자격도 보증하지
-          않으니, 서명 전에 두 분이 직접 확인해주세요. 자세한 내용은 제1조·제2조에 있어요.
+      {/* 돌보다의 위치를 문서 맨 앞에 분명히 밝힌다.
+          긴 문단이 서명 화면 위를 덮고 있어 접어두되, **핵심 한 줄은 접힌 상태에서도
+          보이게** 남긴다 — 이건 "돌보다는 당사자가 아니다"라는 법적 포지션 고지라
+          통째로 감추면 고지 자체가 약해진다(docs/care-agreement-spec.md §1).
+          상태 관리 없이 <details>로 만들어 JS 없이도 열린다. */}
+      <details className="group mb-6 rounded-2xl bg-ink-100/40">
+        <summary className="flex cursor-pointer list-none items-start gap-2.5 p-4 [&::-webkit-details-marker]:hidden">
+          <ShieldCheck size={16} className="mt-0.5 shrink-0 text-ink-300" />
+          <span className="flex-1 text-xs leading-relaxed text-ink-500">
+            이 합의는{" "}
+            <strong className="text-ink-700">보호자와 돌보다 매니저 두 분 사이의 합의</strong>
+            예요. 돌보다는 합의의 당사자가 아니에요.
+            <span className="mt-0.5 block font-semibold text-ink-400 group-open:hidden">
+              자세히 보기
+            </span>
+          </span>
+          <ChevronDown
+            size={15}
+            className="mt-0.5 shrink-0 text-ink-300 transition-transform duration-200 group-open:rotate-180"
+          />
+        </summary>
+        <p className="px-4 pb-4 pl-[42px] text-xs leading-relaxed text-ink-500">
+          돌보다는 표준 양식을 제공하고 서명 사실을 기록·보관할 뿐 사례비 결정이나 지급,
+          돌봄 이행에 관여하지 않아요. 상대방의 신원·자격도 보증하지 않으니, 서명 전에 두
+          분이 직접 확인해주세요. 자세한 내용은 제1조·제2조에 있어요.
         </p>
-      </div>
+      </details>
 
       {data.hashValid === false && (
         <div className="mb-6 flex gap-2.5 rounded-2xl border border-accent-300 bg-accent-50 p-4">

@@ -31,6 +31,9 @@ const DECIDED_GRADES = [
   "등급 외 판정",
 ] as const;
 
+/** 이 중 하나여야 복지용구 혜택 화면이 열린다 — welfare-benefit 페이지의 ELIGIBLE_GRADES와 같은 집합 */
+const BENEFIT_GRADES = new Set(["1등급", "2등급", "3등급", "4등급", "5등급", "인지지원등급"]);
+
 const CERT_DIGITS = 10;
 
 export default function LtcCertRegisterPage() {
@@ -81,6 +84,8 @@ function CertForm({ profiles }: { profiles: CareProfileSummary[] }) {
   const [gender, setGender] = useState<string>(selected.gender ?? "");
   const [grade, setGrade] = useState<string>("");
   const [cert, setCert] = useState("");
+  const [birthDate, setBirthDate] = useState("");
+  const [validFrom, setValidFrom] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -91,6 +96,8 @@ function CertForm({ profiles }: { profiles: CareProfileSummary[] }) {
     // 이미 판정 등급이 저장돼 있으면 그대로 보여주고, 아직이면 비워 고르게 한다
     setGrade(DECIDED_GRADES.includes(selected.ltcGrade as never) ? (selected.ltcGrade as string) : "");
     setCert("");
+    setBirthDate(selected.birthDate ?? "");
+    setValidFrom(selected.ltcCertValidFrom ?? "");
     setError(null);
   }, [selected]);
 
@@ -118,6 +125,8 @@ function CertForm({ profiles }: { profiles: CareProfileSummary[] }) {
           ltcCertNumber: certDigits,
           ltcGrade: grade,
           ...(gender ? { gender } : {}),
+          ...(birthDate ? { birthDate } : {}),
+          ...(validFrom ? { ltcCertValidFrom: validFrom } : {}),
         }),
       });
       const data = await res.json().catch(() => null);
@@ -195,6 +204,21 @@ function CertForm({ profiles }: { profiles: CareProfileSummary[] }) {
           </div>
         </div>
 
+        {/* 생년월일 — 인정서에 적힌 어르신 정보와 맞추기 위해 받는다 */}
+        <div>
+          <label htmlFor="ltc-birth" className="mb-2 block text-[13px] font-bold text-ink-700">
+            어르신 생년월일
+          </label>
+          <input
+            id="ltc-birth"
+            type="date"
+            value={birthDate}
+            onChange={(e) => setBirthDate(e.target.value)}
+            max={new Date().toISOString().slice(0, 10)}
+            className="min-h-[52px] w-full rounded-xl border border-ink-100 bg-white px-3.5 text-sm text-ink-900 outline-none focus:border-primary-400"
+          />
+        </div>
+
         {/* 인정등급 */}
         <div>
           <label htmlFor="ltc-grade" className="mb-2 block text-[13px] font-bold text-ink-700">
@@ -213,6 +237,15 @@ function CertForm({ profiles }: { profiles: CareProfileSummary[] }) {
               </option>
             ))}
           </select>
+          {/* 복지용구 급여 대상이 아닌 등급을 고르면 미리 알려준다 — 이 안내가 없으면
+              등록을 마치고 돌아갔을 때 혜택 화면이 그대로라 "저장이 안 됐나?"로 읽힌다
+              (실제로는 저장됐고, 대상이 아니라 화면이 안 바뀌는 것) */}
+          {grade !== "" && !BENEFIT_GRADES.has(grade) && (
+            <p className="mt-2 rounded-xl bg-ivory-100 px-3.5 py-2.5 text-[12px] leading-relaxed text-ink-500">
+              이 등급은 복지용구 급여 대상이 아니에요. 등록은 그대로 저장되지만 혜택 화면은
+              열리지 않아요.
+            </p>
+          )}
         </div>
 
         {/* 인정번호 */}
@@ -223,9 +256,11 @@ function CertForm({ profiles }: { profiles: CareProfileSummary[] }) {
           <input
             id="ltc-cert"
             value={cert}
-            onChange={(e) => setCert(e.target.value)}
+            // 숫자만, 10자리까지만 들어가게 입력 단계에서 잘라낸다 — maxLength만 두면
+            // 하이픈·공백을 섞어 10자리를 넘겨 칠 수 있어 "왜 더 써지지" 소리를 듣는다
+            onChange={(e) => setCert(e.target.value.replace(/\D/g, "").slice(0, CERT_DIGITS))}
             inputMode="numeric"
-            maxLength={14}
+            maxLength={CERT_DIGITS}
             placeholder={`L 없이 숫자 ${CERT_DIGITS}자리`}
             className="min-h-[52px] w-full rounded-xl border border-ink-100 bg-white px-3.5 text-sm tracking-wide text-ink-900 outline-none focus:border-primary-400"
           />
@@ -234,6 +269,24 @@ function CertForm({ profiles }: { profiles: CareProfileSummary[] }) {
               {certDigits.length}
             </span>
             / {CERT_DIGITS}자리
+          </p>
+        </div>
+
+        {/* 인정유효기간 시작일 — 인정서에 적힌 값을 그대로 옮겨 적는다.
+            만료일은 우리가 계산하지 않는다(갱신 주기가 등급·판정마다 달라 추정하면 틀린다) */}
+        <div>
+          <label htmlFor="ltc-valid" className="mb-2 block text-[13px] font-bold text-ink-700">
+            인정유효기간 시작일
+          </label>
+          <input
+            id="ltc-valid"
+            type="date"
+            value={validFrom}
+            onChange={(e) => setValidFrom(e.target.value)}
+            className="min-h-[52px] w-full rounded-xl border border-ink-100 bg-white px-3.5 text-sm text-ink-900 outline-none focus:border-primary-400"
+          />
+          <p className="mt-1.5 text-[11px] leading-relaxed text-ink-300">
+            인정서의 유효기간 중 <strong className="font-semibold">앞의 날짜</strong>를 적어주세요.
           </p>
         </div>
       </div>

@@ -113,9 +113,17 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
     { href: "/mypage/sitter/settlements", label: "정산 관리", icon: <Wallet size={18} />, hint: "계좌 등록" },
     { href: "/mypage/sitter/notifications", label: "알림 설정", icon: <Bell size={18} />, hint: "받을 알림 고르기" },
   ];
-  const [primaryItem, ...restItems] = sitterItems;
-  const gridItems = restItems.slice(0, 4);
-  const compactItems = restItems.slice(4);
+  // 모바일 위계: 대표 카드(일자리) → 네모 카드 2개 → 얇은 줄.
+  //
+  // 프로필 관리는 네모 카드에서 뺐다 — 바로 위 역할 카드 앞면에 이미 "프로필 관리"
+  // 버튼이 있어 한 화면에 같은 링크가 두 번 나왔다(데스크톱 사이드바에는 그대로 있다).
+  // 정산 관리·알림 설정은 가끔 한 번 들어가는 곳이라 얇은 줄로 내린다.
+  const [primaryItem] = sitterItems;
+  const CARD_HREFS = ["/mypage/sitter/workplaces", "/mypage/sitter/tips"];
+  const gridItems = sitterItems.filter((i) => CARD_HREFS.includes(i.href));
+  const compactItems = sitterItems.filter(
+    (i) => i !== primaryItem && !CARD_HREFS.includes(i.href) && i.href !== "/mypage/sitter/profile"
+  );
 
   // 모바일 대표 카드 — 각 역할이 들어오는 첫 목적을 한눈에 띄게.
   // 색으로 역할을 구분한다: 보호자는 보라(royal), 매니저는 브랜드 코랄.
@@ -132,7 +140,7 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
           active
             ? `bg-white ring-2 ${guardian ? "ring-royal-300" : "ring-primary-300"}`
             : guardian
-            ? "bg-gradient-to-br from-royal-500 to-royal-600 shadow-royal"
+            ? "bg-gradient-to-br from-royal-600 via-royal-500 to-royal-400 shadow-royal"
             : "bg-gradient-to-br from-primary-500 to-peach-500 shadow-soft"
         }`}
       >
