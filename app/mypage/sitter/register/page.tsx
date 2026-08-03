@@ -173,7 +173,7 @@ export default function SitterRegisterPage() {
             type="button"
             onClick={() => setStep((s) => s - 1)}
             aria-label="이전 단계"
-            className="rounded-full p-1.5 text-ink-500 transition-colors duration-150 hover:bg-ink-100"
+            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-ink-500 transition-all duration-150 hover:bg-ink-100 active:scale-90 active:bg-ink-100"
           >
             <ChevronLeft size={20} />
           </button>
@@ -363,7 +363,7 @@ export default function SitterRegisterPage() {
                   key={n}
                   type="button"
                   onClick={() => setNationality(n)}
-                  className={`rounded-xl border px-4 py-2 text-sm font-semibold transition-colors duration-150 ${
+                  className={`min-h-[44px] rounded-xl border px-4 py-2 text-sm font-semibold transition-all duration-150 active:scale-95 ${
                     nationality === n
                       ? "border-primary-500 bg-primary-50 text-primary-700"
                       : "border-ink-100 text-ink-500 hover:bg-ink-100/60"
@@ -436,7 +436,7 @@ export default function SitterRegisterPage() {
                     type="button"
                     onClick={() => removeCertification(i)}
                     aria-label="자격증 삭제"
-                    className="rounded-full p-1 text-primary-400 hover:bg-primary-100"
+                    className="-m-1.5 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full p-1 text-primary-400 transition-all duration-150 hover:bg-primary-100 active:scale-90 active:bg-primary-100"
                   >
                     <X size={14} />
                   </button>
@@ -460,7 +460,7 @@ export default function SitterRegisterPage() {
                 type="button"
                 onClick={addCertification}
                 aria-label="자격증 추가"
-                className="flex shrink-0 items-center justify-center rounded-xl bg-primary-500 px-3 text-white transition-colors duration-150 hover:bg-primary-600"
+                className="flex min-h-[44px] shrink-0 items-center justify-center rounded-xl bg-primary-500 px-3 text-white transition-all duration-150 hover:bg-primary-600 active:scale-95"
               >
                 <Plus size={18} />
               </button>
@@ -485,12 +485,12 @@ export default function SitterRegisterPage() {
                   type="button"
                   disabled={disabled}
                   onClick={() => toggleRegion(region)}
-                  className={`rounded-xl border px-3 py-2.5 text-sm font-semibold transition-colors duration-150 ${
+                  className={`min-h-[44px] rounded-xl border px-3 py-2.5 text-sm font-semibold transition-all duration-150 ${
                     active
-                      ? "border-primary-500 bg-primary-500 text-white"
+                      ? "border-primary-500 bg-primary-500 text-white active:scale-95"
                       : disabled
                       ? "cursor-not-allowed border-ink-100 text-ink-300"
-                      : "border-ink-100 text-ink-700 hover:bg-ink-100/60"
+                      : "border-ink-100 text-ink-700 hover:bg-ink-100/60 active:scale-95"
                   }`}
                 >
                   {region}
@@ -607,7 +607,7 @@ export default function SitterRegisterPage() {
               <button
                 type="button"
                 onClick={() => setShowAgreeModal(false)}
-                className="flex-1 rounded-xl border border-ink-100 py-2.5 text-sm font-semibold text-ink-500 transition-colors duration-150 hover:bg-ink-100/60"
+                className="flex-1 rounded-xl border border-ink-100 py-2.5 text-sm font-semibold text-ink-500 transition-all duration-150 hover:bg-ink-100/60 active:scale-95"
               >
                 다시 볼게요
               </button>

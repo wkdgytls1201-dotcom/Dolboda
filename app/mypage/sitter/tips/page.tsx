@@ -50,7 +50,7 @@ export default function SitterTipsPage() {
                       type="button"
                       onClick={() => toggle(tip.slug)}
                       aria-expanded={isOpen}
-                      className="flex w-full items-center gap-3 p-4 text-left"
+                      className="flex w-full items-center gap-3 p-4 text-left transition-colors duration-150 active:bg-ink-100/60"
                     >
                       <span className="min-w-0 flex-1">
                         <span className="block text-[15px] font-bold leading-snug text-ink-900">

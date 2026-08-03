@@ -26,7 +26,7 @@ export default function SitterSettlementsPage() {
           <p className="mb-3 text-sm text-ink-700">아직 돌보다 매니저로 등록하지 않으셨어요.</p>
           <Link
             href="/mypage/sitter/register"
-            className="inline-block rounded-xl bg-primary-500 px-5 py-2.5 text-sm font-bold text-white hover:bg-primary-600"
+            className="inline-flex min-h-[44px] items-center rounded-xl bg-primary-500 px-5 py-2.5 text-sm font-bold text-white transition-all duration-150 hover:bg-primary-600 active:scale-95"
           >
             돌보다 매니저 등록하기
           </Link>

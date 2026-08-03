@@ -334,7 +334,7 @@ export default function SitterJobsPage() {
           <p className="mb-3 text-sm text-ink-700">아직 돌보다 매니저로 등록하지 않으셨어요.</p>
           <Link
             href="/mypage/sitter/register"
-            className="inline-block rounded-xl bg-primary-500 px-5 py-2.5 text-sm font-bold text-white hover:bg-primary-600"
+            className="inline-flex min-h-[44px] items-center rounded-xl bg-primary-500 px-5 py-2.5 text-sm font-bold text-white transition-all duration-150 hover:bg-primary-600 active:scale-95"
           >
             돌보다 매니저 등록하기
           </Link>
@@ -370,7 +370,7 @@ export default function SitterJobsPage() {
             key={t.key}
             type="button"
             onClick={() => setTab(t.key)}
-            className={`min-h-[48px] shrink-0 border-b-2 px-2.5 text-[14px] font-bold transition-colors duration-150 sm:px-4 sm:text-[15px] ${
+            className={`min-h-[48px] shrink-0 border-b-2 px-2.5 text-[14px] font-bold transition-all duration-150 active:scale-95 sm:px-4 sm:text-[15px] ${
               tab === t.key
                 ? "border-primary-500 text-primary-700"
                 : "border-transparent text-ink-300 hover:text-ink-500"
@@ -423,10 +423,10 @@ export default function SitterJobsPage() {
                   <button
                     type="button"
                     onClick={() => setTypeFilter("")}
-                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
+                    className={`min-h-[44px] rounded-full border px-3 py-1.5 text-xs font-semibold transition-all duration-150 active:scale-95 ${
                       typeFilter === ""
                         ? "border-primary-500 bg-primary-50 text-primary-700"
-                        : "border-ink-100 text-ink-500"
+                        : "border-ink-100 text-ink-500 hover:bg-ink-100/60"
                     }`}
                   >
                     전체
@@ -436,10 +436,10 @@ export default function SitterJobsPage() {
                       key={t.value}
                       type="button"
                       onClick={() => setTypeFilter(t.value)}
-                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
+                      className={`min-h-[44px] rounded-full border px-3 py-1.5 text-xs font-semibold transition-all duration-150 active:scale-95 ${
                         typeFilter === t.value
                           ? "border-primary-500 bg-primary-50 text-primary-700"
-                          : "border-ink-100 text-ink-500"
+                          : "border-ink-100 text-ink-500 hover:bg-ink-100/60"
                       }`}
                     >
                       {t.label}
@@ -447,7 +447,7 @@ export default function SitterJobsPage() {
                   ))}
                 </div>
               </div>
-              <label className="flex cursor-pointer items-center justify-between text-sm text-ink-700">
+              <label className="flex min-h-[44px] cursor-pointer items-center justify-between text-sm text-ink-700">
                 이미 시작된 돌봄은 숨기기
                 <input
                   type="checkbox"
