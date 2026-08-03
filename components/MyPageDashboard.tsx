@@ -14,6 +14,7 @@ import {
   HeartHandshake,
 } from "lucide-react";
 import { useSitterProfileContext } from "@/lib/sitterProfileContext";
+import { useMyPageRole } from "@/lib/mypageRoleContext";
 import { sitterProgress, sitterLevel } from "@/lib/sitterProgress";
 import { useFavorites } from "@/lib/favoritesContext";
 import { useCareProfiles, type CareProfileSummary } from "@/lib/careProfileContext";
@@ -58,6 +59,10 @@ function profileCta(p: CareProfileSummary): { label: string; href: string } {
 // 보호자: 진행 중인 돌봄 요청 상태 / 매니저: 프로필 완성도·활동 레벨·새 일자리.
 export function MyPageDashboard() {
   const { profile, isSitter } = useSitterProfileContext();
+  // 두 역할을 다 가진 계정은 지금 보고 있는 쪽 카드만 본다. 예전엔 매니저로 등록하면
+  // 보호자 카드(돌봄 프로필·시작 안내)가 영영 안 보였는데, 매니저도 부모를 모시는
+  // 보호자일 수 있다 — 역할 전환으로 양쪽을 다 쓸 수 있게 됐다.
+  const { role } = useMyPageRole();
   const { favoriteIds } = useFavorites();
   const { profiles: careProfiles, loaded: careProfilesLoaded } = useCareProfiles();
 
@@ -95,8 +100,11 @@ export function MyPageDashboard() {
 
   const cards: React.ReactNode[] = [];
 
+  const asGuardian = role === "guardian";
+  const asManager = role === "manager";
+
   /* ---------- 보호자: 진행 중 돌봄 요청 ---------- */
-  if (request && (request.status === "OPEN" || request.status === "MATCHED")) {
+  if (asGuardian && request && (request.status === "OPEN" || request.status === "MATCHED")) {
     const applicantCount = request.applications?.filter((a) => a.status === "지원완료").length ?? 0;
     cards.push(
       <Link
@@ -138,7 +146,7 @@ export function MyPageDashboard() {
 
   /* ---------- 보호자: 진행 중인 상담 ---------- */
   // 입소를 정하지 않은 건이 있을 때만 — 다 끝난 목록을 계속 띄우면 할 일처럼 보인다
-  if (consults && consults.length > 0) {
+  if (asGuardian && consults && consults.length > 0) {
     const pending = consults.filter((c) => c.status !== "입소결정").length;
     const decided = consults.length - pending;
     if (pending > 0) {
@@ -174,7 +182,7 @@ export function MyPageDashboard() {
   }
 
   /* ---------- 매니저 위젯 ---------- */
-  if (isSitter && profile) {
+  if (asManager && isSitter && profile) {
     const progress = sitterProgress(profile);
     const matched = applications?.filter((a) => a.status === "매칭확정").length ?? 0;
     const completed = applications?.filter((a) => a.status === "돌봄완료").length ?? 0;
@@ -311,10 +319,9 @@ export function MyPageDashboard() {
   }
 
   /* ---------- 보호자: 돌봄 프로필 — 있으면 맞춤 검색, 없으면 만들기 유도 ---------- */
-  // isSitter는 boolean | null(로딩 중)이라 !isSitter로 쓰면 로딩 중에도 true가 돼서,
-  // 실제 매니저 계정에도 /api/sitter-profile 응답이 오기 전까지 이 카드가 잠깐 떴다
-  // 사라지는 깜빡임이 생긴다. false로 확정된 경우만 보호자로 취급한다.
-  if (isSitter === false && careProfilesLoaded) {
+  // 예전엔 `isSitter === false`가 조건이라 매니저 계정에는 영영 안 보였다.
+  // 지금은 역할 전환이 있으니 "보호자 화면일 때"가 정확한 조건이다.
+  if (asGuardian && careProfilesLoaded) {
     if (careProfiles.length > 0) {
       const p = careProfiles[0];
       const cta = profileCta(p);
@@ -394,8 +401,7 @@ export function MyPageDashboard() {
   }
 
   /* ---------- 보호자: 요청이 없을 때 시작 안내 ---------- */
-  // 같은 이유로 isSitter === false만 확정 조건으로 쓴다(위 주석 참고)
-  if (request === null && isSitter === false) {
+  if (asGuardian && request === null) {
     cards.push(
       <div
         key="start"

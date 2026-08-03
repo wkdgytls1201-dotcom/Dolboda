@@ -1,9 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { useSession } from "next-auth/react";
 import {
   HeartHandshake,
   Settings,
@@ -18,9 +16,10 @@ import {
   ClipboardList,
   Heart,
   Scale,
-  User,
 } from "lucide-react";
 import { useSitterProfileContext } from "@/lib/sitterProfileContext";
+import { useMyPageRole } from "@/lib/mypageRoleContext";
+import { MyPageRoleCard } from "./MyPageRoleCard";
 
 interface NavItem {
   href: string;
@@ -37,12 +36,8 @@ interface NavItem {
 // /api/sitter-profile를 따로 불러서 페이지를 옮길 때마다 중복 요청이 나갔다.
 export function MyPageShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { data: session } = useSession();
-  const { isSitter, profile: sitterProfile } = useSitterProfileContext();
-  const [photoFailed, setPhotoFailed] = useState(false);
-  // 카카오 이름 미동의 계정은 name이 없다 — 매니저 닉네임이 있으면 그걸로 부르는 게
-  // "회원님"보다 훨씬 자기 계정답다.
-  const displayName = session?.user?.name ?? sitterProfile?.nickname ?? "회원";
+  const { isSitter } = useSitterProfileContext();
+  const { role } = useMyPageRole();
   // 모바일에서는 /mypage 루트가 메뉴 허브, 서브 화면은 콘텐츠만 보여준다.
   // 예전엔 매니저 메뉴 블록(대표 카드+그리드)이 모든 서브 화면 위에 그대로 깔려서,
   // 보호자 프로필을 만들러 들어가도 매니저 메뉴가 한 화면을 다 차지했다.
@@ -54,6 +49,37 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
     { href: "/mypage/consults", label: "상담 신청 내역", icon: <ClipboardList size={16} /> },
     { href: "/mypage/edit", label: "정보 수정", icon: <ChevronRight size={16} /> },
   ];
+
+  // 보호자 메뉴 — 매니저 쪽과 **같은 문법**(대표 카드 → 2×2 그리드 → 얇은 줄)으로 맞췄다.
+  // 예전엔 보호자에게 아이콘 4개짜리 한 줄만 있어서, 역할을 전환하면 한쪽이 눈에 띄게
+  // 빈약해 보였다. 순서는 자주 쓰는 순: 상담 내역(연락 왔나 확인) → 프로필·찜·비교 → 계정.
+  const guardianItems: NavItem[] = [
+    {
+      href: "/mypage/consults",
+      label: "상담 신청 내역",
+      icon: <ClipboardList size={20} />,
+      hint: "연락 온 시설과 진행 상황",
+    },
+    {
+      href: "/mypage/care-profile",
+      label: "보호자 프로필",
+      icon: <HeartHandshake size={18} />,
+      hint: "한 번 저장하면 계속 재사용",
+    },
+    { href: "/favorites", label: "관심 시설", icon: <Heart size={18} />, hint: "찜해둔 시설" },
+    { href: "/compare", label: "시설 비교", icon: <Scale size={18} />, hint: "최대 3곳 나란히" },
+    {
+      href: "/grade-test",
+      label: "등급 테스트",
+      icon: <ClipboardCheck size={18} />,
+      hint: "1분 자가진단",
+      ribbon: "무료",
+    },
+    { href: "/mypage/edit", label: "정보 수정", icon: <Settings size={18} />, hint: "계정 정보" },
+  ];
+  const [guardianPrimary, ...guardianRest] = guardianItems;
+  const guardianGrid = guardianRest.slice(0, 4);
+  const guardianCompact = guardianRest.slice(4);
 
   // 자주 쓰는 순서대로 — 일자리 확인이 매니저의 주 목적이라 맨 앞에 둔다.
   // 모바일에서는 이 순서가 그대로 위계가 된다: 대표 카드(일자리) → 그리드 4개 → 알림은 얇은 줄.
@@ -69,23 +95,32 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
   const gridItems = restItems.slice(0, 4);
   const compactItems = restItems.slice(4);
 
-  // 모바일 대표 카드 — 매니저가 들어오는 첫 목적(일자리)을 한눈에 띄게.
-  // 보호자용 "진행 중 돌봄 요청" 카드가 보라(royal) 그라데이션이라, 매니저 대표 카드는
-  // 브랜드 코랄로 구분한다. 현재 화면일 때는 흰 배경 + 링으로 바꿔 "여기 있음"을 알린다.
-  function PrimaryNavCard({ item }: { item: NavItem }) {
+  // 모바일 대표 카드 — 각 역할이 들어오는 첫 목적을 한눈에 띄게.
+  // 색으로 역할을 구분한다: 보호자는 보라(royal), 매니저는 브랜드 코랄.
+  // 역할 카드 앞·뒷면과 같은 색이라, 전환했을 때 화면 전체 톤이 함께 바뀌어
+  // "지금 다른 모드에 있다"가 글자를 읽지 않아도 전달된다.
+  // 현재 화면일 때는 흰 배경 + 링으로 바꿔 "여기 있음"을 알린다.
+  function PrimaryNavCard({ item, tone }: { item: NavItem; tone: "guardian" | "manager" }) {
     const active = pathname === item.href;
+    const guardian = tone === "guardian";
     return (
       <Link
         href={item.href}
         className={`flex items-center gap-3.5 rounded-2xl px-4 py-4 transition-all duration-150 active:scale-[0.98] ${
           active
-            ? "bg-white ring-2 ring-primary-300"
+            ? `bg-white ring-2 ${guardian ? "ring-royal-300" : "ring-primary-300"}`
+            : guardian
+            ? "bg-gradient-to-br from-royal-500 to-royal-600 shadow-royal"
             : "bg-gradient-to-br from-primary-500 to-peach-500 shadow-soft"
         }`}
       >
         <span
           className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${
-            active ? "bg-primary-50 text-primary-600" : "bg-white/20 text-white"
+            active
+              ? guardian
+                ? "bg-royal-50 text-royal-600"
+                : "bg-primary-50 text-primary-600"
+              : "bg-white/20 text-white"
           }`}
         >
           {item.icon}
@@ -93,7 +128,7 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
         <span className="min-w-0 flex-1">
           <span
             className={`block text-base font-extrabold leading-snug ${
-              active ? "text-primary-700" : "text-white"
+              active ? (guardian ? "text-royal-700" : "text-primary-700") : "text-white"
             }`}
           >
             {item.label}
@@ -110,7 +145,9 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
         </span>
         <ChevronRight
           size={18}
-          className={`shrink-0 ${active ? "text-primary-400" : "text-white/70"}`}
+          className={`shrink-0 ${
+            active ? (guardian ? "text-royal-400" : "text-primary-400") : "text-white/70"
+          }`}
         />
       </Link>
     );
@@ -200,117 +237,69 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
       <aside className={`${atRoot ? "mb-6" : "hidden"} sm:mb-0 sm:block sm:w-56 sm:shrink-0`}>
         <h1 className="mb-5 hidden text-lg font-bold text-ink-900 sm:block">마이페이지</h1>
 
-        {/* 모바일 인사 카드 — 케어닥의 "OO 보호자님 + 빠른 액션 2개" 구조를 참고하되,
-            돌보다 톤(아이보리 그라데이션·코랄 포인트)으로. 이름과 역할이 먼저 보이면
-            "내 계정에 잘 들어왔다"는 안심이 생기고, 가장 자주 갈 두 곳을 큰 버튼으로 둔다 */}
-        <div className="mb-4 rounded-3xl bg-gradient-to-b from-white to-ivory-100 p-5 shadow-card sm:hidden">
-          <div className="mb-4 flex items-center gap-3">
-            {session?.user?.image && !photoFailed ? (
-              // 카카오 프로필 URL이 깨졌을 때 브라우저 기본 "깨진 이미지"가 뜨지 않게
-              // 기본 아바타로 대체한다(매니저 프로필 화면과 같은 처리)
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={session.user.image}
-                alt=""
-                onError={() => setPhotoFailed(true)}
-                className="h-12 w-12 rounded-full object-cover ring-2 ring-primary-100"
-              />
-            ) : (
-              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-50 text-primary-500 ring-2 ring-primary-100">
-                <User size={22} />
-              </span>
+        {/* 역할 카드 — 보호자↔매니저 전환. 예전 인사 카드가 하던 일(이름·역할·빠른 액션 2개)을
+            그대로 품고 있고, 여기에 전환 기능이 더해졌다. */}
+        <MyPageRoleCard />
+
+        {role === "guardian" ? (
+          <>
+            {/* 모바일: 매니저 쪽과 같은 문법 — 대표 카드(상담 내역) → 2×2 그리드 → 얇은 줄 */}
+            <nav className="flex flex-col gap-2.5 sm:hidden">
+              <PrimaryNavCard item={guardianPrimary} tone="guardian" />
+              <div className="grid auto-rows-fr grid-cols-2 gap-2.5">
+                {guardianGrid.map((item) => (
+                  <NavCard key={item.href} item={item} />
+                ))}
+              </div>
+              {guardianCompact.map((item) => (
+                <CompactNavRow key={item.href} item={item} />
+              ))}
+            </nav>
+
+            {/* 데스크톱 사이드바용 내 정보 목록 (모바일에서는 위 카드들이 대신한다) */}
+            <p className="mb-2 hidden px-1 text-[13px] font-semibold text-ink-300 sm:block">
+              내 정보
+            </p>
+            <nav className="hidden sm:flex sm:flex-col sm:gap-1.5">
+              {infoItems.map((item) => (
+                <NavLink key={item.href} item={item} />
+              ))}
+            </nav>
+
+            {/* 매니저 미등록자에게만 — 세그먼트의 "매니저 시작"만으로는 왜 해야 하는지가
+                전달되지 않는다. 텅 빈 점선 박스보다 이 카드가 전환이 잘 된다.
+                isSitter가 확정(false)됐을 때만 — null(확인 중)에 띄우면 이미 등록한
+                매니저에게도 "시작하기"가 잠깐 깜빡인다. */}
+            {isSitter === false && (
+              <Link
+                href="/mypage/sitter/register"
+                className="group mt-5 flex items-center gap-3.5 rounded-2xl bg-gradient-to-br from-primary-500 to-peach-500 p-4 shadow-soft transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:shadow-card-hover active:translate-y-0 active:scale-[0.99] sm:w-full"
+              >
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/20 text-white backdrop-blur">
+                  <HeartHandshake size={20} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[15px] font-extrabold text-white">
+                    돌보다 매니저 시작하기
+                  </span>
+                  <span className="mt-0.5 block text-[12px] leading-snug text-white/85">
+                    돌봄 일자리에 지원하고 활동 실적을 쌓아보세요
+                  </span>
+                </span>
+                <ChevronRight
+                  size={17}
+                  className="shrink-0 text-white/70 transition-transform duration-200 group-hover:translate-x-0.5"
+                />
+              </Link>
             )}
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-lg font-extrabold text-ink-900">
-                {displayName}님
-              </p>
-              <p className="text-[13px] text-ink-400">
-                {isSitter ? "돌보다 매니저로 활동 중이에요" : "오늘도 어르신 곁을 지켜요"}
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Link
-              href="/mypage/care-profile"
-              className="flex min-h-[48px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-white text-sm font-bold text-ink-700 shadow-soft ring-1 ring-inset ring-ink-100 transition-all duration-150 ease-snappy hover:-translate-y-0.5 hover:ring-primary-200 active:translate-y-0 active:scale-[0.98]"
-            >
-              <HeartHandshake size={16} className="text-primary-500" />
-              보호자 프로필
-            </Link>
-            <Link
-              href="/mypage/edit"
-              className="flex min-h-[48px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-white text-sm font-bold text-ink-700 shadow-soft ring-1 ring-inset ring-ink-100 transition-all duration-150 ease-snappy hover:-translate-y-0.5 hover:ring-primary-200 active:translate-y-0 active:scale-[0.98]"
-            >
-              <Settings size={16} className="text-ink-400" />
-              정보 수정
-            </Link>
-          </div>
-        </div>
-
-        {/* 보호자 섹션 헤더 — 아래 매니저 섹션과 같은 문법(아이콘+라벨)으로 영역을 나눈다 */}
-        <div className="mb-3 flex items-center gap-2.5 px-1 sm:hidden">
-          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-royal-50 text-royal-500">
-            <HeartHandshake size={17} />
-          </span>
-          <p className="text-lg font-extrabold text-ink-900">보호자</p>
-        </div>
-
-        {/* 모바일 빠른 메뉴 3종 — 케어닥의 공지/FAQ/고객센터 아이콘 줄 자리에,
-            우리 앱에서 실제로 자주 오가는 화면(등급테스트·관심시설·시설비교)을 놓는다 */}
-        <div className="mb-5 grid grid-cols-4 overflow-hidden rounded-2xl bg-white shadow-card sm:hidden">
-          {[
-            { href: "/grade-test", label: "등급테스트", icon: <ClipboardCheck size={19} /> },
-            { href: "/mypage/consults", label: "상담내역", icon: <ClipboardList size={19} /> },
-            { href: "/favorites", label: "관심시설", icon: <Heart size={19} /> },
-            { href: "/compare", label: "시설비교", icon: <Scale size={19} /> },
-          ].map((q, i) => (
-            <Link
-              key={q.href}
-              href={q.href}
-              className={`flex min-h-[76px] flex-col items-center justify-center gap-1.5 text-[12px] font-semibold text-ink-700 transition-colors duration-150 active:bg-primary-50 ${
-                i > 0 ? "border-l border-ink-100/70" : ""
-              }`}
-            >
-              <span className="text-primary-400">{q.icon}</span>
-              {q.label}
-            </Link>
-          ))}
-        </div>
-
-        {/* 데스크톱 사이드바용 내 정보 목록 (모바일에서는 위 인사 카드가 대신한다) */}
-        <p className="mb-2 hidden px-1 text-[13px] font-semibold text-ink-300 sm:block">내 정보</p>
-        <nav className="hidden sm:flex sm:flex-col sm:gap-1.5">
-          {infoItems.map((item) => (
-            <NavLink key={item.href} item={item} />
-          ))}
-        </nav>
-
-        {/* 매니저 섹션 헤더 — 케어닥처럼 회색 글자 한 줄이 아니라, 아이콘+설명이 있는
-            섹션 타이틀로 "여기서부터는 매니저 영역"이 한눈에 구분되게 한다 */}
-        <div className="mb-3 mt-7 flex items-center gap-2.5 px-1 sm:mt-5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary-50 text-primary-500 sm:hidden">
-            <Briefcase size={17} />
-          </span>
-          <p className="text-lg font-extrabold text-ink-900 sm:text-[13px] sm:font-semibold sm:text-ink-300">
-            돌보다 매니저
-          </p>
-          {isSitter && (
-            <span className="rounded-full bg-mint-100 px-2.5 py-1 text-[12px] font-bold text-mint-700 sm:hidden">
-              활동 중
-            </span>
-          )}
-        </div>
-        {isSitter === null ? (
-          // 이미 등록된 시터에게 "등록하기"가 잠깐 떴다 사라지는 걸 막기 위해
-          // 확인 끝나기 전(null)엔 아무것도 안 보여준다.
-          <div className="h-24 w-full animate-pulse rounded-2xl bg-ink-100/60" aria-hidden />
-        ) : isSitter ? (
+          </>
+        ) : (
           <>
             {/* 모바일: 대표 카드(일자리) → 2×2 그리드 → 얇은 줄(알림).
                 6개를 동급으로 깔면 정작 매일 쓰는 일자리 관리가 묻힌다 — 쓰는 빈도가 곧 크기다.
                 auto-rows-fr로 같은 줄 카드의 높이를 서로 맞춘다 */}
             <nav className="flex flex-col gap-2.5 sm:hidden">
-              <PrimaryNavCard item={primaryItem} />
+              <PrimaryNavCard item={primaryItem} tone="manager" />
               <div className="grid auto-rows-fr grid-cols-2 gap-2.5">
                 {gridItems.map((item) => (
                   <NavCard key={item.href} item={item} />
@@ -321,34 +310,15 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
               ))}
             </nav>
             {/* 데스크톱: 기존 사이드바 목록 유지 */}
+            <p className="mb-2 hidden px-1 text-[13px] font-semibold text-ink-300 sm:block">
+              돌보다 매니저
+            </p>
             <nav className="hidden sm:flex sm:flex-col sm:gap-1.5">
               {sitterItems.map((item) => (
                 <NavLink key={item.href} item={item} />
               ))}
             </nav>
           </>
-        ) : (
-          // 미등록자에게는 "왜 등록하면 좋은지"까지 — 텅 빈 점선 박스보다 전환이 잘 된다
-          <Link
-            href="/mypage/sitter/register"
-            className="group flex items-center gap-3.5 rounded-2xl bg-gradient-to-br from-primary-500 to-peach-500 p-4 shadow-soft transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:shadow-card-hover active:translate-y-0 active:scale-[0.99] sm:w-full"
-          >
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/20 text-white backdrop-blur">
-              <HeartHandshake size={20} />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-[15px] font-extrabold text-white">
-                돌보다 매니저 시작하기
-              </span>
-              <span className="mt-0.5 block text-[12px] leading-snug text-white/85">
-                돌봄 일자리에 지원하고 활동 실적을 쌓아보세요
-              </span>
-            </span>
-            <ChevronRight
-              size={17}
-              className="shrink-0 text-white/70 transition-transform duration-200 group-hover:translate-x-0.5"
-            />
-          </Link>
         )}
       </aside>
 
