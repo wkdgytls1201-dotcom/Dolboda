@@ -33,6 +33,7 @@ export async function Footer() {
               { href: "/services", label: "돌봄 서비스" },
               { href: "/grade-test", label: "등급 테스트" },
               { href: "/guide", label: "요양 가이드" },
+              { href: "/welfare-equipment", label: "복지용구 혜택" },
               { href: "/about", label: "돌보다 소개" },
               { href: "/business", label: "시설 운영자" },
               { href: "/data-policy", label: "데이터 출처" },

@@ -60,6 +60,7 @@ async function staticEntries(): Promise<SitemapEntry[]> {
     { loc: `${SITE_URL}/services/housekeeping`, changefreq: "monthly", priority: 0.85 },
     { loc: `${SITE_URL}/services/family`, changefreq: "monthly", priority: 0.85 },
     { loc: `${SITE_URL}/business`, changefreq: "monthly", priority: 0.8 },
+    { loc: `${SITE_URL}/welfare-equipment`, changefreq: "monthly", priority: 0.85 },
     { loc: `${SITE_URL}/about`, changefreq: "monthly", priority: 0.7 },
     { loc: `${SITE_URL}/data-policy`, changefreq: "monthly", priority: 0.7 },
     { loc: `${SITE_URL}/compare`, changefreq: "weekly", priority: 0.5 },

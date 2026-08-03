@@ -25,6 +25,8 @@ export interface CareProfileSummary {
   ltcGrade: string | null;
   estimatedBand: string | null;
   estimatedAt: string | null;
+  /** 요양인정번호(본인 신고값) — 복지용구 혜택 화면에서만 쓴다. 실시간 조회 연동 아님 */
+  ltcCertNumber: string | null;
 }
 
 interface CareProfileContextValue {

@@ -14,6 +14,7 @@ import {
   ChevronRight,
   ClipboardCheck,
   ClipboardList,
+  Gift,
   Heart,
   Scale,
 } from "lucide-react";
@@ -46,6 +47,7 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
   const infoItems: NavItem[] = [
     { href: "/mypage", label: "계정 설정", icon: <Settings size={16} /> },
     { href: "/care-request", label: "돌봄 신청 내역", icon: <HeartHandshake size={16} /> },
+    { href: "/mypage/welfare-benefit", label: "복지용구 혜택", icon: <Gift size={16} /> },
     { href: "/mypage/care-profile", label: "보호자 프로필", icon: <HeartHandshake size={16} /> },
     { href: "/mypage/consults", label: "상담 신청 내역", icon: <ClipboardList size={16} /> },
     { href: "/mypage/edit", label: "정보 수정", icon: <ChevronRight size={16} /> },
@@ -64,6 +66,16 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
       icon: <HeartHandshake size={20} />,
       hint: "매니저 지원·매칭 현황",
     },
+    // 복지용구 혜택 — 연 160만원 한도인데 몰라서 못 쓰는 사람이 많아 그리드 상단에
+    // 강조해서 배치한다(등급테스트는 상단 내비·하단 탭바에 이미 다른 진입점이 있어
+    // 여기서는 얇은 줄로 내려도 접근성이 줄지 않는다).
+    {
+      href: "/mypage/welfare-benefit",
+      label: "복지용구 혜택",
+      icon: <Gift size={18} />,
+      hint: "연 160만원 한도 지원",
+      ribbon: "혜택",
+    },
     {
       href: "/mypage/care-profile",
       label: "보호자 프로필",
@@ -77,7 +89,6 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
       label: "등급 테스트",
       icon: <ClipboardCheck size={18} />,
       hint: "1분 자가진단",
-      ribbon: "무료",
     },
     {
       href: "/mypage/consults",

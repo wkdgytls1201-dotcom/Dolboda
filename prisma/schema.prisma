@@ -188,6 +188,10 @@ model BusinessInquiry {
   plan    String
   message String?
 
+  // 마케팅 정보 수신 동의(선택). 언제 동의했는지가 법적으로 중요해서 시각으로 저장한다
+  // (null = 동의 안 함). 광고성 정보를 보내려면 이 값이 있는 신청자에게만 보낼 것.
+  marketingConsentAt DateTime?
+
   // 운영자 처리 상태: null=접수 / "contacted"=확인전화 완료 / "verified"=승인 / "rejected"
   status String?
   // 운영자 내부 메모 (시설에는 보이지 않는다)
@@ -467,6 +471,10 @@ model CareProfile {
 
   // 실제 장기요양등급 (본인 신고값) — "없음/신청 준비 중/1~5등급/인지지원등급"
   ltcGrade String?
+  // 요양인정번호(공단 발급) — 본인 신고값이며 공단 실시간 조회와 연동돼 있지 않다.
+  // 복지용구 혜택 화면(마이페이지)에서 "등록"만 하고, 남은 한도 같은 실제 급여 현황은
+  // 이 번호로 조회하지 않는다 — 화면에 "정보 확인용"이라고 항상 밝힐 것.
+  ltcCertNumber String?
   // 등급테스트 추정 구간 — 실제 등급이 아니므로 화면에서 항상 "예상"으로 구분 표시
   estimatedBand String?
   estimatedAt   DateTime?

@@ -33,18 +33,42 @@ function pickConditions(v: unknown): string[] {
   return [...new Set(v.filter((c): c is string => typeof c === "string" && allowed.has(c)))];
 }
 
-/** 본문에서 프로필 필드를 화이트리스트로 걸러낸다. 어긋난 값은 조용히 null 처리. */
+// 요양인정번호는 화이트리스트가 있는 값이 아니라 자유 입력이다 — 정확한 자릿수 규격을
+// 공식 확인하지 않았으므로 자릿수를 강제하지 않고, 숫자·하이픈만 허용해 형식만 거른다
+// (자유 텍스트가 그대로 들어가 다른 정보가 섞이는 것만 막는다).
+function pickCertNumber(v: unknown): string | null | undefined {
+  if (v === null) return null; // 명시적으로 지우는 요청
+  if (typeof v !== "string") return undefined; // 안 보낸 필드는 건드리지 않는다
+  const trimmed = v.trim();
+  if (!trimmed) return null;
+  if (!/^[0-9-]{4,20}$/.test(trimmed)) return undefined;
+  return trimmed;
+}
+
+/**
+ * 본문에서 프로필 필드를 화이트리스트로 걸러낸다. 어긋난 값은 조용히 null 처리하되,
+ * **body에 그 키가 아예 없으면 결과에도 포함하지 않는다.**
+ *
+ * 전체 폼(보호자 프로필 만들기·수정)은 항상 모든 키를 채워 보내므로 예전과 동작이
+ * 같다. 다만 복지용구 혜택 화면처럼 `{id, ltcCertNumber}`만 보내는 부분 업데이트가
+ * 생기면서, "안 보낸 필드 = null로 지운다"는 기존 규칙이 그 요청에도 적용돼 프로필의
+ * 나머지 값(성별·거동 수준 등)이 전부 지워지는 문제가 있었다 — 그래서 "키가 있는지"를
+ * 먼저 보고, 있을 때만 pick()으로 검증한다.
+ */
 function cleanFields(body: Record<string, unknown>) {
-  return {
-    gender: pick(body.gender, RECIPIENT_GENDERS),
-    ageBand: pick(body.ageBand, AGE_BANDS),
-    weightBand: pick(body.weightBand, WEIGHT_BANDS),
-    mobilityLevel: pick(body.mobilityLevel, MOBILITY_LEVELS),
-    mealAssistLevel: pick(body.mealAssistLevel, MEAL_ASSIST_LEVELS),
-    toiletAssistLevel: pick(body.toiletAssistLevel, TOILET_ASSIST_LEVELS),
-    ltcGrade: pick(body.ltcGrade, LTC_GRADE_OPTIONS),
-    conditions: pickConditions(body.conditions),
+  const out: Record<string, string | string[] | null> = {};
+  const setIfPresent = (key: string, allowed: readonly string[]) => {
+    if (key in body) out[key] = pick(body[key], allowed);
   };
+  setIfPresent("gender", RECIPIENT_GENDERS);
+  setIfPresent("ageBand", AGE_BANDS);
+  setIfPresent("weightBand", WEIGHT_BANDS);
+  setIfPresent("mobilityLevel", MOBILITY_LEVELS);
+  setIfPresent("mealAssistLevel", MEAL_ASSIST_LEVELS);
+  setIfPresent("toiletAssistLevel", TOILET_ASSIST_LEVELS);
+  setIfPresent("ltcGrade", LTC_GRADE_OPTIONS);
+  if ("conditions" in body) out.conditions = pickConditions(body.conditions);
+  return out;
 }
 
 export async function GET() {
@@ -94,12 +118,15 @@ export async function POST(req: Request) {
       ? body.estimatedBand
       : null;
 
+  const ltcCertNumber = pickCertNumber(body.ltcCertNumber);
+
   const profile = await prisma.careProfile.create({
     data: {
       userId: session.user.id,
       relation,
       ...cleanFields(body),
       ...(estimatedBand ? { estimatedBand, estimatedAt: new Date() } : {}),
+      ...(ltcCertNumber !== undefined ? { ltcCertNumber } : {}),
       consentAt: new Date(),
     },
   });
@@ -122,12 +149,16 @@ export async function PATCH(req: Request) {
   }
 
   const relation = pick(body.relation, RECIPIENT_RELATIONS);
+  const ltcCertNumber = pickCertNumber(body.ltcCertNumber);
 
   const profile = await prisma.careProfile.update({
     where: { id },
     data: {
       ...(relation && { relation }),
       ...cleanFields(body),
+      // 요양인정번호만 등록하는 화면(복지용구 혜택)은 나머지 프로필 필드를 안 보낸다 —
+      // 이 필드만 따로 다뤄야 그 화면이 나머지 값을 null로 밀어버리지 않는다
+      ...(ltcCertNumber !== undefined ? { ltcCertNumber } : {}),
       // 등급테스트 추정 구간 반영 — 테스트가 실제로 내놓는 밴드 id만 받는다.
       // (자유 문자열을 받으면 "1등급 확정" 같은 임의 주장이 저장될 수 있다)
       ...(typeof body.estimatedBand === "string" &&
