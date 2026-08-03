@@ -544,7 +544,7 @@ export default function FacilityDetailClient({
               <button
                 type="button"
                 onClick={() => setShowGradeCriteria((v) => !v)}
-                className="mt-3 flex min-h-[44px] w-full items-center justify-center gap-1 rounded-xl bg-ink-100/40 text-xs font-semibold text-ink-500 transition hover:bg-ink-100/70 hover:text-ink-700"
+                className="mt-3 flex min-h-[44px] w-full items-center justify-center gap-1 rounded-xl bg-ink-100/40 text-xs font-semibold text-ink-500 transition-all duration-150 ease-snappy hover:bg-ink-100/70 hover:text-ink-700 active:scale-[0.99]"
               >
                 등급 기준 전체 {showGradeCriteria ? "접기" : "보기"}
                 <ChevronDown
@@ -1092,11 +1092,13 @@ export default function FacilityDetailClient({
           <KakaoMap lat={facility.lat} lng={facility.lng} label={facility.address} />
           <p className="mb-2 mt-4 text-xs font-semibold text-ink-300">로드뷰 미리보기 (검토용)</p>
           <KakaoRoadview lat={facility.lat} lng={facility.lng} />
+          {/* min-h만으로 44px를 만든다(items-center가 글자를 세로 중앙에 놓아준다) —
+              margin/padding을 서로 상쇄시키는 방식은 유틸리티 우선순위가 불확실해 피한다. */}
           <a
             href={`https://map.naver.com/v5/search/${encodeURIComponent(facility.address)}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-primary-600 hover:underline"
+            className="mt-3 -ml-2 inline-flex min-h-[44px] items-center gap-1.5 py-1 pl-2 pr-3 text-sm font-semibold text-primary-600 transition-colors duration-150 hover:underline active:text-primary-800"
           >
             <Navigation size={14} />
             길찾기
@@ -1137,7 +1139,7 @@ export default function FacilityDetailClient({
             <a
               href={`tel:${facility.phone}`}
               aria-label="전화 문의"
-              className="flex shrink-0 items-center gap-1.5 rounded-xl border border-ink-100 px-3 py-2.5 text-sm font-semibold text-ink-700 transition-all duration-150 hover:bg-ink-100 active:scale-95 sm:px-4"
+              className="flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-xl border border-ink-100 px-3 text-sm font-semibold text-ink-700 transition-all duration-150 hover:bg-ink-100 active:scale-95 sm:px-4"
             >
               <Phone size={16} />
               <span className="hidden sm:inline">전화 문의</span>
