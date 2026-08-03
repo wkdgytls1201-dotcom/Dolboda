@@ -113,16 +113,21 @@ export default function FacilityDetailClient({
   }, [facility.id]);
 
   useEffect(() => {
-    let cancelled = false;
-    fetch(`/api/facilities/score-context?id=${encodeURIComponent(facility.id)}`)
+    // AbortController로 진짜 취소한다 — 예전엔 cancelled 플래그로 응답만 무시했는데,
+    // 요청 자체는 서버까지 그대로 나갔다. 이 엔드포인트는 캐시가 비어 있으면 최대 800행을
+    // 스캔하는 무거운 작업이라(위 route.ts), dev의 StrictMode 이중 마운트에서 뜬 낡은
+    // 요청을 실제로 끊어주는 게 값어치가 있다. 프로덕션에서도 같은 시설을 빠르게 오가는
+    // 경우 낡은 요청이 걸려 있지 않게 된다.
+    const controller = new AbortController();
+    fetch(`/api/facilities/score-context?id=${encodeURIComponent(facility.id)}`, {
+      signal: controller.signal,
+    })
       .then((r) => r.json())
       .then((d) => {
-        if (!cancelled && !d.error) setScoreContext(d);
+        if (!d.error) setScoreContext(d);
       })
       .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
+    return () => controller.abort();
   }, [facility.id]);
 
   // 카드/배너 클릭 시점에 이미 게이트를 통과했지만, 직접 URL로 들어온 경우를 대비해 조회 기록만 남긴다.
