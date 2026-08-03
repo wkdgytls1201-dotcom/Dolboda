@@ -121,7 +121,7 @@ export default function ConsultHistoryPage() {
           </p>
           <Link
             href="/search"
-            className="inline-flex min-h-[48px] items-center gap-1.5 rounded-xl bg-primary-500 px-5 text-sm font-bold text-white shadow-soft transition-colors hover:bg-primary-600"
+            className="inline-flex min-h-[48px] items-center gap-1.5 rounded-xl bg-primary-500 px-5 text-sm font-bold text-white shadow-soft transition-all duration-150 ease-snappy hover:bg-primary-600 active:scale-[0.98]"
           >
             시설 찾아보기
             <ArrowRight size={15} />
@@ -189,21 +189,21 @@ export default function ConsultHistoryPage() {
               <div className="flex flex-wrap gap-2">
                 <Link
                   href={`/facility/${item.facilityId}`}
-                  className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-royal-50 px-3 text-[13px] font-bold text-royal-700 transition-colors hover:bg-royal-100"
+                  className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-royal-50 px-3 text-[13px] font-bold text-royal-700 transition-all duration-150 ease-snappy hover:bg-royal-100 active:scale-95"
                 >
                   <Eye size={14} />
                   다시 보기
                 </Link>
                 <Link
                   href="/compare"
-                  className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-ivory-100 px-3 text-[13px] font-bold text-ink-600 transition-colors hover:bg-ink-100"
+                  className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-ivory-100 px-3 text-[13px] font-bold text-ink-600 transition-all duration-150 ease-snappy hover:bg-ink-100 active:scale-95"
                 >
                   <Scale size={14} />
                   비교하기
                 </Link>
                 <Link
                   href="/favorites"
-                  className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-ivory-100 px-3 text-[13px] font-bold text-ink-600 transition-colors hover:bg-ink-100"
+                  className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-ivory-100 px-3 text-[13px] font-bold text-ink-600 transition-all duration-150 ease-snappy hover:bg-ink-100 active:scale-95"
                 >
                   <Heart size={14} />
                   관심시설
@@ -214,7 +214,7 @@ export default function ConsultHistoryPage() {
 
           <Link
             href="/search"
-            className="flex min-h-[52px] w-full items-center justify-center gap-1.5 rounded-2xl border border-dashed border-ink-100 bg-white/60 text-sm font-bold text-ink-500 transition-colors hover:border-primary-300 hover:text-primary-600"
+            className="flex min-h-[52px] w-full items-center justify-center gap-1.5 rounded-2xl border border-dashed border-ink-100 bg-white/60 text-sm font-bold text-ink-500 transition-all duration-150 ease-snappy hover:border-primary-300 hover:text-primary-600 active:scale-[0.99]"
           >
             <Building2 size={16} />
             다른 시설도 알아보기

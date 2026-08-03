@@ -397,7 +397,7 @@ function CareProfileContent() {
           <button
             type="button"
             onClick={startNew}
-            className="inline-flex min-h-[48px] items-center gap-1.5 rounded-xl bg-primary-500 px-5 text-sm font-bold text-white shadow-soft transition-colors hover:bg-primary-600"
+            className="inline-flex min-h-[48px] items-center gap-1.5 rounded-xl bg-primary-500 px-5 text-sm font-bold text-white shadow-soft transition-all duration-150 ease-snappy hover:bg-primary-600 active:scale-[0.98]"
           >
             <Plus size={16} />
             프로필 만들기
@@ -460,7 +460,7 @@ function CareProfileContent() {
             <button
               type="button"
               onClick={startNew}
-              className="mt-3 flex min-h-[52px] w-full items-center justify-center gap-1.5 rounded-2xl border border-dashed border-ink-100 bg-white/60 text-sm font-bold text-ink-500 transition-colors hover:border-primary-300 hover:text-primary-600"
+              className="mt-3 flex min-h-[52px] w-full items-center justify-center gap-1.5 rounded-2xl border border-dashed border-ink-100 bg-white/60 text-sm font-bold text-ink-500 transition-all duration-150 ease-snappy hover:border-primary-300 hover:text-primary-600 active:scale-[0.99]"
             >
               <Plus size={16} />
               다른 어르신 추가

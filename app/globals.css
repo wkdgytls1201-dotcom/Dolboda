@@ -209,6 +209,34 @@ p {
   animation: shimmer 2.2s ease-in-out 0.6s 3 both;
 }
 
+/* 등장 애니메이션 일괄 해제 — 움직임 줄이기를 켠 사용자에게는 즉시 최종 상태로 보인다.
+   (회전·반복 계열은 각자 자기 정의 바로 아래에 같은 블록을 이미 갖고 있다.)
+   여기 모아둔 것들은 전부 "최종 상태 = 자연 상태"인 키프레임이라, animation을 끄면
+   opacity 1·transform 없음으로 그냥 보인다 — 요소가 사라지거나 어긋나지 않는다.
+   ★ 이 위치여야 한다: CSS는 같은 특이도면 뒤에 온 규칙이 이기므로, 위 .animate-* 정의
+   **뒤에** 와야 실제로 덮어쓴다.
+
+   목록 스태거(animate-fade-up + inline animation-delay)를 검색결과·마이페이지·
+   돌봄일지에 넓게 깔면서 이 배려의 필요가 커졌다 — fill-mode가 both라 지연 동안
+   opacity 0으로 대기하는데, 움직임에 민감한 사용자에게는 그 대기 자체가 부담이다. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-slide-up,
+  .animate-message-in,
+  .animate-typing-dot,
+  .animate-pop,
+  .animate-fade-up,
+  .animate-overlay-in,
+  .animate-modal-in,
+  .animate-float-slow {
+    animation: none;
+  }
+  /* 반짝이는 띠만 예외 — 이건 최종 상태가 "카드 오른쪽 밖"이라 animation만 끄면
+     띠가 카드 왼쪽에 그대로 멈춰 선다. 순수 장식(aria-hidden)이라 아예 숨긴다. */
+  .animate-shimmer {
+    display: none;
+  }
+}
+
 /* CTA 오른쪽 화살표가 "눌러보세요" 하고 살짝 밀리는 움직임. 무한 반복은 본문에서
    쓰지 않는 원칙이라 shimmer와 같이 3번만 흔들리고 멈춘다. 폭은 4px — 더 크게 하면
    버튼이 흔들리는 것처럼 보여 40~60대 사용자에게 산만하다.

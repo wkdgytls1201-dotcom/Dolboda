@@ -59,7 +59,7 @@ export default function MyPageAccountPage() {
             type="button"
             onClick={() => setAccountOpen((v) => !v)}
             aria-expanded={accountOpen}
-            className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors duration-150 hover:bg-ivory-100/60"
+            className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors duration-150 hover:bg-ivory-100/60 active:bg-ivory-100"
           >
             {user.image && !photoFailed ? (
               // 카카오 프로필 URL이 깨져도 기본 아바타로 대체(깨진 이미지 아이콘 방지)
@@ -114,7 +114,7 @@ export default function MyPageAccountPage() {
         <button
           type="button"
           onClick={signOutAndClear}
-          className="mt-2 flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-xl text-[13px] font-semibold text-ink-400 transition-colors duration-150 hover:bg-ink-100/60 hover:text-ink-700"
+          className="mt-2 flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-xl text-[13px] font-semibold text-ink-400 transition-all duration-150 ease-snappy hover:bg-ink-100/60 hover:text-ink-700 active:scale-[0.98]"
         >
           <LogOut size={14} />
           로그아웃
@@ -156,7 +156,9 @@ export default function MyPageAccountPage() {
               type="button"
               disabled={deleting}
               onClick={handleDeleteAccount}
-              className="mt-3 text-[11px] text-ink-300 underline underline-offset-2 transition-colors duration-150 hover:text-ink-500 disabled:opacity-60"
+              // 탈퇴는 눈에 덜 띄어야 하지만(파괴적 동작) 누르기 어려우면 안 된다 —
+              // 글자 크기는 그대로 두고 누를 수 있는 면적만 44px로 넓힌다.
+              className="mt-1 inline-flex min-h-[44px] items-center px-3 text-[11px] text-ink-300 underline underline-offset-2 transition-colors duration-150 hover:text-ink-500 active:text-ink-700 disabled:opacity-60"
             >
               {deleting ? "탈퇴 처리 중..." : "그래도 탈퇴할게요"}
             </button>

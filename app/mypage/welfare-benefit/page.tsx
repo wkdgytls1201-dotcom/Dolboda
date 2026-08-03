@@ -88,7 +88,7 @@ function EmptyProfileState() {
       </p>
       <Link
         href="/mypage/care-profile"
-        className="inline-flex min-h-[48px] items-center gap-1.5 rounded-xl bg-primary-500 px-5 text-sm font-bold text-white shadow-soft transition-colors hover:bg-primary-600"
+        className="inline-flex min-h-[48px] items-center gap-1.5 rounded-xl bg-primary-500 px-5 text-sm font-bold text-white shadow-soft transition-all duration-150 ease-snappy hover:bg-primary-600 active:scale-[0.98]"
       >
         보호자 프로필 만들기
         <ArrowRight size={15} />
@@ -211,14 +211,14 @@ function NoGradeState({ profile }: { profile: CareProfileSummary }) {
           <div className="flex flex-col gap-2">
             <Link
               href="/mypage/welfare-benefit/cert"
-              className="flex min-h-[50px] items-center justify-center gap-1.5 rounded-xl bg-primary-500 px-5 text-sm font-bold text-white shadow-soft transition-colors hover:bg-primary-600"
+              className="flex min-h-[50px] items-center justify-center gap-1.5 rounded-xl bg-primary-500 px-5 text-sm font-bold text-white shadow-soft transition-all duration-150 ease-snappy hover:bg-primary-600 active:scale-[0.98]"
             >
               등급을 받았어요 · 인정번호 등록
               <ArrowRight size={15} />
             </Link>
             <Link
               href="/guide/grade-application"
-              className="flex min-h-[46px] items-center justify-center gap-1.5 rounded-xl border border-ink-100 bg-white px-5 text-[13px] font-bold text-ink-600 transition-colors hover:bg-ink-100/60"
+              className="flex min-h-[46px] items-center justify-center gap-1.5 rounded-xl border border-ink-100 bg-white px-5 text-[13px] font-bold text-ink-600 transition-all duration-150 ease-snappy hover:bg-ink-100/60 active:scale-[0.98]"
             >
               등급 신청 방법 보기
             </Link>
@@ -240,13 +240,13 @@ function NoGradeState({ profile }: { profile: CareProfileSummary }) {
       <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
         <Link
           href="/grade-test"
-          className="flex min-h-[48px] items-center justify-center gap-1.5 rounded-xl bg-primary-500 px-5 text-sm font-bold text-white shadow-soft transition-colors hover:bg-primary-600"
+          className="flex min-h-[48px] items-center justify-center gap-1.5 rounded-xl bg-primary-500 px-5 text-sm font-bold text-white shadow-soft transition-all duration-150 ease-snappy hover:bg-primary-600 active:scale-[0.98]"
         >
           1분 등급 예상 테스트
         </Link>
         <Link
           href="/mypage/welfare-benefit/cert"
-          className="flex min-h-[48px] items-center justify-center gap-1.5 rounded-xl border border-ink-100 bg-white px-5 text-sm font-bold text-ink-700 transition-colors hover:bg-ink-100"
+          className="flex min-h-[48px] items-center justify-center gap-1.5 rounded-xl border border-ink-100 bg-white px-5 text-sm font-bold text-ink-700 transition-all duration-150 ease-snappy hover:bg-ink-100 active:scale-[0.98]"
         >
           이미 등급이 있어요
         </Link>
@@ -536,7 +536,7 @@ function ProviderFinder() {
               </span>
               <a
                 href={`tel:${p.phone}`}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-mint-100 text-mint-700 transition-colors hover:bg-mint-200"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-mint-100 text-mint-700 transition-all duration-150 ease-snappy hover:bg-mint-200 active:scale-90"
                 aria-label={`${p.name}에 전화`}
               >
                 <Phone size={15} />

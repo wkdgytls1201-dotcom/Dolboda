@@ -211,7 +211,7 @@ export default function SitterProfilePage() {
           <p className="mb-3 text-sm text-ink-700">아직 돌보다 매니저로 등록하지 않으셨어요.</p>
           <Link
             href="/mypage/sitter/register"
-            className="inline-block rounded-xl bg-primary-500 px-5 py-2.5 text-sm font-bold text-white hover:bg-primary-600"
+            className="inline-flex min-h-[48px] items-center rounded-xl bg-primary-500 px-5 text-sm font-bold text-white transition-all duration-150 ease-snappy hover:bg-primary-600 active:scale-[0.98]"
           >
             돌보다 매니저 등록하기
           </Link>
@@ -269,7 +269,7 @@ export default function SitterProfilePage() {
               <button
                 type="button"
                 onClick={() => setEditSection("basic")}
-                className="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold text-primary-600 hover:bg-primary-50"
+                className="-my-1 flex min-h-[44px] items-center gap-1 rounded-full px-3 text-xs font-semibold text-primary-600 transition-all duration-150 ease-snappy hover:bg-primary-50 active:scale-95"
               >
                 <Pencil size={12} />
                 수정
@@ -331,7 +331,7 @@ export default function SitterProfilePage() {
                       <button
                         type="button"
                         onClick={removePhoto}
-                        className="font-semibold text-ink-400 underline underline-offset-2 hover:text-ink-700"
+                        className="-my-2 inline-flex min-h-[44px] items-center font-semibold text-ink-400 underline underline-offset-2 transition-colors duration-150 hover:text-ink-700 active:scale-95"
                       >
                         삭제
                       </button>
@@ -379,7 +379,7 @@ export default function SitterProfilePage() {
                 <button
                   type="button"
                   onClick={() => setEditSection(null)}
-                  className="rounded-lg px-3 py-1.5 text-xs font-semibold text-ink-500 hover:bg-ink-100"
+                  className="flex min-h-[44px] items-center rounded-lg px-4 text-xs font-semibold text-ink-500 transition-all duration-150 ease-snappy hover:bg-ink-100 active:scale-95"
                 >
                   취소
                 </button>
@@ -390,7 +390,7 @@ export default function SitterProfilePage() {
                     await patch({ nickname, intro, experienceYears });
                     setEditSection(null);
                   }}
-                  className="rounded-lg bg-primary-500 px-3 py-1.5 text-xs font-bold text-white hover:bg-primary-600 disabled:opacity-60"
+                  className="flex min-h-[44px] items-center rounded-lg bg-primary-500 px-4 text-xs font-bold text-white transition-all duration-150 ease-snappy hover:bg-primary-600 active:scale-95 disabled:opacity-60"
                 >
                   저장
                 </button>
@@ -411,17 +411,19 @@ export default function SitterProfilePage() {
               {profile.certifications.map((c) => (
                 <div
                   key={c.id}
-                  className="flex items-center justify-between rounded-xl bg-primary-50 px-3.5 py-2 text-sm"
+                  className="flex items-center justify-between gap-2 rounded-xl bg-primary-50 py-1 pl-3.5 pr-1 text-sm"
                 >
-                  <span className="font-medium text-primary-700">
+                  <span className="min-w-0 font-medium text-primary-700">
                     {c.name}
                     {c.issuedBy && <span className="ml-1.5 text-primary-400">· {c.issuedBy}</span>}
                   </span>
+                  {/* 44px 터치 타깃(CLAUDE.md) — 예전엔 p-1이라 19×40이었다. 아이콘은 그대로 두고
+                      누를 수 있는 면적만 넓힌다(음수 마진으로 칩 높이는 그대로). */}
                   <button
                     type="button"
                     onClick={() => removeCertification(c.id)}
                     aria-label="자격증 삭제"
-                    className="rounded-full p-1 text-primary-400 hover:bg-primary-100"
+                    className="-my-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-primary-400 transition-all duration-150 ease-snappy hover:bg-primary-100 active:scale-90"
                   >
                     <X size={14} />
                   </button>
@@ -446,7 +448,7 @@ export default function SitterProfilePage() {
               type="button"
               onClick={addCertification}
               aria-label="자격증 추가"
-              className="flex shrink-0 items-center justify-center rounded-xl bg-primary-500 px-3 text-white hover:bg-primary-600"
+              className="flex min-h-[44px] w-11 shrink-0 items-center justify-center rounded-xl bg-primary-500 text-white transition-all duration-150 ease-snappy hover:bg-primary-600 active:scale-90"
             >
               <Plus size={18} />
             </button>
@@ -461,7 +463,7 @@ export default function SitterProfilePage() {
               <button
                 type="button"
                 onClick={() => setEditSection("regions")}
-                className="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold text-primary-600 hover:bg-primary-50"
+                className="-my-1 flex min-h-[44px] items-center gap-1 rounded-full px-3 text-xs font-semibold text-primary-600 transition-all duration-150 ease-snappy hover:bg-primary-50 active:scale-95"
               >
                 <Pencil size={12} />
                 수정
@@ -484,7 +486,7 @@ export default function SitterProfilePage() {
                       type="button"
                       disabled={disabled}
                       onClick={() => toggleRegion(region)}
-                      className={`rounded-lg border px-2.5 py-2 text-xs font-semibold transition-colors duration-150 ${
+                      className={`rounded-lg border px-2.5 py-2 text-xs font-semibold transition-all duration-150 ease-snappy active:scale-95 ${
                         active
                           ? "border-primary-500 bg-primary-500 text-white"
                           : disabled
@@ -501,7 +503,7 @@ export default function SitterProfilePage() {
                 <button
                   type="button"
                   onClick={() => setEditSection(null)}
-                  className="rounded-lg px-3 py-1.5 text-xs font-semibold text-ink-500 hover:bg-ink-100"
+                  className="flex min-h-[44px] items-center rounded-lg px-4 text-xs font-semibold text-ink-500 transition-all duration-150 ease-snappy hover:bg-ink-100 active:scale-95"
                 >
                   취소
                 </button>
@@ -512,7 +514,7 @@ export default function SitterProfilePage() {
                     await patch({ regions });
                     setEditSection(null);
                   }}
-                  className="rounded-lg bg-primary-500 px-3 py-1.5 text-xs font-bold text-white hover:bg-primary-600 disabled:opacity-60"
+                  className="flex min-h-[44px] items-center rounded-lg bg-primary-500 px-4 text-xs font-bold text-white transition-all duration-150 ease-snappy hover:bg-primary-600 active:scale-95 disabled:opacity-60"
                 >
                   저장
                 </button>
@@ -542,7 +544,7 @@ export default function SitterProfilePage() {
               <button
                 type="button"
                 onClick={() => setEditSection("bank")}
-                className="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold text-primary-600 hover:bg-primary-50"
+                className="-my-1 flex min-h-[44px] items-center gap-1 rounded-full px-3 text-xs font-semibold text-primary-600 transition-all duration-150 ease-snappy hover:bg-primary-50 active:scale-95"
               >
                 <Pencil size={12} />
                 수정
@@ -574,7 +576,7 @@ export default function SitterProfilePage() {
                 <button
                   type="button"
                   onClick={() => setEditSection(null)}
-                  className="rounded-lg px-3 py-1.5 text-xs font-semibold text-ink-500 hover:bg-ink-100"
+                  className="flex min-h-[44px] items-center rounded-lg px-4 text-xs font-semibold text-ink-500 transition-all duration-150 ease-snappy hover:bg-ink-100 active:scale-95"
                 >
                   취소
                 </button>
@@ -585,7 +587,7 @@ export default function SitterProfilePage() {
                     await patch({ bankName, bankAccountNumber, bankAccountHolder });
                     setEditSection(null);
                   }}
-                  className="rounded-lg bg-primary-500 px-3 py-1.5 text-xs font-bold text-white hover:bg-primary-600 disabled:opacity-60"
+                  className="flex min-h-[44px] items-center rounded-lg bg-primary-500 px-4 text-xs font-bold text-white transition-all duration-150 ease-snappy hover:bg-primary-600 active:scale-95 disabled:opacity-60"
                 >
                   저장
                 </button>

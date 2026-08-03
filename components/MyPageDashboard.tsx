@@ -110,7 +110,7 @@ export function MyPageDashboard() {
       <Link
         key="request"
         href="/care-request"
-        className="animate-fade-up block rounded-2xl bg-gradient-to-br from-royal-600 via-royal-500 to-royal-400 p-5 text-white shadow-royal transition-transform hover:-translate-y-0.5 sm:p-6"
+        className="animate-fade-up block rounded-2xl bg-gradient-to-br from-royal-600 via-royal-500 to-royal-400 p-5 text-white shadow-royal transition-transform duration-200 ease-snappy hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] sm:p-6"
         style={{ animationDelay: `${cards.length * 70}ms` }}
       >
         <p className="mb-1.5 flex items-center gap-1.5 text-[13px] font-bold text-white/80">
@@ -154,7 +154,7 @@ export function MyPageDashboard() {
         <Link
           key="consults"
           href="/mypage/consults"
-          className="animate-fade-up group flex items-center justify-between gap-3 rounded-2xl border border-royal-100 bg-white p-5 shadow-card transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:shadow-card-hover sm:p-6"
+          className="animate-fade-up group flex items-center justify-between gap-3 rounded-2xl border border-royal-100 bg-white p-5 shadow-card transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:shadow-card-hover active:translate-y-0 active:scale-[0.98] sm:p-6"
           style={{ animationDelay: `${cards.length * 70}ms` }}
         >
           <span className="flex min-w-0 items-center gap-3.5">
@@ -231,7 +231,7 @@ export function MyPageDashboard() {
           {progress.nextItem && (
             <Link
               href={progress.nextItem.href}
-              className="flex min-h-[48px] items-center justify-between gap-2 rounded-xl bg-primary-50 px-4 text-[13px] font-semibold text-primary-700 transition-colors hover:bg-primary-100"
+              className="flex min-h-[48px] items-center justify-between gap-2 rounded-xl bg-primary-50 px-4 text-[13px] font-semibold text-primary-700 transition-all duration-150 ease-snappy hover:bg-primary-100 active:scale-[0.98]"
             >
               다음 할 일: {progress.nextItem.hint}
               <ChevronRight size={15} className="shrink-0" />
@@ -262,7 +262,7 @@ export function MyPageDashboard() {
           {openJobs !== null && openJobs > 0 && (
             <Link
               href="/mypage/sitter/jobs"
-              className="animate-pop flex items-center gap-1.5 rounded-full bg-royal-50 px-3 py-1.5 text-[13px] font-bold text-royal-600 transition-colors hover:bg-royal-100"
+              className="animate-pop flex items-center gap-1.5 rounded-full bg-royal-50 px-3 py-1.5 text-[13px] font-bold text-royal-600 transition-colors duration-150 hover:bg-royal-100 active:scale-95"
             >
               <Briefcase size={13} />새 일자리 {openJobs}건
             </Link>
@@ -298,7 +298,7 @@ export function MyPageDashboard() {
       <Link
         key="tips"
         href="/mypage/sitter/tips"
-        className="animate-fade-up group flex items-center justify-between gap-3 rounded-2xl border-2 border-royal-200 bg-royal-50/60 p-4 shadow-card transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:border-royal-300 hover:bg-royal-50 hover:shadow-card-hover sm:p-5"
+        className="animate-fade-up group flex items-center justify-between gap-3 rounded-2xl border-2 border-royal-200 bg-royal-50/60 p-4 shadow-card transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:border-royal-300 hover:bg-royal-50 hover:shadow-card-hover active:translate-y-0 active:scale-[0.98] sm:p-5"
         style={{ animationDelay: `${cards.length * 70}ms` }}
       >
         <span className="flex items-center gap-3">
@@ -377,7 +377,7 @@ export function MyPageDashboard() {
         <Link
           key="care-profile-empty"
           href="/mypage/care-profile"
-          className="animate-fade-up group flex items-center justify-between gap-3 rounded-2xl border border-dashed border-primary-200 bg-primary-50/50 p-4 transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:border-primary-300 hover:bg-primary-50"
+          className="animate-fade-up group flex items-center justify-between gap-3 rounded-2xl border border-dashed border-primary-200 bg-primary-50/50 p-4 transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:border-primary-300 hover:bg-primary-50 active:translate-y-0 active:scale-[0.98]"
           style={{ animationDelay: `${cards.length * 70}ms` }}
         >
           <span className="flex items-center gap-3">

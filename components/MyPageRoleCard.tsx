@@ -67,7 +67,7 @@ export function MyPageRoleCard() {
           role="tab"
           aria-selected={!flipped}
           onClick={() => setRole("guardian")}
-          className={`flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl text-sm font-bold transition-all duration-200 ${
+          className={`flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl text-sm font-bold transition-all duration-200 ease-snappy active:scale-95 ${
             !flipped ? "bg-white text-royal-700 shadow-card" : "text-ink-500 hover:text-ink-700"
           }`}
         >
@@ -81,7 +81,7 @@ export function MyPageRoleCard() {
             role="tab"
             aria-selected={flipped}
             onClick={() => setRole("manager")}
-            className={`flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl text-sm font-bold transition-all duration-200 ${
+            className={`flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl text-sm font-bold transition-all duration-200 ease-snappy active:scale-95 ${
               flipped ? "bg-white text-primary-700 shadow-card" : "text-ink-500 hover:text-ink-700"
             }`}
           >
@@ -93,7 +93,7 @@ export function MyPageRoleCard() {
           // 사실 자체가 안 보인다. 누르면 전환이 아니라 등록 화면으로.
           <Link
             href="/mypage/sitter/register"
-            className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl text-sm font-bold text-ink-400 transition-colors duration-200 hover:text-primary-600"
+            className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl text-sm font-bold text-ink-400 transition-all duration-200 ease-snappy hover:text-primary-600 active:scale-95"
           >
             <Briefcase size={16} />
             매니저 시작
