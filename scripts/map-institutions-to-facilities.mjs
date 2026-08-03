@@ -225,6 +225,11 @@ for (const f of facilities) {
         over2y: t.over2y,
         y1to2: t.y1to2,
         under1y: (t.under3m ?? 0) + (t.m3to6 ?? 0) + (t.m6to1y ?? 0),
+        // 1년 미만 세 구간도 그대로 남긴다 — 합계만 두면 "6개월 안에 나가는 비율"을
+        // 계산할 수 없다. 근무환경 지수의 초기 이직 신호가 이 값을 쓴다.
+        under3m: t.under3m ?? 0,
+        m3to6: t.m3to6 ?? 0,
+        m6to1y: t.m6to1y ?? 0,
       }));
   }
 

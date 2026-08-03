@@ -106,6 +106,13 @@ export interface TenureStat {
   over2y: number;
   y1to2: number;
   under1y: number;
+  // 1년 미만을 세 구간으로 나눈 값 (공단 원본에 있던 것을 2026-08-03에 살렸다).
+  // 근무환경 지수의 "초기 이직" 신호가 이 값을 쓴다 — 1년 이상 근속률은 오래된
+  // 시설일수록 유리해서 "지금 사람이 나가고 있는가"를 못 본다.
+  // 옛 데이터에는 없을 수 있어 optional이다.
+  under3m?: number;
+  m3to6?: number;
+  m6to1y?: number;
 }
 
 // 요양원 / 주야간보호 / 방문요양 (국민건강보험공단 NHIS 데이터 구조)

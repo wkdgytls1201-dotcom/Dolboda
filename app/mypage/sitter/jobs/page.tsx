@@ -361,13 +361,15 @@ export default function SitterJobsPage() {
     <MyPageShell>
       <h2 className="mb-4 text-xl font-bold text-ink-900">일자리 관리</h2>
 
-      <div className="mb-5 flex gap-1 overflow-x-auto border-b border-ink-100">
+      {/* px를 줄여 360px(안드로이드 최소 폭)에서도 탭 4개가 한 줄에 들어가게 했다.
+          그래도 넘칠 때를 대비해 가로 스크롤은 남기되 스크롤바는 감춘다(no-scrollbar) */}
+      <div className="no-scrollbar mb-5 flex gap-1 overflow-x-auto border-b border-ink-100">
         {TABS.map((t) => (
           <button
             key={t.key}
             type="button"
             onClick={() => setTab(t.key)}
-            className={`min-h-[48px] shrink-0 border-b-2 px-4 text-[15px] font-bold transition-colors duration-150 ${
+            className={`min-h-[48px] shrink-0 border-b-2 px-2.5 text-[14px] font-bold transition-colors duration-150 sm:px-4 sm:text-[15px] ${
               tab === t.key
                 ? "border-primary-500 text-primary-700"
                 : "border-transparent text-ink-300 hover:text-ink-500"

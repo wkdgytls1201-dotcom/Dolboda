@@ -273,6 +273,18 @@ p {
 .animate-bob-slow {
   animation: bob-slow 3s ease-in-out infinite;
 }
+
+/* 가로 스크롤은 되게 두되 스크롤바만 감춘다.
+   탭 줄(overflow-x-auto)이 화면보다 넓으면 안드로이드 크롬·데스크톱에서 탭 아래에
+   회색 스크롤바 막대가 그려져 밑줄처럼 보인다 — 실제로 "회색 바가 왜 있냐"는
+   피드백을 받았다. 스크롤 기능 자체는 남겨야 좁은 화면에서 뒤쪽 탭에 닿을 수 있다. */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
 @media (prefers-reduced-motion: reduce) {
   .animate-bob-slow {
     animation: none;

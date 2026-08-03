@@ -186,7 +186,6 @@ export function calcWorkIndex(f: Facility): WorkIndex {
   ];
   if (tenure && tenureTotal > 0) {
     // 2년 이상 장기근속자가 있다는 건 오래 일할 수 있는 곳이라는 뜻.
-    // (원본 파일엔 3개월·6개월 단위 세분값도 있지만 DB에는 1년 미만으로 합쳐 저장돼 있다)
     const veteran = Math.round((tenure.over2y / tenureTotal) * 100);
     retention.push({
       label: "2년 이상 장기근속 비율",
@@ -194,6 +193,30 @@ export function calcWorkIndex(f: Facility): WorkIndex {
       weight: 2,
       note: `${veteran}% — 오래 일하는 분이 많을수록 좋은 신호예요`,
     });
+
+    // 초기 이직 — "지금 사람이 나가고 있는가".
+    //
+    // 1년 이상 근속률만 보면 **오래된 시설일수록 유리**하다(신설 시설은 구조적으로 낮다).
+    // 6개월 안에 그만두는 비율은 시설 나이와 무관하게 현재 상태를 드러내서, 매니저가
+    // 실제로 알고 싶은 것에 훨씬 가깝다.
+    //
+    // 세 구간(under3m·m3to6·m6to1y)은 공단 원본에 원래 있었는데 Facility로 옮길 때
+    // under1y로 합쳐 버려지고 있었다 — 2026-08-03 백필로 26,717곳에 되살렸다.
+    // 옛 데이터에는 없을 수 있어 값이 있을 때만 신호를 만든다.
+    if (tenure.under3m !== undefined && tenure.m3to6 !== undefined) {
+      const early = Math.round(((tenure.under3m + tenure.m3to6) / tenureTotal) * 100);
+      retention.push({
+        label: "6개월 안에 그만둔 비율",
+        // 실측 분포(15,023곳): p25 4% · p50 18% · p75 34% · p90 62% — 낮을수록 좋다.
+        // 두 유형(요양원 19% / 주야간보호 18%)의 중앙값이 거의 같아 구간을 나누지 않았다.
+        score: early <= 4 ? 95 : early <= 18 ? 80 : early <= 34 ? 60 : early <= 62 ? 40 : 25,
+        weight: 2,
+        note:
+          early === 0
+            ? "최근 6개월 안에 그만둔 분이 없어요"
+            : `${early}% (전국 중앙값 18%) — 낮을수록 오래 일하는 곳이에요`,
+      });
+    }
   }
 
   const nurses = f.staffDetail.medical.nurses + f.staffDetail.medical.nursingAssistants;
