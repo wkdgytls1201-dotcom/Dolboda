@@ -169,7 +169,7 @@ function CertForm({ profiles }: { profiles: CareProfileSummary[] }) {
                 key={p.id}
                 type="button"
                 onClick={() => setSelectedId(p.id)}
-                className={`min-h-[42px] rounded-xl px-4 text-[13px] font-bold transition-colors ${
+                className={`min-h-[44px] rounded-xl px-4 text-[13px] font-bold transition-colors ${
                   p.id === selected.id
                     ? "bg-ink-900 text-white"
                     : "border border-ink-100 bg-white text-ink-500 hover:bg-ink-100/60"

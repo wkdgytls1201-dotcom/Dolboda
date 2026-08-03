@@ -387,7 +387,7 @@ export default function SitterJobsPage() {
             <button
               type="button"
               onClick={() => setShowFilters((v) => !v)}
-              className={`flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-xs font-bold transition-colors duration-150 active:scale-95 ${
+              className={`flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-xs font-bold transition-colors duration-150 active:scale-95 ${
                 showFilters || typeFilter || !hideClosed
                   ? "border-primary-300 bg-primary-50 text-primary-700"
                   : "border-ink-100 text-ink-500 hover:bg-ink-100/60"
@@ -402,7 +402,7 @@ export default function SitterJobsPage() {
                   key={s.key}
                   type="button"
                   onClick={() => setSort(s.key)}
-                  className={`min-h-[40px] shrink-0 rounded-full px-3.5 text-xs font-bold transition-colors duration-150 active:scale-95 ${
+                  className={`min-h-[44px] shrink-0 rounded-full px-3.5 text-xs font-bold transition-colors duration-150 active:scale-95 ${
                     sort === s.key
                       ? "bg-ink-900 text-white"
                       : "text-ink-500 hover:bg-ink-100"

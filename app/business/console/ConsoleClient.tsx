@@ -105,7 +105,7 @@ export function ConsoleClient({ facilities }: { facilities: ConsoleFacility[] })
               key={x.facilityId}
               type="button"
               onClick={() => setSelected(i)}
-              className={`min-h-[40px] rounded-full px-3.5 text-xs font-bold transition-colors ${
+              className={`min-h-[44px] rounded-full px-3.5 text-xs font-bold transition-colors ${
                 i === selected ? "bg-ink-900 text-white" : "bg-white text-ink-500 shadow-card"
               }`}
             >
@@ -667,7 +667,7 @@ function BannerSection({
           type="button"
           disabled={busy}
           onClick={() => bannerFileRef.current?.click()}
-          className="mt-2 min-h-[40px] w-full rounded-xl border border-ink-100 text-xs font-semibold text-ink-700 transition-colors hover:bg-ink-100"
+          className="mt-2 min-h-[44px] w-full rounded-xl border border-ink-100 text-xs font-semibold text-ink-700 transition-colors hover:bg-ink-100"
         >
           다른 이미지로 바꾸기
         </button>

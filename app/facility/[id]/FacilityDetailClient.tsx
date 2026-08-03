@@ -1123,7 +1123,7 @@ export default function FacilityDetailClient({
       </div>
 
       {/* 하단 고정 CTA */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-ink-100 bg-white/95 px-4 py-3 backdrop-blur">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-ink-100 bg-white/95 px-4 pt-3 backdrop-blur [padding-bottom:calc(0.75rem+env(safe-area-inset-bottom))]">
         {/* 전화 걸기 버튼은 기본적으로 두지 않는다 — 상담 신청과 역할이 겹치고, 전화로 새면
             문의가 접수·전달·이력으로 남지 않아 보호자도 나중에 되짚을 수 없다
             (상담 내역 화면에 "전화 걸기"를 두지 않은 것과 같은 원칙).

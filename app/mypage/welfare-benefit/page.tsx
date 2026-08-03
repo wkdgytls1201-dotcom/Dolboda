@@ -118,7 +118,7 @@ function ProfileFlow({
               key={p.id}
               type="button"
               onClick={() => onSelect(p.id)}
-              className={`min-h-[40px] rounded-full px-3.5 text-xs font-bold transition-colors ${
+              className={`min-h-[44px] rounded-full px-3.5 text-xs font-bold transition-colors ${
                 p.id === selected.id ? "bg-ink-900 text-white" : "bg-white text-ink-500 shadow-card"
               }`}
             >

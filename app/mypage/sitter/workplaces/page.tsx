@@ -60,7 +60,7 @@ export default function WorkplacesPage() {
         <button
           type="button"
           onClick={() => setActive(null)}
-          className={`min-h-[40px] rounded-full px-3.5 text-xs font-bold transition-colors ${
+          className={`min-h-[44px] rounded-full px-3.5 text-xs font-bold transition-colors ${
             active === null ? "bg-mint-600 text-white" : "bg-white text-ink-500 shadow-card"
           }`}
         >
@@ -73,7 +73,7 @@ export default function WorkplacesPage() {
               key={r}
               type="button"
               onClick={() => setActive(r)}
-              className={`min-h-[40px] rounded-full px-3.5 text-xs font-bold transition-colors ${
+              className={`min-h-[44px] rounded-full px-3.5 text-xs font-bold transition-colors ${
                 active === r
                   ? "bg-mint-600 text-white"
                   : mine
