@@ -86,7 +86,8 @@ export function CareRequestSignedOut({ presetType }: { presetType: LocationTypeV
         onClick={() => setShowAuth(true)}
         className="flex min-h-[54px] w-full items-center justify-center gap-2 rounded-2xl bg-primary-500 text-base font-bold text-white shadow-soft transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:bg-primary-600 hover:shadow-card-hover active:translate-y-0 active:scale-[0.99]"
       >
-        카카오로 3초 만에 시작하기
+        {/* 모달에 카카오·구글이 함께 있어 특정 수단을 못 박지 않는다 */}
+        3초 만에 시작하기
         <ArrowRight size={18} />
       </button>
       <p className="mt-3 text-center text-xs text-ink-300">

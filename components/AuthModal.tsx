@@ -5,7 +5,7 @@ import { signIn } from "next-auth/react";
 import { X, Lock } from "lucide-react";
 
 type AuthProviderId = "kakao" | "naver" | "google";
-const READY_PROVIDERS: AuthProviderId[] = ["kakao"]; // 네이버/구글은 아직 미연동
+const READY_PROVIDERS: AuthProviderId[] = ["kakao", "naver"]; // 구글은 아직 미연동
 
 function KakaoIcon() {
   return (
@@ -62,6 +62,7 @@ const SOCIAL_BUTTONS: {
     icon: KakaoIcon,
     className: "bg-[#FEE500] text-[#391B1B] hover:brightness-95",
   },
+  // 연동된 것끼리 먼저 — 준비 중 버튼이 사이에 끼면 눌러도 반응이 없어 고장처럼 보인다
   {
     id: "naver",
     label: "네이버로 계속하기",

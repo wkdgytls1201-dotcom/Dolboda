@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import { MyPageShell } from "@/components/MyPageShell";
 import { PageLoader } from "@/components/PageLoader";
+import { authProviderLabel } from "@/lib/authProviderLabel";
 
 export default function MyPageEditPage() {
   const { data: session, status } = useSession();
@@ -17,12 +18,15 @@ export default function MyPageEditPage() {
     );
   }
 
+  const providerLabel = authProviderLabel(session.user.provider);
+
   return (
     <MyPageShell>
       <h2 className="mb-1 text-xl font-bold text-ink-900">정보 수정</h2>
       <p className="mb-6 text-sm text-ink-500">
-        이름·프로필 사진은 카카오 계정 정보를 그대로 가져와요. 카카오 계정에서 바꾸시면 다음
-        로그인 시 자동으로 반영돼요.
+        이름·프로필 사진은 {providerLabel} 계정 정보를 그대로 가져와요.
+        <br />
+        {providerLabel} 계정에서 바꾸시면 다음 로그인 시 자동으로 반영돼요.
       </p>
       <div className="rounded-2xl border border-ink-100 bg-ink-100/30 p-5 text-sm text-ink-500">
         아직 돌보다 안에서 직접 수정할 수 있는 정보는 없어요. 돌보다 매니저로 등록하셨다면 프로필

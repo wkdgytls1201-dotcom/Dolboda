@@ -28,6 +28,11 @@ export default function PrivacyPage() {
             <td>카카오 소셜 로그인 연동 시 카카오로부터 제공받음</td>
           </tr>
           <tr>
+            <td>네이버 로그인</td>
+            <td>별명, 프로필 이미지, 이메일, 네이버 계정 식별자</td>
+            <td>네이버 소셜 로그인 연동 시 네이버로부터 제공받음</td>
+          </tr>
+          <tr>
             <td>위치 정보</td>
             <td>브라우저(GPS/네트워크 기반) 위치 좌표</td>
             <td>이용자가 위치 정보 제공에 동의한 경우 기기에서 일시적으로 수집</td>
@@ -152,6 +157,10 @@ export default function PrivacyPage() {
         <tbody>
           <tr>
             <td>카카오(주)</td>
+            <td>소셜 로그인 인증</td>
+          </tr>
+          <tr>
+            <td>네이버(주)</td>
             <td>소셜 로그인 인증</td>
           </tr>
           <tr>

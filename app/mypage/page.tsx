@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { signOutAndClear } from "@/lib/signOutAndClear";
+import { authProviderLabel } from "@/lib/authProviderLabel";
 import { ChevronDown, LogOut, User } from "lucide-react";
 import { MyPageShell } from "@/components/MyPageShell";
 import { MyPageDashboard } from "@/components/MyPageDashboard";
@@ -29,6 +30,7 @@ export default function MyPageAccountPage() {
   }
 
   const user = session.user;
+  const providerLabel = authProviderLabel(user.provider);
 
   async function handleDeleteAccount() {
     setDeleting(true);
@@ -77,7 +79,9 @@ export default function MyPageAccountPage() {
               <span className="block truncate text-sm font-bold text-ink-900">
                 {user.name ?? "이름 없음"}
               </span>
-              <span className="block text-[12px] text-ink-300">카카오 계정으로 로그인 중</span>
+              <span className="block text-[12px] text-ink-300">
+                {providerLabel} 계정으로 로그인 중
+              </span>
             </span>
             <ChevronDown
               size={16}
@@ -101,7 +105,7 @@ export default function MyPageAccountPage() {
               </div>
               <div className="flex items-center justify-between gap-3">
                 <dt className="text-ink-400">로그인 방식</dt>
-                <dd className="font-semibold text-ink-900">카카오</dd>
+                <dd className="font-semibold text-ink-900">{providerLabel}</dd>
               </div>
             </dl>
           )}

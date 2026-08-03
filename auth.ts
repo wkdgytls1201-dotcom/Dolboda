@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import Kakao from "next-auth/providers/kakao";
+import Naver from "next-auth/providers/naver";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 
@@ -19,15 +20,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   // 새 데이터 생성은 외래키 제약에 막힌다.
   session: { strategy: "jwt" },
   callbacks: {
-    // 최초 로그인 때만 user가 들어온다 — 그때 id를 토큰에 새겨두고 이후엔 토큰만 읽는다
-    jwt({ token, user }) {
+    // 최초 로그인 때만 user·account가 들어온다 — 그때 id와 로그인 수단을 토큰에 새겨두고
+    // 이후엔 토큰만 읽는다. provider를 넣는 이유: jwt 전략이라 세션에 DB 조회가 없어서
+    // 마이페이지가 "무엇으로 로그인했는지"를 알 방법이 이것밖에 없다.
+    jwt({ token, user, account }) {
       if (user?.id) token.id = user.id;
+      if (account?.provider) token.provider = account.provider;
       return token;
     },
     session({ session, token }) {
       // sub는 Auth.js가 기본으로 채우는 사용자 식별자 — id가 없을 때의 안전망
       const id = (token.id as string | undefined) ?? token.sub;
       if (id) session.user.id = id;
+      // 구글 추가(2026-08-03) 이전에 발급된 토큰에는 provider가 없다 — 그땐 카카오뿐이었다
+      session.user.provider = (token.provider as string | undefined) ?? "kakao";
       return session;
     },
   },
@@ -42,6 +48,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         url: "https://kauth.kakao.com/oauth/authorize",
         params: { scope: "profile_nickname account_email talk_message" },
       },
+    }),
+    // 네이버를 붙인 이유는 이메일이다. 카카오는 "이메일 제공 동의"가 꺼져 있으면 이메일을
+    // 아예 주지 않아서, 찜 알림을 보낼 주소가 없는 계정이 생긴다. 네이버는 개발자센터에서
+    // 이메일을 '필수' 제공 항목으로 설정할 수 있다(설정 안 하면 카카오와 같은 문제가 난다).
+    Naver({
+      clientId: process.env.AUTH_NAVER_ID,
+      clientSecret: process.env.AUTH_NAVER_SECRET,
+      // 같은 이메일의 카카오 계정이 이미 있으면 그 계정에 연결한다. 끄면 Auth.js가
+      // OAuthAccountNotLinked 에러 화면으로 보내는데, 사용자는 "왜 로그인이 안 되지"만
+      // 남고 스스로 복구할 방법이 없다(계정 연결 UI가 없으므로).
+      allowDangerousEmailAccountLinking: true,
     }),
   ],
 });
