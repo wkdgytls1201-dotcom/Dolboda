@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { X, Plus, ChevronLeft, HeartHandshake } from "lucide-react";
+import { X, Plus, ChevronLeft, HeartHandshake, Camera, User } from "lucide-react";
 import { REGIONS } from "@/lib/regions";
 import { PageLoader } from "@/components/PageLoader";
+import { PhotoCropModal } from "@/components/PhotoCropModal";
 import { useSitterProfileContext } from "@/lib/sitterProfileContext";
 
 const STEP_TITLES = ["약관 동의", "기본 정보", "경력 · 자격", "활동 지역", "정산 계좌 (선택)"];
@@ -36,7 +37,12 @@ export default function SitterRegisterPage() {
 
   // 2. 기본 정보
   const [nickname, setNickname] = useState("");
-  const [photoUrl, setPhotoUrl] = useState("");
+  // 사진은 프로필이 만들어진 뒤에야 올릴 수 있다(업로드 API가 SitterProfile 행을 찾는다).
+  // 그래서 가입 중에는 크롭 결과를 손에 들고만 있다가 등록 직후에 올린다.
+  const [cropFile, setCropFile] = useState<File | null>(null);
+  const [photoBlob, setPhotoBlob] = useState<Blob | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const [nationality, setNationality] = useState("내국인");
   const [intro, setIntro] = useState("");
 
@@ -82,6 +88,21 @@ export default function SitterRegisterPage() {
     });
   }
 
+  // 파일을 고르면 바로 들고 있지 않고 크롭 창을 먼저 띄운다 — 얼굴이 가운데가 아닌
+  // 사진이 대부분이라 기계적으로 가운데를 자르면 이마가 잘린다(프로필 관리와 같은 흐름).
+  function pickPhoto(file: File) {
+    setPhotoError(null);
+    if (!file.type.startsWith("image/")) {
+      setPhotoError("사진 파일만 올릴 수 있어요.");
+      return;
+    }
+    if (file.size > 30 * 1024 * 1024) {
+      setPhotoError("사진 용량이 너무 커요. 30MB 이하로 올려주세요.");
+      return;
+    }
+    setCropFile(file);
+  }
+
   function addCertification() {
     if (!certName.trim()) return;
     setCertifications((prev) => [...prev, { name: certName.trim(), issuedBy: certIssuer.trim() }]);
@@ -102,7 +123,6 @@ export default function SitterRegisterPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           nickname: nickname.trim(),
-          photoUrl: photoUrl.trim() || undefined,
           nationality,
           intro: intro.trim() || undefined,
           experienceYears,
@@ -115,10 +135,27 @@ export default function SitterRegisterPage() {
         }),
       });
       if (!res.ok) throw new Error();
+      let profile = await res.json();
+
+      // 사진은 프로필이 생긴 뒤에만 올릴 수 있다. 여기서 실패해도 가입 자체는 이미
+      // 끝났으므로 되돌리지 않는다 — 프로필 관리 화면에서 다시 올리면 된다.
+      if (photoBlob) {
+        try {
+          const photoRes = await fetch("/api/sitter-profile/photo", {
+            method: "POST",
+            headers: { "Content-Type": photoBlob.type },
+            body: photoBlob,
+          });
+          if (photoRes.ok) profile = await photoRes.json();
+        } catch {
+          /* 사진만 빠진 채로 진행 */
+        }
+      }
+
       // /mypage 레이아웃은 화면을 옮겨도 다시 마운트되지 않는다. 방금 만든 프로필을
       // 공유 상태에 넣어주지 않으면, 등록을 마치고 넘어간 프로필 관리 화면이
       // "아직 돌보다 매니저로 등록하지 않으셨어요"를 띄운다(사이드바도 마찬가지).
-      updateContextProfile(await res.json());
+      updateContextProfile(profile);
       router.push("/mypage/sitter/profile");
     } catch {
       setError("등록에 실패했어요. 잠시 후 다시 시도해주세요.");
@@ -258,20 +295,65 @@ export default function SitterRegisterPage() {
             <input
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
-              placeholder="시설에게 보여질 이름 (2자 이상)"
+              placeholder="보호자에게 보여질 이름 (2자 이상)"
               className="w-full rounded-xl border border-ink-100 px-3 py-2.5 text-sm transition-colors duration-150 focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-100"
             />
           </div>
+
           <div>
-            <label className="mb-1 block text-xs font-semibold text-ink-700">
-              프로필 사진 URL <span className="font-normal text-ink-300">(선택)</span>
+            <label className="mb-1.5 block text-xs font-semibold text-ink-700">
+              프로필 사진 <span className="font-normal text-ink-300">(선택)</span>
             </label>
-            <input
-              value={photoUrl}
-              onChange={(e) => setPhotoUrl(e.target.value)}
-              placeholder="사진 업로드 기능은 준비 중이에요 · 나중에 추가해도 돼요"
-              className="w-full rounded-xl border border-ink-100 px-3 py-2.5 text-sm transition-colors duration-150 focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-100"
-            />
+            <div className="flex items-center gap-3.5">
+              <div className="relative shrink-0">
+                {photoPreview ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={photoPreview} alt="" className="h-16 w-16 rounded-full object-cover" />
+                ) : (
+                  <span className="flex h-16 w-16 items-center justify-center rounded-full bg-primary-50 text-primary-500">
+                    <User size={24} />
+                  </span>
+                )}
+                <label className="absolute -bottom-1 -right-1 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-primary-500 text-white shadow-soft transition-transform hover:bg-primary-600 active:scale-90">
+                  <Camera size={14} aria-hidden />
+                  <span className="sr-only">프로필 사진 {photoPreview ? "바꾸기" : "올리기"}</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      e.target.value = ""; // 같은 파일을 다시 골라도 onChange가 오게
+                      if (file) pickPhoto(file);
+                    }}
+                    className="sr-only"
+                  />
+                </label>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[12px] leading-relaxed text-ink-500">
+                  보호자는 어르신을 맡길 사람을 고르는 중이에요.
+                  <br />
+                  얼굴 사진 한 장이 자기소개보다 먼저 신뢰를 만듭니다.
+                </p>
+                {photoPreview ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPhotoBlob(null);
+                      setPhotoPreview(null);
+                    }}
+                    className="mt-1 text-[12px] font-semibold text-ink-400 underline underline-offset-2 hover:text-ink-700"
+                  >
+                    고른 사진 지우기
+                  </button>
+                ) : (
+                  <p className="mt-1 text-[12px] text-ink-300">지금 건너뛰고 나중에 올려도 돼요.</p>
+                )}
+              </div>
+            </div>
+            {photoError && (
+              <p className="mt-2 text-[12px] font-semibold text-primary-600">{photoError}</p>
+            )}
           </div>
           <div>
             <label className="mb-1 block text-xs font-semibold text-ink-700">국적</label>
@@ -494,6 +576,18 @@ export default function SitterRegisterPage() {
           )}
         </div>
       </div>
+
+      {cropFile && (
+        <PhotoCropModal
+          file={cropFile}
+          onCancel={() => setCropFile(null)}
+          onDone={(blob, previewUrl) => {
+            setPhotoBlob(blob);
+            setPhotoPreview(previewUrl);
+            setCropFile(null);
+          }}
+        />
+      )}
 
       {showAgreeModal && (
         <div

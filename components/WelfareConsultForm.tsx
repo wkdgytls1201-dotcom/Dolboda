@@ -5,7 +5,11 @@ import { CheckCircle2, ChevronDown, PhoneCall } from "lucide-react";
 import { REGION_SEO } from "@/lib/regionSeo";
 import { allEquipmentItems } from "@/lib/welfareEquipment";
 
-// 복지용구 상담 신청 폼 — 로그인 없이도 제출 가능(app/api/consult와 같은 원칙).
+// 복지용구 상담 신청 폼.
+//
+// 로그인한 사람만 이 폼까지 온다 — 공개 페이지에서는 WelfareConsultGate가, 마이페이지
+// 에서는 페이지 자체가 앞을 막는다. API(app/api/welfare-consult)도 세션을 확인한다.
+//
 // 사업소에 자동 전달되지 않는다(이메일 데이터가 없음) — 접수만 하고 운영자가 이어받는다.
 // 이 사실을 화면에서 숨기지 않는다("확인 후 연락드려요"로 명시).
 

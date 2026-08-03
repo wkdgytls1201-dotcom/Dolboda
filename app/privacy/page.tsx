@@ -4,7 +4,7 @@ export const metadata = { title: "개인정보처리방침 — 돌보다" };
 
 export default function PrivacyPage() {
   return (
-    <LegalPage title="개인정보처리방침" updatedAt="2026-08-02">
+    <LegalPage title="개인정보처리방침" updatedAt="2026-08-04">
       <p>
         돌보다(이하 &quot;회사&quot;)는 이용자의 개인정보를 중요시하며, 「개인정보 보호법」 등
         관련 법령을 준수합니다. 회사는 본 개인정보처리방침을 통해 이용자가 제공하는 개인정보가
@@ -177,6 +177,43 @@ export default function PrivacyPage() {
           </tr>
         </tbody>
       </table>
+
+      <h2>5-1. 개인정보의 국외 이전</h2>
+      <p>
+        회사는 서비스 제공을 위해 아래와 같이 개인정보를 국외로 이전하고 있습니다.
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>이전받는 자</th>
+            <th>이전 국가</th>
+            <th>이전 항목</th>
+            <th>이전 일시·방법</th>
+            <th>보유·이용 기간</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Resend, Inc.</td>
+            <td>미국</td>
+            <td>수신자 이메일 주소, 발송 내용(상담 신청 전달, 돌봄 합의서 사본 등)</td>
+            <td>이메일 발송 시점에 네트워크를 통해 전송</td>
+            <td>위탁 계약 종료 시 또는 목적 달성 시까지</td>
+          </tr>
+          <tr>
+            <td>Telegram FZ-LLC</td>
+            <td>아랍에미리트</td>
+            <td>상담 신청 접수 사실 요약 정보(신청자 이름 일부, 지역, 접수 시각 등)</td>
+            <td>상담 접수 시점에 네트워크를 통해 전송</td>
+            <td>운영자 알림 확인 후 삭제</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        위 이전을 거부하실 수 있으나, 이 경우 상담 신청 접수·돌봄 합의서 사본 발송 등 이메일을
+        통한 안내를 받으실 수 없습니다. 국외 이전에 관한 자세한 사항은 아래 문의처로
+        연락해주세요.
+      </p>
 
       <h2>6. 이용자의 권리와 행사 방법</h2>
       <ol>

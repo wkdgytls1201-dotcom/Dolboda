@@ -8,8 +8,12 @@ import { REGION_SEO } from "@/lib/regionSeo";
 import { allEquipmentItems } from "@/lib/welfareEquipment";
 import { SITE_NAME, MAIL_FROM } from "@/lib/siteConfig";
 
-// 복지용구 상담 신청 접수 — 로그인 없이도 부를 수 있는 쓰기 엔드포인트다(app/api/consult와
-// 같은 위험이 있어 같은 방어를 그대로 쓴다).
+// 복지용구 상담 신청 접수.
+//
+// 로그인 필수다(2026-08-03 변경). 복지용구 급여는 장기요양등급이 있어야 받는 제도라서
+// 등급 없는 사람의 연락처를 받아둬도 해줄 수 있는 게 없었다. 화면에서는
+// WelfareConsultGate가 등급 없는 방문자를 등급 테스트로 보내는데, 화면만 막으면
+// 엔드포인트는 그대로 열려 있으므로 여기서도 세션을 본다.
 //
 // 복지용구 사업소(Institution)는 이메일이 없어(전화번호만 100% 보유) 시설처럼 자동
 // 이메일 전달을 할 수 없다. 그래서 여기서는 DB 저장 + 운영자 알림(텔레그램·메일)까지만
@@ -21,6 +25,12 @@ const PHONE_RE = /^0\d{1,2}-?\d{3,4}-?\d{4}$/;
 const ITEM_NAMES = new Set(allEquipmentItems().map((i) => i.name));
 
 export async function POST(req: Request) {
+  const session = await auth();
+  const userId = session?.user?.id;
+  if (!userId) {
+    return NextResponse.json({ error: "로그인이 필요해요." }, { status: 401 });
+  }
+
   const limited = rateLimit(`welfare-consult:${clientIp(req)}`, LIMIT, WINDOW_MS);
   if (!limited.ok) {
     return tooManyRequests(
@@ -60,9 +70,6 @@ export async function POST(req: Request) {
   }
   const sido = region.label;
 
-  const session = await auth();
-  const userId = session?.user?.id ?? null;
-
   const request = await prisma.welfareConsultRequest.create({
     data: { name, phone, sido, sigungu, items, userId },
   });
@@ -78,7 +85,7 @@ export async function POST(req: Request) {
         subject: `[복지용구 상담신청] ${sido} ${sigungu} · ${name}`,
         text:
           `이름: ${name}\n연락처: ${phone}\n지역: ${sido} ${sigungu}\n관심품목: ${itemLine}\n` +
-          `접수시각: ${receivedAt}\n로그인: ${userId ? "예" : "아니오"}`,
+          `접수시각: ${receivedAt}\n회원 id: ${userId}`,
       });
     } catch (err) {
       console.error("복지용구 상담신청 운영자 메일 실패", err);

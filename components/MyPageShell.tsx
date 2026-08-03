@@ -73,14 +73,14 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
       href: "/mypage/welfare-benefit",
       label: "복지용구 혜택",
       icon: <Gift size={18} />,
-      hint: "연 160만원 한도 지원",
+      hint: "연 160만원 한도",
       ribbon: "혜택",
     },
     {
       href: "/mypage/care-profile",
       label: "보호자 프로필",
       icon: <HeartHandshake size={18} />,
-      hint: "한 번 저장하면 계속 재사용",
+      hint: "저장해두고 재사용",
     },
     { href: "/favorites", label: "관심 시설", icon: <Heart size={18} />, hint: "찜해둔 시설" },
     { href: "/compare", label: "시설 비교", icon: <Scale size={18} />, hint: "최대 3곳 나란히" },
@@ -207,14 +207,18 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
 
   // 모바일에서는 가로 스크롤 대신 2열 그리드 — 예전엔 메뉴 폭이 975px인데 화면이 338px이라
   // 6개 중 2개만 보이고 나머지는 밀어야 나와서, 있는 줄도 모르고 지나쳤다.
+  //
+  // 아이콘 위·글자 아래로 쌓는 세로형이었을 때는 카드 하나가 177px까지 자라서(2×2
+  // 그리드의 두 행이 auto-rows-fr로 같은 높이를 맞추는데, 좁은 칸에서 설명이 두 줄로
+  // 감기는 카드 하나 때문에 나머지 다섯 칸까지 같이 늘어났다) 그 아래 얇은 메뉴 두 줄이
+  // 화면 접히는 지점 밖으로 밀려났다. 아이콘·글자를 가로로 나란히 두면 설명이 감겨도
+  // 카드가 세로로 자라지 않아 이 문제 자체가 안 생긴다(2026-08-04).
   function NavCard({ item }: { item: NavItem }) {
     const active = pathname === item.href;
     return (
       <Link
         href={item.href}
-        // 높이는 그리드의 auto-rows-fr가 맞춰준다 — 예전엔 h-[112px]로 못박아뒀는데
-        // 글자를 키우면 설명이 잘려나가서, 가장 긴 카드에 맞춰 같이 자라게 바꿨다.
-        className={`relative flex flex-col overflow-hidden rounded-2xl p-4 transition-all duration-150 active:scale-[0.98] ${
+        className={`relative flex items-center gap-2 overflow-hidden rounded-2xl p-2.5 transition-all duration-150 active:scale-[0.98] ${
           active
             ? "bg-primary-50 ring-1 ring-primary-200"
             : "bg-white shadow-card hover:shadow-card-hover"
@@ -222,27 +226,31 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
       >
         {/* 우상단 강조 띠 — 새로 만든 메뉴가 6개 사이에 묻히지 않게 */}
         {item.ribbon && (
-          <span className="absolute right-0 top-0 rounded-bl-xl bg-gradient-to-r from-royal-500 to-primary-500 px-2.5 py-1 text-[10px] font-extrabold text-white">
+          <span className="absolute right-0 top-0 rounded-bl-xl bg-gradient-to-r from-royal-500 to-primary-500 px-2 py-0.5 text-[9px] font-extrabold text-white">
             {item.ribbon}
           </span>
         )}
         <span
-          className={`mb-2.5 flex h-10 w-10 items-center justify-center rounded-xl ${
+          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-xl ${
             active ? "bg-white text-primary-600 shadow-soft" : "bg-ivory-100 text-ink-400"
           }`}
         >
           {item.icon}
         </span>
-        <span
-          className={`text-[15px] font-bold leading-snug ${
-            active ? "text-primary-700" : "text-ink-900"
-          }`}
-        >
-          {item.label}
+        <span className="min-w-0 flex-1">
+          <span
+            className={`block truncate text-[13px] font-bold leading-tight ${
+              active ? "text-primary-700" : "text-ink-900"
+            }`}
+          >
+            {item.label}
+          </span>
+          {item.hint && (
+            <span className="block truncate text-[10px] leading-tight text-ink-400">
+              {item.hint}
+            </span>
+          )}
         </span>
-        {item.hint && (
-          <span className="mt-1.5 text-[12px] leading-snug text-ink-400">{item.hint}</span>
-        )}
       </Link>
     );
   }

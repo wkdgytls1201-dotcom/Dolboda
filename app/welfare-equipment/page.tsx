@@ -12,7 +12,7 @@ import {
 } from "@/lib/welfareEquipment";
 import { BenefitGauge, CopayCompareBars } from "@/components/WelfareBenefitVisuals";
 import { WelfareItemTabs } from "@/components/WelfareItemTabs";
-import { WelfareConsultForm } from "@/components/WelfareConsultForm";
+import { WelfareConsultGate } from "@/components/WelfareConsultGate";
 import { WelfareLoginCta } from "@/components/WelfareLoginCta";
 import { SITE_URL, SITE_NAME, OG_IMAGE } from "@/lib/siteConfig";
 import { jsonLdHtml } from "@/lib/jsonLd";
@@ -195,13 +195,13 @@ export default function WelfareEquipmentPage() {
           </dl>
         </section>
 
-        {/* 상담 신청 — 로그인 없이도 접수할 수 있는 유일한 자리 */}
+        {/* 상담 신청 — 등급이 있는 사람만 들어가는 자리(WelfareConsultGate 주석 참고) */}
         <section id="consult" className="mt-10 scroll-mt-6">
           <h2 className="mb-1 text-lg font-bold text-ink-900">지금 바로 상담받고 싶다면</h2>
           <p className="mb-4 text-sm leading-relaxed text-ink-500">
-            회원가입 없이도 신청할 수 있어요. 확인 후 순차적으로 연락드려요.
+            확인 후 순차적으로 연락드려요. 상담은 무료예요.
           </p>
-          <WelfareConsultForm />
+          <WelfareConsultGate />
         </section>
 
         {/* 마무리 CTA */}

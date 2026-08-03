@@ -12,7 +12,7 @@ import {
   copayOf,
 } from "@/lib/welfareEquipment";
 import { WelfareItemIcon, toneOf } from "@/components/WelfareItemIcon";
-import { WelfareConsultForm } from "@/components/WelfareConsultForm";
+import { WelfareConsultGate } from "@/components/WelfareConsultGate";
 import { WelfareLoginCta } from "@/components/WelfareLoginCta";
 import { SITE_URL, SITE_NAME, OG_IMAGE } from "@/lib/siteConfig";
 import { jsonLdHtml } from "@/lib/jsonLd";
@@ -157,7 +157,7 @@ export default function WelfareEquipmentItemPage({ params }: { params: { item: s
         </section>
 
         <section className="mt-8">
-          <WelfareConsultForm defaultItem={item.name} />
+          <WelfareConsultGate defaultItem={item.name} />
         </section>
 
         <section className="mt-8 rounded-2xl bg-royal-50/60 p-5 text-center">
