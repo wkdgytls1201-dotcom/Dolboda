@@ -102,6 +102,7 @@ export default async function ConsolePage() {
           canPostNews: cap.canPostNews,
           canManageBanner: cap.hasBanner,
           bannerImageUrl: bannerById.get(f.facilityId)?.imageUrl ?? null,
+          hasReport: cap.hasReport,
           intro: content?.intro ?? "",
           photos: Array.isArray(content?.photos) ? (content.photos as string[]) : [],
           consultTotal: totalById.get(f.facilityId) ?? 0,

@@ -1,5 +1,5 @@
-import Link from "next/link";
 import type { RegionBanner as RegionBannerData } from "@/lib/sponsor";
+import { AdImpressionBeacon, TrackedLink } from "./AdTracking";
 
 // 지역 배너 — 지역 프리미엄 이상 전용, 시·군·구당 1곳.
 //
@@ -10,11 +10,14 @@ export function RegionBanner({ banner }: { banner: RegionBannerData | null }) {
   if (!banner) return null;
 
   return (
-    <Link
+    <TrackedLink
       href={`/facility/${banner.facilityId}`}
+      facilityId={banner.facilityId}
+      kind="banner"
       className="group relative mb-6 block overflow-hidden rounded-2xl shadow-card"
-      aria-label={`광고: ${banner.facilityName}`}
+      ariaLabel={`광고: ${banner.facilityName}`}
     >
+      <AdImpressionBeacon facilityId={banner.facilityId} kind="banner" />
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={banner.imageUrl}
@@ -28,6 +31,6 @@ export function RegionBanner({ banner }: { banner: RegionBannerData | null }) {
       <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink-900/60 to-transparent px-3 pb-2 pt-6 text-xs font-semibold text-white">
         {banner.facilityName}
       </span>
-    </Link>
+    </TrackedLink>
   );
 }

@@ -52,6 +52,7 @@ interface ConsoleFacility {
   canPostNews: boolean;
   canManageBanner: boolean;
   bannerImageUrl: string | null;
+  hasReport: boolean;
   intro: string;
   photos: string[];
   consultTotal: number;
@@ -227,6 +228,24 @@ function FacilityPanel({ facility }: { facility: ConsoleFacility }) {
         <span className="truncate">{facility.facilityName} — 보호자에게 보이는 페이지 열기</span>
         <ExternalLink size={15} className="shrink-0 text-ink-300" />
       </Link>
+
+      {facility.hasReport ? (
+        <Link
+          href={`/business/console/report?facilityId=${encodeURIComponent(facility.facilityId)}`}
+          className="flex items-center justify-between gap-3 rounded-2xl bg-royal-500 px-4 py-3.5 text-sm font-bold text-white shadow-royal transition-all hover:bg-royal-600"
+        >
+          이번 달 성과 보고서 보기
+          <ExternalLink size={15} className="shrink-0 text-white/70" />
+        </Link>
+      ) : (
+        <a
+          href="#plans"
+          className="flex items-center justify-between gap-3 rounded-2xl border border-dashed border-ink-100 bg-white px-4 py-3.5 text-sm font-semibold text-ink-500 transition-colors hover:bg-ink-100"
+        >
+          월간 성과 보고서는 지역 프리미엄부터
+          <span className="shrink-0 text-xs text-primary-600">자세히 →</span>
+        </a>
+      )}
 
       {/* 숫자 — 콘솔을 다시 열게 만드는 부분이라 맨 위 */}
       <section className={CARD}>

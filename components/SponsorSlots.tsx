@@ -1,13 +1,14 @@
-import Link from "next/link";
 import { MapPin, ChevronRight } from "lucide-react";
 import { FACILITY_TYPE_LABEL, type FacilityType } from "@/lib/types";
 import type { SponsorFacility } from "@/lib/sponsor";
+import { AdImpressionBeacon, TrackedLink } from "./AdTracking";
 
 // 스폰서(광고) 노출 자리 — 지역 페이지의 일반 목록 위에 붙는 분리 섹션.
 //
-// 순수 서버 마크업이다(클라이언트 훅 없음). 노출 지면이 SEO 페이지라 여기서
-// 클라이언트 번들을 끌고 오면 안 된다. 카드 모양은 FacilityLinkList와 맞추되
-// 배경·라벨로 광고 영역임을 구분한다 — 표시광고법상 광고는 광고임을 알 수 있어야 한다.
+// 카드는 서버 마크업 그대로 두고(SEO에 유리, 가볍다), 노출·클릭 기록만 작은 클라이언트
+// 조각(AdTracking.tsx)에 맡긴다 — 유료 시설의 월간 성과 보고서가 이 숫자로 채워진다.
+// 카드 모양은 FacilityLinkList와 맞추되 배경·라벨로 광고 영역임을 구분한다
+// — 표시광고법상 광고는 광고임을 알 수 있어야 한다.
 export function SponsorSlots({
   facilities,
   regionLabel,
@@ -34,8 +35,11 @@ export function SponsorSlots({
       <ul className="space-y-2">
         {facilities.map((f) => (
           <li key={f.id}>
-            <Link
+            <AdImpressionBeacon facilityId={f.id} kind="sponsor" />
+            <TrackedLink
               href={`/facility/${f.id}`}
+              facilityId={f.id}
+              kind="sponsor"
               className="flex items-center gap-3 rounded-2xl border border-ink-100 bg-white p-4 transition-all duration-150 hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-card"
             >
               <span className="min-w-0 flex-1">
@@ -56,7 +60,7 @@ export function SponsorSlots({
                 </span>
               </span>
               <ChevronRight size={16} className="shrink-0 text-ink-300" />
-            </Link>
+            </TrackedLink>
           </li>
         ))}
       </ul>
