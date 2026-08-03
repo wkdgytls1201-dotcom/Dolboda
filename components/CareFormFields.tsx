@@ -50,8 +50,12 @@ export function ChipSelect({
             type="button"
             onClick={() => onChange(on ? "" : opt)}
             className={`min-h-[48px] rounded-xl border px-3.5 py-3 text-left text-sm font-semibold leading-snug transition-all duration-150 active:scale-[0.98] ${
+              // 지역 선택 그리드(꽉 찬 색)와 같은 무게로 맞춘다 — 옅은 배경(bg-primary-50)만
+              // 쓰던 예전 스타일은 선택했는지 안 했는지가 빠르게 훑을 때 잘 안 들어왔다.
+              // 이 컴포넌트가 마법사 3·4단계 대부분의 선택(관계·성별·연령대·거동·식사 등)을
+              // 담당하니, 여기 하나를 바꾸면 화면 전체에 일괄 적용된다.
               on
-                ? "animate-pop border-primary-500 bg-primary-50 text-primary-700 shadow-soft"
+                ? "animate-pop border-primary-500 bg-primary-500 text-white shadow-soft"
                 : "border-ink-100 bg-white text-ink-700 hover:border-primary-200 hover:bg-primary-50/40"
             }`}
           >
@@ -86,7 +90,7 @@ export function ChipMultiSelect({
             onClick={() => onToggle(opt)}
             className={`flex min-h-[48px] items-center justify-between gap-1.5 rounded-xl border px-3.5 py-3 text-left text-sm font-semibold leading-snug transition-all duration-150 active:scale-[0.98] ${
               on
-                ? "animate-pop border-primary-500 bg-primary-50 text-primary-700 shadow-soft"
+                ? "animate-pop border-primary-500 bg-primary-500 text-white shadow-soft"
                 : "border-ink-100 bg-white text-ink-700 hover:border-primary-200 hover:bg-primary-50/40"
             }`}
           >
