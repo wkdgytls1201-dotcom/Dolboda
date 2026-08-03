@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { isAdminUser } from "@/lib/admin";
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -31,7 +32,14 @@ export async function POST(req: Request) {
   // 없으면 자기 글에 자기가 지원하고 자기를 매칭 확정한 뒤 합의서까지 쓰게 된다 —
   // 실제로 그렇게 만들어진 데이터가 나왔다. 목록에서도 걸러내지만(care-requests/open),
   // 화면에서 감추는 것만으로는 막히지 않으므로 여기서 확실히 끊는다.
-  if (careRequest.guardianId === session.user.id) {
+  //
+  // 단, 운영자 계정은 예외다 — 돌봄 흐름(지원→매칭→합의서 서명)을 계정 하나로
+  // 끝까지 시험해봐야 하기 때문. 프로덕션에서도 확인이 필요해 NODE_ENV가 아니라
+  // 운영자 판별로 연다(lib/admin.ts).
+  if (
+    careRequest.guardianId === session.user.id &&
+    !isAdminUser(session.user.id, session.user.email)
+  ) {
     return NextResponse.json(
       { error: "내가 올린 돌봄 요청에는 지원할 수 없어요." },
       { status: 400 }

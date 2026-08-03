@@ -3,6 +3,7 @@ import type { Prisma } from "@prisma/client";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { parseLocationType } from "@/lib/careRequestValidation";
+import { isAdminUser } from "@/lib/admin";
 
 // 아직 열려있는 돌봄 요청 목록. 원래는 시터의 활동 가능 지역과 겹치는 것만 보여줬는데,
 // 아직 등록된 돌봄 요청 자체가 많지 않아 지역을 좁게 등록한 시터에게는 화면이 통째로
@@ -36,7 +37,12 @@ export async function GET(req: Request) {
     // "새 일자리"에 뜨고 자기 글에 지원까지 된다. 실제로 그렇게 지원된 데이터가 나왔다.
     // 지원 자체는 API에서도 막지만(care-request-applications POST), 목록에서 안 보이게
     // 해야 애초에 그 상황이 생기지 않는다.
-    guardianId: { not: session.user.id },
+    //
+    // 운영자 계정만 예외 — 계정 하나로 돌봄 흐름 전체를 시험할 수 있어야 해서
+    // 자기 글도 목록에 보인다(지원 API의 예외와 같은 이유).
+    ...(isAdminUser(session.user.id, session.user.email)
+      ? {}
+      : { guardianId: { not: session.user.id } }),
     ...(type && { locationType: type }),
     // "시작일이 지난 공고 제외" — 이미 시작한 돌봄은 사실상 마감된 것으로 본다.
     ...(hideClosed && { startDate: { gte: new Date() } }),

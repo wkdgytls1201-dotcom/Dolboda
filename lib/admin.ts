@@ -31,6 +31,18 @@ function isAdminUserId(userId: string): boolean {
   return envList("ADMIN_USER_IDS").includes(userId);
 }
 
+/**
+ * 운영자 계정인지 (세션 조회 없이 id만으로).
+ *
+ * 돌봄 흐름을 계정 하나로 끝까지 시험해보려면 보호자로 글을 올리고 매니저로 지원하는
+ * 자기 지원이 필요하다. 일반 사용자에게는 막아야 하지만(자기가 자기를 매칭하고 합의서까지
+ * 쓰게 된다) 운영자에게는 열어둔다 — 프로덕션에서도 계정 두 개를 만들지 않고 확인할 수
+ * 있어야 하기 때문에 NODE_ENV가 아니라 운영자 판별로 연다.
+ */
+export function isAdminUser(userId: string, email?: string | null): boolean {
+  return isAdminUserId(userId) || isAdminEmail(email);
+}
+
 export interface AdminSession {
   userId: string;
   email: string;
