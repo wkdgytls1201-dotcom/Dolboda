@@ -157,7 +157,7 @@ export default function GuidePage({ params }: { params: { slug: string } }) {
           <Link
             key={c.href}
             href={c.href}
-            className={`flex min-h-[52px] items-center justify-center gap-2 rounded-2xl text-sm font-bold transition-all duration-200 hover:-translate-y-0.5 ${
+            className={`flex min-h-[52px] items-center justify-center gap-2 rounded-2xl text-sm font-bold transition-all duration-200 ease-snappy hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] ${
               i === 0
                 ? "bg-primary-500 text-white shadow-soft hover:bg-primary-600"
                 : "border border-ink-100 bg-white text-ink-700 hover:bg-ink-100"

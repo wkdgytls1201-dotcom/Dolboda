@@ -183,7 +183,7 @@ export default function WelfareEquipmentItemPage({ params }: { params: { item: s
                   <Link
                     key={r.slug}
                     href={`/welfare-equipment/${encodeURIComponent(r.slug)}`}
-                    className="flex items-center gap-2.5 rounded-xl bg-white p-3 shadow-card transition-transform duration-150 hover:-translate-y-0.5"
+                    className="flex items-center gap-2.5 rounded-xl bg-white p-3 shadow-card transition-transform duration-150 ease-snappy hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
                   >
                     <WelfareItemIcon name={r.name} index={rIdx} size={16} className="h-8 w-8" />
                     <span className="text-[13px] font-bold text-ink-900">{r.name}</span>

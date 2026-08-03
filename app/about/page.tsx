@@ -260,7 +260,7 @@ export default function AboutPage() {
         <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
           <a
             href="mailto:wkdgytls1201@gmail.com"
-            className="flex min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-white px-3 py-2.5 text-ink-700 shadow-card transition-transform hover:-translate-y-0.5"
+            className="flex min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-white px-3 py-2.5 text-ink-700 shadow-card transition-transform duration-150 ease-snappy hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
           >
             <Mail size={16} className="shrink-0 text-primary-500" />
             <span className="min-w-0">
@@ -270,7 +270,7 @@ export default function AboutPage() {
           </a>
           <a
             href="tel:010-2222-9943"
-            className="flex min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-white px-3 py-2.5 text-ink-700 shadow-card transition-transform hover:-translate-y-0.5"
+            className="flex min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-white px-3 py-2.5 text-ink-700 shadow-card transition-transform duration-150 ease-snappy hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
           >
             <Phone size={16} className="shrink-0 text-mint-600" />
             <span className="min-w-0">
@@ -289,13 +289,13 @@ export default function AboutPage() {
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <Link
           href="/data-policy"
-          className="flex min-h-[52px] items-center justify-center rounded-2xl bg-primary-500 text-sm font-bold text-white shadow-soft transition-transform hover:-translate-y-0.5"
+          className="flex min-h-[52px] items-center justify-center rounded-2xl bg-primary-500 text-sm font-bold text-white shadow-soft transition-transform duration-150 ease-snappy hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
         >
           데이터 출처·안심지수 계산 방식
         </Link>
         <Link
           href="/guide"
-          className="flex min-h-[52px] items-center justify-center rounded-2xl border border-ink-100 bg-white text-sm font-bold text-ink-700 transition-colors hover:bg-ink-100"
+          className="flex min-h-[52px] items-center justify-center rounded-2xl border border-ink-100 bg-white text-sm font-bold text-ink-700 transition-colors duration-150 hover:bg-ink-100 active:scale-[0.98]"
         >
           요양 가이드 보기
         </Link>

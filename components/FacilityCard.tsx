@@ -103,7 +103,7 @@ export function FacilityCard({
           e.preventDefault();
           requestFacilityView(facility.id);
         }}
-        className="block"
+        className="block transition-transform duration-150 ease-snappy active:scale-[0.98]"
       >
         <div className="relative mb-3 -mx-4 -mt-4 aspect-[16/9] overflow-hidden rounded-t-2xl">
           <FacilityThumbnail

@@ -205,10 +205,10 @@ export function DolbodaScoreCard({
         <button
           type="button"
           onClick={() => setOpen(!open)}
-          className={`mt-4 flex min-h-[48px] w-full items-center justify-center gap-1.5 rounded-xl text-sm font-bold transition-all ${
+          className={`mt-4 flex min-h-[48px] w-full items-center justify-center gap-1.5 rounded-xl text-sm font-bold transition-all duration-150 ease-snappy active:scale-[0.98] ${
             open
               ? "bg-ink-100/60 text-ink-700"
-              : "bg-gradient-to-r from-royal-500 to-primary-500 text-white shadow-royal hover:-translate-y-0.5 hover:shadow-royal-hover"
+              : "bg-gradient-to-r from-royal-500 to-primary-500 text-white shadow-royal hover:-translate-y-0.5 hover:shadow-royal-hover active:translate-y-0"
           }`}
         >
           <Sparkles size={15} className={open ? "text-royal-500" : ""} />

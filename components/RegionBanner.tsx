@@ -14,7 +14,7 @@ export function RegionBanner({ banner }: { banner: RegionBannerData | null }) {
       href={`/facility/${banner.facilityId}`}
       facilityId={banner.facilityId}
       kind="banner"
-      className="group relative mb-6 block overflow-hidden rounded-2xl shadow-card"
+      className="group relative mb-6 block overflow-hidden rounded-2xl shadow-card transition-transform duration-150 ease-snappy active:scale-[0.98]"
       ariaLabel={`광고: ${banner.facilityName}`}
     >
       <AdImpressionBeacon facilityId={banner.facilityId} kind="banner" />

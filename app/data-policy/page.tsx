@@ -166,7 +166,7 @@ export default function DataPolicyPage() {
         </p>
         <a
           href="mailto:wkdgytls1201@gmail.com?subject=%5B%EB%8F%8C%EB%B3%B4%EB%8B%A4%5D%20%EC%8B%9C%EC%84%A4%20%EC%A0%95%EB%B3%B4%20%EC%A0%95%EC%A0%95%20%EC%9A%94%EC%B2%AD"
-          className="flex min-h-[52px] items-center justify-center rounded-2xl bg-primary-500 text-sm font-bold text-white shadow-soft transition-transform hover:-translate-y-0.5"
+          className="flex min-h-[52px] items-center justify-center rounded-2xl bg-primary-500 text-sm font-bold text-white shadow-soft transition-transform duration-150 ease-snappy hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
         >
           정보 정정 요청하기
         </a>

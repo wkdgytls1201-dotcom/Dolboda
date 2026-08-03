@@ -40,7 +40,7 @@ export function SponsorSlots({
               href={`/facility/${f.id}`}
               facilityId={f.id}
               kind="sponsor"
-              className="flex items-center gap-3 rounded-2xl border border-ink-100 bg-white p-4 transition-all duration-150 hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-card"
+              className="flex items-center gap-3 rounded-2xl border border-ink-100 bg-white p-4 transition-all duration-150 ease-snappy hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-card active:translate-y-0 active:scale-[0.98]"
             >
               <span className="min-w-0 flex-1">
                 <span className="mb-0.5 flex flex-wrap items-center gap-1.5">

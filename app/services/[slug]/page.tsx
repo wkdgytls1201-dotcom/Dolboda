@@ -169,7 +169,7 @@ export default function ServiceLandingPage({ params }: { params: { slug: string 
             href={primaryCta.href}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-primary-500 text-sm font-bold text-white shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary-600"
+            className="flex min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-primary-500 text-sm font-bold text-white shadow-soft transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:bg-primary-600 active:translate-y-0 active:scale-[0.98]"
           >
             {primaryCta.label}
             <ArrowRight size={16} />
@@ -177,7 +177,7 @@ export default function ServiceLandingPage({ params }: { params: { slug: string 
         ) : (
           <Link
             href={primaryCta.href}
-            className="flex min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-primary-500 text-sm font-bold text-white shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary-600"
+            className="flex min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-primary-500 text-sm font-bold text-white shadow-soft transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:bg-primary-600 active:translate-y-0 active:scale-[0.98]"
           >
             {primaryCta.label}
             <ArrowRight size={16} />

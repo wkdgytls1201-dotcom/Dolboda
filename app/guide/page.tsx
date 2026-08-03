@@ -74,7 +74,7 @@ export default function GuideListPage() {
                 <Link
                   key={g.slug}
                   href={`/guide/${g.slug}`}
-                  className="flex items-center gap-3 rounded-2xl border border-ink-100 bg-white p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card"
+                  className="flex items-center gap-3 rounded-2xl border border-ink-100 bg-white p-4 transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:shadow-card active:translate-y-0 active:scale-[0.98]"
                 >
                   <span className="min-w-0 flex-1">
                     <span className="mb-1 block text-[17px] font-bold leading-snug text-ink-900">
