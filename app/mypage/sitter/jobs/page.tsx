@@ -11,6 +11,7 @@ import {
   Wallet,
   FileText,
   FileSignature,
+  NotebookPen,
   SlidersHorizontal,
   Search,
   MapPinned,
@@ -619,6 +620,13 @@ export default function SitterJobsPage() {
                       <FileText size={15} />
                       돌봄 확인서 보기
                     </Link>
+                    <Link
+                      href="/care-request/care-log"
+                      className="flex min-h-[48px] items-center justify-center gap-1.5 rounded-xl border border-primary-200 bg-primary-50 text-sm font-bold text-primary-700 transition-colors duration-150 hover:bg-primary-100 active:scale-[0.98]"
+                    >
+                      <NotebookPen size={15} />
+                      돌봄일지 쓰기
+                    </Link>
                   </div>
                 }
               />
@@ -644,6 +652,15 @@ export default function SitterJobsPage() {
                   <span className="rounded-full bg-royal-50 px-2.5 py-1 text-xs font-bold text-royal-700">
                     돌봄 완료
                   </span>
+                }
+                footer={
+                  <Link
+                    href="/care-request/care-log"
+                    className="flex min-h-[48px] items-center justify-center gap-1.5 rounded-xl border border-primary-200 bg-primary-50 text-sm font-bold text-primary-700 transition-colors duration-150 hover:bg-primary-100 active:scale-[0.98]"
+                  >
+                    <NotebookPen size={15} />
+                    돌봄일지 보기
+                  </Link>
                 }
               />
             ))

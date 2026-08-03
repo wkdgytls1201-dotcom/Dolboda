@@ -108,6 +108,74 @@ model CareAgreement {
   @@index([sitterProfileId])
 }
 
+// 돌봄일지 — 매니저와 보호자가 서로 확인하는 하루 기록. 설계: docs/care-log-spec.md
+//
+// 1단계는 "확인 일지"까지다(정산·근태 미연동, §3). 2단계에서 정산을 붙이게 되면
+// workStart/workEnd가 그대로 근거가 되도록 지금부터 받아둔다(선택 항목으로).
+//
+// ★ CareAgreement와 같은 이유로 관계(@relation)를 걸지 않는다 — 보호자가 탈퇴해도
+//   매니저의 작업 기록(경력·분쟁 대응 자료)은 남아야 한다. cascade로 묶으면 상대방
+//   계정 삭제 한 번에 자기 기록이 통째로 사라진다.
+model CareLog {
+  id              String @id @default(cuid())
+  careRequestId   String
+  sitterProfileId String
+
+  // 돌봄이 이루어진 날 (YYYY-MM-DD, KST). 매니저가 고르되 미래 날짜는 API에서 막는다.
+  careDate String
+  // 실제로 기록한 시각 — 서버가 찍는다. careDate와 차이가 크면 화면에 "N일 늦게 작성"으로 보여준다.
+  createdAt DateTime @default(now())
+
+  // --- 기본 3탭(이것만으로 저장된다) — 전부 nullable, 완벽을 요구하면 안 쓴다 ---
+  meal      String? // "잘 드심" | "조금 드심" | "거의 못 드심"
+  mood      String? // "좋으심" | "평소 같으심" | "힘들어하심"
+  dayStatus String? // "별일 없었어요" | "알려드릴 일이 있어요"
+
+  // --- 더 자세히(접힌 영역, 전부 선택) ---
+  sleep      String?
+  bowel      String?
+  medication String?
+  tasks      String[] // 오늘 한 일 칩 — 돌봄 요청의 업무 범위에서 화면이 자동 생성
+
+  memo      String? // 오늘 한마디 — 보호자가 가장 좋아하는 부분
+  alertNote String? // dayStatus가 "알려드릴 일이 있어요"일 때만 값이 있다. 값이 있으면 즉시 알림 발송.
+
+  workStart String? // "09:00"
+  workEnd   String? // "18:00"
+
+  photos Json? // [{url, takenAt}] — 카메라 촬영만(클라이언트에서 강제), 선택
+
+  readAt DateTime? // 보호자가 열람한 시각 — 매니저 쪽에 "확인했어요"로 표시
+
+  // 정정 기록 — 원본을 고치지 않고 새 행을 만들어 잇는다(append-only, 합의서와 같은 사상)
+  correctsId String?
+
+  @@index([careRequestId, careDate])
+  @@index([sitterProfileId])
+}
+
+// 빠른 알림 — 돌봄 중에 버튼 하나로 그 자리에서 보내는 알림. CareLog와 분리한 이유는
+// 일지는 하루에 하나지만 이건 하루에 여러 번 발생하고 발생 시각 자체가 정보이기 때문
+// ("점심을 몇 시에 드셨나"). 이 기록들이 그날 CareLog 요약의 재료가 된다.
+model CareQuickNote {
+  id              String @id @default(cuid())
+  careRequestId   String
+  sitterProfileId String
+
+  kind String // "meal" | "medication" | "walk" | "hospital" | "sleep" | "custom"
+  body String? // kind가 "custom"일 때만("⚠️ 알려드릴 일이 있어요")
+
+  careDate  String // YYYY-MM-DD(KST) — 일지와 묶는 키
+  createdAt DateTime @default(now())
+
+  // 1분 안에 취소하면 지우지 않고 표시만 한다 — 보호자가 이미 봤을 수 있어
+  // 조용히 사라지면 "내가 잘못 봤나" 싶게 된다
+  canceledAt DateTime?
+  readAt     DateTime?
+
+  @@index([careRequestId, careDate])
+}
+
 // 시설 시계열 스냅샷 — 매일 새벽 공단 데이터를 자동 수집(scripts/daily-nhis-sync.mjs)하면서
 // 정원·현원·대기·등급이 "바뀐 시설만" 그날 값으로 적재한다(첫 실행일은 전체 기준선).
 // 쌓이면: 자리 난 시설 감지 → 찜한 시설 알림 → 대기 소진 속도 → 등급 변동 추적의 재료가 된다.

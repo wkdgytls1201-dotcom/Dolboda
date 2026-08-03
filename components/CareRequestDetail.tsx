@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { FileText, FileSignature, CheckCircle2 } from "lucide-react";
+import { FileText, FileSignature, CheckCircle2, NotebookPen } from "lucide-react";
 import { typeMeta } from "@/lib/careLocationTypes";
 import { formatTimeRange, daysBetween } from "@/lib/careOptions";
 import type { CareRequestData } from "@/lib/careRequestTypes";
@@ -192,6 +192,22 @@ export function CareRequestDetail({
               <span className="block text-sm font-bold text-ink-900">돌봄 확인서 보기</span>
               <span className="block text-xs text-ink-500">
                 확정된 내용을 한 장으로 정리했어요. 인쇄하거나 PDF로 저장할 수 있어요.
+              </span>
+            </span>
+          </Link>
+          {/* 돌봄일지 — 서명이 끝나면 그 다음부터 실제 돌봄이 몇 달 이어지는데, 그동안 앱을
+              열 이유가 없었다(docs/care-log-spec.md §1-1). 매칭 직후부터 눈에 띄게 둔다. */}
+          <Link
+            href="/care-request/care-log"
+            className="flex items-center gap-3 rounded-2xl border border-primary-200 bg-primary-50 p-4 transition-colors duration-150 hover:bg-primary-100"
+          >
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-700">
+              <NotebookPen size={18} />
+            </span>
+            <span className="flex-1">
+              <span className="block text-sm font-bold text-ink-900">돌봄일지 보기</span>
+              <span className="block text-xs text-ink-500">
+                오늘 어머니는 어떠셨는지, 매니저님이 남긴 기록을 확인해요.
               </span>
             </span>
           </Link>
