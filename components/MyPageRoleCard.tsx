@@ -86,7 +86,7 @@ export function MyPageRoleCard() {
             }`}
           >
             <Briefcase size={16} />
-            돌보다 매니저
+            매니저
           </button>
         ) : (
           // 미등록자에게도 자리를 남겨둔다 — 칸이 아예 없으면 "매니저로도 활동할 수 있다"는
