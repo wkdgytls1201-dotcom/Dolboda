@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { List, Map as MapIcon, Crosshair, Search } from "lucide-react";
 import { FacilityCard } from "@/components/FacilityCard";
 import { CompareSelectBar } from "@/components/CompareSelectBar";
+import { BackToTopButton } from "@/components/BackToTopButton";
 import { FilterBar, FacilityFilters, EMPTY_FILTERS } from "@/components/FilterBar";
 import { KakaoMultiMap } from "@/components/KakaoMap";
 import { NHIS_GRADE_LETTER } from "@/components/GradeBadge";
@@ -467,8 +468,14 @@ function SearchContent() {
       ) : (
         <>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {results.slice(0, visibleCount).map(({ f, dist }) => (
-              <FacilityCard key={f.id} facility={f} distanceKm={dist} />
+            {results.slice(0, visibleCount).map(({ f, dist }, i) => (
+              // 인덱스를 6으로 나눈 나머지만 쓴다 — 무한스크롤로 계속 늘어나는 목록이라
+              // 절대 인덱스를 그대로 쓰면 아래로 갈수록 지연이 몇 초씩 쌓여 새로 로드된
+              // 카드가 한참 빈칸으로 보인다. key가 고정이라 이미 그려진 카드는
+              // 리렌더돼도 애니메이션이 다시 재생되지 않는다(React가 새로 마운트할 때만 돈다).
+              <div key={f.id} className="animate-fade-up" style={{ animationDelay: `${(i % 6) * 60}ms` }}>
+                <FacilityCard facility={f} distanceKm={dist} />
+              </div>
             ))}
           </div>
           {visibleCount < results.length && (
@@ -479,6 +486,7 @@ function SearchContent() {
         </>
       )}
 
+      {view !== "map" && <BackToTopButton />}
       <CompareSelectBar />
     </main>
   );

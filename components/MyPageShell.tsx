@@ -184,14 +184,15 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
   }
 
   // 얇은 한 줄짜리 — 알림 설정처럼 가끔 한 번 들어가는 메뉴는 카드 자리를 차지할 필요가 없다
-  function CompactNavRow({ item }: { item: NavItem }) {
+  function CompactNavRow({ item, delayIndex }: { item: NavItem; delayIndex?: number }) {
     const active = pathname === item.href;
     return (
       <Link
         href={item.href}
-        className={`flex min-h-[52px] items-center gap-3 rounded-2xl px-4 transition-colors duration-150 active:scale-[0.99] ${
+        className={`animate-fade-up flex min-h-[52px] items-center gap-3 rounded-2xl px-4 transition-colors duration-150 active:scale-[0.99] ${
           active ? "bg-primary-50 ring-1 ring-primary-200" : "bg-white shadow-card"
         }`}
+        style={delayIndex !== undefined ? { animationDelay: `${delayIndex * 70}ms` } : undefined}
       >
         <span className={active ? "text-primary-600" : "text-ink-400"}>{item.icon}</span>
         <span
@@ -213,16 +214,17 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
   // 감기는 카드 하나 때문에 나머지 다섯 칸까지 같이 늘어났다) 그 아래 얇은 메뉴 두 줄이
   // 화면 접히는 지점 밖으로 밀려났다. 아이콘·글자를 가로로 나란히 두면 설명이 감겨도
   // 카드가 세로로 자라지 않아 이 문제 자체가 안 생긴다(2026-08-04).
-  function NavCard({ item }: { item: NavItem }) {
+  function NavCard({ item, delayIndex }: { item: NavItem; delayIndex?: number }) {
     const active = pathname === item.href;
     return (
       <Link
         href={item.href}
-        className={`relative flex items-center gap-2 overflow-hidden rounded-2xl p-2.5 transition-all duration-150 active:scale-[0.98] ${
+        className={`animate-fade-up relative flex items-center gap-2 overflow-hidden rounded-2xl p-2.5 transition-all duration-150 active:scale-[0.98] ${
           active
             ? "bg-primary-50 ring-1 ring-primary-200"
             : "bg-white shadow-card hover:shadow-card-hover"
         }`}
+        style={delayIndex !== undefined ? { animationDelay: `${delayIndex * 70}ms` } : undefined}
       >
         {/* 우상단 강조 띠 — 새로 만든 메뉴가 6개 사이에 묻히지 않게 */}
         {item.ribbon && (
@@ -285,12 +287,12 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
             <nav className="flex flex-col gap-2.5 sm:hidden">
               <PrimaryNavCard item={guardianPrimary} tone="guardian" />
               <div className="grid auto-rows-fr grid-cols-2 gap-2.5">
-                {guardianGrid.map((item) => (
-                  <NavCard key={item.href} item={item} />
+                {guardianGrid.map((item, i) => (
+                  <NavCard key={item.href} item={item} delayIndex={i} />
                 ))}
               </div>
-              {guardianCompact.map((item) => (
-                <CompactNavRow key={item.href} item={item} />
+              {guardianCompact.map((item, i) => (
+                <CompactNavRow key={item.href} item={item} delayIndex={guardianGrid.length + i} />
               ))}
             </nav>
 
@@ -339,12 +341,12 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
             <nav className="flex flex-col gap-2.5 sm:hidden">
               <PrimaryNavCard item={primaryItem} tone="manager" />
               <div className="grid auto-rows-fr grid-cols-2 gap-2.5">
-                {gridItems.map((item) => (
-                  <NavCard key={item.href} item={item} />
+                {gridItems.map((item, i) => (
+                  <NavCard key={item.href} item={item} delayIndex={i} />
                 ))}
               </div>
-              {compactItems.map((item) => (
-                <CompactNavRow key={item.href} item={item} />
+              {compactItems.map((item, i) => (
+                <CompactNavRow key={item.href} item={item} delayIndex={gridItems.length + i} />
               ))}
             </nav>
             {/* 데스크톱: 기존 사이드바 목록 유지 */}
