@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { parseLocationType, buildCareRequestData } from "@/lib/careRequestValidation";
+import { resend, careCompletedEmailHtml } from "@/lib/resend";
+import { SITE_NAME, MAIL_FROM } from "@/lib/siteConfig";
+import { careRequestSummary } from "@/lib/careLocationTypes";
 
 async function getOwnedRequest(id: string, userId: string) {
   const careRequest = await prisma.careRequest.findUnique({ where: { id } });
@@ -33,6 +36,14 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         { status: 409 }
       );
     }
+    // 완료 처리로 상태가 바뀌기 전에 "누구에게 완료 소식을 알릴지" 미리 알아둔다 —
+    // updateMany 뒤에는 그 매니저의 지원 status가 이미 "돌봄완료"로 바뀌어 있어서
+    // "매칭확정"으로 찾을 수 없다.
+    const matchedSitter = await prisma.careRequestApplication.findFirst({
+      where: { careRequestId: params.id, status: "매칭확정" },
+      select: { sitterProfile: { select: { user: { select: { id: true, email: true } } } } },
+    });
+
     const [completed] = await prisma.$transaction([
       prisma.careRequest.update({
         where: { id: params.id },
@@ -43,6 +54,25 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         data: { status: "돌봄완료" },
       }),
     ]);
+
+    // 메일은 완료 처리 뒤에 보낸다 — 실패해도 완료 처리 자체는 이미 끝난 상태.
+    if (resend && matchedSitter?.sitterProfile.user.email) {
+      const pref = await prisma.sitterNotificationPref.findUnique({
+        where: { userId: matchedSitter.sitterProfile.user.id },
+        select: { matchUpdate: true },
+      });
+      if (pref?.matchUpdate ?? true) {
+        await resend.emails
+          .send({
+            from: `${SITE_NAME} <${MAIL_FROM}>`,
+            to: matchedSitter.sitterProfile.user.email,
+            subject: `[${SITE_NAME}] 돌봄이 완료 처리됐어요`,
+            html: careCompletedEmailHtml({ requestSummary: careRequestSummary(existing) }),
+          })
+          .catch(() => {});
+      }
+    }
+
     return NextResponse.json(completed);
   }
 

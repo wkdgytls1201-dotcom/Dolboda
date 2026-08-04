@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { isAdminUser } from "@/lib/admin";
+import { resend, applicationReceivedEmailHtml } from "@/lib/resend";
+import { SITE_NAME, MAIL_FROM } from "@/lib/siteConfig";
+import { careRequestSummary } from "@/lib/careLocationTypes";
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -46,12 +49,38 @@ export async function POST(req: Request) {
     );
   }
 
+  let application;
   try {
-    const application = await prisma.careRequestApplication.create({
+    application = await prisma.careRequestApplication.create({
       data: { careRequestId, sitterProfileId: sitterProfile.id },
     });
-    return NextResponse.json(application, { status: 201 });
   } catch {
     return NextResponse.json({ error: "이미 지원한 요청이에요." }, { status: 409 });
   }
+
+  // 보호자에게 "새 지원자 왔어요" 메일 — 지원 자체는 이미 저장됐으니 메일이 실패해도
+  // 응답은 그대로 성공으로 돌려준다(발송 실패가 지원을 되돌리면 안 된다).
+  if (resend) {
+    try {
+      const guardian = await prisma.user.findUnique({
+        where: { id: careRequest.guardianId },
+        select: { email: true },
+      });
+      if (guardian?.email) {
+        await resend.emails.send({
+          from: `${SITE_NAME} <${MAIL_FROM}>`,
+          to: guardian.email,
+          subject: `[${SITE_NAME}] ${sitterProfile.nickname}님이 돌봄 요청에 지원했어요`,
+          html: applicationReceivedEmailHtml({
+            sitterNickname: sitterProfile.nickname,
+            requestSummary: careRequestSummary(careRequest),
+          }),
+        });
+      }
+    } catch {
+      // 무시 — 지원 처리 자체는 이미 끝났다
+    }
+  }
+
+  return NextResponse.json(application, { status: 201 });
 }

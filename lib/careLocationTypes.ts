@@ -45,3 +45,15 @@ export function typeMeta(value: LocationTypeValue) {
 export function parseLocationTypeParam(v: string | null): LocationTypeValue | null {
   return LOCATION_TYPES.some((t) => t.value === v) ? (v as LocationTypeValue) : null;
 }
+
+/** 돌봄 요청 한 건을 "병원 간병 · 서울 · 8.4~8.17"처럼 한 줄로 요약한다.
+ * 매칭 흐름 알림 메일(lib/resend.ts)에서 "무슨 요청 얘기인지"를 짧게 보여줄 때 쓴다. */
+export function careRequestSummary(req: {
+  locationType: LocationTypeValue;
+  region: string;
+  startDate: Date;
+  endDate: Date;
+}): string {
+  const short = (d: Date) => `${d.getMonth() + 1}.${d.getDate()}`;
+  return `${typeMeta(req.locationType).label} · ${req.region} · ${short(req.startDate)}~${short(req.endDate)}`;
+}

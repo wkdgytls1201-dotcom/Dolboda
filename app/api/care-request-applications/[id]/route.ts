@@ -1,6 +1,52 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { resend, matchConfirmedEmailHtml, applicationNotSelectedEmailHtml } from "@/lib/resend";
+import { SITE_NAME, MAIL_FROM } from "@/lib/siteConfig";
+import { careRequestSummary } from "@/lib/careLocationTypes";
+
+/** 매니저 알림 설정에서 matchUpdate가 켜져 있는지. 설정을 한 번도 안 바꾼 사람은
+ * 행 자체가 없는데, 기본값이 "켜짐"이라 그 경우도 true로 본다
+ * (app/api/sitter/notification-prefs/route.ts의 DEFAULT_PREFS와 같은 기준). */
+async function wantsMatchUpdate(userId: string) {
+  const pref = await prisma.sitterNotificationPref.findUnique({
+    where: { userId },
+    select: { matchUpdate: true },
+  });
+  return pref?.matchUpdate ?? true;
+}
+
+/** 매칭확정·미선정 메일 발송 — 실패해도 무시한다(발송 실패가 매칭 확정을 되돌리면 안 된다). */
+async function notifyMatchOutcome(
+  summary: string,
+  confirmed: { email: string | null; id: string } | null,
+  notSelected: { email: string | null; id: string }[]
+) {
+  if (!resend) return;
+
+  if (confirmed?.email && (await wantsMatchUpdate(confirmed.id))) {
+    await resend.emails
+      .send({
+        from: `${SITE_NAME} <${MAIL_FROM}>`,
+        to: confirmed.email,
+        subject: `[${SITE_NAME}] 매칭이 확정됐어요`,
+        html: matchConfirmedEmailHtml({ requestSummary: summary }),
+      })
+      .catch(() => {});
+  }
+
+  for (const s of notSelected) {
+    if (!s.email || !(await wantsMatchUpdate(s.id))) continue;
+    await resend.emails
+      .send({
+        from: `${SITE_NAME} <${MAIL_FROM}>`,
+        to: s.email,
+        subject: `[${SITE_NAME}] 이번엔 다른 분과 진행하게 됐어요`,
+        html: applicationNotSelectedEmailHtml({ requestSummary: summary }),
+      })
+      .catch(() => {});
+  }
+}
 
 // 보호자가 지원자 중 한 명을 확정 — status를 "매칭확정"으로, 해당 CareRequest도 MATCHED로.
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
@@ -11,7 +57,10 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
   const application = await prisma.careRequestApplication.findUnique({
     where: { id: params.id },
-    include: { careRequest: true },
+    include: {
+      careRequest: true,
+      sitterProfile: { select: { user: { select: { id: true, email: true } } } },
+    },
   });
   if (!application || application.careRequest.guardianId !== session.user.id) {
     return NextResponse.json({ error: "처리할 수 없어요." }, { status: 404 });
@@ -26,6 +75,16 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (application.careRequest.status !== "OPEN" || application.status !== "지원완료") {
     return NextResponse.json({ error: "이미 처리된 요청이에요." }, { status: 409 });
   }
+
+  // 미선정 처리될 사람 목록을 트랜잭션 "전에" 미리 알아둔다 — updateMany는 몇 건이
+  // 바뀌었는지 개수만 돌려주고 "누가" 바뀌었는지는 안 알려주기 때문이다. 트랜잭션
+  // 안에서 다른 지원자가 끼어들 가능성은 거의 없지만(같은 careRequestId에 한정된
+  // 좁은 창이라), 만에 하나 있어도 "메일을 한두 명 놓칠 수 있다"는 정도라 확정
+  // 처리 자체의 정확성(위의 조건부 updateMany 잠금)엔 영향 없다.
+  const toNotify = await prisma.careRequestApplication.findMany({
+    where: { careRequestId: application.careRequestId, id: { not: params.id }, status: "지원완료" },
+    select: { sitterProfile: { select: { user: { select: { id: true, email: true } } } } },
+  });
 
   // 위 검사만으로는 부족하다 — 서로 다른 지원자를 거의 동시에 확정하면 두 요청이 모두
   // 검사를 통과해(둘 다 OPEN을 봄) 지원자 두 명이 "매칭확정"이 될 수 있다.
@@ -56,6 +115,14 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       });
       return app;
     });
+
+    // 상태 변경은 이미 끝났다 — 메일은 실패해도 응답에 영향을 주지 않는다.
+    await notifyMatchOutcome(
+      careRequestSummary(application.careRequest),
+      application.sitterProfile.user,
+      toNotify.map((t) => t.sitterProfile.user)
+    ).catch(() => {});
+
     return NextResponse.json(updatedApplication);
   } catch (e) {
     if (e instanceof Error && e.message === "ALREADY_MATCHED") {

@@ -271,3 +271,100 @@ export function agreementCopyEmailHtml(params: {
   </body>
 </html>`;
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// 돌봄 매칭 흐름(지원 → 매칭확정/미선정 → 완료) 알림 4종.
+//
+// 왜 여기 있나: 이 넷은 매일 새벽 도는 배치 스크립트(scripts/send-*.mjs)가 아니라
+// **그 일이 실제로 일어나는 순간**(API 라우트 안)에 바로 나가야 자연스럽다 —
+// "누가 방금 내 글에 지원했다"를 다음날 아침까지 기다리게 하면 그 사이에 매니저가
+// 다른 일자리로 가버릴 수 있다. 그래서 배치 스크립트가 아니라 이 파일(다른 거래성
+// 메일과 같은 위치)에 두고, 상태를 바꾸는 API 라우트에서 직접 호출한다.
+//
+// 공통 원칙(위 sendCopies와 동일): **발송 실패가 원래 하려던 일(지원·확정·완료
+// 처리)을 절대 막으면 안 된다.** 그래서 호출하는 쪽에서 항상 try/catch로 감싸고
+// 실패해도 무시한다 — 메일 한 통 때문에 매칭 자체가 실패하면 안 된다.
+//
+// docs/alert-system-spec.md §7의 "아직 안 된 것"에 있던 항목들이라, 구현 완료 시
+// 그 문서도 함께 갱신할 것.
+// ─────────────────────────────────────────────────────────────────────────
+
+const esc2 = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+/** 네 메일이 전부 같은 카드 모양을 쓰므로 본문 문단만 바꿔 끼우는 공용 틀. */
+function matchingFlowEmailHtml(params: {
+  eyebrow: string; // 카드 위쪽 작은 라벨(예: "새 지원자")
+  title: string; // 굵은 제목 한 줄
+  body: string; // 설명 문단(HTML 이스케이프는 호출하는 쪽에서 이미 끝낸 문자열)
+  ctaLabel: string;
+  ctaUrl: string;
+}): string {
+  return `
+<!doctype html>
+<html lang="ko">
+  <body style="margin:0;padding:0;background:#FFFBF3;font-family:-apple-system,BlinkMacSystemFont,'Malgun Gothic',sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FFFBF3;padding:32px 16px;">
+      <tr><td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:460px;background:#fff;border-radius:20px;overflow:hidden;">
+          <tr><td style="padding:18px 24px;border-bottom:1px solid #F0EDF6;">
+            <a href="${SITE_URL}" style="text-decoration:none;color:#FF6250;font-size:19px;font-weight:800;">${SITE_NAME}</a>
+          </td></tr>
+          <tr><td style="padding:24px;">
+            <p style="margin:0 0 6px;font-size:12px;font-weight:700;color:#9C97AC;">${esc2(params.eyebrow)}</p>
+            <p style="margin:0 0 14px;font-size:16px;font-weight:800;color:#1B1730;">${esc2(params.title)}</p>
+            <p style="margin:0 0 20px;font-size:14px;line-height:1.75;color:#3A3452;">${params.body}</p>
+            <a href="${params.ctaUrl}" style="display:inline-block;background:#FF6250;color:#fff;font-size:14px;font-weight:700;text-decoration:none;padding:12px 20px;border-radius:12px;">${esc2(params.ctaLabel)} →</a>
+          </td></tr>
+        </table>
+      </td></tr>
+    </table>
+  </body>
+</html>`;
+}
+
+/** 보호자에게 — 내 돌봄 요청에 새 지원자가 왔을 때 */
+export function applicationReceivedEmailHtml(params: {
+  sitterNickname: string;
+  requestSummary: string; // 예: "병원 간병 · 서울 · 8.4~8.17"
+}): string {
+  return matchingFlowEmailHtml({
+    eyebrow: "새 지원자",
+    title: `${params.sitterNickname}님이 돌봄 요청에 지원했어요`,
+    body: `${esc2(params.requestSummary)} 요청에 새 지원자가 도착했어요. 프로필을 확인하고 마음에 드는 분을 골라 확정해 주세요.`,
+    ctaLabel: "지원자 확인하러 가기",
+    ctaUrl: `${SITE_URL}/care-request`,
+  });
+}
+
+/** 매니저에게 — 내가 확정됐을 때 */
+export function matchConfirmedEmailHtml(params: { requestSummary: string }): string {
+  return matchingFlowEmailHtml({
+    eyebrow: "매칭 확정",
+    title: "매칭이 확정됐어요",
+    body: `${esc2(params.requestSummary)} 요청에 확정되셨어요. 돌봄 확인서·합의서를 확인하고 시작 전 필요한 절차를 마쳐 주세요.`,
+    ctaLabel: "확정된 돌봄 확인하기",
+    ctaUrl: `${SITE_URL}/mypage/sitter/jobs?tab=matched`,
+  });
+}
+
+/** 매니저에게 — 다른 분이 확정돼서 내가 떨어졌을 때 */
+export function applicationNotSelectedEmailHtml(params: { requestSummary: string }): string {
+  return matchingFlowEmailHtml({
+    eyebrow: "지원 결과",
+    title: "이번엔 다른 분과 진행하게 됐어요",
+    body: `${esc2(params.requestSummary)} 요청은 다른 지원자로 확정됐어요. 아쉽지만 다른 요청도 활동 지역에 계속 올라오니 다음 기회에 다시 만나요.`,
+    ctaLabel: "다른 일자리 보러 가기",
+    ctaUrl: `${SITE_URL}/mypage/sitter/jobs`,
+  });
+}
+
+/** 매니저에게 — 보호자가 돌봄을 완료 처리했을 때 */
+export function careCompletedEmailHtml(params: { requestSummary: string }): string {
+  return matchingFlowEmailHtml({
+    eyebrow: "돌봄 완료",
+    title: "보호자가 돌봄을 완료 처리했어요",
+    body: `${esc2(params.requestSummary)} 요청이 완료 처리됐어요. 그동안 남겨두신 돌봄일지가 그대로 활동 기록으로 남아요. 수고 많으셨어요.`,
+    ctaLabel: "완료된 돌봄 확인하기",
+    ctaUrl: `${SITE_URL}/mypage/sitter/jobs?tab=done`,
+  });
+}
