@@ -7,6 +7,7 @@ import { FacilityCard } from "@/components/FacilityCard";
 import { CompareSelectBar } from "@/components/CompareSelectBar";
 import { BackToTopButton } from "@/components/BackToTopButton";
 import { FilterBar, FacilityFilters, EMPTY_FILTERS } from "@/components/FilterBar";
+import { restoreFacilityCardTransition } from "@/lib/facilityTransition";
 import { KakaoMultiMap } from "@/components/KakaoMap";
 import { NHIS_GRADE_LETTER } from "@/components/GradeBadge";
 import { PageLoader } from "@/components/PageLoader";
@@ -280,6 +281,9 @@ function SearchContent() {
     // 전역 scroll-behavior:smooth가 끼어들면 복원이 애니메이션으로 보인다 — 즉시 이동
     setTimeout(() => {
       window.scrollTo({ top: pending.y, left: 0, behavior: "instant" as ScrollBehavior });
+      // 스크롤이 제자리로 돌아온 뒤에 직전에 눌렀던 카드를 전환의 짝으로 다시 표시한다.
+      // (스크롤 복원 전에 하면 그 카드가 아직 화면 밖이라 의미가 없다)
+      restoreFacilityCardTransition();
     }, 0);
   }, [loading, results.length]);
 

@@ -8,6 +8,7 @@ import {
   PHOTO_AREA_ORDER,
 } from "@/lib/types";
 import { FacilityThumbnail } from "./FacilityThumbnail";
+import { facilityTransitionNames } from "@/lib/facilityTransition";
 
 // 실제 사진이 2장 이상 있는 시설만 옆으로 넘기는 갤러리로 보여주고,
 // 그 외(사진 없음/1장)는 기존 썸네일(로드뷰·일러스트·스톡사진) 그대로 보여준다.
@@ -31,12 +32,19 @@ export function FacilityPhotoGallery({ facility }: { facility: Facility }) {
 
   const [index, setIndex] = useState(0);
 
-  // [view-transition-name:facility-hero] — 시설 카드에서 넘어올 때 카드 사진이 이
-  // 영역으로 커지는 전환 애니메이션의 "도착점". 카드 쪽(FacilityCard)이 클릭 순간
-  // 자기 사진에 같은 이름을 붙여서 둘이 짝지어진다. 미지원 브라우저에선 그냥 무시된다.
+  // 시설 카드에서 넘어올 때 카드 사진이 이 영역으로 커지는 전환의 "도착점".
+  // 카드 쪽(FacilityCard)이 클릭 순간 자기 사진에 같은 이름을 붙여 둘이 짝지어진다.
+  // 이름에 시설 id가 들어 있어 다른 시설과 섞이지 않는다(lib/facilityTransition.ts).
+  // 미지원 브라우저·움직임 줄이기 사용자에게는 이름만 있고 아무 일도 일어나지 않는다.
+  // 이름은 시설마다 다르므로 인라인 style로, 스타일 훅(fc-hero)은 고정이라 클래스로.
+  const heroStyle = { viewTransitionName: facilityTransitionNames(facility.id).hero };
+
   if (slides.length < 2) {
     return (
-      <div className="relative mb-6 aspect-[21/9] overflow-hidden rounded-2xl [view-transition-name:facility-hero]">
+      <div
+        style={heroStyle}
+        className="relative mb-6 aspect-[21/9] overflow-hidden rounded-2xl [view-transition-class:fc-hero]"
+      >
         <FacilityThumbnail facility={facility} />
         <span className="absolute bottom-3 right-3 rounded-full bg-ink-900/50 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur">
           {facility.dataSource === "public" ? "실제 시설 사진 준비 중" : "예시 이미지 (실제 시설 사진 아님)"}
@@ -52,7 +60,7 @@ export function FacilityPhotoGallery({ facility }: { facility: Facility }) {
   }
 
   return (
-    <div className="relative mb-6 [view-transition-name:facility-hero]">
+    <div style={heroStyle} className="relative mb-6 [view-transition-class:fc-hero]">
       <div
         onScroll={handleScroll}
         className="flex aspect-[21/9] snap-x snap-mandatory overflow-x-auto rounded-2xl [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
