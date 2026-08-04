@@ -121,7 +121,7 @@ export function FacilityCard({
           )}
         </div>
 
-        <div className="mb-3 flex flex-wrap items-center gap-1.5 pr-10">
+        <div className="mb-3 flex flex-wrap items-center gap-1 pr-10">
           <TypeBadge
             type={facility.facilityType}
             label={FACILITY_TYPE_LABEL[facility.facilityType]}

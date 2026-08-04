@@ -12,7 +12,7 @@ const TYPE_BADGE_STYLE: Record<FacilityType, string> = {
 export function TypeBadge({ type, label }: { type: FacilityType; label: string }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${TYPE_BADGE_STYLE[type]}`}
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${TYPE_BADGE_STYLE[type]}`}
     >
       {label}
     </span>
@@ -30,7 +30,7 @@ export function GradeBadge({
 }) {
   if (grade === null) {
     return (
-      <span className="inline-flex items-center rounded-full bg-ink-100 px-2.5 py-1 text-xs font-semibold text-ink-500">
+      <span className="inline-flex items-center rounded-full bg-ink-100 px-2 py-0.5 text-xs font-semibold text-ink-500">
         등급 제외
       </span>
     );
@@ -51,7 +51,7 @@ export function GradeBadge({
 
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${style}`}
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold ${style}`}
     >
       {isTop && <Crown size={12} fill="currentColor" />}
       {label}
