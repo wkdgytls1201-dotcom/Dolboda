@@ -176,6 +176,15 @@ model CareQuickNote {
   @@index([careRequestId, careDate])
 }
 
+// 돌봄일지 정기 체크인 알림의 쿨다운 기록. 요청 하나당 한 행만 두고 sentAt만 계속
+// 갱신한다(AlertDelivery처럼 날짜별로 쌓지 않는다 — 이건 "오늘 보냈나"가 아니라
+// "최근 며칠 안에 보냈나"만 알면 되는 쿨다운이라 더 단순하게 간다).
+// scripts/send-care-log-reminders.mjs 참고.
+model CareLogReminder {
+  careRequestId String    @id
+  sentAt        DateTime  @default(now())
+}
+
 // 시설 시계열 스냅샷 — 매일 새벽 공단 데이터를 자동 수집(scripts/daily-nhis-sync.mjs)하면서
 // 정원·현원·대기·등급이 "바뀐 시설만" 그날 값으로 적재한다(첫 실행일은 전체 기준선).
 // 쌓이면: 자리 난 시설 감지 → 찜한 시설 알림 → 대기 소진 속도 → 등급 변동 추적의 재료가 된다.

@@ -1,0 +1,48 @@
+# 돌봄일지 정기 체크인 — scripts/send-care-log-reminders.mjs 참고.
+#
+# send-facility-alerts와 같은 시각(오전 9시)에 돌지만 별도 워크플로로 뒀다 — 대상(매니저)과
+# 판정 기준이 완전히 달라서(찜·관심지역이 아니라 "진행 중인 매칭 돌봄에 최근 일지가
+# 있는가"), 합치면 오히려 코드가 헷갈린다. 실패해도 서로 영향 없다.
+#
+# 필요한 저장소 시크릿 — send-facility-alerts.yml과 동일(DIRECT_URL·RESEND_API_KEY·MAIL_FROM)
+name: send-care-log-reminders
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # 00:00 UTC = 09:00 KST
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "대상일 (YYYY-MM-DD, 비우면 오늘 KST)"
+        required: false
+        type: string
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 의존성 설치 (postinstall에서 Prisma Client 생성)
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+        run: npm ci
+
+      - name: 체크인 알림 발송
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          MAIL_FROM: ${{ secrets.MAIL_FROM }}
+          NEXT_PUBLIC_SITE_URL: https://www.dolboda.kr
+        run: |
+          if [ -n "${{ inputs.date }}" ]; then
+            node scripts/send-care-log-reminders.mjs --write --date=${{ inputs.date }}
+          else
+            node scripts/send-care-log-reminders.mjs --write
+          fi
