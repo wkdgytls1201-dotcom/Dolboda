@@ -20,6 +20,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   // 새 데이터 생성은 외래키 제약에 막힌다.
   session: { strategy: "jwt" },
   callbacks: {
+    // 카카오는 최초 로그인 때 "이메일 제공"에 동의하지 않으면 계정에 이메일이 영영 안
+    // 남는다. 문제는 나중에 동의를 켜고 재로그인해도 Auth.js가 기존 User 행을 그대로
+    // 쓰고 갱신하지 않는다는 것(@auth/core의 handle-login.js — 이미 연결된 계정으로
+    // 재로그인하면 DB에 있던 값을 그대로 반환하고 끝낸다). 그래서 여기서 이메일이 없을
+    // 때만 새로 받아온 프로필의 이메일로 채운다 — 이미 있는 이메일은 절대 덮어쓰지 않는다
+    // (다른 소셜 계정으로 이메일을 바꿔치기하는 계정 탈취를 막기 위해).
+    // signIn 콜백은 handleLoginOrRegister가 DB를 다시 조회하기 전에 실행되므로, 여기서
+    // 업데이트하면 같은 로그인 요청 안에서 바로 세션·JWT에 반영된다(재로그인 두 번 필요 없음).
+    async signIn({ user, account, profile }) {
+      if (account?.provider === "kakao" && !user.email && user.id) {
+        const kakaoEmail = (profile as { kakao_account?: { email?: string } } | undefined)
+          ?.kakao_account?.email;
+        if (kakaoEmail) {
+          await prisma.user.update({ where: { id: user.id }, data: { email: kakaoEmail } }).catch(() => {});
+        }
+      }
+      return true;
+    },
     // 최초 로그인 때만 user·account가 들어온다 — 그때 id와 로그인 수단을 토큰에 새겨두고
     // 이후엔 토큰만 읽는다. provider를 넣는 이유: jwt 전략이라 세션에 DB 조회가 없어서
     // 마이페이지가 "무엇으로 로그인했는지"를 알 방법이 이것밖에 없다.

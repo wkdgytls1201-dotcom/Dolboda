@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, BellRing, MapPin } from "lucide-react";
-import { useSession } from "next-auth/react";
+import { AlertTriangle, Bell, BellRing, MapPin } from "lucide-react";
+import { useSession, signIn } from "next-auth/react";
 import { useFavorites } from "@/lib/favoritesContext";
 import { useAlertPreferences } from "@/lib/alertPreferencesContext";
 import { useFacilitiesByIds } from "@/lib/useFacilities";
@@ -45,6 +45,26 @@ export default function NotificationsPage() {
       <p className="mb-8 text-sm text-ink-500">
         설정해두면 조건에 맞는 변화가 생겼을 때 알려드려요.
       </p>
+
+      {!user.email && (
+        <div className="mb-8 flex items-start gap-3 rounded-2xl border border-accent-200 bg-accent-50 p-4">
+          <AlertTriangle size={18} className="mt-0.5 shrink-0 text-accent-600" />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold text-ink-900">알림을 받으려면 이메일이 필요해요</p>
+            <p className="mt-1 text-[13px] leading-relaxed text-ink-500">
+              여기서 설정을 켜두어도, 계정에 이메일이 없으면 보낼 곳이 없어 알림이 전달되지
+              않아요. 카카오 로그인에서 이메일 제공에 동의하지 않으면 이렇게 돼요.
+            </p>
+            <button
+              type="button"
+              onClick={() => signIn("kakao")}
+              className="mt-3 inline-flex min-h-[44px] items-center rounded-xl bg-accent-500 px-4 text-xs font-bold text-white transition-all duration-150 hover:bg-accent-600 active:scale-95"
+            >
+              카카오로 다시 로그인해서 이메일 동의하기
+            </button>
+          </div>
+        </div>
+      )}
 
       <section className="mb-8">
         <h2 className="mb-3 flex items-center text-base font-bold text-ink-900">
