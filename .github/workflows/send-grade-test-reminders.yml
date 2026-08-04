@@ -1,0 +1,49 @@
+# 등급테스트 재검사 리마인드 — scripts/send-grade-test-reminders.mjs 참고.
+#
+# 다른 두 알림 워크플로(send-facility-alerts·send-care-log-reminders)와 시각은 같지만
+# 대상·판정 기준이 또 다르다(관심 지역이 아니라 "예상 구간 저장한 지 3개월+, 아직 실제
+# 등급은 없음"). 매일 도는데 실제로 대상이 생기는 건 드물다 — 서비스 초기엔 예상 구간을
+# 3개월 전에 저장해둔 사람 자체가 거의 없다.
+#
+# 필요한 저장소 시크릿 — 다른 알림 워크플로와 동일(DIRECT_URL·RESEND_API_KEY·MAIL_FROM)
+name: send-grade-test-reminders
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # 00:00 UTC = 09:00 KST
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "대상일 (YYYY-MM-DD, 비우면 오늘 KST)"
+        required: false
+        type: string
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 의존성 설치 (postinstall에서 Prisma Client 생성)
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+        run: npm ci
+
+      - name: 재검사 리마인드 발송
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          MAIL_FROM: ${{ secrets.MAIL_FROM }}
+          NEXT_PUBLIC_SITE_URL: https://www.dolboda.kr
+        run: |
+          if [ -n "${{ inputs.date }}" ]; then
+            node scripts/send-grade-test-reminders.mjs --write --date=${{ inputs.date }}
+          else
+            node scripts/send-grade-test-reminders.mjs --write
+          fi
