@@ -31,9 +31,12 @@ export function FacilityPhotoGallery({ facility }: { facility: Facility }) {
 
   const [index, setIndex] = useState(0);
 
+  // [view-transition-name:facility-hero] — 시설 카드에서 넘어올 때 카드 사진이 이
+  // 영역으로 커지는 전환 애니메이션의 "도착점". 카드 쪽(FacilityCard)이 클릭 순간
+  // 자기 사진에 같은 이름을 붙여서 둘이 짝지어진다. 미지원 브라우저에선 그냥 무시된다.
   if (slides.length < 2) {
     return (
-      <div className="relative mb-6 aspect-[21/9] overflow-hidden rounded-2xl">
+      <div className="relative mb-6 aspect-[21/9] overflow-hidden rounded-2xl [view-transition-name:facility-hero]">
         <FacilityThumbnail facility={facility} />
         <span className="absolute bottom-3 right-3 rounded-full bg-ink-900/50 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur">
           {facility.dataSource === "public" ? "실제 시설 사진 준비 중" : "예시 이미지 (실제 시설 사진 아님)"}
@@ -49,7 +52,7 @@ export function FacilityPhotoGallery({ facility }: { facility: Facility }) {
   }
 
   return (
-    <div className="relative mb-6">
+    <div className="relative mb-6 [view-transition-name:facility-hero]">
       <div
         onScroll={handleScroll}
         className="flex aspect-[21/9] snap-x snap-mandatory overflow-x-auto rounded-2xl [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"

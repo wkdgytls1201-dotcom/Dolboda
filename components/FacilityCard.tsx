@@ -101,11 +101,29 @@ export function FacilityCard({
         href={`/facility/${facility.id}`}
         onClick={(e) => {
           e.preventDefault();
+          // 카드 → 상세 전환 애니메이션(View Transitions API): 화면에는 카드가 수십 장
+          // 있는데 view-transition-name은 문서 안에서 유일해야 해서, 미리 전부에 붙이지
+          // 않고 "지금 누른 카드"의 사진에만 그 자리에서 이름을 붙인다. 상세 페이지의
+          // 대표 사진(FacilityPhotoGallery)이 같은 이름을 갖고 있어 둘이 짝지어지며,
+          // 브라우저가 카드 사진이 상세 사진 크기·위치로 커지는 움직임을 자동으로 만든다.
+          // 미지원 브라우저에서는 이름만 붙고 아무 일도 안 일어난다(기존과 동일한 즉시 전환).
+          //
+          // ★ 붙이기 전에 먼저 다 지운다: 이름이 문서 안에서 둘 이상이면 브라우저가
+          //   전환을 통째로 취소한다(InvalidStateError). 뒤로가기로 목록에 돌아왔을 때
+          //   앞서 누른 카드에 이름이 남아 있을 수 있어서, 매번 정리하고 새로 붙인다.
+          document
+            .querySelectorAll<HTMLElement>("[data-vt-hero]")
+            .forEach((el) => (el.style.viewTransitionName = ""));
+          const thumb = e.currentTarget.querySelector<HTMLElement>("[data-vt-hero]");
+          if (thumb) thumb.style.viewTransitionName = "facility-hero";
           requestFacilityView(facility.id);
         }}
         className="block transition-transform duration-150 ease-snappy active:scale-[0.98]"
       >
-        <div className="relative mb-3 -mx-4 -mt-4 aspect-[16/9] overflow-hidden rounded-t-2xl">
+        <div
+          data-vt-hero
+          className="relative mb-3 -mx-4 -mt-4 aspect-[16/9] overflow-hidden rounded-t-2xl"
+        >
           <FacilityThumbnail
             facility={facility}
             className="transition-transform duration-500 group-hover:scale-105"
