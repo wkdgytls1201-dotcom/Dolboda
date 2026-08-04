@@ -1,4 +1,4 @@
-# 관심시설 알림 발송 — scripts/send-facility-alerts.mjs 참고.
+# 관심시설·관심지역 알림 발송(빈자리·등급변동·신규등록) — scripts/send-facility-alerts.mjs 참고.
 #
 # 수집(daily-nhis-sync, 새벽 4시)과 **일부러 분리했다**:
 #   - 새벽에 알림을 보내면 알림음이 울려 불쾌하다. 사람이 볼 만한 오전 9시에 보낸다.

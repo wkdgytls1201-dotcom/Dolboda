@@ -1,13 +1,14 @@
-// 관심시설 알림 발송 — 빈자리·등급 변동.
+// 관심시설·관심지역 알림 발송 — 빈자리·등급 변동·신규 시설 등록.
 //
 // 일일 수집(daily-nhis-sync.mjs)이 끝난 **뒤** 실행된다. 수집이 넘겨주는 값에 기대지 않고
-// FacilitySnapshot에서 사건을 **다시 계산**한다. 그래서:
+// FacilitySnapshot·Facility에서 사건을 **다시 계산**한다. 그래서:
 //   - 수집과 분리돼 있어 따로 재실행해도 안전하다(중복은 AlertDelivery가 막는다)
 //   - 수집이 실패한 날에도 나중에 이 스크립트만 돌릴 수 있다
 //
-// 사건 판정 (스냅샷은 "바뀐 시설만" 적재되므로 오늘 행이 있는 시설만 본다):
-//   빈자리   — 이전에는 현원 >= 정원(만실)이었는데 오늘 현원 < 정원
-//   등급변동 — 이전 등급과 오늘 등급이 다름
+// 사건 판정:
+//   빈자리   — 이전에는 현원 >= 정원(만실)이었는데 오늘 현원 < 정원 (FacilitySnapshot, 바뀐 시설만 적재)
+//   등급변동 — 이전 등급과 오늘 등급이 다름 (FacilitySnapshot)
+//   신규등록 — Facility.createdAt이 오늘(KST)인 시설 (관심 지역이 겹치는 사람에게)
 //
 // 사용법:
 //   node --env-file=.env.local scripts/send-facility-alerts.mjs           # 드라이런
@@ -34,6 +35,50 @@ function todayKst() {
   return new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
 }
 
+/** 그 날짜(KST)의 [00:00, 다음날 00:00) 구간을 UTC Date로 */
+function kstDayRange(dateStr) {
+  const start = new Date(`${dateStr}T00:00:00+09:00`);
+  const end = new Date(start.getTime() + 24 * 3600 * 1000);
+  return { start, end };
+}
+
+// lib/regions.ts의 REGIONS(17개, /notifications 관심 지역 칩과 동일)와 짝을 맞춘 주소
+// 접두어 표. lib/regionSeo.ts의 REGION_SEO는 "전남"과 "광주"를 한 항목으로 묶어서 이
+// 17개 표기와 안 맞는다(app/api/sitter/workplaces/route.ts의 prefixesFor와 같은 이유로
+// 여기서도 별도로 둔다 — 그 파일은 TS라 이 순수 node 스크립트에서 직접 import 못 한다).
+const REGION_PREFIXES = [
+  ["서울", ["서울"]],
+  ["경기", ["경기"]],
+  ["인천", ["인천"]],
+  ["부산", ["부산"]],
+  ["대구", ["대구"]],
+  ["대전", ["대전"]],
+  ["울산", ["울산"]],
+  ["세종", ["세종"]],
+  ["강원", ["강원"]],
+  ["충북", ["충청북도", "충북"]],
+  ["충남", ["충청남도", "충남"]],
+  ["전북", ["전라북도", "전북"]],
+  ["전남", ["전라남도", "전남"]],
+  ["광주", ["광주"]],
+  ["경북", ["경상북도", "경북"]],
+  ["경남", ["경상남도", "경남"]],
+  ["제주", ["제주"]],
+];
+function regionLabelOf(address) {
+  const sido = address.split(/\s+/)[0] ?? "";
+  const hit = REGION_PREFIXES.find(([, prefixes]) => prefixes.some((p) => sido.startsWith(p)));
+  return hit ? hit[0] : null;
+}
+
+const FACILITY_TYPE_LABEL = {
+  NURSING_HOSPITAL: "요양병원",
+  NURSING_HOME: "요양원",
+  DAY_NIGHT_CARE: "주야간보호센터",
+  HOME_CARE: "방문요양센터",
+  SILVER_TOWN: "실버타운",
+};
+
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.dolboda.kr";
 const SITE_NAME = "돌보다";
 const MAIL_FROM = process.env.MAIL_FROM || "onboarding@resend.dev";
@@ -50,11 +95,19 @@ const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replac
  */
 function mailBody(events) {
   const many = events.length > 1;
+  const hasFacilityKind = events.some((e) => e.kind !== "newFacility");
+  const hasRegionKind = events.some((e) => e.kind === "newFacility");
   const headline = many
-    ? `관심시설 ${events.length}곳에 소식이 있어요.`
+    ? hasFacilityKind && hasRegionKind
+      ? `관심시설·관심지역에 소식이 ${events.length}건 있어요.`
+      : hasRegionKind
+        ? `관심 지역에 새 시설이 ${events.length}곳 등록됐어요.`
+        : `관심시설 ${events.length}곳에 소식이 있어요.`
     : events[0].kind === "vacancy"
       ? "관심시설로 저장하신 곳에 입소 가능한 자리가 생겼어요."
-      : "관심시설로 저장하신 곳의 평가등급이 바뀌었어요.";
+      : events[0].kind === "gradeChange"
+        ? "관심시설로 저장하신 곳의 평가등급이 바뀌었어요."
+        : "관심 지역에 새 시설이 등록됐어요.";
 
   const text =
     `${headline}\n\n` +
@@ -93,12 +146,18 @@ ${cards}
 
 function subjectOf(events) {
   if (events.length > 1) {
-    return `[${SITE_NAME}] 관심시설 ${events.length}곳에 소식이 있어요`;
+    const hasFacilityKind = events.some((e) => e.kind !== "newFacility");
+    const hasRegionKind = events.some((e) => e.kind === "newFacility");
+    return hasFacilityKind && hasRegionKind
+      ? `[${SITE_NAME}] 관심시설·관심지역에 소식이 ${events.length}건 있어요`
+      : hasRegionKind
+        ? `[${SITE_NAME}] 관심 지역에 새 시설이 ${events.length}곳 등록됐어요`
+        : `[${SITE_NAME}] 관심시설 ${events.length}곳에 소식이 있어요`;
   }
   const e = events[0];
-  return e.kind === "vacancy"
-    ? `[${SITE_NAME}] ${e.facilityName}에 자리가 났어요`
-    : `[${SITE_NAME}] ${e.facilityName}의 평가등급이 바뀌었어요`;
+  if (e.kind === "vacancy") return `[${SITE_NAME}] ${e.facilityName}에 자리가 났어요`;
+  if (e.kind === "gradeChange") return `[${SITE_NAME}] ${e.facilityName}의 평가등급이 바뀌었어요`;
+  return `[${SITE_NAME}] ${e.region}에 새 시설이 등록됐어요`;
 }
 
 async function sendMail(to, subject, body) {
@@ -171,27 +230,62 @@ async function main() {
     }
   }
   const vac = events.filter((e) => e.kind === "vacancy").length;
-  console.log(`사건: 빈자리 ${vac}건 · 등급변동 ${events.length - vac}건`);
-  if (events.length === 0) {
+
+  // 2-1) 사건 판정 — 신규 등록. Facility.createdAt은 이 시설이 우리 DB에 처음 들어온
+  // 시각이라(@default(now())는 create 시에만 찍히고 update로는 안 바뀐다), 초기 대량
+  // 수집 이후로는 곧 "실제로 새로 등록된 시설"과 같은 뜻이 된다.
+  const { start: dayStart, end: dayEnd } = kstDayRange(date);
+  const newFacilities = await prisma.facility.findMany({
+    where: { createdAt: { gte: dayStart, lt: dayEnd } },
+    select: { id: true, name: true, address: true, facilityType: true },
+  });
+  const newFacilityEvents = [];
+  for (const f of newFacilities) {
+    const region = regionLabelOf(f.address);
+    if (!region) continue; // 지역 매핑이 안 되는 주소(드묾)는 조용히 건너뛴다
+    newFacilityEvents.push({
+      facilityId: f.id,
+      facilityName: f.name,
+      kind: "newFacility",
+      region,
+      detail: `${region} 지역에 새로 등록된 ${FACILITY_TYPE_LABEL[f.facilityType] ?? "시설"}이에요`,
+    });
+  }
+  console.log(
+    `사건: 빈자리 ${vac}건 · 등급변동 ${events.length - vac}건 · 신규등록 ${newFacilityEvents.length}건`
+  );
+  if (events.length === 0 && newFacilityEvents.length === 0) {
     await prisma.$disconnect();
     return;
   }
 
-  // 3) 수신자 조회 — 찜하고 해당 알림을 켠 사람만
+  // 3) 수신자 조회
+  //  - 빈자리·등급변동: 그 시설을 찜하고 해당 알림을 켠 사람만
+  //  - 신규등록: 그 지역을 관심 지역으로 등록한 사람 전원(시설별 온오프 스위치가 없다)
   const byKey = new Map(events.map((e) => [`${e.facilityId}:${e.kind}`, e]));
   const facilityIds = [...new Set(events.map((e) => e.facilityId))];
-  const subs = await prisma.facilityFavorite.findMany({
-    where: {
-      facilityId: { in: facilityIds },
-      OR: [{ vacancyAlert: true }, { gradeChangeAlert: true }],
-    },
-    select: {
-      facilityId: true,
-      vacancyAlert: true,
-      gradeChangeAlert: true,
-      user: { select: { id: true, email: true } },
-    },
-  });
+  const subs = facilityIds.length
+    ? await prisma.facilityFavorite.findMany({
+        where: {
+          facilityId: { in: facilityIds },
+          OR: [{ vacancyAlert: true }, { gradeChangeAlert: true }],
+        },
+        select: {
+          facilityId: true,
+          vacancyAlert: true,
+          gradeChangeAlert: true,
+          user: { select: { id: true, email: true } },
+        },
+      })
+    : [];
+
+  const regionsInvolved = [...new Set(newFacilityEvents.map((e) => e.region))];
+  const regionSubs = regionsInvolved.length
+    ? await prisma.regionInterest.findMany({
+        where: { region: { in: regionsInvolved } },
+        select: { region: true, user: { select: { id: true, email: true } } },
+      })
+    : [];
 
   // 4) 사람별로 묶는다 — 시설마다 따로 보내면 여러 곳 찜한 사람은 메일 폭탄을 맞는다.
   //    같은 시설은 COOLDOWN_DAYS 안에 다시 보내지 않는다: 만실↔여유를 오가는 시설이면
@@ -225,6 +319,22 @@ async function main() {
       const entry = byUser.get(sub.user.id) ?? { email: sub.user.email, events: [], keys: [] };
       entry.events.push(ev);
       entry.keys.push({ facilityId: sub.facilityId, kind });
+      byUser.set(sub.user.id, entry);
+    }
+  }
+
+  // 신규 등록 — 쿨다운 없음(한 시설이 "신규"인 날은 평생 딱 하루뿐이라 재발송 걱정이 없다).
+  // AlertDelivery의 unique 제약([userId, facilityId, kind, date])이 재실행 중복은 그대로 막는다.
+  for (const ev of newFacilityEvents) {
+    for (const sub of regionSubs) {
+      if (sub.region !== ev.region) continue;
+      targeted++;
+
+      if (!sub.user.email) { noEmail++; continue; }
+
+      const entry = byUser.get(sub.user.id) ?? { email: sub.user.email, events: [], keys: [] };
+      entry.events.push(ev);
+      entry.keys.push({ facilityId: ev.facilityId, kind: "newFacility" });
       byUser.set(sub.user.id, entry);
     }
   }
