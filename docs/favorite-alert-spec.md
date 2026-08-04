@@ -3,6 +3,12 @@
 > 최종 갱신: 2026-08-03
 > 관련 코드: `lib/favoritesContext.tsx` · `lib/alertPreferencesContext.tsx` ·
 > `app/notifications/page.tsx` · `scripts/daily-nhis-sync.mjs` · `prisma/schema.prisma`
+>
+> ⭐ **전체 알림 시스템(찜 알림 이후 추가된 관심 지역·저장 검색조건·돌봄일지
+> 체크인·등급테스트 재검사·매니저 새 일자리 알림까지 전부)을 한눈에 보려면
+> [alert-system-spec.md](alert-system-spec.md)를 먼저 읽으세요.** 이 문서는
+> 그중 가장 먼저 만들어진 §1~7(찜·관심지역·이메일없음안내) 부분의 상세
+> 설계·시행착오 기록입니다.
 
 ## 0. 한 줄 요약
 
