@@ -89,15 +89,22 @@ export function AlertPreferencesProvider({ children }: { children: React.ReactNo
       });
 
       if (!userId) return;
+      // fetch는 400 같은 실패 응답을 reject하지 않는다 — res.ok를 직접 봐야
+      // 서버 저장이 조용히 실패했을 때(예: 지역 표기 불일치) 화면만 켜진 채로
+      // 남는 걸 막는다.
       fetch("/api/favorites", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ region, on }),
-      }).catch(() => {
-        setRegionInterests((prev) =>
-          on ? prev.filter((r) => r !== region) : [...new Set([...prev, region])]
-        );
-      });
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error("region toggle failed");
+        })
+        .catch(() => {
+          setRegionInterests((prev) =>
+            on ? prev.filter((r) => r !== region) : [...new Set([...prev, region])]
+          );
+        });
     },
     [userId]
   );

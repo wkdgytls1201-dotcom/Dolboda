@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { REGION_SEO } from "@/lib/regionSeo";
+import { REGIONS } from "@/lib/regions";
 
 // 관심시설(찜)과 알림 설정 — 서버 저장분.
 //
@@ -100,9 +100,15 @@ export async function PATCH(req: Request) {
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
 
   // 관심 지역 토글
+  // ★ REGION_SEO가 아니라 REGIONS로 검증한다 — REGION_SEO는 "전남"·"광주"를 "전남광주"
+  // 하나로 묶어서, /notifications 화면(REGIONS 17개, 전남·광주 분리)에서 그 두 칩을
+  // 누르면 클라이언트는 켜진 것처럼 보이는데 여기서 조용히 400을 내고 있었다
+  // (fetch는 실패 응답을 reject하지 않아 클라이언트가 실패를 못 알아챈다 —
+  // lib/alertPreferencesContext.tsx의 toggleRegionInterest 참고). 실제로 저장은
+  // 하나도 안 되고 있었던 버그.
   if (typeof body.region === "string") {
     const region = body.region.trim();
-    if (!REGION_SEO.some((r) => r.slug === region)) {
+    if (!(REGIONS as readonly string[]).includes(region)) {
       return NextResponse.json({ error: "지역을 확인해주세요." }, { status: 400 });
     }
     const on = body.on === true;
