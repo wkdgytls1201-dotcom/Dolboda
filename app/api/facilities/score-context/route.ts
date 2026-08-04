@@ -6,7 +6,7 @@ import { calcDolbodaScore } from "@/lib/dolbodaScore";
 import { haversineDistanceKm } from "@/lib/distance";
 import type { Facility as FacilityRow } from "@prisma/client";
 
-// 돌보다 AI기반 안심지수의 맥락 데이터 1회 조회:
+// 돌보다 공공데이터 기반 안심지수의 맥락 데이터 1회 조회:
 // ① 같은 시군구·같은 유형 시설들의 안심지수 평균 (서버에서 동일 산식으로 계산)
 // ② 최근접 요양병원 거리 (비병원 시설의 의료 접근성 신호)
 // 상세페이지가 이 엔드포인트 하나만 부르면 되도록 묶어서 요청 수를 줄였다.

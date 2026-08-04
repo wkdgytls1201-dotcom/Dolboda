@@ -96,7 +96,7 @@ export default function FacilityDetailClient({
   const [showGradeCriteria, setShowGradeCriteria] = useState(false);
   // 프로그램 운영 아코디언 — null이면 첫 번째 종류만 열림, "__none__"이면 전부 접힘
   const [openProgramCategory, setOpenProgramCategory] = useState<string | null>(null);
-  // 돌보다 AI기반 안심지수 맥락(지역 평균·인근 요양병원 거리) — 시설당 1회 조회
+  // 돌보다 공공데이터 기반 안심지수 맥락(지역 평균·인근 요양병원 거리) — 시설당 1회 조회
   const [scoreContext, setScoreContext] = useState<{
     regionName: string | null;
     regionAverage: number | null;

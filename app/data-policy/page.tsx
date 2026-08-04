@@ -7,7 +7,7 @@ import { jsonLdHtml } from "@/lib/jsonLd";
 export const metadata: Metadata = {
   title: "데이터 출처와 안심지수 계산 방식",
   description:
-    "돌보다가 어느 공공기관 자료를 쓰는지, 돌보다 AI기반 안심지수가 무엇을 보는지, 데이터가 없을 때의 처리 원칙과 오류 정정 요청 방법을 안내합니다.",
+    "돌보다가 어느 공공기관 자료를 쓰는지, 돌보다 공공데이터 기반 안심지수가 무엇을 보는지, 데이터가 없을 때의 처리 원칙과 오류 정정 요청 방법을 안내합니다.",
   alternates: { canonical: "/data-policy" },
 };
 
@@ -78,7 +78,7 @@ export default function DataPolicyPage() {
       </section>
 
       <section className="mb-10">
-        <h2 className="mb-4 text-lg font-bold text-ink-900">2. 돌보다 AI기반 안심지수</h2>
+        <h2 className="mb-4 text-lg font-bold text-ink-900">2. 돌보다 공공데이터 기반 안심지수</h2>
         <p className="mb-4 text-[15px] leading-[1.8] text-ink-700">
           보호자가 시설을 고를 때 실제로 걱정하는 순서를 그대로 점수 구조에 반영했습니다. 공개된
           공공데이터만으로 계산하는 참고 지표이며, 이용자 평점이나 리뷰가 아닙니다.

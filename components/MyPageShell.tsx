@@ -291,9 +291,8 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
                   <NavCard key={item.href} item={item} delayIndex={i} />
                 ))}
               </div>
-              {guardianCompact.map((item, i) => (
-                <CompactNavRow key={item.href} item={item} delayIndex={guardianGrid.length + i} />
-              ))}
+              {/* 얇은 줄(등급 테스트·상담 신청 내역)은 여기 두지 않는다 —
+                  아래 대시보드로 내렸다(이유는 그 자리 주석 참고). */}
             </nav>
 
             {/* 데스크톱 사이드바용 내 정보 목록 (모바일에서는 위 카드들이 대신한다) */}
@@ -374,6 +373,20 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
           </Link>
         )}
         {children}
+
+        {/* 자주 안 쓰는 메뉴(등급 테스트·상담 신청 내역)는 대시보드 **아래**에 둔다.
+            예전엔 메뉴 묶음에 함께 있어서, "상담 신청 내역" 줄이 정작 지금 무슨 일이
+            벌어지고 있는지 알려주는 카드("매니저들의 지원을 기다리고 있어요")보다
+            위에 나왔다. 지금 진행 중인 일이 먼저고, 가끔 들춰보는 기록은 그다음이다.
+            데스크톱은 사이드바(infoItems)에 그대로 있어 접근성이 줄지 않는다.
+            마이페이지 첫 화면에서만 — 하위 화면에서는 메뉴 자체를 안 그린다. */}
+        {atRoot && role === "guardian" && guardianCompact.length > 0 && (
+          <nav className="mt-2.5 flex flex-col gap-2.5 sm:hidden">
+            {guardianCompact.map((item, i) => (
+              <CompactNavRow key={item.href} item={item} delayIndex={i} />
+            ))}
+          </nav>
+        )}
       </div>
     </main>
   );

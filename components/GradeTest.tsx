@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { AuthModal } from "./AuthModal";
@@ -61,6 +61,11 @@ const TONE_STYLES: Record<
   },
 };
 
+// useLayoutEffect는 서버 렌더에서 호출하면 React가 경고를 낸다(서버에는 화면이 없으니
+// 당연하다). 서버에서는 아무 일도 안 하는 useEffect로 바꿔치기해 경고만 피한다 —
+// 실제 동작(그리기 전에 복원)은 브라우저에서만 필요하다.
+const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
+
 // 카카오 로그인은 페이지를 완전히 떠났다가 돌아오기 때문에, 답변을 세션에 저장해두지
 // 않으면 로그인하고 온 사이에 52문항이 전부 날아간다.
 const SAVE_KEY = "dolboda-grade-test";
@@ -85,11 +90,37 @@ function readSaved(): SavedState | null {
 export function GradeTest() {
   const { status } = useSession();
   const [showAuth, setShowAuth] = useState(false);
-  const saved = typeof window !== "undefined" ? readSaved() : null;
 
-  const [phase, setPhase] = useState<Phase>(saved?.phase ?? "intro");
-  const [areaIndex, setAreaIndex] = useState(saved?.areaIndex ?? 0);
-  const [answers, setAnswers] = useState<Answers>(saved?.answers ?? {});
+  // 첫 렌더는 서버와 똑같은 값(인트로)으로 시작한다.
+  //
+  // 예전엔 렌더 도중에 sessionStorage를 읽어 초기값을 정했는데, 서버에는
+  // sessionStorage가 없어서 서버는 "인트로", 클라이언트는 "결과"를 그렸다.
+  // 그 차이 때문에 하이드레이션이 깨지고 React가 화면을 통째로 다시 그렸다
+  // — 로그인하고 돌아오는 흐름(이 화면의 주 사용 경로)에서 매번 일어났다.
+  // 검색 페이지(app/search/SearchPageClient.tsx)가 같은 문제를 먼저 겪고
+  // 같은 방식으로 고쳐둔 전례가 있다.
+  const [phase, setPhase] = useState<Phase>("intro");
+  const [areaIndex, setAreaIndex] = useState(0);
+  const [answers, setAnswers] = useState<Answers>({});
+  // 복원이 끝나기 전에는 아래 "진행 상황 저장" effect가 돌지 않게 막는다
+  // (인트로 초기값으로 저장분을 덮어써 버리면 답변 52개가 날아간다).
+  const [restored, setRestored] = useState(false);
+
+  // 저장분 복원은 화면이 그려지기 **전에** 끝내야 한다. useEffect(그리고 난 뒤 실행)로
+  // 하면 결과 화면으로 돌아온 사람에게 인트로가 한 번 번쩍인다. useLayoutEffect는
+  // 브라우저가 그리기 직전에 실행돼 그 깜빡임이 없다. 서버에서는 실행되지 않으므로
+  // 위 초기값(인트로)이 그대로 서버 HTML이 되고, 하이드레이션도 어긋나지 않는다.
+  useIsomorphicLayoutEffect(() => {
+    const saved = readSaved();
+    if (saved) {
+      setPhase(saved.phase);
+      setAreaIndex(saved.areaIndex);
+      setAnswers(saved.answers);
+    }
+    setRestored(true);
+    // 최초 1회만 — 이후 사용자의 진행을 되돌리면 안 된다
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 인트로에서 5개 영역 중 3개쯤에서 화면이 잘리면 아래에 더 있는지 모른다 —
   // 스크롤 전까지만 "아래에 더 있어요" 힌트를 띄우고, 내리기 시작하면 치운다.
@@ -114,14 +145,17 @@ export function GradeTest() {
     return () => cancelAnimationFrame(raf);
   }, [phase, areaIndex]);
 
-  // 진행 상황을 계속 저장해둔다 (로그인 왕복 후 복원용)
+  // 진행 상황을 계속 저장해둔다 (로그인 왕복 후 복원용).
+  // 복원이 끝나기 전에는 저장하지 않는다 — 그러지 않으면 첫 렌더의 초기값(인트로·답변
+  // 없음)이 저장분을 덮어써, 로그인하고 돌아온 사람의 답변 52개가 날아간다.
   useEffect(() => {
+    if (!restored) return;
     try {
       sessionStorage.setItem(SAVE_KEY, JSON.stringify({ phase, areaIndex, answers }));
     } catch {
       // 저장이 막혀 있어도 테스트 자체는 계속 진행된다
     }
-  }, [phase, areaIndex, answers]);
+  }, [restored, phase, areaIndex, answers]);
 
   const area = TEST_AREAS[areaIndex];
   const answeredCount = Object.keys(answers).length;
