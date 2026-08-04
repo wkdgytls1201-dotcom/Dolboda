@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { useSession } from "next-auth/react";
 import {
   X,
   Building2,
@@ -11,11 +12,15 @@ import {
   ShieldCheck,
   Sparkles,
   SlidersHorizontal,
+  BellPlus,
 } from "lucide-react";
 import { FACILITY_TYPE_LABEL, Facility, FacilityType, isHospital } from "@/lib/types";
 import { InfoTooltip } from "./InfoTooltip";
 import { TOOLTIPS } from "@/lib/tooltips";
 import { PROGRAM_TAG_META, type ProgramTag } from "@/lib/programTaxonomy";
+import { hasAnyFilter } from "@/lib/savedSearch";
+import { AuthModal } from "./AuthModal";
+import { EMPTY_FILTERS, type FacilityFilters } from "@/lib/facilityFilters";
 
 const ALL_TYPES: FacilityType[] = [
   "NURSING_HOSPITAL",
@@ -33,29 +38,12 @@ const DISTANCE_OPTIONS = [
   { label: "100km 이내", value: 100 },
 ];
 
-export interface FacilityFilters {
-  types: FacilityType[];
-  grades: number[];
-  maxDistanceKm: number | null;
-  departments: string[];
-  onlyVacancy: boolean;
-  verifiedOnly: boolean;
-  /** 프로그램 태그 — 공단 프로그램 12만 건을 분류해 만든 필터 */
-  programTags: ProgramTag[];
-  /** 안심지수 "우수"(전국 상위 25%) 이상만 — 돌보다의 핵심 지표를 필터 첫 자리에 내세운다 */
-  goodScoreOnly: boolean;
-}
-
-export const EMPTY_FILTERS: FacilityFilters = {
-  types: [],
-  grades: [],
-  maxDistanceKm: null,
-  departments: [],
-  onlyVacancy: false,
-  verifiedOnly: false,
-  programTags: [],
-  goodScoreOnly: false,
-};
+// 타입·기본값은 lib/facilityFilters.ts로 옮겼다(서버 쪽 코드가 이 클라이언트 컴포넌트
+// 파일 전체를 import하지 않고도 같은 타입을 쓸 수 있게). 기존 import 경로
+// (@/components/FilterBar에서 FacilityFilters·EMPTY_FILTERS를 가져오던 곳)가 안 깨지게
+// 여기서 재수출한다.
+export type { FacilityFilters };
+export { EMPTY_FILTERS };
 
 // 드롭다운 안에서 쓰는 알약형 선택지 — 모든 섹션이 같은 모양을 공유한다.
 function FilterPill({
@@ -115,7 +103,37 @@ export function FilterBar({
   /** 지금 필터 조건으로 몇 건이 남는지 — 시트 하단 버튼에 실시간으로 보여준다 */
   resultCount: number;
 }) {
+  const { data: session } = useSession();
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  async function saveSearch() {
+    if (!session?.user) {
+      setShowAuth(true);
+      return;
+    }
+    setSaveState("saving");
+    setSaveError(null);
+    try {
+      const res = await fetch("/api/saved-searches", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filters }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setSaveState("error");
+        setSaveError(data?.error ?? "저장하지 못했어요.");
+        return;
+      }
+      setSaveState("saved");
+    } catch {
+      setSaveState("error");
+      setSaveError("저장하지 못했어요.");
+    }
+  }
 
   // 시트가 떠 있는 동안 배경 스크롤 잠금.
   // body에 overflow:hidden만 주는 방식(ApplyConfirmSheet와 같은 패턴)은 모바일에서
@@ -123,6 +141,13 @@ export function FilterBar({
   // 제스처가 뒤에 있는 시설 목록으로 "새어나가"(scroll chaining) 배경이 같이 밀려 올라간다.
   // body를 fixed로 그 자리에 고정하고 닫힐 때 원래 스크롤 위치로 되돌리는 방식이라야
   // iOS·안드로이드 모두에서 확실히 막힌다.
+  // 조건이 바뀌면 이전 저장 확인 문구("저장했어요")가 새 조건에도 그대로 남아있으면
+  // 안 되니 초기화한다.
+  useEffect(() => {
+    setSaveState("idle");
+    setSaveError(null);
+  }, [filters]);
+
   useEffect(() => {
     if (!sheetOpen) return;
     const scrollY = window.scrollY;
@@ -482,6 +507,33 @@ export function FilterBar({
               </FilterSection>
             </div>
 
+            {hasAnyFilter(filters) && (
+              <div className="shrink-0 border-t border-ink-100 px-5 py-3">
+                <button
+                  type="button"
+                  onClick={saveSearch}
+                  disabled={saveState === "saving" || saveState === "saved"}
+                  className={`flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-xl text-sm font-bold transition-all duration-150 active:scale-[0.98] disabled:active:scale-100 ${
+                    saveState === "saved"
+                      ? "bg-mint-50 text-mint-700"
+                      : "bg-royal-50 text-royal-700 hover:bg-royal-100"
+                  }`}
+                >
+                  <BellPlus size={15} />
+                  {saveState === "saving"
+                    ? "저장하는 중..."
+                    : saveState === "saved"
+                      ? "저장했어요 — 새 시설이 뜨면 알려드려요"
+                      : "이 조건 저장하고 새 시설 알림받기"}
+                </button>
+                {saveState === "error" && (
+                  <p className="mt-1.5 text-center text-xs font-semibold text-primary-600">
+                    {saveError}
+                  </p>
+                )}
+              </div>
+            )}
+
             <div className="flex shrink-0 gap-2 border-t border-ink-100 px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
               <button
                 type="button"
@@ -502,6 +554,8 @@ export function FilterBar({
         </div>,
         document.body
       )}
+
+      {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
     </div>
   );
 }

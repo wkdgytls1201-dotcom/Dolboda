@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { AlertTriangle, Bell, BellRing, MapPin } from "lucide-react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { AlertTriangle, Bell, BellRing, MapPin, Search, X } from "lucide-react";
 import { useSession, signIn } from "next-auth/react";
 import { useFavorites } from "@/lib/favoritesContext";
 import { useAlertPreferences } from "@/lib/alertPreferencesContext";
@@ -11,6 +12,12 @@ import { AuthModal } from "@/components/AuthModal";
 import { InfoTooltip } from "@/components/InfoTooltip";
 import { REGIONS } from "@/lib/regions";
 
+interface SavedSearchItem {
+  id: string;
+  label: string;
+  createdAt: string;
+}
+
 export default function NotificationsPage() {
   const { data: session } = useSession();
   const user = session?.user;
@@ -18,6 +25,20 @@ export default function NotificationsPage() {
   const { facilities: favoriteFacilities } = useFacilitiesByIds(favoriteIds);
   const { getPref, setPref, regionInterests, toggleRegionInterest } = useAlertPreferences();
   const [showAuth, setShowAuth] = useState(false);
+  const [savedSearches, setSavedSearches] = useState<SavedSearchItem[] | null>(null);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    fetch("/api/saved-searches")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d) => setSavedSearches(d.items ?? []))
+      .catch(() => setSavedSearches([]));
+  }, [user?.id]);
+
+  async function removeSavedSearch(id: string) {
+    setSavedSearches((prev) => (prev ? prev.filter((s) => s.id !== id) : prev));
+    await fetch(`/api/saved-searches/${id}`, { method: "DELETE" }).catch(() => {});
+  }
 
   if (!user) {
     return (
@@ -91,6 +112,41 @@ export default function NotificationsPage() {
             );
           })}
         </div>
+      </section>
+
+      <section className="mb-8">
+        <h2 className="mb-3 flex items-center text-base font-bold text-ink-900">
+          <Search size={16} className="mr-1.5" />
+          저장한 검색조건
+          <InfoTooltip text="시설찾기에서 조건을 골라 저장하면, 그 조건에 맞는 새 시설이 등록될 때 알려드려요." />
+        </h2>
+        {savedSearches === null ? null : savedSearches.length === 0 ? (
+          <div className="rounded-2xl bg-white p-6 text-center text-sm text-ink-300 shadow-card">
+            아직 저장한 검색조건이 없어요.{" "}
+            <Link href="/search" className="font-semibold text-primary-600 underline">
+              시설찾기
+            </Link>
+            에서 조건을 고르고 저장해보세요.
+          </div>
+        ) : (
+          <ul className="divide-y divide-ink-100 rounded-2xl border border-ink-100 bg-white">
+            {savedSearches.map((s) => (
+              <li key={s.id} className="flex items-center justify-between gap-3 p-4">
+                <span className="min-w-0 truncate text-sm font-semibold text-ink-900">
+                  {s.label}
+                </span>
+                <button
+                  type="button"
+                  aria-label={`${s.label} 검색조건 삭제`}
+                  onClick={() => removeSavedSearch(s.id)}
+                  className="-m-2 flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-full text-ink-300 transition-all duration-150 hover:bg-ink-100 hover:text-ink-700 active:scale-90 active:bg-ink-100"
+                >
+                  <X size={16} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section className="mb-8">

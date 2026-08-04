@@ -1,4 +1,4 @@
-// 관심시설·관심지역 알림 발송 — 빈자리·등급 변동·신규 시설 등록.
+// 관심시설·관심지역·저장 검색조건 알림 발송 — 빈자리·등급 변동·신규 시설 등록.
 //
 // 일일 수집(daily-nhis-sync.mjs)이 끝난 **뒤** 실행된다. 수집이 넘겨주는 값에 기대지 않고
 // FacilitySnapshot·Facility에서 사건을 **다시 계산**한다. 그래서:
@@ -9,6 +9,7 @@
 //   빈자리   — 이전에는 현원 >= 정원(만실)이었는데 오늘 현원 < 정원 (FacilitySnapshot, 바뀐 시설만 적재)
 //   등급변동 — 이전 등급과 오늘 등급이 다름 (FacilitySnapshot)
 //   신규등록 — Facility.createdAt이 오늘(KST)인 시설 (관심 지역이 겹치는 사람에게)
+//   저장조건 — 위 신규등록 시설 중 저장한 검색조건(SavedSearch)에 맞는 것 (그 사람에게)
 //
 // 사용법:
 //   node --env-file=.env.local scripts/send-facility-alerts.mjs           # 드라이런
@@ -87,33 +88,85 @@ const RESEND_KEY = process.env.RESEND_API_KEY;
 const GRADE_LETTER = ["A", "B", "C", "D", "E"];
 const gradeLabel = (g) => (g == null || g < 1 || g > 5 ? "미공개" : `${GRADE_LETTER[g - 1]}등급`);
 
+// 저장한 검색조건(components/FilterBar.tsx의 FacilityFilters) 매칭 — app/search/
+// SearchPageClient.tsx의 클라이언트 필터링과 같은 규칙을 값싸게 재현할 수 있는 항목만.
+// maxDistanceKm(사용자 위치를 서버에 안 둔다)·goodScoreOnly(안심지수는 즉석 계산이라
+// 이 순수 node 스크립트에서 재현 비용이 크다)는 매칭에서 건너뛴다 — 즉 그 두 조건을
+// 저장했어도, 나머지 조건만으로 매칭됐을 때는 걸러지지 않고 알림이 갈 수 있다
+// (완벽한 필터링보다 "false negative로 조용히 안 보내는 것"보다 "덜 정확해도 보내는 것"이
+// 이 기능의 목적에 맞는다 — 놓치는 것보다 조금 넓게 잡는 게 낫다).
+function matchesSavedSearch(facility, filters) {
+  if (filters.types?.length > 0 && !filters.types.includes(facility.facilityType)) return false;
+  if (
+    filters.grades?.length > 0 &&
+    (facility.grade == null || !filters.grades.includes(facility.grade))
+  )
+    return false;
+
+  const isHospital = facility.facilityType === "NURSING_HOSPITAL";
+  const extra = facility.extra ?? {};
+
+  if (filters.departments?.length > 0) {
+    if (!isHospital) return false;
+    const names = new Set((extra.departments ?? []).map((d) => d.name));
+    if (!filters.departments.some((d) => names.has(d))) return false;
+  }
+  if (filters.programTags?.length > 0) {
+    if (isHospital) return false;
+    const owned = new Set((extra.programTags ?? []).map((t) => t.tag));
+    if (!filters.programTags.every((t) => owned.has(t))) return false;
+  }
+  if (filters.onlyVacancy && !isHospital) {
+    const capacity = extra.capacity ?? 0;
+    if (capacity !== 0) {
+      const occupancy = extra.currentOccupancy;
+      if (occupancy == null || capacity - occupancy <= 0) return false;
+    }
+  }
+  if (filters.verifiedOnly && facility.dataSource !== "public") return false;
+
+  return true;
+}
+
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+// 저장 검색조건이 넓으면(예: "요양원" 하나만) 하루에 수천 건이 한꺼번에 매칭될 수 있다
+// (실측: 대량 등록일 하루에 5,071건). 평소엔 하루 몇 건 수준이라 문제 없지만, 방어적으로
+// 메일 하나에 넣는 카드 수를 제한한다 — 개수 자체(제목·요약 문구)는 전체로 세되,
+// 나열되는 카드만 자른다. AlertDelivery는 잘린 것 포함 전부 기록되므로 내일 다시
+// 오지는 않는다(사이트에서 확인해야 함을 문구로 안내).
+const MAX_CARDS_PER_MAIL = 20;
 
 /**
  * 한 사람에게 갈 사건들을 **메일 한 통**으로 묶는다.
  * 시설마다 따로 보내면 찜을 여러 곳 해둔 사람은 아침에 메일 폭탄을 맞는다.
  */
-function mailBody(events) {
-  const many = events.length > 1;
-  const hasFacilityKind = events.some((e) => e.kind !== "newFacility");
-  const hasRegionKind = events.some((e) => e.kind === "newFacility");
+function mailBody(allEvents) {
+  const events = allEvents.slice(0, MAX_CARDS_PER_MAIL);
+  const overflow = allEvents.length - events.length;
+  const many = allEvents.length > 1;
+  const hasFacilityKind = events.some((e) => e.kind === "vacancy" || e.kind === "gradeChange");
+  const hasNewKind = events.some((e) => e.kind === "newFacility" || e.kind === "savedSearch");
   const headline = many
-    ? hasFacilityKind && hasRegionKind
-      ? `관심시설·관심지역에 소식이 ${events.length}건 있어요.`
-      : hasRegionKind
-        ? `관심 지역에 새 시설이 ${events.length}곳 등록됐어요.`
-        : `관심시설 ${events.length}곳에 소식이 있어요.`
+    ? hasFacilityKind && hasNewKind
+      ? `관심시설·새 시설 소식이 ${allEvents.length}건 있어요.`
+      : hasNewKind
+        ? `조건에 맞는 새 시설이 ${allEvents.length}곳 등록됐어요.`
+        : `관심시설 ${allEvents.length}곳에 소식이 있어요.`
     : events[0].kind === "vacancy"
       ? "관심시설로 저장하신 곳에 입소 가능한 자리가 생겼어요."
       : events[0].kind === "gradeChange"
         ? "관심시설로 저장하신 곳의 평가등급이 바뀌었어요."
-        : "관심 지역에 새 시설이 등록됐어요.";
+        : events[0].kind === "savedSearch"
+          ? "저장하신 검색조건에 맞는 시설이 새로 등록됐어요."
+          : "관심 지역에 새 시설이 등록됐어요.";
 
   const text =
     `${headline}\n\n` +
     events
       .map((e) => `· ${e.facilityName}\n  ${e.detail}\n  ${SITE_URL}/facility/${e.facilityId}`)
       .join("\n\n") +
+    (overflow > 0 ? `\n\n…외 ${overflow}건 더 있어요. 사이트에서 전체를 확인해 주세요.` : "") +
     `\n\n국민건강보험공단 공개자료 기준이라 실제와 다를 수 있어요. 입소 가능 여부는 시설에 직접 확인해 주세요.\n\n` +
     `알림 설정 변경: ${SITE_URL}/notifications`;
 
@@ -137,6 +190,7 @@ function mailBody(events) {
 <tr><td style="padding:24px;">
 <p style="margin:0 0 16px;font-size:15px;font-weight:700;color:#1B1730;">${esc(headline)}</p>
 ${cards}
+${overflow > 0 ? `<p style="margin:0 0 14px;font-size:13px;font-weight:700;color:#9C97AC;">…외 ${overflow}건 더 있어요. 사이트에서 전체를 확인해 주세요.</p>` : ""}
 <p style="margin:14px 0 0;font-size:12px;line-height:1.7;color:#9C97AC;">국민건강보험공단 공개자료 기준이라 실제와 다를 수 있어요. 입소 가능 여부는 시설에 직접 확인해 주세요.</p>
 </td></tr>
 <tr><td style="padding:14px 24px;background:#F7F5FB;text-align:center;"><a href="${SITE_URL}/notifications" style="color:#9C97AC;font-size:12px;">알림 설정 변경·수신 거부</a></td></tr>
@@ -146,17 +200,18 @@ ${cards}
 
 function subjectOf(events) {
   if (events.length > 1) {
-    const hasFacilityKind = events.some((e) => e.kind !== "newFacility");
-    const hasRegionKind = events.some((e) => e.kind === "newFacility");
-    return hasFacilityKind && hasRegionKind
-      ? `[${SITE_NAME}] 관심시설·관심지역에 소식이 ${events.length}건 있어요`
-      : hasRegionKind
-        ? `[${SITE_NAME}] 관심 지역에 새 시설이 ${events.length}곳 등록됐어요`
+    const hasFacilityKind = events.some((e) => e.kind === "vacancy" || e.kind === "gradeChange");
+    const hasNewKind = events.some((e) => e.kind === "newFacility" || e.kind === "savedSearch");
+    return hasFacilityKind && hasNewKind
+      ? `[${SITE_NAME}] 관심시설·새 시설 소식이 ${events.length}건 있어요`
+      : hasNewKind
+        ? `[${SITE_NAME}] 조건에 맞는 새 시설이 ${events.length}곳 등록됐어요`
         : `[${SITE_NAME}] 관심시설 ${events.length}곳에 소식이 있어요`;
   }
   const e = events[0];
   if (e.kind === "vacancy") return `[${SITE_NAME}] ${e.facilityName}에 자리가 났어요`;
   if (e.kind === "gradeChange") return `[${SITE_NAME}] ${e.facilityName}의 평가등급이 바뀌었어요`;
+  if (e.kind === "savedSearch") return `[${SITE_NAME}] 저장하신 조건에 맞는 시설이 새로 등록됐어요`;
   return `[${SITE_NAME}] ${e.region}에 새 시설이 등록됐어요`;
 }
 
@@ -237,7 +292,15 @@ async function main() {
   const { start: dayStart, end: dayEnd } = kstDayRange(date);
   const newFacilities = await prisma.facility.findMany({
     where: { createdAt: { gte: dayStart, lt: dayEnd } },
-    select: { id: true, name: true, address: true, facilityType: true },
+    select: {
+      id: true,
+      name: true,
+      address: true,
+      facilityType: true,
+      grade: true,
+      dataSource: true,
+      extra: true,
+    },
   });
   const newFacilityEvents = [];
   for (const f of newFacilities) {
@@ -254,7 +317,9 @@ async function main() {
   console.log(
     `사건: 빈자리 ${vac}건 · 등급변동 ${events.length - vac}건 · 신규등록 ${newFacilityEvents.length}건`
   );
-  if (events.length === 0 && newFacilityEvents.length === 0) {
+  // newFacilityEvents가 아니라 newFacilities로 본다 — 지역 매핑에 실패한 시설도
+  // 저장한 검색조건 매칭(아래)에는 여전히 후보가 될 수 있다.
+  if (events.length === 0 && newFacilities.length === 0) {
     await prisma.$disconnect();
     return;
   }
@@ -286,6 +351,37 @@ async function main() {
         select: { region: true, user: { select: { id: true, email: true } } },
       })
     : [];
+
+  //  - 저장한 검색조건: 오늘 신규 등록된 시설 중 그 조건에 맞는 게 있으면(매칭 항목은
+  //    matchesSavedSearch 참고 — 위치·안심지수는 매칭하지 않는다)
+  const savedSearches = newFacilities.length
+    ? await prisma.savedSearch.findMany({
+        select: { label: true, filters: true, user: { select: { id: true, email: true } } },
+      })
+    : [];
+  const savedSearchEvents = [];
+  {
+    const seen = new Set(); // `${userId}:${facilityId}` — 같은 시설이 여러 저장 조건에 걸려도 한 번만 언급
+    for (const f of newFacilities) {
+      for (const s of savedSearches) {
+        if (!matchesSavedSearch(f, s.filters)) continue;
+        const key = `${s.user.id}:${f.id}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        savedSearchEvents.push({
+          facilityId: f.id,
+          facilityName: f.name,
+          kind: "savedSearch",
+          userId: s.user.id,
+          userEmail: s.user.email,
+          detail: `저장하신 "${s.label}" 조건에 맞는 시설이 새로 등록됐어요`,
+        });
+      }
+    }
+  }
+  if (savedSearchEvents.length > 0) {
+    console.log(`사건: 저장 검색조건 매칭 ${savedSearchEvents.length}건`);
+  }
 
   // 4) 사람별로 묶는다 — 시설마다 따로 보내면 여러 곳 찜한 사람은 메일 폭탄을 맞는다.
   //    같은 시설은 COOLDOWN_DAYS 안에 다시 보내지 않는다: 만실↔여유를 오가는 시설이면
@@ -337,6 +433,19 @@ async function main() {
       entry.keys.push({ facilityId: ev.facilityId, kind: "newFacility" });
       byUser.set(sub.user.id, entry);
     }
+  }
+
+  // 저장한 검색조건 — 매칭 단계에서 이미 userId가 정해져 있어 바로 합친다. 쿨다운 없음
+  // (신규 시설도 하루뿐인 사건이라 마찬가지).
+  for (const ev of savedSearchEvents) {
+    targeted++;
+
+    if (!ev.userEmail) { noEmail++; continue; }
+
+    const entry = byUser.get(ev.userId) ?? { email: ev.userEmail, events: [], keys: [] };
+    entry.events.push({ facilityId: ev.facilityId, facilityName: ev.facilityName, kind: ev.kind, detail: ev.detail });
+    entry.keys.push({ facilityId: ev.facilityId, kind: "savedSearch" });
+    byUser.set(ev.userId, entry);
   }
 
   let sent = 0, skipped = 0, failed = 0;

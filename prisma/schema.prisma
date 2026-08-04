@@ -374,6 +374,7 @@ model User {
   facilityOwners         FacilityOwner[]
   facilityFavorites      FacilityFavorite[]
   regionInterests        RegionInterest[]
+  savedSearches          SavedSearch[]
 }
 
 // 관심시설(찜) + 그 시설에 대한 알림 설정.
@@ -439,13 +440,35 @@ model RegionInterest {
   id     String @id @default(cuid())
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  // lib/regionSeo.ts의 시도 slug (예: "경남")
+  // lib/regions.ts의 REGIONS 표기(예: "경남"). regionSeo.ts의 REGION_SEO와는 다른
+  // 표(전남·광주를 합치는지 여부)라 혼동하지 말 것 — 한 번 뒤섞여서 "전남"·"광주"
+  // 저장이 조용히 실패하는 버그가 났었다.
   region String
 
   createdAt DateTime @default(now())
 
   @@unique([userId, region])
   @@index([region])
+}
+
+// 저장한 검색 조건 — 다시 방문 안 해도 조건에 맞는 새 시설이 뜨면 알려준다.
+// FacilityFilters(components/FilterBar.tsx)를 그대로 JSON으로 저장한다. 매칭(발송
+// 스크립트)은 위치·안심지수처럼 계산이 필요하거나 서버에 저장 안 된 조건은 보고
+// 판단하지 않는다 — maxDistanceKm(사용자 위치를 서버에 안 둔다)과 goodScoreOnly
+// (안심지수는 즉석 계산이라 순수 node 스크립트에서 값싸게 재현 못 한다)는 저장은
+// 해두되 매칭에서는 건너뛴다. scripts/send-facility-alerts.mjs 참고.
+model SavedSearch {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // 사람이 읽는 요약 — 알림 메일·목록에 그대로 쓴다("요양원 · 3등급 이상 · 빈자리만")
+  label   String
+  filters Json
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 // 시설 담당자 ↔ 계정 연결. 운영자가 확인 전화를 마치고 승인했을 때만 생긴다.
