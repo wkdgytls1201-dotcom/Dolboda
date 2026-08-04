@@ -342,7 +342,7 @@ export function FilterBar({
                 type="button"
                 aria-label="닫기"
                 onClick={() => setSheetOpen(false)}
-                className="-mr-2.5 flex h-11 w-11 items-center justify-center rounded-full text-ink-300 transition-colors duration-150 hover:bg-ink-100 hover:text-ink-700"
+                className="-mr-2.5 flex h-11 w-11 items-center justify-center rounded-full text-ink-300 transition-all duration-150 hover:bg-ink-100 hover:text-ink-700 active:scale-90 active:bg-ink-100"
               >
                 <X size={18} />
               </button>
@@ -486,7 +486,7 @@ export function FilterBar({
               <button
                 type="button"
                 onClick={() => onChange(EMPTY_FILTERS)}
-                className="min-h-[48px] flex-1 rounded-xl border border-ink-100 text-sm font-bold text-ink-500 transition-colors duration-150 hover:bg-ink-100/60"
+                className="min-h-[48px] flex-1 rounded-xl border border-ink-100 text-sm font-bold text-ink-500 transition-all duration-150 hover:bg-ink-100/60 active:scale-[0.98]"
               >
                 초기화
               </button>
