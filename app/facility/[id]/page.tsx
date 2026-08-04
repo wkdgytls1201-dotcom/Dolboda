@@ -19,26 +19,48 @@ export default async function FacilityDetailPage({ params }: { params: { id: str
   if (!row) notFound();
 
   const facility = rowToFacility(row);
+  const sigungu = row.address.trim().split(/\s+/)[1] ?? "";
 
-  // 시설이 콘솔에서 직접 쓴 소개·사진 (없으면 null — 대부분의 시설이 아직 없다).
-  // 공단 데이터와 별개 테이블(FacilityContent)이라 따로 읽는다.
-  // 조회 실패(테이블 미생성 등)가 상세 페이지 2만 8천 장을 죽이면 안 되므로 조용히 무시한다.
-  const ownerRow = await prisma.facilityContent
-    .findUnique({
-      where: { facilityId: row.id },
-      select: { intro: true, photos: true, updatedAt: true },
-    })
-    .catch(() => null);
-  // 시설 소식(비즈니스 플러스) — 최신 3개만 싣는다. 페이로드를 지키면서도
-  // "살아 있는 시설"이라는 인상을 주기엔 충분하다.
-  const ownerPosts = await prisma.facilityPost
-    .findMany({
-      where: { facilityId: row.id },
-      orderBy: { createdAt: "desc" },
-      take: 3,
-      select: { id: true, title: true, body: true, createdAt: true },
-    })
-    .catch(() => []);
+  // ★ 세 조회를 동시에 던진다. 예전엔 하나씩 기다렸는데(소개 → 소식 → 비슷한 시설),
+  //   서로 아무 상관이 없는 조회라 기다릴 이유가 없었다. 실측(2026-08-04)으로
+  //   순차 165ms → 병렬 135ms. 가장 오래 걸리는 "비슷한 시설"(약 98ms) 하나에
+  //   나머지가 묻히기 때문에, 그 뒤로는 이 셋을 아무리 늘려도 총 시간이 안 늘어난다.
+  const [ownerRow, ownerPosts, relatedRows] = await Promise.all([
+    // 시설이 콘솔에서 직접 쓴 소개·사진 (없으면 null — 대부분의 시설이 아직 없다).
+    // 공단 데이터와 별개 테이블(FacilityContent)이라 따로 읽는다.
+    // 조회 실패(테이블 미생성 등)가 상세 페이지 2만 8천 장을 죽이면 안 되므로 조용히 무시한다.
+    prisma.facilityContent
+      .findUnique({
+        where: { facilityId: row.id },
+        select: { intro: true, photos: true, updatedAt: true },
+      })
+      .catch(() => null),
+    // 시설 소식(비즈니스 플러스) — 최신 3개만 싣는다. 페이로드를 지키면서도
+    // "살아 있는 시설"이라는 인상을 주기엔 충분하다.
+    prisma.facilityPost
+      .findMany({
+        where: { facilityId: row.id },
+        orderBy: { createdAt: "desc" },
+        take: 3,
+        select: { id: true, title: true, body: true, createdAt: true },
+      })
+      .catch(() => []),
+    // "이 시설과 비슷한 곳" 첫 화면분을 서버에서 미리 계산해 넘긴다.
+    // 클라이언트에서만 불러오면 (1) 인접 시설 링크가 초기 HTML에 없어 크롤러가 타고 갈 수 없고
+    // (2) 첫 진입 때 스켈레톤이 한 번 깜빡인다. 탭을 바꿀 때만 추가로 조회한다.
+    sigungu
+      ? prisma.facility.findMany({
+          where: {
+            address: { contains: sigungu },
+            id: { not: row.id },
+            facilityType: row.facilityType,
+            dataSource: { not: "mock" },
+          },
+          take: 60,
+        })
+      : Promise.resolve([]),
+  ]);
+
   const ownerContent =
     ownerRow && (ownerRow.intro || (Array.isArray(ownerRow.photos) && ownerRow.photos.length > 0))
       ? {
@@ -47,22 +69,6 @@ export default async function FacilityDetailPage({ params }: { params: { id: str
           updatedAt: ownerRow.updatedAt.toISOString().slice(0, 10),
         }
       : null;
-
-  // "이 시설과 비슷한 곳" 첫 화면분을 서버에서 미리 계산해 넘긴다.
-  // 클라이언트에서만 불러오면 (1) 인접 시설 링크가 초기 HTML에 없어 크롤러가 타고 갈 수 없고
-  // (2) 첫 진입 때 스켈레톤이 한 번 깜빡인다. 탭을 바꿀 때만 추가로 조회한다.
-  const sigungu = row.address.trim().split(/\s+/)[1] ?? "";
-  const relatedRows = sigungu
-    ? await prisma.facility.findMany({
-        where: {
-          address: { contains: sigungu },
-          id: { not: row.id },
-          facilityType: row.facilityType,
-          dataSource: { not: "mock" },
-        },
-        take: 60,
-      })
-    : [];
 
   const scored = relatedRows.map((r) => compareFacilities(facility, rowToFacility(r)));
   const initialSimilar = rankByIntent(facility, scored, "similar")

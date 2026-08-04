@@ -29,11 +29,36 @@ import {
 
 type Phase = "intro" | "test" | "result";
 
-const TONE_STYLES: Record<string, { chip: string; ring: string; bar: string }> = {
-  high: { chip: "bg-primary-50 text-primary-700", ring: "text-primary-500", bar: "bg-primary-500" },
-  mid: { chip: "bg-royal-50 text-royal-700", ring: "text-royal-500", bar: "bg-royal-500" },
-  low: { chip: "bg-mint-100 text-mint-700", ring: "text-mint-600", bar: "bg-mint-500" },
-  none: { chip: "bg-ink-100 text-ink-500", ring: "text-ink-300", bar: "bg-ink-300" },
+// hero: 결과 카드 배경(등급대별 색). 결과 화면에서 가장 먼저 눈이 가야 하는 자리라
+// 다른 섹션(흰 카드)과 확실히 구분되게 색을 채운다.
+const TONE_STYLES: Record<
+  string,
+  { chip: string; ring: string; bar: string; hero: string }
+> = {
+  high: {
+    chip: "bg-primary-50 text-primary-700",
+    ring: "text-primary-500",
+    bar: "bg-primary-500",
+    hero: "bg-gradient-to-br from-primary-500 via-primary-500 to-peach-500 shadow-royal",
+  },
+  mid: {
+    chip: "bg-royal-50 text-royal-700",
+    ring: "text-royal-500",
+    bar: "bg-royal-500",
+    hero: "bg-gradient-to-br from-royal-600 via-royal-500 to-royal-400 shadow-royal",
+  },
+  low: {
+    chip: "bg-mint-100 text-mint-700",
+    ring: "text-mint-600",
+    bar: "bg-mint-500",
+    hero: "bg-gradient-to-br from-mint-600 via-mint-500 to-mint-400 shadow-soft",
+  },
+  none: {
+    chip: "bg-ink-100 text-ink-500",
+    ring: "text-ink-300",
+    bar: "bg-ink-300",
+    hero: "bg-gradient-to-br from-ink-500 via-ink-400 to-ink-300 shadow-soft",
+  },
 };
 
 // 카카오 로그인은 페이지를 완전히 떠났다가 돌아오기 때문에, 답변을 세션에 저장해두지
@@ -272,22 +297,41 @@ export function GradeTest() {
             }
             aria-hidden={locked}
           >
-        <div className="mb-6 rounded-3xl border border-ink-100 bg-white p-7 text-center shadow-card sm:p-8">
-          <p className="mb-2 text-xs font-bold text-ink-300">예상 결과</p>
-          <h1 className="mb-2 text-2xl font-bold text-ink-900">{result.band.label}</h1>
-          <p className="mb-4 text-sm leading-relaxed text-ink-500">{result.band.summary}</p>
+        {/* 결과 카드 — 52문항을 끝내고 처음 만나는 화면이라 여기가 가장 눈에 띄어야 한다.
+            예전엔 흰 카드에 검은 글씨라 아래 섹션들과 구분이 안 돼 밋밋했다.
+            등급대별 색을 채우고, 등급 문구는 등장할 때 한 번 pop으로 튀어나온다
+            (계속 움직이지 않고 딱 한 번 — 40~60대 사용자에게 반복 움직임은 산만하다).
+            눈금은 왼쪽에서 차오르며 "채점됐다"는 느낌을 준다. */}
+        <div
+          className={`animate-fade-up relative mb-6 overflow-hidden rounded-3xl p-7 text-center sm:p-8 ${tone.hero}`}
+        >
+          {/* 장식 원 — 저장하기 배너와 같은 문법으로 맞춘다 */}
+          <span aria-hidden className="absolute -right-10 -top-12 h-32 w-32 rounded-full bg-white/10" />
+          <span aria-hidden className="absolute -bottom-14 -left-8 h-28 w-28 rounded-full bg-white/[0.08]" />
 
-          <div className="mb-4 flex items-center justify-center gap-1.5">
-            {[1, 2, 3, 4, 5].map((n) => (
-              <span
-                key={n}
-                className={`h-2 flex-1 rounded-full ${
-                  result.score >= n * 20 - 10 ? tone.bar : "bg-ink-100"
-                }`}
-              />
-            ))}
+          <div className="relative">
+            <p className="mb-2 text-xs font-bold text-white/70">예상 결과</p>
+            <h1 className="animate-pop mb-2 text-3xl font-extrabold leading-snug text-white sm:text-[2rem]">
+              {result.band.label}
+            </h1>
+            <p className="mb-5 text-sm leading-relaxed text-white/85">{result.band.summary}</p>
+
+            <div className="mb-3 flex items-center justify-center gap-1.5">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <span key={n} className="h-2 flex-1 overflow-hidden rounded-full bg-white/25">
+                  {/* 채워지는 칸만 안쪽 막대가 왼쪽에서 100%로 자란다 — 순서대로 조금씩
+                      늦게 시작해 눈금이 차례로 차오르는 것처럼 보인다 */}
+                  {result.score >= n * 20 - 10 && (
+                    <span
+                      className="block h-full origin-left rounded-full bg-white"
+                      style={{ animation: `grade-fill 0.5s cubic-bezier(.32,.72,0,1) ${n * 90}ms both` }}
+                    />
+                  )}
+                </span>
+              ))}
+            </div>
+            <p className="text-xs text-white/70">도움 필요도 {result.score}점 / 100점 기준</p>
           </div>
-          <p className="text-xs text-ink-300">도움 필요도 {result.score}점 / 100점 기준</p>
         </div>
 
         <section className="mb-6 rounded-2xl border border-ink-100 bg-white p-5 shadow-card sm:p-6">
@@ -319,37 +363,17 @@ export function GradeTest() {
           </p>
         </section>
 
-        <section className="mb-6 rounded-2xl border border-ink-100 bg-white p-5 shadow-card sm:p-6">
-          <h2 className="mb-2 text-sm font-bold text-ink-900">이런 서비스를 주로 이용해요</h2>
-          <p className="mb-3 text-xs leading-relaxed text-ink-500">{result.band.detail}</p>
-          <div className="flex flex-wrap items-center gap-1.5">
-            {result.band.services.map((s) => (
-              <span key={s} className={`rounded-full px-3 py-1.5 text-xs font-bold ${tone.chip}`}>
-                {s}
-              </span>
-            ))}
-            {/* 돌보다 매니저는 등급과 무관하게 항상 보여준다 — 공단 급여 서비스는 등급별로
-                갈리지만, 집에서 곁을 지켜줄 사람이 필요한 상황은 어느 등급에서나 생긴다.
-                다른 서비스와 같은 칩 모양으로 둔다(누르는 것이 아니라 "이런 선택지도 있다"는 안내). */}
-            <span className={`rounded-full px-3 py-1.5 text-xs font-bold ${tone.chip}`}>
-              돌보다 매니저
-            </span>
-          </div>
-          {/* 칩 모양이 공단 급여 서비스와 같아져서, 돌보다 매니저도 공단 급여로 오해할 수 있다.
-              무엇이 다른지 한 줄로 짚어둔다(공단 급여 여부는 비용이 갈리는 문제라 중요하다). */}
-          <p className="mt-2.5 text-[11px] leading-relaxed text-ink-400">
-            돌보다 매니저는 공단 급여가 아니라, 돌보다에서 보호자와 매니저를
-            연결해드리는 서비스예요. 등급과 상관없이 이용하실 수 있어요.
-          </p>
-        </section>
-
         {/* 결과를 보호자 프로필에 저장 — 결과 화면에서 가장 눈에 띄어야 하는 다음 행동.
             저장해두면 시설 찾기·돌봄 요청에서 재사용되고, 나중에 재판정 시기 안내의 기준이 된다.
             반짝이는 띠(shimmer)는 3회만 지나가고 멈춘다 — 시선은 끌되 계속 산만하지 않게. */}
         {!locked && (
           <Link
             href={`/mypage/care-profile?estimate=${encodeURIComponent(result.band.id)}`}
-            className="group relative mb-6 block overflow-hidden rounded-2xl bg-gradient-to-br from-primary-500 via-primary-500 to-peach-500 p-5 shadow-royal transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:shadow-royal-hover active:translate-y-0 active:scale-[0.99]"
+            // animate-bob-slow: 4px·3초 주기로 아주 천천히 오르내린다. 결과 화면에서
+            // 다음 행동이 이 버튼이라는 걸 계속 상기시키되, 진폭이 작아 산만하지 않다
+            // (움직임 줄이기 설정이면 globals.css에서 멈춘다). 마우스를 올리면 hover의
+            // -translate-y와 겹쳐 어긋나 보이므로 그때는 멈춘다.
+            className="group animate-bob-slow relative mb-6 block overflow-hidden rounded-2xl bg-gradient-to-br from-primary-500 via-primary-500 to-peach-500 p-5 shadow-royal transition-all duration-200 ease-snappy hover:animate-none hover:-translate-y-0.5 hover:shadow-royal-hover active:translate-y-0 active:scale-[0.99]"
           >
             {/* 장식 원 — 배너 톤과 맞춘 일러스트풍 배경 */}
             <span aria-hidden className="absolute -right-8 -top-10 h-28 w-28 rounded-full bg-white/10" />
@@ -380,6 +404,30 @@ export function GradeTest() {
             </span>
           </Link>
         )}
+
+        <section className="mb-6 rounded-2xl border border-ink-100 bg-white p-5 shadow-card sm:p-6">
+          <h2 className="mb-2 text-sm font-bold text-ink-900">이런 서비스를 주로 이용해요</h2>
+          <p className="mb-3 text-xs leading-relaxed text-ink-500">{result.band.detail}</p>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {result.band.services.map((s) => (
+              <span key={s} className={`rounded-full px-3 py-1.5 text-xs font-bold ${tone.chip}`}>
+                {s}
+              </span>
+            ))}
+            {/* 돌보다 매니저는 등급과 무관하게 항상 보여준다 — 공단 급여 서비스는 등급별로
+                갈리지만, 집에서 곁을 지켜줄 사람이 필요한 상황은 어느 등급에서나 생긴다.
+                다른 서비스와 같은 칩 모양으로 둔다(누르는 것이 아니라 "이런 선택지도 있다"는 안내). */}
+            <span className={`rounded-full px-3 py-1.5 text-xs font-bold ${tone.chip}`}>
+              돌보다 매니저
+            </span>
+          </div>
+          {/* 칩 모양이 공단 급여 서비스와 같아져서, 돌보다 매니저도 공단 급여로 오해할 수 있다.
+              무엇이 다른지 한 줄로 짚어둔다(공단 급여 여부는 비용이 갈리는 문제라 중요하다). */}
+          <p className="mt-2.5 text-[11px] leading-relaxed text-ink-400">
+            돌보다 매니저는 공단 급여가 아니라, 돌보다에서 보호자와 매니저를
+            연결해드리는 서비스예요. 등급과 상관없이 이용하실 수 있어요.
+          </p>
+        </section>
           </div>
 
           {locked && (

@@ -75,7 +75,20 @@ export function MyPageRoleCard() {
           보호자
         </button>
 
-        {canSwitch ? (
+        {isSitter === null ? (
+          // 아직 매니저인지 모르는 동안(프로필 조회 중)에는 글자를 정하지 않는다.
+          // 예전엔 이 구간에 "매니저 시작"(미등록용)이 그려져서, 이미 등록한 매니저가
+          // 마이페이지에 들어올 때마다 "매니저 시작"이 번쩍 떴다가 "매니저"로 바뀌었다.
+          // 둘 중 하나를 찍기보다 자리만 잡아두는 편이 낫다 — 폭·높이가 같아 확정된
+          // 뒤에도 레이아웃이 흔들리지 않는다.
+          <span
+            aria-hidden
+            className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl"
+          >
+            <Briefcase size={16} className="text-ink-300/40" />
+            <span className="h-3 w-10 rounded bg-ink-300/20" />
+          </span>
+        ) : canSwitch ? (
           <button
             type="button"
             role="tab"

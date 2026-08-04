@@ -24,7 +24,6 @@ import { useSession } from "next-auth/react";
 import { useFavorites } from "@/lib/favoritesContext";
 import { canViewFacility, registerFacilityView } from "@/lib/viewLimit";
 import { FacilityPhotoGallery } from "@/components/FacilityPhotoGallery";
-import { facilityTransitionNames, prefersReducedMotion } from "@/lib/facilityTransition";
 import { FACILITY_TYPE_LABEL, isHospital, type CareProgram } from "@/lib/types";
 import { GradeBadge, TypeBadge } from "@/components/GradeBadge";
 import { DetailSection } from "@/components/DetailSection";
@@ -90,25 +89,6 @@ export default function FacilityDetailClient({
   const { isFavorite, toggleFavorite } = useFavorites();
   const { data: session } = useSession();
   const user = session?.user;
-
-  // 목록 카드에서 넘어올 때 "같은 물건"으로 이어줄 이름들(사진·제목·배지).
-  // 시설 id가 들어 있어 다른 시설과 절대 섞이지 않는다. lib/facilityTransition.ts 참고.
-  const vtNames = facilityTransitionNames(facility.id);
-  const titleRef = useRef<HTMLHeadingElement>(null);
-
-  // 전환이 끝난 뒤 제목으로 포커스를 옮긴다 — 화면 낭독기·키보드 사용자가 새 페이지에
-  // 도착했음을 알 수 있게. preventScroll을 켜서 포커스 때문에 화면이 튀지 않게 하고,
-  // 이미 사용자가 다른 곳을 누르고 있었다면(body가 아니면) 뺏지 않는다.
-  useEffect(() => {
-    const el = titleRef.current;
-    if (!el) return;
-    const delay = prefersReducedMotion() ? 0 : 420;
-    const t = window.setTimeout(() => {
-      if (document.activeElement === document.body) el.focus({ preventScroll: true });
-    }, delay);
-    return () => window.clearTimeout(t);
-  }, [facility.id]);
-
   const [showConsult, setShowConsult] = useState(false);
   // 비회원이 상담 신청을 누르면 먼저 뜨는 로그인/가입 창
   const [showAuth, setShowAuth] = useState(false);
@@ -231,31 +211,18 @@ export default function FacilityDetailClient({
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="mb-2 flex flex-wrap items-center gap-1.5">
-              {/* 카드의 같은 배지 쌍과 짝지어져 제자리로 이동한다(lib/facilityTransition.ts) */}
-              <span
-                style={{ viewTransitionName: vtNames.badges }}
-                className="flex items-center gap-1.5 [view-transition-class:fc-text]"
-              >
-                <TypeBadge
-                  type={facility.facilityType}
-                  label={FACILITY_TYPE_LABEL[facility.facilityType]}
-                />
-                <GradeBadge grade={facility.grade} gradeSource={facility.gradeSource} />
-              </span>
+              <TypeBadge
+                type={facility.facilityType}
+                label={FACILITY_TYPE_LABEL[facility.facilityType]}
+              />
+              <GradeBadge grade={facility.grade} gradeSource={facility.gradeSource} />
               {facility.establishedYear !== undefined && (
                 <span className="text-xs text-ink-300">
                   설립 {new Date().getFullYear() - facility.establishedYear}년차
                 </span>
               )}
             </div>
-            {/* tabIndex={-1}: 전환이 끝난 뒤 여기로 포커스를 옮겨, 화면 낭독기·키보드
-                사용자가 "어느 페이지로 왔는지"를 바로 알 수 있게 한다 */}
-            <h1
-              ref={titleRef}
-              tabIndex={-1}
-              style={{ viewTransitionName: vtNames.title }}
-              className="text-2xl font-extrabold leading-snug text-ink-900 outline-none [view-transition-class:fc-text] sm:text-3xl"
-            >
+            <h1 className="text-2xl font-extrabold leading-snug text-ink-900 sm:text-3xl">
               {facility.name}
             </h1>
             <p className="mt-2 text-sm leading-relaxed text-ink-500">{facility.address}</p>
@@ -397,8 +364,8 @@ export default function FacilityDetailClient({
             여백(mb-6)은 컴포넌트 내부에 있다 — 여기서 감싸면 null 렌더 시에도 빈 여백이 남는다. */}
         <CareMatchPoints facility={facility} />
 
-        {/* 돌보다 AI기반 안심지수 */}
-        <DetailSection id="dolboda-score" title="돌보다 AI기반 안심지수">
+        {/* 돌보다 공공데이터 기반 안심지수 */}
+        <DetailSection id="dolboda-score" title="돌보다 공공데이터 기반 안심지수">
           <DolbodaScoreCard
             score={calcDolbodaScore(facility, {
               nearestHospitalKm: scoreContext?.nearestHospitalKm ?? null,

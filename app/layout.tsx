@@ -9,7 +9,6 @@ import { ViewGateProvider } from "@/lib/viewGateContext";
 import { FavoritesProvider } from "@/lib/favoritesContext";
 import { CareProfileProvider } from "@/lib/careProfileContext";
 import { AlertPreferencesProvider } from "@/lib/alertPreferencesContext";
-import { ViewTransitions } from "next-view-transitions";
 import { SITE_URL, SITE_NAME, SITE_TITLE, SITE_DESCRIPTION } from "@/lib/siteConfig";
 import { jsonLdHtml } from "@/lib/jsonLd";
 
@@ -113,11 +112,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // ViewTransitions: 시설 카드 → 상세 페이지로 넘어갈 때 카드 이미지가 상세 상단
-  // 이미지로 자연스럽게 확대되는 전환(View Transitions API). 미지원 브라우저
-  // (iOS Safari 17 이하 등)에서는 아무 효과 없이 기존처럼 즉시 전환된다.
   return (
-    <ViewTransitions>
     <html lang="ko">
       <head>
         {/* 본문 폰트(Pretendard) — 공식 배포 방식인 dynamic-subset을 쓴다.
@@ -163,6 +158,5 @@ export default function RootLayout({
         </SessionProvider>
       </body>
     </html>
-    </ViewTransitions>
   );
 }

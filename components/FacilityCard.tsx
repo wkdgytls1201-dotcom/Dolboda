@@ -1,9 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef } from "react";
 import { Heart, MapPin, ShieldCheck, Trophy } from "lucide-react";
-import { markFacilityCardForTransition } from "@/lib/facilityTransition";
 import { Facility, FACILITY_TYPE_LABEL, isHospital } from "@/lib/types";
 import { formatDistance } from "@/lib/distance";
 import { shortAddress } from "@/lib/shortAddress";
@@ -30,9 +28,6 @@ export function FacilityCard({
   const { toggle, isSelected, selectedIds, canAddMore } = useCompare();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { requestFacilityView } = useViewGate();
-  // 연속 터치로 전환이 두 번 시작되는 것을 막는 잠금. state가 아니라 ref를 쓰는 이유는
-  // 이 값이 바뀔 때 카드를 다시 그릴 필요가 전혀 없기 때문이다(불필요한 리렌더 방지).
-  const navigatingRef = useRef(false);
   const favorite = isFavorite(facility.id);
   const selected = isSelected(facility.id);
   const order = selected ? selectedIds.indexOf(facility.id) + 1 : null;
@@ -67,9 +62,6 @@ export function FacilityCard({
 
   return (
     <div
-      // 목록으로 되돌아왔을 때 "직전에 누른 시설이 어느 카드였는지" 찾는 표시
-      // (lib/facilityTransition.ts의 restoreFacilityCardTransition)
-      data-vt-card={facility.id}
       className={`group relative rounded-2xl bg-white p-4 shadow-card transition-all duration-300 ease-snappy hover:-translate-y-1 hover:shadow-card-hover ${
         isTopGrade ? "ring-2 ring-accent-300" : ""
       }`}
@@ -109,25 +101,11 @@ export function FacilityCard({
         href={`/facility/${facility.id}`}
         onClick={(e) => {
           e.preventDefault();
-          // 빠르게 두 번 눌러도 전환이 겹치지 않게 — 이미 넘어가는 중이면 무시한다.
-          if (navigatingRef.current) return;
-          navigatingRef.current = true;
-          // 혹시 이동이 막히는 경우(로그인 모달 등)에 대비해 잠시 뒤 풀어준다.
-          window.setTimeout(() => {
-            navigatingRef.current = false;
-          }, 1000);
-
-          // 누른 카드의 사진·시설명·배지에 상세 페이지와 짝이 될 이름을 붙인다.
-          // 자세한 원리와 예외 처리는 lib/facilityTransition.ts 상단 주석 참고.
-          markFacilityCardForTransition(e.currentTarget, facility.id);
           requestFacilityView(facility.id);
         }}
         className="block transition-transform duration-150 ease-snappy active:scale-[0.98]"
       >
-        <div
-          data-vt-hero
-          className="relative mb-3 -mx-4 -mt-4 aspect-[16/9] overflow-hidden rounded-t-2xl"
-        >
+        <div className="relative mb-3 -mx-4 -mt-4 aspect-[16/9] overflow-hidden rounded-t-2xl">
           <FacilityThumbnail
             facility={facility}
             className="transition-transform duration-500 group-hover:scale-105"
@@ -144,16 +122,11 @@ export function FacilityCard({
         </div>
 
         <div className="mb-3 flex flex-wrap items-center gap-1 pr-10">
-          {/* 유형·등급 배지는 상세 페이지 헤더에도 똑같이 있다 — 이 둘만 묶어 전환의
-              짝으로 삼는다. 안심지수(카드에만)·설립년차(상세에만)처럼 한쪽에만 있는
-              것까지 묶으면 서로 다른 내용이 겹쳐 morph돼 오히려 지저분해진다. */}
-          <span data-vt-badges className="flex items-center gap-1">
-            <TypeBadge
-              type={facility.facilityType}
-              label={FACILITY_TYPE_LABEL[facility.facilityType]}
-            />
-            <GradeBadge grade={facility.grade} gradeSource={facility.gradeSource} />
-          </span>
+          <TypeBadge
+            type={facility.facilityType}
+            label={FACILITY_TYPE_LABEL[facility.facilityType]}
+          />
+          <GradeBadge grade={facility.grade} gradeSource={facility.gradeSource} />
           {/* 안심지수 — 돌보다의 핵심 지표라 등급 바로 옆, 배지들 중 가장 눈에 띄는 톤으로.
               점수는 목록 API(toCardFacility)가 실어준 것만 쓴다(없으면 안 보여줌).
               "안심지수" 글자를 다 쓰면 "방문요양센터"(6자)+"등급 제외"(4자) 조합에서
@@ -199,10 +172,7 @@ export function FacilityCard({
 
         {/* 시설명은 긴 것이 많다("시립서대문노인종합복지관데이케어센터") — 한 줄로 자르면
             어느 시설인지 알 수 없어서 두 줄까지 허용한다 */}
-        <h3
-          data-vt-title
-          className="mb-1 line-clamp-2 text-lg font-bold leading-snug text-ink-900 group-hover:text-primary-600"
-        >
+        <h3 className="mb-1 line-clamp-2 text-lg font-bold leading-snug text-ink-900 group-hover:text-primary-600">
           {facility.name}
         </h3>
 

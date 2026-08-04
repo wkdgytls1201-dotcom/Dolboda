@@ -53,8 +53,8 @@ export function DolbodaScoreCard({
     return (
       <div className="rounded-2xl bg-ink-100/40 p-5">
         <p className="text-sm leading-relaxed text-ink-500">
-          이 시설은 공개된 공공데이터가 부족해 돌보다 AI기반 안심지수를 계산하지 않았어요. 부족한
-          데이터로 시설을 판단하지 않는 것이 돌보다의 원칙이에요.
+          이 시설은 공개된 공공데이터가 부족해 돌보다 공공데이터 기반 안심지수를 계산하지
+          않았어요. 부족한 데이터로 시설을 판단하지 않는 것이 돌보다의 원칙이에요.
         </p>
       </div>
     );
@@ -99,7 +99,7 @@ export function DolbodaScoreCard({
           <div className="min-w-0">
             <span className="inline-flex items-center gap-1 rounded-full bg-white/20 px-3 py-1.5 text-xs font-bold text-white backdrop-blur">
               <Sparkles size={12} />
-              돌보다 AI기반 안심지수
+              돌보다 공공데이터 기반 안심지수
             </span>
             <p className="mt-2 text-2xl font-extrabold text-white">{level.label}</p>
           </div>

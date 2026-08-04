@@ -22,46 +22,47 @@ import { WelfareConsultForm } from "@/components/WelfareConsultForm";
 export function WelfareConsultGate({ defaultItem }: { defaultItem?: string }) {
   const { status } = useSession();
   const [showAuth, setShowAuth] = useState(false);
+  // 상담 폼은 접어둔다 — 펼치는 건 "이미 등급이 있다"고 스스로 밝힌 사람뿐이다.
+  const [showConsult, setShowConsult] = useState(false);
 
   return (
     <div className="rounded-2xl bg-white p-5 shadow-card">
       <p className="mb-1.5 flex items-center gap-1.5 text-[15px] font-bold text-ink-900">
         <ClipboardList size={16} className="shrink-0 text-royal-500" />
-        상담 전에 확인해주세요
+        복지용구는 등급이 있어야 지원돼요
       </p>
       <p className="mb-4 text-[13px] leading-relaxed text-ink-500">
-        복지용구는 장기요양등급을 받으신 분만 지원돼요.
+        장기요양등급을 받으신 분만 지원되는 제도예요.
         <br />
-        상담을 신청하시려면 어르신의 요양인정번호가 필요해요.
+        아직 등급이 없거나 잘 모르시겠다면 먼저 확인해보세요.
       </p>
 
-      {status === "authenticated" ? (
-        <WelfareConsultForm defaultItem={defaultItem} compact />
-      ) : (
-        <button
-          type="button"
-          onClick={() => setShowAuth(true)}
-          className="flex min-h-[52px] w-full items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-r from-royal-600 via-royal-500 to-royal-400 text-sm font-bold text-white shadow-royal transition-all duration-200 ease-snappy hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
-        >
-          <PhoneCall size={16} />
-          로그인하고 상담 신청하기
-        </button>
-      )}
+      {/* 주 버튼 — 이 페이지 방문자 대부분은 아직 등급이 없다. 등급이 없는 사람에게
+          상담 신청을 앞세우면 연락처만 남고 운영자가 해줄 수 있는 게 없어서,
+          "먼저 등급부터 확인"을 눈에 띄는 자리에 둔다. */}
+      <Link
+        href="/grade-test"
+        className="flex min-h-[52px] w-full items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-r from-royal-600 via-royal-500 to-royal-400 text-sm font-bold text-white shadow-royal transition-all duration-200 ease-snappy hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
+      >
+        예상 등급 무료로 확인하기
+        <ArrowRight size={15} />
+      </Link>
+      <p className="mt-2 text-center text-[12px] text-ink-300">3분이면 확인할 수 있어요</p>
 
-      {/* 등급이 없는 사람이 이 페이지 방문자의 다수다 — 막다른 길로 두지 않는다 */}
+      {/* 보조 — 이미 등급이 있는 사람을 위한 길. 없애지는 않되 뒤로 물린다. */}
       <div className="mt-4 border-t border-ink-100 pt-4">
-        <p className="mb-2 text-[13px] leading-relaxed text-ink-500">
-          아직 등급이 없거나 잘 모르시겠나요?
-          <br />
-          3분이면 예상 등급을 확인할 수 있어요.
-        </p>
-        <Link
-          href="/grade-test"
-          className="flex min-h-[46px] w-full items-center justify-center gap-1 rounded-xl bg-ivory-100 text-[13px] font-bold text-ink-700 transition-colors hover:bg-ink-100"
-        >
-          예상 등급 무료로 확인하기
-          <ArrowRight size={14} />
-        </Link>
+        {status === "authenticated" && showConsult ? (
+          <WelfareConsultForm defaultItem={defaultItem} compact />
+        ) : (
+          <button
+            type="button"
+            onClick={() => (status === "authenticated" ? setShowConsult(true) : setShowAuth(true))}
+            className="flex min-h-[46px] w-full items-center justify-center gap-1.5 rounded-xl bg-ivory-100 text-[13px] font-bold text-ink-700 transition-colors hover:bg-ink-100 active:scale-[0.98]"
+          >
+            <PhoneCall size={14} />
+            이미 요양인정번호가 있어요 · 상담 신청
+          </button>
+        )}
       </div>
 
       {showAuth && (

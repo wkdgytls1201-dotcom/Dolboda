@@ -195,11 +195,12 @@ export default function WelfareEquipmentPage() {
           </dl>
         </section>
 
-        {/* 상담 신청 — 등급이 있는 사람만 들어가는 자리(WelfareConsultGate 주석 참고) */}
+        {/* 예상 등급 확인이 주. 상담은 등급이 있는 사람만 쓰는 보조 길로 물려뒀다
+            (이유는 components/WelfareConsultGate.tsx 주석 참고) */}
         <section id="consult" className="mt-10 scroll-mt-6">
-          <h2 className="mb-1 text-lg font-bold text-ink-900">지금 바로 상담받고 싶다면</h2>
+          <h2 className="mb-1 text-lg font-bold text-ink-900">우리 어르신도 받을 수 있을까요?</h2>
           <p className="mb-4 text-sm leading-relaxed text-ink-500">
-            확인 후 순차적으로 연락드려요. 상담은 무료예요.
+            등급부터 확인해보시면 가장 빠르게 알 수 있어요.
           </p>
           <WelfareConsultGate />
         </section>
@@ -218,10 +219,11 @@ export default function WelfareEquipmentPage() {
           </WelfareLoginCta>
           <p className="mt-4 flex items-center justify-center gap-1.5 text-[12px] text-white/70">
             <PhoneCall size={12} />
+            등급이 없으시다면{" "}
             <a href="#consult" className="underline underline-offset-2">
-              위 상담 신청
+              예상 등급부터 확인
             </a>
-            으로 바로 문의할 수도 있어요
+            해보세요
           </p>
         </section>
       </div>

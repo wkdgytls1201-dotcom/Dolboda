@@ -24,46 +24,79 @@ export async function Footer() {
   return (
     <footer className="border-t border-ink-100 bg-white/60 px-4 py-8">
       <div className="mx-auto max-w-6xl">
-        <div className="flex flex-col items-center gap-3 text-center text-xs text-ink-300 sm:flex-row sm:justify-between sm:text-left">
-          <p>&copy; {new Date().getFullYear()} 돌보다. 표시된 시설 정보는 공공데이터 기반으로 실제와 다를 수 있습니다.</p>
-          {/* 푸터 링크도 실제로 누르는 링크다 — 26px면 40~60대 사용자가 옆 링크를
-              잘못 누르기 쉬워서, 세로 여백으로 44px 터치 영역을 만든다(글자 크기는 유지) */}
-          <div className="flex flex-wrap justify-center gap-x-4">
-            {[
-              { href: "/services", label: "돌봄 서비스" },
-              { href: "/grade-test", label: "등급 테스트" },
-              { href: "/guide", label: "요양 가이드" },
-              { href: "/welfare-equipment", label: "복지용구 혜택" },
-              { href: "/about", label: "돌보다 소개" },
-              { href: "/business", label: "시설 운영자" },
-              { href: "/data-policy", label: "데이터 출처" },
-              { href: "/terms", label: "이용약관" },
-              { href: "/privacy", label: "개인정보처리방침", bold: true },
-            ].map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                className={`inline-flex min-h-[44px] items-center transition-colors duration-150 hover:text-ink-700 ${
-                  l.bold ? "font-semibold" : ""
-                }`}
-              >
-                {l.label}
-              </Link>
-            ))}
-          </div>
+        {/* 링크를 성격별로 묶어 세로로 세운다.
+            예전엔 9개를 한 줄에 flex-wrap으로 흘려서 좁은 화면에서 4/4/1처럼 어긋나게
+            접혔다 — 줄 끝이 들쭉날쭉해 정돈돼 보이지 않았다. 묶음으로 나누면 개수가
+            맞지 않아도 의도된 배치로 읽힌다.
+            터치 영역: 세로로 늘어선 링크라 44px 높이가 그대로 안전한 간격이 된다
+            (40~60대 사용자가 옆 링크를 잘못 누르지 않게 — 글자 크기는 그대로 둔다). */}
+        <div className="grid grid-cols-2 gap-x-6 gap-y-5 text-xs sm:grid-cols-3">
+          {[
+            {
+              title: "서비스",
+              links: [
+                { href: "/services", label: "돌봄 서비스" },
+                { href: "/grade-test", label: "등급 테스트" },
+                { href: "/guide", label: "요양 가이드" },
+                { href: "/welfare-equipment", label: "복지용구 혜택" },
+              ],
+            },
+            {
+              title: "돌보다",
+              links: [
+                { href: "/about", label: "돌보다 소개" },
+                { href: "/business", label: "시설 운영자" },
+                { href: "/data-policy", label: "데이터 출처" },
+              ],
+            },
+            {
+              title: "이용 안내",
+              links: [
+                { href: "/terms", label: "이용약관" },
+                { href: "/privacy", label: "개인정보처리방침", bold: true },
+              ],
+            },
+          ].map((group) => (
+            <div key={group.title}>
+              <p className="mb-1 font-bold text-ink-500">{group.title}</p>
+              <ul>
+                {group.links.map((l) => (
+                  <li key={l.href}>
+                    <Link
+                      href={l.href}
+                      className={`inline-flex min-h-[44px] items-center text-ink-300 transition-colors duration-150 hover:text-ink-700 ${
+                        l.bold ? "font-semibold" : ""
+                      }`}
+                    >
+                      {l.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
 
+        <p className="mt-6 border-t border-ink-100/60 pt-5 text-xs leading-relaxed text-ink-300">
+          &copy; {new Date().getFullYear()} 돌보다. 표시된 시설 정보는 공공데이터 기반으로 실제와
+          다를 수 있습니다.
+        </p>
+
+        {/* 아래 지역 링크와 같은 성격(검색엔진 크롤 경로)이라 같은 무게로 낮췄다.
+            서비스 동선에서 실제로 누르는 링크가 아닌데 본문 링크와 같은 크기·진하기로
+            두면 정작 위쪽 메뉴가 묻힌다. 숨기면 스팸 신호가 되므로 보이되 최대한
+            존재감 없게 둔다(지역 링크와 동일한 처리). */}
         {hubs.length > 0 && (
           <nav
             aria-label="시설 유형별 전국 현황"
             className="mt-4 border-t border-ink-100/60 pt-3 text-center sm:text-left"
           >
-            <ul className="flex flex-wrap justify-center gap-x-3 gap-y-0.5 sm:justify-start">
+            <ul className="flex flex-wrap justify-center gap-x-2.5 gap-y-1 sm:justify-start">
               {hubs.map((h) => (
                 <li key={h.slug}>
                   <Link
                     href={`/${encodeURIComponent(h.slug)}`}
-                    className="inline-flex min-h-[44px] items-center text-xs text-ink-300 transition-colors duration-150 hover:text-ink-700"
+                    className="text-[10px] text-ink-300/50 transition-colors duration-150 hover:text-ink-500"
                   >
                     전국 {h.label}
                   </Link>

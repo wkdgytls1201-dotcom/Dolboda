@@ -209,6 +209,23 @@ p {
   animation: shimmer 2.2s ease-in-out 0.6s 3 both;
 }
 
+
+/* 등급테스트 결과의 점수 눈금이 왼쪽에서 차오르는 움직임.
+   transform만 쓰므로(width가 아니라) 저사양 기기에서도 부담이 없다. */
+@keyframes grade-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [style*='grade-fill'] {
+    animation: none !important;
+  }
+}
+
 /* 등장 애니메이션 일괄 해제 — 움직임 줄이기를 켠 사용자에게는 즉시 최종 상태로 보인다.
    (회전·반복 계열은 각자 자기 정의 바로 아래에 같은 블록을 이미 갖고 있다.)
    여기 모아둔 것들은 전부 "최종 상태 = 자연 상태"인 키프레임이라, animation을 끄면
@@ -384,71 +401,5 @@ p {
   }
   .no-print {
     display: none !important;
-  }
-}
-
-/* ── View Transitions — 시설 카드 ↔ 상세 페이지가 "이어지는 한 화면"으로 보이게 ──
-   원리와 이름 규칙은 lib/facilityTransition.ts 상단 주석에 정리돼 있다.
-   여기서는 "언제·얼마나 빠르게" 움직일지(타이밍)만 다룬다.
-
-   설계 의도: 화려한 광고 애니메이션이 아니라 지도앱처럼 조용하고 정교하게.
-   ① 사진이 먼저 자리를 잡고 → ② 제목·배지가 아주 살짝 늦게 따라오고 →
-   ③ 나머지 본문이 마지막에 옅게 올라온다. 이 시차가 "같은 화면이 재구성된다"는
-   느낌을 만든다. 바운스(튕김) 없이 끝에서 부드럽게 감속하는 곡선만 쓴다.
-
-   ★ 이름(view-transition-name)이 아니라 클래스(view-transition-class)로 스타일을
-     거는 이유: 이름에는 시설 id가 들어가 매번 달라서(fc-hero-nhis2-xxx) 고정된
-     CSS로 지목할 수가 없다. 그래서 짝짓기는 이름이, 스타일은 클래스가 맡는다.
-     view-transition-class를 모르는 조금 옛 브라우저에서는 이 타이밍 조정만
-     무시되고 브라우저 기본 전환(약 250ms)으로 자연스럽게 동작한다.
-
-   성능: 아래 값들은 전부 브라우저가 transform·opacity로 처리한다.
-   width/height/top/left를 매 프레임 바꾸지 않으므로 저사양 기기에서도 부담이 적다.
-   미지원 브라우저는 이 블록 전체를 무시하고 기존처럼 즉시 전환된다. */
-
-::view-transition-group(*) {
-  /* 끝에서 부드럽게 감속 — 튕기지 않는다 */
-  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-/* 카드(16:9)와 상세(21:9)는 사진 비율이 다르다. 기본값으로 두면 전환 중에 사진이
-   눌린 것처럼 찌그러진다 — 늘리는 대신 잘라내기로 이어 붙여 왜곡을 없앤다. */
-::view-transition-old(*),
-::view-transition-new(*) {
-  object-fit: cover;
-  overflow: hidden;
-}
-
-/* ① 사진 — 전환의 주인공. 가장 먼저, 가장 길게 움직인다 */
-::view-transition-group(*.fc-hero) {
-  animation-duration: 420ms;
-}
-
-/* ② 제목·배지 — 사진보다 아주 살짝 늦게 자리를 잡는다(60ms 시차) */
-::view-transition-group(*.fc-text) {
-  animation-duration: 380ms;
-  animation-delay: 60ms;
-  animation-fill-mode: both;
-}
-
-/* ③ 나머지 본문 — 전환의 주인공이 아니다. 짧은 교차 페이드로만 거든다 */
-::view-transition-old(root) {
-  animation-duration: 160ms;
-}
-::view-transition-new(root) {
-  animation-duration: 260ms;
-  animation-delay: 60ms;
-  animation-fill-mode: both;
-}
-
-/* 움직임 줄이기: 확대·이동을 전부 없애고 아주 짧은 페이드만 남긴다.
-   (0으로 만들면 깜빡이며 끊겨 보여서, 짧게 남기는 편이 자연스럽다) */
-@media (prefers-reduced-motion: reduce) {
-  ::view-transition-group(*),
-  ::view-transition-old(*),
-  ::view-transition-new(*) {
-    animation-duration: 120ms !important;
-    animation-delay: 0ms !important;
-    animation-timing-function: linear !important;
   }
 }
