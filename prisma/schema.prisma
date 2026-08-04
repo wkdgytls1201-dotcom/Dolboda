@@ -739,6 +739,24 @@ model SitterCertification {
   createdAt       DateTime      @default(now())
 }
 
+// "새 일자리 알림"을 누구에게 이미 보냈는지 기록한다. 이게 없으면 알림 스크립트를
+// 두 번 돌렸을 때(예: 실패해서 재시도) 같은 사람에게 같은 공고를 두 번 보내게 된다.
+//
+// @@id([userId, careRequestId])로 "이 사람 + 이 공고" 조합을 기본 키로 삼았다. 데이터베이스가
+// 같은 조합을 두 번 저장하지 못하게 막아주므로("unique 제약"), 우리 코드가 직접
+// "이미 보냈는지 확인 → 없으면 보내기"를 두 단계로 나눠 할 필요가 없다. 그냥 저장을
+// 시도했다가 실패하면(이미 있으면) "아, 이미 보냈구나"로 해석하면 된다 —
+// scripts/send-facility-alerts.mjs의 AlertDelivery가 쓰는 것과 같은 요령이다.
+model SitterJobAlertDelivery {
+  userId        String
+  careRequestId String
+  sentAt        DateTime? // 성공 시각. null이면 시도했지만 아직 실패한 상태
+  error         String? // 실패 사유
+  createdAt     DateTime  @default(now())
+
+  @@id([userId, careRequestId])
+}
+
 // 매니저(돌보다 매니저 = 시터)가 어떤 알림을 받을지 고르는 설정.
 //
 // ★ 왜 이 표가 필요한가: 예전에는 이 설정이 브라우저의 localStorage에만 저장됐다.

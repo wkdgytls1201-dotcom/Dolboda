@@ -1,0 +1,48 @@
+# 매니저(시터)용 "새 일자리 알림" — scripts/send-sitter-job-alerts.mjs 참고.
+#
+# 다른 알림 워크플로들과 시각(09:00 KST)은 같지만 대상·판정 기준이 또 다르다
+# (돌봄 요청 = 공고가 매니저 활동 지역에 새로 올라왔는가). 실패해도 서로 영향 없게
+# 계속 별도 워크플로로 뒀다.
+#
+# 필요한 저장소 시크릿 — 다른 알림 워크플로와 동일(DIRECT_URL·RESEND_API_KEY·MAIL_FROM)
+name: send-sitter-job-alerts
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # 00:00 UTC = 09:00 KST
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "대상일 (YYYY-MM-DD, 비우면 오늘 KST)"
+        required: false
+        type: string
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 의존성 설치 (postinstall에서 Prisma Client 생성)
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+        run: npm ci
+
+      - name: 새 일자리 알림 발송
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          MAIL_FROM: ${{ secrets.MAIL_FROM }}
+          NEXT_PUBLIC_SITE_URL: https://www.dolboda.kr
+        run: |
+          if [ -n "${{ inputs.date }}" ]; then
+            node scripts/send-sitter-job-alerts.mjs --write --date=${{ inputs.date }}
+          else
+            node scripts/send-sitter-job-alerts.mjs --write
+          fi
