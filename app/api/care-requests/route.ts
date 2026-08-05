@@ -23,7 +23,7 @@ const APPLICANT_SELECT = {
       intro: true,
       gender: true,
       ageBand: true,
-      // 돌봄 스타 리본(포인트 사용처) — 시각 강조만, 정렬은 불변(먼저 지원한 순 유지)
+      // 돌봄 스타 별(포인트 사용처) — ⭐ 표시 + 활성자 우선 노출(아래 GET의 정렬)
       ribbonUntil: true,
       certifications: { select: { id: true, name: true } },
     },
@@ -41,8 +41,9 @@ export async function GET() {
     where: { guardianId: session.user.id },
     orderBy: { createdAt: "desc" },
     include: {
-      // 먼저 지원한 순 — 정렬을 명시하지 않으면 DB 내부 순서라 새로고침마다 뒤바뀔 수
-      // 있고, 보호자가 "아까 그 두 번째 분"을 다시 찾지 못한다(시나리오 감사 2026-08-05)
+      // 기본은 먼저 지원한 순 — 정렬을 명시하지 않으면 DB 내부 순서라 새로고침마다
+      // 뒤바뀔 수 있다(시나리오 감사 2026-08-05). 여기에 ⭐ 돌봄 스타(포인트 사용처)
+      // 활성 지원자를 앞으로 올린다(2026-08-06 사용자 결정 — points-spec §2).
       applications: { select: APPLICANT_SELECT, orderBy: { createdAt: "asc" } },
       review: { select: { id: true, rating: true } },
     },
@@ -113,9 +114,17 @@ export async function GET() {
     );
   }
 
+  // ⭐ 돌봄 스타 활성 지원자 우선, 그 안에서는 먼저 지원한 순(안정 정렬이라 유지됨)
+  const now = Date.now();
+  const starActive = (a: (typeof careRequest.applications)[number]) =>
+    a.sitterProfile.ribbonUntil !== null && a.sitterProfile.ribbonUntil.getTime() > now;
+  const ordered = [...careRequest.applications].sort(
+    (a, b) => Number(starActive(b)) - Number(starActive(a))
+  );
+
   return NextResponse.json({
     ...careRequest,
-    applications: careRequest.applications.map((a) => ({
+    applications: ordered.map((a) => ({
       ...a,
       stats: statsById.get(a.sitterProfile.id),
     })),

@@ -312,8 +312,8 @@ export function CareRequestDetail({
                   <div className="mb-1 flex items-center justify-between gap-2">
                     <p className="flex min-w-0 items-center gap-1.5 font-bold text-ink-900">
                       <span className="truncate">{app.sitterProfile.nickname}</span>
-                      {/* 돌봄 스타 리본(포인트 사용처) — 시각 강조만, 목록 순서는 그대로
-                          (먼저 지원한 순 — care-flow-spec §4-1을 리본이 깨지 않는다) */}
+                      {/* 돌봄 스타 별(포인트 사용처) — ⭐ 표시. 목록 정렬도 별 활성자
+                          우선(서버가 정렬해 내려줌 — 2026-08-06 사용자 결정) */}
                       {app.sitterProfile.ribbonUntil &&
                         new Date(app.sitterProfile.ribbonUntil) > new Date() && (
                           <span className="shrink-0 rounded-full bg-gradient-to-r from-accent-400 to-primary-400 px-2 py-0.5 text-[10px] font-extrabold text-white shadow-soft">

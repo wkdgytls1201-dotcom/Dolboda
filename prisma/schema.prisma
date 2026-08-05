@@ -801,8 +801,8 @@ model SitterProfile {
   // 성별을 알 길이 없었다. 매니저가 직접 입력하는 선택 항목(밴드형 — 정확 나이는 안 받음).
   gender            String? // "여성" | "남성"
   ageBand           String? // "20대" ~ "70대 이상"
-  // 돌봄 스타 리본(포인트 사용처) 만료 시각 — 지원자 카드·공개 프로필의 시각 강조만
-  // 하고 정렬은 절대 바꾸지 않는다(지원자 목록은 먼저 지원한 순 — care-flow-spec §4-1).
+  // 돌봄 스타 별(포인트 사용처) 만료 시각 — 지원자 카드·공개 프로필 ⭐ 표시 +
+  // 지원자 목록에서 활성자 우선 노출(그 안은 선착순 — 2026-08-06 사용자 결정)
   ribbonUntil       DateTime?
   createdAt         DateTime                 @default(now())
   updatedAt         DateTime                 @updatedAt

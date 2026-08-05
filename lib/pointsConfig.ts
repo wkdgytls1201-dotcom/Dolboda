@@ -28,8 +28,8 @@ export const POINT_SPEND = {
   ribbon: {
     price: 5000,
     days: 7,
-    label: "돌봄 스타 리본",
-    desc: "지원자 카드와 공개 프로필에 7일간 ⭐ 리본이 달려요. 순서는 그대로, 눈에 띄는 정도만 달라져요.",
+    label: "돌봄 스타 별",
+    desc: "7일간 지원자 카드와 공개 프로필에 ⭐ 별이 달리고, 지원자 목록에서 더 위에 보여요.",
   },
   requestBoost: {
     price: 2000,
@@ -45,7 +45,7 @@ export const POINT_KIND_LABEL: Record<string, string> = {
   review_five_star: "후기 5점 보너스",
   reaction: "보호자 반응 받음",
   review_written: "후기 작성",
-  spend_ribbon: "돌봄 스타 리본 사용",
+  spend_ribbon: "돌봄 스타 별 사용",
   spend_request_boost: "우선 요청 사용",
   referral_referrer: "친구 초대 보상",
   referral_referee: "초대받고 가입",

@@ -14,7 +14,7 @@ export interface Applicant {
     intro: string | null;
     gender: string | null;
     ageBand: string | null;
-    /** 돌봄 스타 리본 만료(ISO) — 유효하면 카드에 리본 표시(정렬은 불변) */
+    /** 돌봄 스타 별 만료(ISO) — 유효하면 ⭐ 표시 + 목록 상단 우선(서버 정렬) */
     ribbonUntil: string | null;
     certifications: { id: string; name: string }[];
   };

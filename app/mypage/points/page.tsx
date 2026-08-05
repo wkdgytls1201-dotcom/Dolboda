@@ -112,6 +112,12 @@ export default function PointsPage() {
         </p>
       </section>
 
+      {/* 잔액 바로 아래 — 화면 폭에 따라 여기서 끝처럼 보일 수 있어 아래 내용을 상시 안내 */}
+      <p className="!mt-3 flex items-center justify-center gap-1 text-[13px] font-semibold text-ink-400">
+        아래로 내리면 사용하기 · 친구 초대 · 적립 방법이 있어요
+        <span aria-hidden className="text-[14px]">⌄</span>
+      </p>
+
       {notice && (
         <p className="rounded-xl bg-primary-50 px-3.5 py-2.5 text-[14px] font-semibold text-primary-700">
           {notice}
@@ -186,13 +192,6 @@ export default function PointsPage() {
           </button>
         </div>
       </section>
-
-      {/* 화면 폭에 따라 사용하기 카드가 폴드에 딱 걸려 "여기가 끝"으로 보일 수 있다 —
-          아래에 더 있음을 항상 알리는 0-JS 힌트(사용자 피드백 2026-08-05) */}
-      <p className="!mt-4 flex items-center justify-center gap-1 text-[12px] font-semibold text-ink-300">
-        아래에 친구 초대·적립 방법이 더 있어요
-        <span aria-hidden className="text-[13px]">⌄</span>
-      </p>
 
       {/* 친구 초대 — 가입(귀속) 즉시 양쪽 지급(points-spec §5, 2026-08-05 사용자 결정
           — 포인트가 현금성이 없어 유령 계정으로 캐도 실익이 없다) */}
