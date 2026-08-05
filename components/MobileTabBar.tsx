@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
 import { useSession } from "next-auth/react";
-import { Home, Search, ClipboardCheck, User } from "lucide-react";
+import { Home, Search, ClipboardCheck, BookOpen, User } from "lucide-react";
 import { AuthModal } from "./AuthModal";
 import {
   getTabBarHidden,
@@ -34,6 +34,9 @@ const TABS = [
   { href: "/", label: "홈", icon: Home },
   { href: "/search", label: "시설찾기", icon: Search },
   { href: "/grade-test", label: "등급테스트", icon: ClipboardCheck },
+  // 5번째 탭(2026-08-05) — 50~70대 타깃의 첫 방문 목적이 "정보"라 등급테스트와
+  // 정보축 쌍을 이룬다. 라벨은 폭 때문에 짧게.
+  { href: "/guide", label: "가이드", icon: BookOpen },
 ] as const;
 
 export function MobileTabBar() {
@@ -59,7 +62,7 @@ export function MobileTabBar() {
         className="fixed inset-x-0 bottom-0 z-40 border-t border-ink-100 bg-white/95 backdrop-blur sm:hidden [padding-bottom:env(safe-area-inset-bottom)]"
         aria-label="주요 메뉴"
       >
-        <div className="grid grid-cols-4">
+        <div className="grid grid-cols-5">
           {TABS.map(({ href, label, icon: Icon }) => {
             const active = href === "/" ? pathname === "/" : pathname?.startsWith(href);
             return (

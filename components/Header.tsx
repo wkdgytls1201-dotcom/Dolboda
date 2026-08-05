@@ -10,6 +10,12 @@ import { useSession } from "next-auth/react";
 import { signOutAndClear } from "@/lib/signOutAndClear";
 import { AuthModal } from "./AuthModal";
 import { Logo } from "./Logo";
+import { MobileMenuSheet } from "./MobileMenuSheet";
+
+// 2026-08-05 모바일 메뉴 개편(50~70대 타깃) — 라벨 있는 "☰ 메뉴" 버튼 + 우측 풀시트.
+// ⚠️ 여차하면 되돌리기: 이 값을 false로 내리면 예전 드롭다운(아래 menuOpen 블록)이
+// 그대로 복귀한다 — 옛 코드는 지우지 않고 남겨뒀다.
+const USE_SHEET_MENU = true;
 
 // authOnly 항목은 로그인해야 쓸 수 있는 기능이라 비로그인 상태에선 노출하지 않는다.
 const NAV = [
@@ -44,6 +50,8 @@ export function Header() {
   // 40px 여유를 두는 이유: 메뉴가 열리며 레이아웃이 밀릴 때 스크롤 이벤트가 한 번 튀는데,
   // 그걸로 즉시 닫히면 열자마자 사라지는 것처럼 보인다.
   useEffect(() => {
+    // 시트 메뉴는 오버레이+스크롤 잠금이라 이 보정이 필요 없다(예전 드롭다운 전용)
+    if (USE_SHEET_MENU) return;
     if (!menuOpen) return;
     const from = window.scrollY;
     const onScroll = () => {
@@ -193,7 +201,25 @@ export function Header() {
               </Link>
             )}
 
-            {/* 모바일 햄버거 버튼 */}
+            {/* 모바일 메뉴 버튼 — 시트 모드에선 라벨 병기("☰ 메뉴"): 아이콘 단독은
+                50~70대 인지율이 낮다. 예전 모드에선 기존 아이콘 버튼 그대로. */}
+            {USE_SHEET_MENU ? (
+              <button
+                type="button"
+                onClick={() => setMenuOpen(true)}
+                aria-label="전체 메뉴 열기"
+                aria-expanded={menuOpen}
+                className="relative flex min-h-[44px] items-center gap-1.5 rounded-full border border-ink-200 bg-white px-3.5 text-[14px] font-bold text-ink-700 transition-all duration-150 hover:bg-ink-100 active:scale-95"
+              >
+                <Menu size={20} aria-hidden />
+                메뉴
+                {mobileBadgeCount > 0 && (
+                  <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-accent-300 px-1 text-[10px] font-bold text-ink-900">
+                    {mobileBadgeCount}
+                  </span>
+                )}
+              </button>
+            ) : (
             <button
               type="button"
               onClick={() => setMenuOpen((o) => !o)}
@@ -225,12 +251,22 @@ export function Header() {
                 </span>
               )}
             </button>
+            )}
           </div>
         </div>
 
-        {/* 모바일 드롭다운 메뉴 — 오른쪽 정렬(엄지 닿는 쪽), 장식 없이 텍스트 위주로 깔끔하게.
+        {/* 새 전체 메뉴 시트 (USE_SHEET_MENU) */}
+        {USE_SHEET_MENU && menuOpen && (
+          <MobileMenuSheet
+            isLoggedIn={Boolean(user)}
+            onClose={() => setMenuOpen(false)}
+            onLogin={() => setShowAuth(true)}
+          />
+        )}
+
+        {/* 예전 모바일 드롭다운 메뉴(복귀용 보존) — 오른쪽 정렬(엄지 닿는 쪽).
             현재 화면 항목만 옅은 배경으로 표시하고, 로그아웃은 구분선 아래에 옅게 분리한다. */}
-        {menuOpen && (
+        {!USE_SHEET_MENU && menuOpen && (
           <div className="border-t border-ink-100 bg-white/95 px-4 py-2 backdrop-blur sm:hidden">
             <nav className="flex flex-col">
               {mobileNavItems.map((item) => {
