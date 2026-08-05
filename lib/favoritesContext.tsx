@@ -67,6 +67,25 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
   // 같은 세션에서 병합을 두 번 시도하지 않게 (React StrictMode 이중 실행 대비)
   const importingRef = useRef(false);
 
+  // 찜 직후 스낵바 — 빈자리·등급변동 알림(10차, send-facility-alerts)이 이미 돌고 있는데
+  // 켜는 곳이 /notifications 깊숙이 숨어 있어 아무도 모른다. 찜하는 "그 순간"이 알림을
+  // 켤 동기가 가장 강한 순간이라 여기서 원탭으로 켜게 한다. 자동으로 켜지는 않는다 —
+  // 이메일 수신은 사용자가 직접 누른 명시적 선택이어야 한다.
+  const [savedToast, setSavedToast] = useState<{ facilityId: string; enabled: boolean } | null>(
+    null
+  );
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showToast = useCallback((next: { facilityId: string; enabled: boolean }) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setSavedToast(next);
+    toastTimerRef.current = setTimeout(() => setSavedToast(null), next.enabled ? 2500 : 5000);
+  }, []);
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    };
+  }, []);
+
   // 1) 로컬 값을 먼저 읽는다 — 로그인 여부와 무관하게 화면이 바로 뜨게
   useEffect(() => {
     setFavoriteIds(readLocal<string[]>(STORAGE_KEY, []));
@@ -158,6 +177,9 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
         return has ? prev.filter((x) => x !== id) : [...prev, id];
       });
 
+      if (nextFavorite) showToast({ facilityId: id, enabled: false });
+      else setSavedToast(null);
+
       if (!userId) return;
       fetch("/api/favorites", {
         method: "POST",
@@ -170,7 +192,7 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
         );
       });
     },
-    [userId]
+    [userId, showToast]
   );
 
   const setAlertPref = useCallback(
@@ -205,7 +227,47 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
     [favoriteIds, isFavorite, toggleFavorite, loaded, alertPrefs, setAlertPref]
   );
 
-  return <FavoritesContext.Provider value={value}>{children}</FavoritesContext.Provider>;
+  const toastPref = savedToast ? alertPrefs[savedToast.facilityId] : undefined;
+  const toastAlreadyOn = Boolean(toastPref?.vacancy && toastPref?.gradeChange);
+
+  return (
+    <FavoritesContext.Provider value={value}>
+      {children}
+      {/* 찜 스낵바 — 모바일 탭바(72px) 위, 데스크톱은 하단 여백. transform·opacity만 쓰는
+          기존 animate-fade-up 재사용. aria-live로 한 번만 읽히고 5초 뒤 사라진다. */}
+      {savedToast && (
+        <div
+          role="status"
+          className="animate-fade-up fixed inset-x-4 bottom-[calc(84px+env(safe-area-inset-bottom))] z-50 mx-auto flex min-h-[52px] max-w-md items-center justify-between gap-3 rounded-2xl bg-ink-900/95 py-2.5 pl-4 pr-2.5 text-sm text-white shadow-card-hover sm:bottom-6"
+        >
+          {savedToast.enabled ? (
+            <span className="py-1.5 font-semibold">
+              알림을 켰어요{userId ? "" : " · 로그인하면 이메일로 받아요"}
+            </span>
+          ) : (
+            <>
+              <span className="min-w-0 truncate font-semibold">
+                관심시설에 저장했어요{toastAlreadyOn ? " · 알림 설정됨" : ""}
+              </span>
+              {!toastAlreadyOn && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAlertPref(savedToast.facilityId, "vacancy", true);
+                    setAlertPref(savedToast.facilityId, "gradeChange", true);
+                    showToast({ facilityId: savedToast.facilityId, enabled: true });
+                  }}
+                  className="min-h-[44px] shrink-0 rounded-xl bg-white px-3.5 text-[13px] font-bold text-ink-900 transition-transform duration-150 active:scale-95"
+                >
+                  빈자리 알림 켜기
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </FavoritesContext.Provider>
+  );
 }
 
 export function useFavorites() {
