@@ -3,7 +3,7 @@
 > ⚠️ **법적 포지션이 걸린 기능입니다.** 조항 문구나 흐름을 바꿀 때는 아래 §1을 먼저 읽으세요.
 > 이 선을 넘으면 회사가 계약 당사자가 되고, 직업안정법상 유료직업소개사업 등록 문제가 생깁니다.
 
-최종 갱신: 2026-08-02 · 구현: [lib/careAgreement.ts](../lib/careAgreement.ts) ·
+최종 갱신: 2026-08-05(역경매 제안 금액 봉인·취소 건 비노출 결정 반영) · 구현: [lib/careAgreement.ts](../lib/careAgreement.ts) ·
 [app/api/care-agreement/route.ts](../app/api/care-agreement/route.ts) ·
 [app/care-request/agreement/page.tsx](../app/care-request/agreement/page.tsx)
 

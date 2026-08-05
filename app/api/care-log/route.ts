@@ -99,7 +99,7 @@ export async function GET(req: Request) {
       stats: {
         dayCount: perDay.length,
         alertCount: perDay.filter((r) => r.alertNote).length,
-        // "식사 잘하신 날" — 후기 화면(§273 계획)이 쓴다: 쓸 말이 생기면 평가가 후해진다
+        // "식사 잘하신 날" — 후기 화면이 쓴다(care-log-spec §9-3): 쓸 말이 생기면 평가가 후해진다
         mealGoodCount: perDay.filter((r) => r.meal === "잘 드심").length,
         photoCount: perDay.reduce(
           (n, r) => n + (Array.isArray(r.photos) ? r.photos.length : 0),
