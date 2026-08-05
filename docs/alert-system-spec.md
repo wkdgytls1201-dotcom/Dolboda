@@ -38,6 +38,7 @@
 | 6 | 등급테스트 재검사 리마인드 | 보호자 | `send-grade-test-reminders.mjs` | `send-grade-test-reminders.yml` |
 | 7 | 새 일자리 알림 | 매니저 | `send-sitter-job-alerts.mjs` | `send-sitter-job-alerts.yml` |
 | 8 | 지원자 없는 요청 넛지(§3-14) | 보호자 | `send-open-request-nudges.mjs` | `send-open-request-nudges.yml` |
+| 9 | 돌봄일지 주간 요약(§3-15) | 보호자 | `send-care-log-weekly.mjs` | `send-care-log-weekly.yml` (**월요일만**) |
 
 1~4번이 한 스크립트에 몰려 있는 이유는 **"사람당 메일 한 통" 원칙** 때문이다
 (§2 참고). 나머지는 대상(누구에게)과 판정 기준이 서로 완전히 달라서 스크립트를
@@ -296,6 +297,19 @@ flowchart LR
 | 이메일 | "아직 지원자가 없어요 — 조건을 조금 조정해보세요" + 제안 3가지(사례비·기간/시간대·내용 보강). **지어낸 수치 금지** — "올리면 N% 늘어요" 같은 근거 없는 문구 안 씀 |
 | 구현 메모 | 발송 전 기록(§2 원칙). 단, `--write`인데 `RESEND_API_KEY`가 없으면 **기록도 남기지 않고 중단** — 평생 1회 기록을 발송 없이 소모하면 그 보호자에겐 영영 안내가 못 간다 |
 
+### 3-15. 돌봄일지 주간 요약 (2026-08-06 추가 — 배치형, 번호는 추가순)
+
+| 항목 | 내용 |
+|---|---|
+| 트리거 | **월요일 09:00 KST만**(다른 배치는 매일) — 스크립트가 "지난 주 월~일"을 계산하므로 월요일에 돌려야 직전 한 주가 딱 잡힌다 |
+| 데이터 소스 | `CareLog`(지난 주 `careDate` 범위) + `CareRequest`(`MATCHED`·`COMPLETED`) |
+| 판정 | 지난 주에 기록이 **1건 이상** 있는 돌봄 건. **0건이면 보내지 않는다** — 빈 요약은 매니저에 대한 무언의 지적이 된다 |
+| 수신자 | 그 돌봄 건의 보호자(이메일 있는 경우) |
+| 쿨다운 | **돌봄 건×주 1회**(`CareLogWeeklyDigest`, 기본키 `[careRequestId, weekOf]`) — 같은 주에 수동 재실행해도 두 번 안 나간다 |
+| 이메일 | "지난 주 돌봄 기록을 정리했어요" + 기록한 날 수·식사 잘하신 날·알려드린 일·사진 수 + **그 주 마지막 한마디 인용**(숫자보다 이 한 줄이 크게 남는다) |
+| 구현 메모 | 정정이 여러 행일 수 있어 **날짜별 최신 1건만** 센다(화면 셈법과 동일). 발송 전 기록(§2), `--write`인데 키 없으면 기록도 없이 중단(§3-14와 같은 이유) |
+| ⚠️ 문구 원칙 | **매니저를 향한 압박 금지**(care-log-spec §10-5 · 매니저 법적 거리 방침) — "며칠 빠졌다"를 지적하거나 독촉을 유도하지 않는다. 있는 것을 그대로 전하고 "기록이 없는 날도 있어요"로 담담히 닫는다 |
+
 > §3-8~3-11 넷 다 **§2의 "발송 전에 기록"** 원칙이 살짝 다르게 적용된다 —
 > 여기선 "발송 기록"이 아니라 "원래 하려던 상태 변경"이 먼저다(지원 저장,
 > 매칭확정 처리, 완료 처리). 상태 변경이 이미 성공적으로 끝난 **뒤에** 메일을
@@ -318,6 +332,7 @@ flowchart LR
 | `SitterNotificationPref` | 매니저 알림 설정(`newJob`·`matchUpdate`) | `userId`가 그대로 기본키(사람당 1행) |
 | `SitterJobAlertDelivery` | §3-7의 중복 방지 기록 | `[userId, careRequestId]`가 기본키(쿨다운 없이 "보낸 적 있는지"만 확인) |
 | `OpenRequestNudge` | §3-14의 발송 기록 | `careRequestId`가 그대로 기본키(요청당 평생 1회) |
+| `CareLogWeeklyDigest` | §3-15의 발송 기록 | `[careRequestId, weekOf]`가 기본키(돌봄 건×주 1회 — 같은 주 재실행에도 두 번 안 나감) |
 
 **쿨다운 기록의 두 가지 설계**가 섞여 있다는 걸 기억할 것:
 - `AlertDelivery`는 **날짜별로 쌓는다**(하루하루 "오늘 보냈나"를 남겨야 하는
@@ -400,6 +415,7 @@ scripts/
   send-grade-test-reminders.mjs   # §3-6
   send-sitter-job-alerts.mjs      # §3-7
   send-open-request-nudges.mjs    # §3-14
+  send-care-log-weekly.mjs        # §3-15 (월요일만)
 
 .github/workflows/
   send-facility-alerts.yml

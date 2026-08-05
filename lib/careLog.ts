@@ -68,11 +68,16 @@ export interface CareLogWindow {
  * 일지는 "그날 무슨 일이 있었나"의 기록이므로 돌봄 기간 밖의 날은 뜻이 없다.
  */
 export function careLogWindow(
-  request: { startDate: Date; endDate: Date },
+  request: { startDate: Date; endDate: Date; completedAt?: Date | null },
   today = todayKst()
 ): CareLogWindow {
   const start = toKstDate(request.startDate);
-  const end = toKstDate(request.endDate);
+  const planned = toKstDate(request.endDate);
+  // 보호자가 예정일보다 일찍 완료 처리하면 돌봄은 그날 끝난 것이다 — 그 뒤 날짜의
+  // 기록은 뜻이 없고, 유예도 "실제로 끝난 날"부터 세는 게 맞다. 예정일보다 늦게
+  // 완료를 눌렀다면(흔하다) 돌봄 자체는 예정일에 끝났으므로 예정일을 쓴다.
+  const completed = request.completedAt ? toKstDate(request.completedAt) : null;
+  const end = completed && completed < planned ? completed : planned;
   const closesAfter = shiftKst(end, CARE_LOG_GRACE_DAYS);
   const max = today < end ? today : end;
 

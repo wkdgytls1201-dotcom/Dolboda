@@ -22,8 +22,8 @@ const ALLOWED = new Set(["image/webp", "image/jpeg", "image/png"]);
 
 // 컨텍스트는 일지·빠른 알림과 같은 구현을 쓴다(lib/careLogContext.ts) — 사본이 각자
 // 최신 건만 집던 탓에 사진이 엉뚱한 돌봄 건 폴더에 올라갈 수 있었다.
-async function findSitterContext(userId: string) {
-  const ctx = await findSitterCareContext(userId);
+async function findSitterContext(userId: string, requestId: string | null) {
+  const ctx = await findSitterCareContext(userId, requestId);
   return ctx ? { careRequestId: ctx.request.id, request: ctx.request } : null;
 }
 
@@ -44,7 +44,12 @@ export async function POST(req: Request) {
     return tooManyRequests("잠시 후 다시 시도해주세요.", limited.retryAfter);
   }
 
-  const ctx = await findSitterContext(session.user.id);
+  // 본문이 이미지 바이트라 어느 돌봄 건인지는 쿼리로 받는다(일지·빠른 알림은 JSON body).
+  // 저장 경로가 care-log/{careRequestId}/ 라 이 값이 틀리면 사진이 엉뚱한 건에 쌓인다.
+  const ctx = await findSitterContext(
+    session.user.id,
+    new URL(req.url).searchParams.get("requestId")
+  );
   if (!ctx) {
     return NextResponse.json({ error: "돌봄일지 사진은 매니저만 올릴 수 있어요." }, { status: 403 });
   }

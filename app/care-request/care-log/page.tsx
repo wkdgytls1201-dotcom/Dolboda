@@ -85,8 +85,10 @@ interface ApiResponse {
    *  open=false면 작성 UI를 아예 접고 reason을 보여준다: 눌러본 뒤 400을 맞는 것보다
    *  "아직/이미 쓸 수 없다"를 먼저 아는 편이 낫다. */
   logWindow: { min: string; max: string; closesAfter: string; open: boolean; reason: string | null };
-  /** 진행 중인 돌봄이 둘 이상이면 알린다(이 화면은 1건 전제) */
-  activeCount?: number;
+  /** 지금 보고 있는 돌봄 건 — 쓰기 요청에 그대로 실어 보낸다(엉뚱한 건에 쓰이지 않게) */
+  currentRequestId: string;
+  /** 고를 수 있는 돌봄 건들 — 1개면 전환 칩을 숨긴다 */
+  requestOptions: { id: string; summary: string; status: string; ongoing: boolean }[];
   logs: CareLogRow[];
   quickNotes: QuickNoteRow[];
   error?: string;
@@ -149,10 +151,16 @@ function CareLogPageInner() {
   const router = useRouter();
   const pathname = usePathname();
   const asParam = searchParams.get("as");
+  // 어느 돌봄 건을 보고 있는지 — 매니저가 여러 가정을 맡거나 보호자에게 지난 돌봄이
+  // 쌓이면 하나만 보여선 안 된다(2026-08-06). 없으면 서버가 진행 중 건을 고른다.
+  const requestIdParam = searchParams.get("requestId");
 
   function load() {
-    const qs = asParam ? `?as=${asParam}` : "";
-    fetch(`/api/care-log${qs}`)
+    const qs = new URLSearchParams();
+    if (asParam) qs.set("as", asParam);
+    if (requestIdParam) qs.set("requestId", requestIdParam);
+    const q = qs.toString();
+    fetch(`/api/care-log${q ? `?${q}` : ""}`)
       .then((r) => r.json())
       .then((d) => setData(d.error ? null : d))
       .catch(() => setData(null));
@@ -161,7 +169,18 @@ function CareLogPageInner() {
   useEffect(() => {
     if (status === "authenticated") load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status, asParam]);
+  }, [status, asParam, requestIdParam]);
+
+  /** 역할·돌봄 건 전환 — 주소만 바꾸면 위 effect가 다시 불러온다(뒤로가기도 자연히 동작) */
+  function goTo(next: { as?: string | null; requestId?: string | null }) {
+    const qs = new URLSearchParams();
+    const nextAs = next.as !== undefined ? next.as : asParam;
+    const nextId = next.requestId !== undefined ? next.requestId : requestIdParam;
+    if (nextAs) qs.set("as", nextAs);
+    if (nextId) qs.set("requestId", nextId);
+    const q = qs.toString();
+    router.replace(q ? `${pathname}?${q}` : pathname);
+  }
 
   if (status === "loading") return <PageLoader />;
 
@@ -205,7 +224,8 @@ function CareLogPageInner() {
             <button
               key={v}
               type="button"
-              onClick={() => router.replace(`${pathname}?as=${v}`)}
+              // 역할을 바꾸면 보던 돌봄 건은 그 역할의 목록에 없을 수 있어 함께 비운다
+              onClick={() => goTo({ as: v, requestId: null })}
               className={`min-h-[36px] rounded-full px-4 text-[13px] font-bold transition-colors ${
                 data.viewer === v ? "bg-white text-primary-600 shadow-soft" : "text-ink-400"
               }`}
@@ -213,6 +233,36 @@ function CareLogPageInner() {
               {v === "sitter" ? "매니저로 보기" : "보호자로 보기"}
             </button>
           ))}
+        </div>
+      )}
+
+      {/* 돌봄 건 전환 — 매니저가 여러 가정을 맡거나 보호자에게 지난 돌봄이 쌓였을 때만 뜬다.
+          진행 중인 건이 먼저 오고(서버 정렬), 끝난 건은 회색 점으로 구분한다. */}
+      {data.requestOptions.length > 1 && (
+        <div className="mb-4 -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {data.requestOptions.map((o) => {
+            const current = o.id === data.currentRequestId;
+            return (
+              <button
+                key={o.id}
+                type="button"
+                onClick={() => goTo({ requestId: o.id })}
+                aria-current={current ? "true" : undefined}
+                className={`flex min-h-[44px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 text-[13px] font-bold transition-colors ${
+                  current
+                    ? "border-primary-300 bg-primary-50 text-primary-700"
+                    : "border-ink-100 bg-white text-ink-500 hover:bg-ink-100"
+                }`}
+              >
+                <span
+                  aria-hidden
+                  className={`h-1.5 w-1.5 rounded-full ${o.ongoing ? "bg-mint-500" : "bg-ink-300"}`}
+                />
+                {o.summary}
+                {!o.ongoing && <span className="font-normal text-ink-400">· 종료</span>}
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -298,7 +348,9 @@ function SitterView({
     setPhotoBusy(true);
     try {
       const { blob } = await toResizedImage(file);
-      const res = await fetch("/api/care-log/photo", {
+      // 보고 있는 돌봄 건을 명시한다 — 사진 저장 경로가 건별로 갈리고, 서버는 이 값이
+      // 내 목록에 없으면 기본값으로 바꾸지 않고 거절한다(엉뚱한 건에 쌓이지 않게).
+      const res = await fetch(`/api/care-log/photo?requestId=${encodeURIComponent(data.currentRequestId)}`, {
         method: "POST",
         headers: { "Content-Type": blob.type },
         body: blob,
@@ -320,7 +372,7 @@ function SitterView({
       const res = await fetch("/api/care-log/quick-note", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind, body }),
+        body: JSON.stringify({ kind, body, requestId: data.currentRequestId }),
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error);
@@ -368,6 +420,7 @@ function SitterView({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          requestId: data.currentRequestId,
           meal,
           mood,
           dayStatus,
@@ -415,14 +468,6 @@ function SitterView({
 
   return (
     <div className="space-y-5">
-      {/* 진행 중인 돌봄이 둘 이상일 때 — 이 화면은 한 건만 다룬다(lib/careLogContext.ts) */}
-      {(data.activeCount ?? 0) > 1 && (
-        <p className="break-keep rounded-2xl bg-amber-50 px-4 py-3 text-[13px] font-semibold leading-relaxed text-amber-900 ring-1 ring-amber-200">
-          진행 중인 돌봄이 {data.activeCount}건이에요. 이 화면에는 그중 한 건만 보여요 —
-          다른 건의 기록은 그 돌봄이 끝난 뒤에 이어서 남겨주세요.
-        </p>
-      )}
-
       {/* 빠른 알림 — 하루 정리보다 위. 대부분의 방문은 "지금 알리려고" 온다(§7-1) */}
       <section className="rounded-2xl bg-white p-4 shadow-card">
         <p className="mb-3 flex items-center gap-1.5 text-sm font-bold text-ink-900">
@@ -989,6 +1034,9 @@ function GuardianView({ data, readOnly = false }: { data: ApiResponse; readOnly?
   // 반응은 화면부터 바꾸고 서버는 뒤따른다(낙관적) — 실패하면 되돌린다.
   const [reactions, setReactions] = useState<Record<string, string | null>>({});
   const [reactingId, setReactingId] = useState<string | null>(null);
+  // 긴 돌봄에서 "그날 무슨 일이 있었더라"를 다시 찾는 통로. 서버 요청 없이 이미 받은
+  // 목록만 거른다(§ 가벼움 원칙 — 새 API도, 새 의존성도 없다).
+  const [filter, setFilter] = useState<"all" | "alert" | "photo">("all");
 
   async function react(logId: string, current: string | null, next: string) {
     const value = current === next ? null : next; // 같은 걸 또 누르면 취소
@@ -1014,7 +1062,30 @@ function GuardianView({ data, readOnly = false }: { data: ApiResponse; readOnly?
   const currentPerDay = dayGroups.map((g) => g.entries[g.entries.length - 1]);
   const mealDays = currentPerDay.filter((l) => l.meal === "잘 드심").length;
   const alertDays = currentPerDay.filter((l) => l.alertNote).length;
+  const photoDays = currentPerDay.filter((l) => (l.photos?.length ?? 0) > 0).length;
   const recentNotes = data.quickNotes.filter((n) => !n.canceledAt).slice(0, 8);
+
+  // 식사·컨디션 추세 — 기록이 쌓이면 "요즘 어떠신가"가 숫자 하나보다 잘 보인다.
+  // 막대는 CSS 폭(%)뿐이라 차트 라이브러리를 들이지 않는다.
+  function distribution(pick: (l: CareLogRow) => string | null, order: readonly string[]) {
+    const counts = order.map((label) => ({
+      label,
+      n: currentPerDay.filter((l) => pick(l) === label).length,
+    }));
+    const total = counts.reduce((s, c) => s + c.n, 0);
+    return { counts, total };
+  }
+  const mealDist = distribution((l) => l.meal, data.options.meal);
+  const moodDist = distribution((l) => l.mood, data.options.mood);
+  // 추세는 표본이 어느 정도 쌓여야 뜻이 있다 — 2~3일치로 "경향"을 말하면 오해를 만든다
+  const showTrend = currentPerDay.length >= 5;
+
+  const visibleGroups = dayGroups.filter(({ entries }) => {
+    const l = entries[entries.length - 1];
+    if (filter === "alert") return Boolean(l.alertNote);
+    if (filter === "photo") return (l.photos?.length ?? 0) > 0;
+    return true;
+  });
 
   // 최근 14일 스트립(§4-5 "빈 날은 빈 날로 보여준다") — 기록 목록만으로는 공백이 안
   // 보인다. 돌봄 시작 전 날짜는 빈 날이 아니라 "기간 밖"이라 스트립에서 제외한다.
@@ -1102,6 +1173,38 @@ function GuardianView({ data, readOnly = false }: { data: ApiResponse; readOnly?
             ))}
           </ul>
         )}
+
+        {/* 식사·컨디션 추세 — 기록이 5일 이상 쌓였을 때만. 인쇄에도 함께 나간다
+            (보험 청구·가족 공유에서 "전반적으로 어떠셨나"가 한눈에 보인다). */}
+        {showTrend && (
+          <div className="mt-4 grid gap-3 border-t border-royal-100 pt-3 sm:grid-cols-2">
+            {[
+              { title: "식사", dist: mealDist },
+              { title: "컨디션", dist: moodDist },
+            ].map(({ title, dist }) => (
+              <div key={title}>
+                <p className="mb-1.5 text-[11px] font-bold text-ink-500">{title}</p>
+                <ul className="space-y-1">
+                  {dist.counts.map(({ label, n }) => (
+                    <li key={label} className="flex items-center gap-2 text-[11px]">
+                      <span className="w-[68px] shrink-0 truncate text-ink-500">{label}</span>
+                      <span className="h-2 flex-1 overflow-hidden rounded-full bg-white/70">
+                        <span
+                          aria-hidden
+                          className="block h-full rounded-full bg-royal-400"
+                          style={{ width: dist.total ? `${(n / dist.total) * 100}%` : "0%" }}
+                        />
+                      </span>
+                      <span className="w-7 shrink-0 text-right tabular-nums font-bold text-ink-700">
+                        {n}일
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {recentNotes.length > 0 && (
@@ -1150,8 +1253,38 @@ function GuardianView({ data, readOnly = false }: { data: ApiResponse; readOnly?
           없는 날도 있을 수 있어요.
         </p>
       ) : (
+        <>
+        {/* 기록이 쌓이면 "특이사항 있던 날"을 다시 찾기 어려워진다. 해당 날이 없으면
+            칩 자체를 숨긴다 — 눌러봤자 빈 목록이 나오는 버튼은 없느니만 못하다. */}
+        {dayGroups.length >= 5 && (alertDays > 0 || photoDays > 0) && (
+          <div className="print-hide mb-2.5 flex gap-1.5">
+            {(
+              [
+                { key: "all", label: `전체 ${dayGroups.length}일`, show: true },
+                { key: "alert", label: `특이사항 ${alertDays}건`, show: alertDays > 0 },
+                { key: "photo", label: `사진 ${photoDays}일`, show: photoDays > 0 },
+              ] as const
+            )
+              .filter((c) => c.show)
+              .map((c) => (
+                <button
+                  key={c.key}
+                  type="button"
+                  onClick={() => setFilter(c.key)}
+                  aria-pressed={filter === c.key}
+                  className={`min-h-[36px] rounded-full px-3 text-[12px] font-bold transition-colors ${
+                    filter === c.key
+                      ? "bg-royal-100 text-royal-700"
+                      : "bg-white text-ink-400 shadow-card hover:text-ink-700"
+                  }`}
+                >
+                  {c.label}
+                </button>
+              ))}
+          </div>
+        )}
         <ul className="space-y-2.5">
-          {dayGroups.map(({ careDate, entries }, i) => {
+          {visibleGroups.map(({ careDate, entries }, i) => {
             const l = entries[entries.length - 1]; // 정정이 있으면 최신 버전을 보여준다
             return (
               <li
@@ -1242,6 +1375,7 @@ function GuardianView({ data, readOnly = false }: { data: ApiResponse; readOnly?
             );
           })}
         </ul>
+        </>
       )}
     </div>
   );

@@ -197,6 +197,17 @@ model CareLogReminder {
   sentAt        DateTime  @default(now())
 }
 
+// 돌봄일지 주간 요약(alert-system-spec §3-15)의 발송 기록 — 돌봄 건×주 조합으로 한 번.
+// 매일 열어보지 않는 보호자가 "이번 주 어떠셨나"를 한 눈에 받는 용도다.
+// 주(weekOf)는 그 주 월요일 날짜(KST)라 같은 주에 두 번 돌아도 두 번 나가지 않는다.
+model CareLogWeeklyDigest {
+  careRequestId String
+  weekOf        String // 그 주 월요일 YYYY-MM-DD (KST)
+  sentAt        DateTime @default(now())
+
+  @@id([careRequestId, weekOf])
+}
+
 // "지원자 없는 요청 넛지"(alert-system-spec §3-14)의 발송 기록 — 요청당 평생 한 번만
 // 보낸다(반복하면 잔소리가 된다). 보호자는 진행 중 요청이 1건뿐이라(advisory lock)
 // "사람당 한 통" 원칙도 자연히 지켜진다. scripts/send-open-request-nudges.mjs 참고.

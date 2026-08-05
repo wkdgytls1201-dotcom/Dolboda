@@ -19,7 +19,14 @@ import {
   careLogWindow,
   careDateError,
 } from "@/lib/careLog";
-import { findSitterCareContext } from "@/lib/careLogContext";
+import {
+  findSitterCareContext,
+  listSitterContexts,
+  listGuardianContexts,
+  listFamilyContexts,
+  pickContext,
+  careContextOption,
+} from "@/lib/careLogContext";
 
 // 돌봄일지 — GET(조회, 보호자는 열람 즉시 읽음 처리) · POST(매니저 작성/정정).
 // 설계·법적 포지션은 docs/care-log-spec.md — 정산·근태와 엮지 않는 "확인 일지" 1단계다.
@@ -27,46 +34,12 @@ import { findSitterCareContext } from "@/lib/careLogContext";
 // /api/care-agreement와 같은 방식으로 "지금 확정된 돌봄 건"을 세션에서 찾는다
 // (URL에 careRequestId를 두지 않는다 — /care-request 페이지 전체가 이 전제로 짜여 있다).
 
-async function findGuardianContext(userId: string) {
-  const request = await prisma.careRequest.findFirst({
-    where: { guardianId: userId, status: { in: ["MATCHED", "COMPLETED"] } },
-    orderBy: { createdAt: "desc" },
-    include: {
-      applications: {
-        where: { status: { in: ["매칭확정", "돌봄완료"] } },
-        include: { sitterProfile: { select: { id: true, nickname: true, userId: true } } },
-      },
-    },
-  });
-  if (!request?.applications[0]) return null;
-  return { request, application: request.applications[0], viewer: "guardian" as const };
-}
-
-// 가족 열람(care-log-spec §9-5) — 보호자·매니저 컨텍스트가 둘 다 없을 때만 찾는다.
-// 보호자 화면과 같은 모양의 "읽기 전용"이다: 읽음 표시를 남기지 않고(읽음은 보호자의
-// 약속 — §4-4), 반응도 못 남긴다(반응은 보호자의 목소리 — §9-1).
-async function findFamilyContext(userId: string) {
-  const access = await prisma.careLogFamilyAccess.findFirst({
-    where: { userId, acceptedAt: { not: null }, revokedAt: null },
-    orderBy: { acceptedAt: "desc" },
-  });
-  if (!access) return null;
-  const request = await prisma.careRequest.findFirst({
-    where: { id: access.careRequestId, status: { in: ["MATCHED", "COMPLETED"] } },
-    include: {
-      applications: {
-        where: { status: { in: ["매칭확정", "돌봄완료"] } },
-        include: { sitterProfile: { select: { id: true, nickname: true, userId: true } } },
-      },
-    },
-  });
-  if (!request?.applications[0]) return null;
-  return { request, application: request.applications[0], viewer: "family" as const };
-}
-
-// 매니저 컨텍스트는 lib/careLogContext.ts가 단일 구현이다(진행 중 건 우선 — 세 라우트
-// 각자의 사본이 최신 건만 집어 완료된 건에 오늘 기록이 들어가는 문제가 있었다).
-const findSitterContext = findSitterCareContext;
+// 역할별 컨텍스트 목록·선택은 lib/careLogContext.ts가 단일 구현이다.
+// (진행 중 건 우선 + requestId로 건 전환 — 세 라우트 각자의 사본이 최신 건만 집어
+//  완료된 건에 오늘 기록이 들어가는 문제가 있었다. 2026-08-06 감사)
+//
+// 가족 열람(§9-5)은 보호자 화면과 같은 모양의 "읽기 전용"이다: 읽음 표시를 남기지
+// 않고(읽음은 보호자의 약속 — §4-4), 반응도 못 남긴다(반응은 보호자의 목소리 — §9-1).
 
 export async function GET(req: Request) {
   const session = await auth();
@@ -78,25 +51,32 @@ export async function GET(req: Request) {
   // 특히 그렇다 — 자기 글에 자기가 지원 가능한 예외가 admin에 있다). 둘 다 되는 계정은
   // ?as=guardian|sitter로 보고 싶은 쪽을 고를 수 있게 하고, 기본값은 매니저 쪽이다
   // (일지는 매니저가 "쓰는" 화면이 기본 동작이라 쓸 게 있는 쪽을 먼저 보여준다).
-  const [sitterCtx, guardianCtx] = await Promise.all([
-    findSitterContext(session.user.id),
-    findGuardianContext(session.user.id),
+  const [sitterList, guardianList] = await Promise.all([
+    listSitterContexts(session.user.id),
+    listGuardianContexts(session.user.id),
   ]);
   const availableViews = [
-    ...(sitterCtx ? (["sitter"] as const) : []),
-    ...(guardianCtx ? (["guardian"] as const) : []),
+    ...(sitterList.length > 0 ? (["sitter"] as const) : []),
+    ...(guardianList.length > 0 ? (["guardian"] as const) : []),
   ];
   const { searchParams } = new URL(req.url);
   const requested = searchParams.get("as");
-  const partyCtx =
-    requested === "guardian" && guardianCtx
-      ? guardianCtx
-      : requested === "sitter" && sitterCtx
-      ? sitterCtx
-      : sitterCtx ?? guardianCtx;
+  // 돌봄 건 전환(2026-08-06) — 매니저는 여러 가정을, 보호자는 지난 돌봄을 함께 가질 수
+  // 있다. requestId가 없으면 진행 중 건이 기본이다(lib/careLogContext.ts 정렬).
+  const requestId = searchParams.get("requestId");
+
+  const partyList =
+    requested === "guardian" && guardianList.length > 0
+      ? guardianList
+      : requested === "sitter" && sitterList.length > 0
+        ? sitterList
+        : sitterList.length > 0
+          ? sitterList
+          : guardianList;
 
   // 가족 열람은 당사자 컨텍스트가 없을 때만 — 보호자·매니저는 각자의 화면이 우선이다.
-  const ctx = partyCtx ?? (await findFamilyContext(session.user.id));
+  const list = partyList.length > 0 ? partyList : await listFamilyContexts(session.user.id);
+  const ctx = pickContext(list, requestId);
 
   if (!ctx) {
     return NextResponse.json({ error: "확정된 돌봄이 없어요." }, { status: 404 });
@@ -192,9 +172,9 @@ export async function GET(req: Request) {
     // 기록 가능한 날짜 창 — 화면이 날짜 선택 범위를 제한하고, 닫혔으면 이유를 보여준다.
     // 서버 가드와 같은 함수라 화면과 API가 어긋날 수 없다.
     logWindow: careLogWindow(ctx.request),
-    // 진행 중인 돌봄이 둘 이상이면 화면이 "다른 건은 여기서 볼 수 없다"고 알린다
-    // (이 앱은 아직 진행 중 1건을 전제로 짜여 있다 — lib/careLogContext.ts 주석 참고)
-    activeCount: "activeCount" in ctx ? ctx.activeCount : undefined,
+    // 지금 보고 있는 건 + 고를 수 있는 건 목록(전환 칩). 1건이면 화면이 칩을 숨긴다.
+    currentRequestId: ctx.request.id,
+    requestOptions: list.map(careContextOption),
     taskChips: taskChipsFor(ctx.request),
     options: {
       meal: MEAL_OPTIONS,
@@ -227,13 +207,16 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: "잘못된 요청이에요." }, { status: 400 });
   }
 
-  // 반응은 보호자만 남긴다 — 자기 돌봄 건의 기록인지도 확인한다
-  const ctx = await findGuardianContext(session.user.id);
-  if (!ctx) {
+  // 반응은 보호자만 남긴다 — 자기 돌봄 건의 기록인지도 확인한다.
+  // 건이 여러 개일 수 있으니 목록 전체에서 그 기록이 속한 건을 찾는다(지난 돌봄의
+  // 기록에도 뒤늦게 고마움을 남길 수 있어야 한다).
+  const guardianList = await listGuardianContexts(session.user.id);
+  if (guardianList.length === 0) {
     return NextResponse.json({ error: "반응은 보호자만 남길 수 있어요." }, { status: 403 });
   }
   const log = await prisma.careLog.findUnique({ where: { id: logId } });
-  if (!log || log.careRequestId !== ctx.request.id) {
+  const ctx = log ? guardianList.find((c) => c.request.id === log.careRequestId) : undefined;
+  if (!log || !ctx) {
     return NextResponse.json({ error: "기록을 찾을 수 없어요." }, { status: 404 });
   }
 
@@ -315,12 +298,15 @@ export async function POST(req: Request) {
     return tooManyRequests("잠시 후 다시 시도해주세요.", limited.retryAfter);
   }
 
-  const ctx = await findSitterContext(session.user.id);
+  const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+
+  // 어느 돌봄 건에 쓰는지 — 화면이 보고 있던 건을 그대로 실어 보낸다. 없으면 진행 중 건.
+  // 내 목록에 없는 id면 null이 되어 아래 403으로 떨어진다(조용히 기본값으로 바꾸지 않는다).
+  const targetRequestId = typeof body.requestId === "string" ? body.requestId : null;
+  const ctx = await findSitterCareContext(session.user.id, targetRequestId);
   if (!ctx) {
     return NextResponse.json({ error: "돌봄일지는 매니저만 작성할 수 있어요." }, { status: 403 });
   }
-
-  const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const str = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
   const arr = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
 

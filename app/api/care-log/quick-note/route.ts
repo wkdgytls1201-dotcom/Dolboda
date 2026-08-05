@@ -20,6 +20,11 @@ const KIND_SET = new Set<QuickNoteKind>([...QUICK_NOTE_KINDS.map((k) => k.kind),
 
 const findSitterContext = findSitterCareContext;
 
+/** 요청 본문에서 "어느 돌봄 건인지" — 화면이 보고 있던 건을 그대로 실어 보낸다 */
+function requestIdOf(body: { requestId?: unknown }): string | null {
+  return typeof body.requestId === "string" ? body.requestId : null;
+}
+
 export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -31,12 +36,17 @@ export async function POST(req: Request) {
     return tooManyRequests("잠시 후 다시 시도해주세요.", limited.retryAfter);
   }
 
-  const ctx = await findSitterContext(session.user.id);
+  const body = (await req.json().catch(() => ({}))) as {
+    kind?: unknown;
+    body?: unknown;
+    requestId?: unknown;
+  };
+
+  const ctx = await findSitterContext(session.user.id, requestIdOf(body));
   if (!ctx) {
     return NextResponse.json({ error: "빠른 알림은 매니저만 보낼 수 있어요." }, { status: 403 });
   }
 
-  const body = (await req.json().catch(() => ({}))) as { kind?: unknown; body?: unknown };
   const kind = typeof body.kind === "string" ? body.kind : "";
   if (!KIND_SET.has(kind as QuickNoteKind)) {
     return NextResponse.json({ error: "알 수 없는 알림 종류예요." }, { status: 400 });

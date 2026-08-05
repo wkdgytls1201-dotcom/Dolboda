@@ -1,0 +1,40 @@
+# 돌봄일지 주간 요약 — scripts/send-care-log-weekly.mjs 참고.
+#
+# 다른 알림은 매일 09:00 KST지만 이건 **월요일 아침에만** 돈다. 스크립트가 "지난 주
+# 월~일"을 계산하므로 월요일에 돌려야 딱 직전 한 주가 잡힌다(다른 요일에 돌리면
+# 범위는 맞지만 보호자에게 "지난 주 소식"이 주 중간에 도착해 어색하다).
+#
+# 발송 기록(CareLogWeeklyDigest)이 돌봄 건×주로 유니크라 수동 재실행해도 두 번 안 나간다.
+#
+# 필요한 저장소 시크릿 — 다른 알림 워크플로와 동일(DIRECT_URL·RESEND_API_KEY·MAIL_FROM)
+name: send-care-log-weekly
+
+on:
+  schedule:
+    - cron: "0 0 * * 1" # 월요일 00:00 UTC = 09:00 KST
+  workflow_dispatch:
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 의존성 설치 (postinstall에서 Prisma Client 생성)
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+        run: npm ci
+
+      - name: 주간 요약 발송
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          MAIL_FROM: ${{ secrets.MAIL_FROM }}
+          NEXT_PUBLIC_SITE_URL: https://www.dolboda.kr
+        run: node scripts/send-care-log-weekly.mjs --write
