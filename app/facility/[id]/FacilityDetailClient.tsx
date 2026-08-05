@@ -74,6 +74,7 @@ const NURSE_GRADE_TABLE = [
 export default function FacilityDetailClient({
   facility,
   similarSlot,
+  trendSlot,
   ownerContent,
   ownerPosts,
 }: {
@@ -84,6 +85,12 @@ export default function FacilityDetailClient({
    * 본문은 이 조회를 기다리지 않는다. 섹션 자체가 비면 서버 쪽에서 null을 돌려준다.
    */
   similarSlot: React.ReactNode;
+  /**
+   * "자리 추이"(VacancyTrend) — 매일 모은 스냅샷으로 그리는 빈자리 변화. 같은 이유로
+   * 서버에서 그려 슬롯으로 받는다(고유 정보라 HTML에 실려야 한다). 관측이 1회뿐이거나
+   * 정원 개념이 없는 유형이면 서버 쪽에서 null을 돌려줘 아무것도 그리지 않는다.
+   */
+  trendSlot?: React.ReactNode;
   /** 시설이 콘솔에서 직접 쓴 소개·사진 — 대부분 null(아직 인증 안 한 시설) */
   ownerContent?: { intro: string | null; photos: string[]; updatedAt: string } | null;
   /** 시설이 올린 소식 최신 3개 — 없으면 빈 배열 */
@@ -714,12 +721,30 @@ export default function FacilityDetailClient({
                     occupancy={facility.currentOccupancy}
                     waitlistCount={facility.waitlistCount}
                   />
-                  {/* 공단이 집계한 "이용 가능 인원" — 정원-현원 계산과 다를 수 있는 공식 값 */}
-                  {(facility.availableSlots ?? 0) > 0 && (
-                    <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-mint-50 px-3 py-1.5 text-sm font-bold text-mint-700">
-                      지금 {facility.availableSlots}자리 이용 가능 (공단 집계)
-                    </p>
-                  )}
+                  {/* 공단이 집계한 "이용 가능 인원".
+                      ⚠️ 출처가 다르다: 이 값은 기관 상세정보 마스터(1회성 임포트)에서 오고,
+                      바로 위 정원·현원은 매일 동기화된다(scripts/daily-nhis-sync.mjs).
+                      시간이 지나면 둘이 어긋나는데, 예전엔 그대로 나란히 띄워서 한 화면에
+                      "입소 가능 22자리"와 "지금 75자리 이용 가능"이 동시에 보였다(실측).
+                      보호자는 큰 쪽을 믿고 전화했다가 헛걸음한다 — 신선한 값이 있으면
+                      그쪽이 진실이므로, 크게 어긋나는 낡은 값은 보여주지 않는다. */}
+                  {(() => {
+                    const slots = facility.availableSlots ?? 0;
+                    if (slots <= 0) return null;
+                    const computed = Math.max(0, facility.capacity - (facility.currentOccupancy ?? 0));
+                    // 매일 동기화된 값과 2자리 넘게 차이 나면 낡은 값으로 보고 감춘다
+                    const contradicts =
+                      facility.currentOccupancy !== undefined && Math.abs(slots - computed) > 2;
+                    if (contradicts) return null;
+                    return (
+                      <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-mint-50 px-3 py-1.5 text-sm font-bold text-mint-700">
+                        지금 {slots}자리 이용 가능 (공단 집계)
+                      </p>
+                    );
+                  })()}
+                  {/* 오늘 한 점 바로 아래에 "며칠간 어떻게 변했나"를 붙인다 —
+                      대기를 걸지 말지가 이 흐름에서 갈린다 */}
+                  {trendSlot && <div className="mt-4">{trendSlot}</div>}
                 </>
               ) : (
                 <p className="text-sm text-ink-300">이 시설 유형은 정원 정보가 공개되지 않았어요.</p>

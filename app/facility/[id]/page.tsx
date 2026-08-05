@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { rowToFacility } from "@/lib/facilityRepo";
 import FacilityDetailClient from "./FacilityDetailClient";
 import { SimilarSection, SimilarSectionSkeleton } from "./SimilarSection";
+import { VacancyTrend, VacancyTrendSkeleton } from "./VacancyTrend";
 
 // 28,000여 개 상세페이지는 방문마다 (레이아웃 조회 + 본문 조회 + 유사시설 60행 조회)를
 // 다시 돌고 있었다. 시설 데이터는 import 스크립트를 돌릴 때만 바뀌므로 하루 캐시로 충분하다.
@@ -65,6 +66,18 @@ export default async function FacilityDetailPage({ params }: { params: { id: str
       similarSlot={
         <Suspense fallback={<SimilarSectionSkeleton />}>
           <SimilarSection facilityId={facility.id} />
+        </Suspense>
+      }
+      // 자리 추이도 같은 슬롯 방식 — 스냅샷 조회가 본문을 붙잡지 않게 흘려보낸다.
+      // 관측이 1회뿐인 시설에서는 컴포넌트가 null을 돌려줘 아무것도 그리지 않는다.
+      trendSlot={
+        <Suspense fallback={<VacancyTrendSkeleton />}>
+          {/* Facility는 유형별 판별 유니온이라 요양병원엔 capacity가 없다(입소 정원 개념
+              자체가 다르다). 없는 유형은 0으로 넘겨 컴포넌트가 조용히 null을 돌려준다. */}
+          <VacancyTrend
+            facilityId={facility.id}
+            capacity={"capacity" in facility ? facility.capacity : 0}
+          />
         </Suspense>
       }
       ownerContent={ownerContent}
