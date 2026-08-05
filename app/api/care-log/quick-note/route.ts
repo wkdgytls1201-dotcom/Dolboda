@@ -4,24 +4,21 @@ import { prisma } from "@/lib/prisma";
 import { rateLimit, clientIp, tooManyRequests } from "@/lib/rateLimit";
 import { resend } from "@/lib/resend";
 import { SITE_NAME, MAIL_FROM } from "@/lib/siteConfig";
-import { QUICK_NOTE_KINDS, QUICK_NOTE_COOLDOWN_MS, todayKst, type QuickNoteKind } from "@/lib/careLog";
+import {
+  QUICK_NOTE_KINDS,
+  QUICK_NOTE_COOLDOWN_MS,
+  todayKst,
+  careLogWindow,
+  type QuickNoteKind,
+} from "@/lib/careLog";
+import { findSitterCareContext } from "@/lib/careLogContext";
 
 // 빠른 알림 — 돌봄 중 버튼 하나로 그 자리에서 보호자에게 보내는 알림(§5-4-1).
 // 매니저 전용. 조회는 /api/care-log의 quickNotes에 함께 담겨 온다.
 
 const KIND_SET = new Set<QuickNoteKind>([...QUICK_NOTE_KINDS.map((k) => k.kind), "custom"]);
 
-async function findSitterContext(userId: string) {
-  const profile = await prisma.sitterProfile.findUnique({ where: { userId }, select: { id: true } });
-  if (!profile) return null;
-  const app = await prisma.careRequestApplication.findFirst({
-    where: { sitterProfileId: profile.id, status: { in: ["매칭확정", "돌봄완료"] } },
-    orderBy: { createdAt: "desc" },
-    include: { sitterProfile: { select: { id: true, nickname: true } }, careRequest: true },
-  });
-  if (!app) return null;
-  return { request: app.careRequest, application: app };
-}
+const findSitterContext = findSitterCareContext;
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -51,6 +48,16 @@ export async function POST(req: Request) {
   }
 
   const careDate = todayKst();
+
+  // 빠른 알림은 "지금 돌봄 중"에만 뜻이 있다 — 시작 전이나 끝난 뒤에 "방금 식사하셨어요"가
+  // 가면 보호자가 혼란스럽다. 일지와 같은 날짜 창을 쓴다(닫힌 이유도 그대로 전한다).
+  const logWindow = careLogWindow(ctx.request);
+  if (!logWindow.open || careDate < logWindow.min || careDate > logWindow.max) {
+    return NextResponse.json(
+      { error: logWindow.reason ?? "지금은 빠른 알림을 보낼 수 있는 기간이 아니에요." },
+      { status: 400 }
+    );
+  }
 
   // 연타 방지 — 같은 버튼은 30분에 한 번만(custom은 매번 다른 내용이라 제외)
   if (kind !== "custom") {

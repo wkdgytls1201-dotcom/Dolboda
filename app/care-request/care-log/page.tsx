@@ -81,6 +81,12 @@ interface ApiResponse {
     bowel: readonly string[];
     medication: readonly string[];
   };
+  /** 기록 가능한 날짜 창 — 서버 가드와 같은 계산(lib/careLog.ts careLogWindow).
+   *  open=false면 작성 UI를 아예 접고 reason을 보여준다: 눌러본 뒤 400을 맞는 것보다
+   *  "아직/이미 쓸 수 없다"를 먼저 아는 편이 낫다. */
+  logWindow: { min: string; max: string; closesAfter: string; open: boolean; reason: string | null };
+  /** 진행 중인 돌봄이 둘 이상이면 알린다(이 화면은 1건 전제) */
+  activeCount?: number;
   logs: CareLogRow[];
   quickNotes: QuickNoteRow[];
   error?: string;
@@ -389,8 +395,34 @@ function SitterView({
 
   const recentNotes = data.quickNotes.filter((n) => !n.canceledAt).slice(0, 6);
 
+  // 기록을 받지 않는 기간(시작 전 · 종료 후 유예 경과)에는 쓰기 UI를 통째로 접는다.
+  // 지난 기록은 계속 볼 수 있다 — 못 쓰는 것과 못 보는 것은 다르다.
+  if (!data.logWindow.open) {
+    return (
+      <div className="space-y-5">
+        <section className="rounded-2xl bg-ivory-100 p-4 text-center ring-1 ring-ink-100">
+          <p className="break-keep text-sm font-bold leading-relaxed text-ink-700">
+            {data.logWindow.reason}
+          </p>
+          <p className="mt-1.5 text-[12px] text-ink-400">
+            돌봄 기간 {data.logWindow.min} ~ {data.logWindow.closesAfter.slice(0, 10)} 기준
+          </p>
+        </section>
+        <PastLogs logs={data.logs} />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5">
+      {/* 진행 중인 돌봄이 둘 이상일 때 — 이 화면은 한 건만 다룬다(lib/careLogContext.ts) */}
+      {(data.activeCount ?? 0) > 1 && (
+        <p className="break-keep rounded-2xl bg-amber-50 px-4 py-3 text-[13px] font-semibold leading-relaxed text-amber-900 ring-1 ring-amber-200">
+          진행 중인 돌봄이 {data.activeCount}건이에요. 이 화면에는 그중 한 건만 보여요 —
+          다른 건의 기록은 그 돌봄이 끝난 뒤에 이어서 남겨주세요.
+        </p>
+      )}
+
       {/* 빠른 알림 — 하루 정리보다 위. 대부분의 방문은 "지금 알리려고" 온다(§7-1) */}
       <section className="rounded-2xl bg-white p-4 shadow-card">
         <p className="mb-3 flex items-center gap-1.5 text-sm font-bold text-ink-900">

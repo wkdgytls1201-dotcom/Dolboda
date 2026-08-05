@@ -16,7 +16,10 @@ import {
   MEDICATION_OPTIONS,
   taskChipsFor,
   todayKst,
+  careLogWindow,
+  careDateError,
 } from "@/lib/careLog";
+import { findSitterCareContext } from "@/lib/careLogContext";
 
 // 돌봄일지 — GET(조회, 보호자는 열람 즉시 읽음 처리) · POST(매니저 작성/정정).
 // 설계·법적 포지션은 docs/care-log-spec.md — 정산·근태와 엮지 않는 "확인 일지" 1단계다.
@@ -61,20 +64,9 @@ async function findFamilyContext(userId: string) {
   return { request, application: request.applications[0], viewer: "family" as const };
 }
 
-async function findSitterContext(userId: string) {
-  const profile = await prisma.sitterProfile.findUnique({ where: { userId }, select: { id: true } });
-  if (!profile) return null;
-  const app = await prisma.careRequestApplication.findFirst({
-    where: { sitterProfileId: profile.id, status: { in: ["매칭확정", "돌봄완료"] } },
-    orderBy: { createdAt: "desc" },
-    include: {
-      sitterProfile: { select: { id: true, nickname: true, userId: true } },
-      careRequest: true,
-    },
-  });
-  if (!app) return null;
-  return { request: app.careRequest, application: app, viewer: "sitter" as const };
-}
+// 매니저 컨텍스트는 lib/careLogContext.ts가 단일 구현이다(진행 중 건 우선 — 세 라우트
+// 각자의 사본이 최신 건만 집어 완료된 건에 오늘 기록이 들어가는 문제가 있었다).
+const findSitterContext = findSitterCareContext;
 
 export async function GET(req: Request) {
   const session = await auth();
@@ -197,6 +189,12 @@ export async function GET(req: Request) {
           ? { amount: ctx.request.budgetAmount, unit: ctx.request.budgetUnit ?? "일", agreed: false }
           : null,
     familyCount,
+    // 기록 가능한 날짜 창 — 화면이 날짜 선택 범위를 제한하고, 닫혔으면 이유를 보여준다.
+    // 서버 가드와 같은 함수라 화면과 API가 어긋날 수 없다.
+    logWindow: careLogWindow(ctx.request),
+    // 진행 중인 돌봄이 둘 이상이면 화면이 "다른 건은 여기서 볼 수 없다"고 알린다
+    // (이 앱은 아직 진행 중 1건을 전제로 짜여 있다 — lib/careLogContext.ts 주석 참고)
+    activeCount: "activeCount" in ctx ? ctx.activeCount : undefined,
     taskChips: taskChipsFor(ctx.request),
     options: {
       meal: MEAL_OPTIONS,
@@ -326,10 +324,11 @@ export async function POST(req: Request) {
   const str = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
   const arr = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
 
-  // 사진(§9-2) — 우리 저장소(care-log 경로)에서 나온 URL만 받는다. 임의 URL을 그대로
-  // 저장하면 보호자 화면에 아무 이미지나 끼워 넣을 수 있게 된다. 최대 3장.
+  // 사진(§9-2) — 우리 저장소에서 나온 URL만, 그것도 **이 돌봄 건의 폴더**만 받는다.
+  // care-log/ 까지만 대조하면 매니저가 예전에 맡았던 다른 가정의 사진 URL을 이 일지에
+  // 끼워 넣을 수 있다(업로드 경로가 care-log/{careRequestId}/ 라 남의 건도 형식은 같다).
   const photoBase = process.env.SUPABASE_URL
-    ? `${process.env.SUPABASE_URL.replace(/\/$/, "")}/storage/v1/object/public/sitter-photos/care-log/`
+    ? `${process.env.SUPABASE_URL.replace(/\/$/, "")}/storage/v1/object/public/sitter-photos/care-log/${ctx.request.id}/`
     : null;
   const photos = (Array.isArray(body.photos) ? body.photos : [])
     .map((p) => {
@@ -356,9 +355,13 @@ export async function POST(req: Request) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(careDate)) {
     return NextResponse.json({ error: "날짜 형식이 올바르지 않아요." }, { status: 400 });
   }
-  // 미래 날짜는 막는다 — 아직 하지 않은 돌봄을 기록할 수는 없다
-  if (careDate > todayKst()) {
-    return NextResponse.json({ error: "미래 날짜는 기록할 수 없어요." }, { status: 400 });
+  // 돌봄 기간 밖(시작 전·종료 후)과 미래 날짜를 함께 막는다. 예전엔 미래 날짜만 막아서
+  // 시작 전 날짜·기간 밖 날짜로 기록이 남을 수 있었다(2026-08-06 실측 4건).
+  // 종료 뒤에도 유예 동안은 받는다 — "어제 것을 오늘 쓰는" 지각 작성은 정당하다.
+  const logWindow = careLogWindow(ctx.request);
+  const dateError = careDateError(careDate, logWindow);
+  if (dateError) {
+    return NextResponse.json({ error: dateError }, { status: 400 });
   }
 
   if (!correctsId) {
@@ -380,6 +383,14 @@ export async function POST(req: Request) {
       target.sitterProfileId !== ctx.application.sitterProfile.id
     ) {
       return NextResponse.json({ error: "정정할 기록을 찾을 수 없어요." }, { status: 404 });
+    }
+    // 정정은 "그날 기록을 고치는 것"이다. 날짜가 다르면 정정이 아니라 새 기록이고,
+    // 그대로 두면 다른 날의 id를 붙여 하루 1원본 가드를 그냥 지나칠 수 있다.
+    if (target.careDate !== careDate) {
+      return NextResponse.json(
+        { error: "정정은 같은 날짜의 기록에만 할 수 있어요." },
+        { status: 400 }
+      );
     }
   }
 
@@ -409,7 +420,16 @@ export async function POST(req: Request) {
   // 기록은 위의 "이미 이 날짜 기록이 있어요" 409 가드 덕에 careDate당 정확히 1건이라,
   // 별도 발송 기록 테이블 없이도 같은 날짜에 두 번 나갈 수 없다(§2-3 원칙을 유니크
   // 가드가 대신한다). 스위치는 아직 없다 — 새 지원자 알림(§3-8)과 같은 거래성 원칙.
-  if (alertNote || !correctsId) {
+  //
+  // 도착 알림은 **오늘·어제 날짜 기록에만** 보낸다. 밀린 날짜를 한 번에 채우면
+  // (돌봄이 끝난 뒤 유예 기간에 흔하다) 날짜마다 한 통씩 나가 보호자 받은편지함이
+  // 메일로 덮인다 — alert-system-spec의 "사람당 한 통" 원칙과 정면으로 어긋난다.
+  // 특이사항(alertNote)은 지금 알아야 할 일이라 날짜와 무관하게 항상 보낸다.
+  const yesterdayKst = new Date(Date.now() - 86_400_000).toLocaleDateString("sv-SE", {
+    timeZone: "Asia/Seoul",
+  });
+  const freshEnoughToNotify = careDate >= yesterdayKst;
+  if (alertNote || (!correctsId && freshEnoughToNotify)) {
     const guardian = await prisma.user.findUnique({
       where: { id: ctx.request.guardianId },
       select: { email: true },

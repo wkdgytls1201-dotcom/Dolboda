@@ -3,6 +3,8 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { rateLimit, clientIp, tooManyRequests } from "@/lib/rateLimit";
 import { isStorageConfigured, uploadPublicObject } from "@/lib/supabaseStorage";
+import { findSitterCareContext } from "@/lib/careLogContext";
+import { careLogWindow } from "@/lib/careLog";
 
 // 돌봄일지 사진 업로드 (care-log-spec §9-2) — 매니저 전용.
 //
@@ -18,15 +20,11 @@ const BUCKET = "sitter-photos";
 const MAX_BYTES = 600 * 1024;
 const ALLOWED = new Set(["image/webp", "image/jpeg", "image/png"]);
 
+// 컨텍스트는 일지·빠른 알림과 같은 구현을 쓴다(lib/careLogContext.ts) — 사본이 각자
+// 최신 건만 집던 탓에 사진이 엉뚱한 돌봄 건 폴더에 올라갈 수 있었다.
 async function findSitterContext(userId: string) {
-  const profile = await prisma.sitterProfile.findUnique({ where: { userId }, select: { id: true } });
-  if (!profile) return null;
-  const app = await prisma.careRequestApplication.findFirst({
-    where: { sitterProfileId: profile.id, status: { in: ["매칭확정", "돌봄완료"] } },
-    orderBy: { createdAt: "desc" },
-    select: { careRequestId: true },
-  });
-  return app ? { careRequestId: app.careRequestId } : null;
+  const ctx = await findSitterCareContext(userId);
+  return ctx ? { careRequestId: ctx.request.id, request: ctx.request } : null;
 }
 
 export async function POST(req: Request) {
@@ -49,6 +47,11 @@ export async function POST(req: Request) {
   const ctx = await findSitterContext(session.user.id);
   if (!ctx) {
     return NextResponse.json({ error: "돌봄일지 사진은 매니저만 올릴 수 있어요." }, { status: 403 });
+  }
+  // 기록을 받지 않는 기간이면 사진도 받지 않는다 — 쓰지도 못할 사진이 저장소에만 쌓인다
+  const logWindow = careLogWindow(ctx.request);
+  if (!logWindow.open) {
+    return NextResponse.json({ error: logWindow.reason }, { status: 400 });
   }
 
   const contentType = (req.headers.get("content-type") ?? "").split(";")[0].trim();
