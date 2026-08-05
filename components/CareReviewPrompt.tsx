@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { CheckCircle2, RotateCcw, Star } from "lucide-react";
+import { useEffect, useState } from "react";
+import { CheckCircle2, NotebookPen, RotateCcw, Star } from "lucide-react";
 import type { CareRequestData } from "@/lib/careRequestTypes";
 
 // 돌봄 완료 직후 화면 — 예전엔 "돌봄이 끝났어요"를 누르는 순간 새 요청 폼으로
@@ -29,6 +29,23 @@ export function CareReviewPrompt({
   const [comment, setComment] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // 일지 요약(care-log-spec §273의 계획 실행) — "기록 18일 · 식사 잘하신 날 15일"이
+  // 별점 위에 보이면 쓸 말이 생기고 평가가 후해진다. 읽음 처리 없는 stats 모드라
+  // 매니저의 "읽혔어요" 표시를 건드리지 않는다. 실패하면 조용히 생략.
+  const [logStats, setLogStats] = useState<{
+    dayCount: number;
+    mealGoodCount: number;
+    photoCount: number;
+  } | null>(null);
+  useEffect(() => {
+    fetch("/api/care-log?stats=1")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.stats?.dayCount > 0) setLogStats(d.stats);
+      })
+      .catch(() => {});
+  }, []);
 
   async function submit() {
     if (rating < 1) {
@@ -83,6 +100,16 @@ export function CareReviewPrompt({
           <p className="mb-3 text-[15px] font-bold text-ink-900">
             {sitter.nickname} 매니저, 어떠셨어요?
           </p>
+          {logStats && (
+            <p className="mb-3 flex items-center gap-1.5 rounded-xl bg-royal-50/70 px-3.5 py-2.5 text-[13px] text-ink-700">
+              <NotebookPen size={14} className="shrink-0 text-royal-500" aria-hidden />
+              <span>
+                이번 돌봄 기록 {logStats.dayCount}일
+                {logStats.mealGoodCount > 0 && ` · 식사 잘하신 날 ${logStats.mealGoodCount}일`}
+                {logStats.photoCount > 0 && ` · 사진 ${logStats.photoCount}장`}
+              </span>
+            </p>
+          )}
           <div className="mb-4 flex justify-center gap-1.5">
             {[1, 2, 3, 4, 5].map((n) => (
               <button

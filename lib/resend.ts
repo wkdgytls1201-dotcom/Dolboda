@@ -366,6 +366,18 @@ export function applicationNotSelectedEmailHtml(params: { requestSummary: string
   });
 }
 
+/** 매니저에게 — 보호자가 요청 자체를 취소했을 때(§3-13). 매니저가 부족해서가 아니라는
+ * 구분을 메일에서도 해준다 — 미선정과 헷갈리면 자신감만 깎인다. */
+export function requestCancelledEmailHtml(params: { requestSummary: string }): string {
+  return matchingFlowEmailHtml({
+    eyebrow: "요청 취소",
+    title: "보호자가 요청을 취소했어요",
+    body: `${esc2(params.requestSummary)} 요청이 보호자 사정으로 취소됐어요. 지원 내용에 문제가 있었던 게 아니에요 — 활동 지역의 다른 요청을 확인해보세요.`,
+    ctaLabel: "다른 일자리 보러 가기",
+    ctaUrl: `${SITE_URL}/mypage/sitter/jobs`,
+  });
+}
+
 /** 매니저에게 — 보호자가 돌봄을 완료 처리했을 때 */
 export function careCompletedEmailHtml(params: { requestSummary: string }): string {
   return matchingFlowEmailHtml({

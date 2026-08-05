@@ -39,7 +39,9 @@ export async function GET() {
     where: { guardianId: session.user.id },
     orderBy: { createdAt: "desc" },
     include: {
-      applications: { select: APPLICANT_SELECT },
+      // 먼저 지원한 순 — 정렬을 명시하지 않으면 DB 내부 순서라 새로고침마다 뒤바뀔 수
+      // 있고, 보호자가 "아까 그 두 번째 분"을 다시 찾지 못한다(시나리오 감사 2026-08-05)
+      applications: { select: APPLICANT_SELECT, orderBy: { createdAt: "asc" } },
       review: { select: { id: true, rating: true } },
     },
   });

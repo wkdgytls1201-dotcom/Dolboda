@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { parseLocationType, buildCareRequestData } from "@/lib/careRequestValidation";
-import { resend, careCompletedEmailHtml } from "@/lib/resend";
+import { resend, careCompletedEmailHtml, requestCancelledEmailHtml } from "@/lib/resend";
 import { SITE_NAME, MAIL_FROM } from "@/lib/siteConfig";
 import { careRequestSummary } from "@/lib/careLocationTypes";
 
@@ -146,6 +146,13 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
     return NextResponse.json({ error: "이미 처리된 요청이에요." }, { status: 409 });
   }
 
+  // 취소 알림(§3-13) 대상을 트랜잭션 "전에" 미리 알아둔다 — updateMany는 몇 건이
+  // 바뀌었는지만 알려주고 "누가"인지는 안 알려준다(§3-9의 미선정과 같은 요령).
+  const toNotify = await prisma.careRequestApplication.findMany({
+    where: { careRequestId: params.id, status: { in: ["지원완료", "매칭확정"] } },
+    select: { sitterProfile: { select: { user: { select: { id: true, email: true } } } } },
+  });
+
   const [careRequest] = await prisma.$transaction([
     prisma.careRequest.update({
       where: { id: params.id },
@@ -163,6 +170,30 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
       data: { status: "요청취소" },
     }),
   ]);
+
+  // 취소 메일(§3-13) — 상태 정리는 이미 끝났고, 발송 실패가 취소를 되돌리면 안 된다.
+  // 화면에만 남기면 매니저가 앱을 열기 전까지 하염없이 기다린다 — 미선정(§3-10)과
+  // 같은 무게의 소식이라 같은 방식(matchUpdate 설정 존중, 사람별 발송)으로 보낸다.
+  if (resend && toNotify.length > 0) {
+    const summary = careRequestSummary(existing);
+    for (const t of toNotify) {
+      const { id: userId, email } = t.sitterProfile.user;
+      if (!email) continue;
+      const pref = await prisma.sitterNotificationPref.findUnique({
+        where: { userId },
+        select: { matchUpdate: true },
+      });
+      if (!(pref?.matchUpdate ?? true)) continue;
+      await resend.emails
+        .send({
+          from: `${SITE_NAME} <${MAIL_FROM}>`,
+          to: email,
+          subject: `[${SITE_NAME}] 보호자가 요청을 취소했어요`,
+          html: requestCancelledEmailHtml({ requestSummary: summary }),
+        })
+        .catch(() => {});
+    }
+  }
 
   return NextResponse.json(careRequest);
 }

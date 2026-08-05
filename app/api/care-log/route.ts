@@ -88,7 +88,7 @@ export async function GET(req: Request) {
   if (searchParams.get("stats") === "1") {
     const rows = await prisma.careLog.findMany({
       where: { careRequestId: ctx.request.id },
-      select: { careDate: true, alertNote: true, photos: true, createdAt: true },
+      select: { careDate: true, alertNote: true, photos: true, meal: true, createdAt: true },
       orderBy: { createdAt: "asc" },
     });
     const latestByDate = new Map<string, (typeof rows)[number]>();
@@ -99,6 +99,8 @@ export async function GET(req: Request) {
       stats: {
         dayCount: perDay.length,
         alertCount: perDay.filter((r) => r.alertNote).length,
+        // "식사 잘하신 날" — 후기 화면(§273 계획)이 쓴다: 쓸 말이 생기면 평가가 후해진다
+        mealGoodCount: perDay.filter((r) => r.meal === "잘 드심").length,
         photoCount: perDay.reduce(
           (n, r) => n + (Array.isArray(r.photos) ? r.photos.length : 0),
           0
