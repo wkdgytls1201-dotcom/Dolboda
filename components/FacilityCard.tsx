@@ -153,17 +153,33 @@ export function FacilityCard({
               설립 {new Date().getFullYear() - facility.establishedYear}년차
             </span>
           )}
-          {/* 안심지수 — 돌보다의 핵심 지표. 예전엔 등급 배지 옆에 11px 칩으로 뒀는데
-              옆 배지(text-xs)와 크기가 어긋나 삐뚤어 보였다(사용자 피드백 2026-08-05).
-              배지들과 같은 스케일(text-xs·py-0.5)로 맞추고 ml-auto로 줄 오른쪽 끝에
-              붙인다 — 유형·등급(분류 배지)과 점수(측정값)가 자리로도 구분된다.
-              점수는 목록 API(toCardFacility)가 실어준 것만 쓴다(없으면 안 보여줌).
-              "안심지수" 글자를 다 쓰면 좁은 카드에서 줄이 밀린다 — 아이콘이 뜻을
-              전달하니 숫자만 남기고, 스크린리더에는 aria-label로 전체 의미를 준다. */}
+        </div>
+
+        {/* 시설명·주소 모두 한 줄로 자르고 뒤를 …로 표기한다.
+            예전엔 둘 다 두 줄까지 허용했는데, 긴 것이 겹치면 카드 높이가 제각각이 돼
+            목록이 들쭉날쭉해졌다("의료법인승인의료재단동창원요양병원" +
+            "…, 동창원요양병원 1,2,3,4층 지하1층(103호)호" 조합에서 실제로 4줄이 됐다).
+            잘려도 정보가 남는다 — 시설명은 앞쪽에 법인명이 아니라 고유명이 오는 경우가
+            대부분이고, 주소는 "어느 동네인가"를 정하는 시/군/구·동이 맨 앞에 있어서
+            뒤로 밀리는 건 건물명·층·호수처럼 목록에서는 볼 이유가 없는 부분이다.
+            (전체 값은 상세 페이지에 그대로 있다.) */}
+        {/* 시설명 줄 — 안심지수는 이 줄의 오른쪽 끝에 붙인다.
+            배지 줄에 ml-auto로 두는 시도(2026-08-05)는 flex-wrap에서 설립년차와 한
+            덩어리로 보였고 pr-10 때문에 끝에 닿지도 않았다(사용자 피드백). 시설명과
+            같은 줄이면 항상 진짜 오른쪽 끝이고, 분류 배지·설립년차와도 섞이지 않는다.
+            점수는 목록 API(toCardFacility)가 실어준 것만 쓴다(없으면 안 보여줌).
+            아이콘이 뜻을 전달하니 숫자만 남기고, 스크린리더에는 aria-label로 전체 의미. */}
+        <div className="mb-1 flex items-center justify-between gap-2">
+          <h3
+            data-vt-title=""
+            className="min-w-0 truncate text-lg font-bold leading-snug text-ink-900 group-hover:text-primary-600"
+          >
+            {facility.name}
+          </h3>
           {facility.dolbodaTotal != null && (
             <span
               aria-label={`안심지수 ${facility.dolbodaTotal}점`}
-              className={`ml-auto flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold ${
+              className={`flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold ${
                 facility.dolbodaTotal >= SCORE_LEVEL_THRESHOLDS.veryGood
                   ? "bg-mint-100 text-mint-700"
                   : facility.dolbodaTotal >= SCORE_LEVEL_THRESHOLDS.good
@@ -176,21 +192,6 @@ export function FacilityCard({
             </span>
           )}
         </div>
-
-        {/* 시설명·주소 모두 한 줄로 자르고 뒤를 …로 표기한다.
-            예전엔 둘 다 두 줄까지 허용했는데, 긴 것이 겹치면 카드 높이가 제각각이 돼
-            목록이 들쭉날쭉해졌다("의료법인승인의료재단동창원요양병원" +
-            "…, 동창원요양병원 1,2,3,4층 지하1층(103호)호" 조합에서 실제로 4줄이 됐다).
-            잘려도 정보가 남는다 — 시설명은 앞쪽에 법인명이 아니라 고유명이 오는 경우가
-            대부분이고, 주소는 "어느 동네인가"를 정하는 시/군/구·동이 맨 앞에 있어서
-            뒤로 밀리는 건 건물명·층·호수처럼 목록에서는 볼 이유가 없는 부분이다.
-            (전체 값은 상세 페이지에 그대로 있다.) */}
-        <h3
-          data-vt-title=""
-          className="mb-1 truncate text-lg font-bold leading-snug text-ink-900 group-hover:text-primary-600"
-        >
-          {facility.name}
-        </h3>
 
         <div className="mb-1 flex items-center gap-1 text-sm text-ink-500">
           <MapPin size={14} className="shrink-0" />

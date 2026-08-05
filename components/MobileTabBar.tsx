@@ -2,18 +2,25 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { useSession } from "next-auth/react";
 import { Home, Search, ClipboardCheck, User } from "lucide-react";
 import { AuthModal } from "./AuthModal";
+import {
+  getTabBarHidden,
+  getTabBarHiddenServer,
+  subscribeTabBarHidden,
+} from "@/lib/tabBarVisibility";
 
 // 웹으로 들어와도 앱처럼 느껴지게 하는 핵심 화면 4개만 하단 탭바에 둔다. 나머지는 햄버거 메뉴로.
 // 이미 자체 하단 CTA 바가 있는 화면(돌봄요청 마법사·등급테스트 진행·시설상세)에서는 탭바를
 // 숨긴다 — 두 바가 겹치면 더 헷갈리고, 그 화면들은 어차피 몰입해서 끝까지 진행하는 흐름이라
 // 중간에 다른 탭으로 새는 걸 유도할 필요도 적다.
+//
+// /grade-test는 여기 없다 — 인트로(시작하기)·결과에서는 탭바가 보이는 게 자연스럽고,
+// 52문항 진행 중에만 숨겨야 해서 경로가 아니라 상태 신호(lib/tabBarVisibility)로 숨긴다.
 const HIDDEN_PREFIXES = [
   "/facility/",
-  "/grade-test",
   "/grade-helper",
   "/care-request",
   // 매니저 등록 마법사도 자체 하단 "다음" 바가 있다 — 탭바가 위에 겹치면
@@ -31,8 +38,14 @@ export function MobileTabBar() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [showAuth, setShowAuth] = useState(false);
+  // 등급테스트 진행 중처럼 "같은 경로 안에서 단계에 따라" 숨겨야 하는 화면의 신호
+  const stateHidden = useSyncExternalStore(
+    subscribeTabBarHidden,
+    getTabBarHidden,
+    getTabBarHiddenServer
+  );
 
-  if (HIDDEN_PREFIXES.some((p) => pathname?.startsWith(p))) return null;
+  if (stateHidden || HIDDEN_PREFIXES.some((p) => pathname?.startsWith(p))) return null;
 
   const myPageActive = pathname?.startsWith("/mypage") || pathname === "/account";
 

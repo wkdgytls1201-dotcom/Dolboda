@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { AuthModal } from "./AuthModal";
+import { setTabBarHidden } from "@/lib/tabBarVisibility";
 import {
   ChevronLeft,
   ChevronDown,
@@ -121,6 +122,44 @@ export function GradeTest() {
     // 최초 1회만 — 이후 사용자의 진행을 되돌리면 안 된다
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // 하단 탭바는 52문항 진행 중에만 숨기되, 맨 아래까지 내리면 다시 보여준다(사용자
+  // 피드백 2026-08-05 — 문항 끝에 닿았다는 건 다른 화면으로 이동할 여지를 열어줄
+  // 시점이라는 뜻). 탭바가 나타나면 문서 높이가 72px 늘어 "바닥" 판정이 다시 어긋나는
+  // 되먹임이 생기므로, 한 번 보이면 120px 이상 멀어져야 다시 숨기는 히스테리시스를 둔다.
+  // 자체 하단 CTA 바(다음 버튼)와 겹치지 않게, 탭바가 보일 땐 CTA를 그 위로 올린다.
+  const [tabBarShown, setTabBarShown] = useState(false);
+  const tabBarShownRef = useRef(false);
+  useEffect(() => {
+    if (phase !== "test") {
+      setTabBarHidden(false);
+      tabBarShownRef.current = false;
+      setTabBarShown(false);
+      return;
+    }
+    // ⚠️ setState updater 안에서 외부 스토어를 만지면 안 된다(updater는 순수해야 함 —
+    // 실제로 갱신이 유실됐다). 현재값은 ref로 들고 밖에서 부수효과를 실행한다.
+    const update = () => {
+      const gap =
+        document.documentElement.scrollHeight - (window.innerHeight + window.scrollY);
+      const next = tabBarShownRef.current ? gap <= 120 : gap <= 24;
+      if (next !== tabBarShownRef.current) {
+        tabBarShownRef.current = next;
+        setTabBarShown(next);
+        setTabBarHidden(!next);
+      }
+    };
+    tabBarShownRef.current = false;
+    setTabBarHidden(true);
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+      setTabBarHidden(false);
+    };
+  }, [phase]);
 
   // 인트로에서 5개 영역 중 3개쯤에서 화면이 잘리면 아래에 더 있는지 모른다 —
   // 스크롤 전까지만 "아래에 더 있어요" 힌트를 띄우고, 내리기 시작하면 치운다.
@@ -649,7 +688,11 @@ export function GradeTest() {
         })}
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-ink-100 bg-white/95 px-4 pt-3 backdrop-blur [padding-bottom:calc(0.75rem+env(safe-area-inset-bottom))]">
+      <div
+        // 탭바가 아래에 나타나면 그 위로 올라간다 — 겹치면 다음 버튼이 가려진다
+        style={{ bottom: tabBarShown ? 72 : 0 }}
+        className="fixed inset-x-0 z-30 border-t border-ink-100 bg-white/95 px-4 pt-3 backdrop-blur transition-[bottom] duration-200 [padding-bottom:calc(0.75rem+env(safe-area-inset-bottom))]"
+      >
         <div className="mx-auto max-w-lg">
           <button
             type="button"
