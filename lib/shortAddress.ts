@@ -5,6 +5,8 @@
 // "서울특별시"·"경상남도" 같은 시/도 정식 명칭이라, 이걸 줄이면 대부분 한 줄에 들어간다.
 //
 // 구/군/동은 절대 건드리지 않는다 — 그게 실제로 위치를 판단하는 정보다.
+import { MERGED_JEONNAM_GWANGJU, splitMergedJeonnamGwangju } from "@/lib/regions";
+
 const SIDO_SHORT: [RegExp, string][] = [
   [/^서울특별시/, "서울"],
   [/^부산광역시/, "부산"],
@@ -19,13 +21,18 @@ const SIDO_SHORT: [RegExp, string][] = [
   [/^충청북도/, "충북"],
   [/^충청남도/, "충남"],
   [/^전북특별자치도|^전라북도/, "전북"],
-  [/^전남광주통합특별시|^전라남도/, "전남"],
+  [/^전라남도/, "전남"],
   [/^경상북도/, "경북"],
   [/^경상남도/, "경남"],
   [/^제주특별자치도/, "제주"],
 ];
 
 export function shortAddress(address: string): string {
+  // 전남광주통합특별시(2026 행정통합)는 구 단위로 갈라 축약한다 — 통째로 "전남"으로
+  // 줄이면 광주 서구가 "전남 서구"로 보였다(2026-08-06 광주 표기 버그의 자매 수정)
+  const mergedSide = splitMergedJeonnamGwangju(address);
+  if (mergedSide) return `${mergedSide} ${address.slice(MERGED_JEONNAM_GWANGJU.length).trim()}`;
+
   for (const [pattern, short] of SIDO_SHORT) {
     if (pattern.test(address)) return address.replace(pattern, short);
   }

@@ -5,15 +5,16 @@ import { prisma } from "@/lib/prisma";
 import { rowToFacility } from "@/lib/facilityRepo";
 import { calcWorkIndex } from "@/lib/workIndex";
 import { REGION_SEO } from "@/lib/regionSeo";
-import { REGIONS } from "@/lib/regions";
+import { REGIONS, MERGED_JEONNAM_GWANGJU, splitMergedJeonnamGwangju } from "@/lib/regions";
 import type { Facility as FacilityRow } from "@prisma/client";
 
 // 활동 지역 라벨(REGIONS 표기) → 주소 접두어.
-// REGION_SEO는 "전남·광주"를 한 항목으로 묶어서 "전남"/"광주" 단독 라벨은 못 찾는다 —
-// 그대로 두면 "전남" 매니저에게 "전라남도"로 시작하는 주소가 통째로 누락된다.
+// 전남·광주는 2026 행정통합으로 주소가 "전남광주통합특별시 ○구/○시…"라 접두어만으론
+// 못 가른다 — 통합시 전체를 받아온 뒤 광주 5개 자치구 여부로 사후 분리한다
+// ("광주 탭 0곳" 버그의 원인, lib/regions.ts의 splitMergedJeonnamGwangju 참조).
 function prefixesFor(label: string): string[] {
-  if (label === "광주") return ["광주"];
-  if (label === "전남") return ["전라남도", "전남"];
+  if (label === "광주") return ["광주광역시", MERGED_JEONNAM_GWANGJU];
+  if (label === "전남") return ["전라남도", MERGED_JEONNAM_GWANGJU];
   return REGION_SEO.find((r) => r.label === label)?.prefixes ?? [label];
 }
 
@@ -43,7 +44,10 @@ export interface WorkplaceItem {
 // 근무환경 지수 순위는 (활동지역 집합)만으로 결정되고 시설 데이터는 import 때만 바뀐다.
 // 매니저가 마이페이지를 열 때마다 수천 행을 다시 읽을 이유가 없어 하루 캐시한다.
 const getRanking = unstable_cache(
-  async (prefixes: string[]): Promise<WorkplaceItem[]> => {
+  // 캐시 키를 접두어가 아니라 "라벨 집합"으로 — 광주/전남이 같은 통합시 접두어를
+  // 공유하므로 접두어 키로는 두 라벨의 결과가 한 캐시에 뭉개진다.
+  async (labels: string[]): Promise<WorkplaceItem[]> => {
+    const prefixes = [...new Set(labels.flatMap(prefixesFor))].sort();
     // 예전엔 `SELECT *`로 extra(jsonb) 전체를 읽었다. 프로그램·비급여·평가상세까지 딸려와
     // 행당 수십 KB였고, 그래서 LIMIT 1500으로 막아둘 수밖에 없었다. 그런데 ORDER BY가 없는
     // LIMIT은 "아무 1500곳"이라, 서울처럼 대상이 더 많은 지역에서는 진짜 상위 시설이
@@ -72,7 +76,15 @@ const getRanking = unstable_cache(
       LIMIT ${SCAN_LIMIT}
     `;
 
-    return rows
+    // 통합시(전남광주) 행은 요청된 라벨 쪽만 남긴다 — 광주 탭엔 5개 자치구만,
+    // 전남 탭엔 나머지 시·군만. 통합시 아닌 행은 SQL 접두어가 이미 정확하다.
+    const wanted = new Set(labels);
+    const scoped = rows.filter((row) => {
+      const side = splitMergedJeonnamGwangju(row.address);
+      return side === null || wanted.has(side);
+    });
+
+    return scoped
       .map((row) => {
         const facility = rowToFacility(row);
         return { facility, index: calcWorkIndex(facility) };
@@ -130,10 +142,9 @@ export async function GET(req: Request) {
     return NextResponse.json({ items: [], regions: [] });
   }
 
-  // 같은 지역 집합이면 캐시가 맞도록 정렬해 키를 안정시킨다.
-  const prefixes = [...new Set(regionLabels.flatMap(prefixesFor))].sort();
-
-  const items = await getRanking(prefixes);
+  // 같은 지역 집합이면 캐시가 맞도록 정렬해 키를 안정시킨다(접두어가 아니라 라벨 키 —
+  // 광주/전남이 통합시 접두어를 공유해서 접두어 키로는 결과가 뭉개진다).
+  const items = await getRanking([...new Set(regionLabels)].sort());
 
   return NextResponse.json({ items, regions: profile.regions });
 }

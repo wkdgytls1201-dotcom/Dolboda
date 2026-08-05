@@ -66,8 +66,17 @@ const REGION_PREFIXES = [
   ["경남", ["경상남도", "경남"]],
   ["제주", ["제주"]],
 ];
+// 전남·광주 행정통합(2026) — 주소가 "전남광주통합특별시 ○구/○시…"라 접두어만으로는
+// 광주/전남을 못 가른다. 광주 5개 자치구면 광주, 아니면 전남(lib/regions.ts와 같은 기준).
+const MERGED_JEONNAM_GWANGJU = "전남광주통합특별시";
+const GWANGJU_DISTRICTS = ["동구", "서구", "남구", "북구", "광산구"];
+
 function regionLabelOf(address) {
-  const sido = address.split(/\s+/)[0] ?? "";
+  const tokens = address.split(/\s+/);
+  const sido = tokens[0] ?? "";
+  if (sido === MERGED_JEONNAM_GWANGJU) {
+    return GWANGJU_DISTRICTS.includes(tokens[1] ?? "") ? "광주" : "전남";
+  }
   const hit = REGION_PREFIXES.find(([, prefixes]) => prefixes.some((p) => sido.startsWith(p)));
   return hit ? hit[0] : null;
 }
