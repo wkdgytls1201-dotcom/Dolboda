@@ -2,28 +2,30 @@
 // 경제 설계의 근거와 법적 장치는 docs/points-spec.md가 단일 진실 공급원이다.
 // ⚠️ 값을 바꾸면 그 문서의 표와 변경 이력을 반드시 함께 갱신할 것.
 
+// 단위 감각: 국내 포인트 관행(1P≈1원 멘탈모델)에 맞춰 큰 단위를 쓴다(2026-08-05
+// 사용자 결정 — "400P는 쿠폰 체감이 안 난다"). 비율은 유지: 리본 = 잘한 돌봄 2~3건.
 export const POINT_EARN = {
   /** 매니저 — 완료한 돌봄에 보호자 후기가 도착했을 때 */
-  reviewReceived: 100,
+  reviewReceived: 1000,
   /** 매니저 — 그 후기가 5점 만점일 때 추가 */
-  fiveStarBonus: 30,
+  fiveStarBonus: 500,
   /** 매니저 — 돌봄일지에 보호자 원탭 반응(🙏😊💪)을 받았을 때(기록 1건당) */
-  reactionPerLog: 5,
+  reactionPerLog: 50,
   /** 반응 적립의 요청당 상한(= 10회) — 반응은 감사의 표시이지 채굴 대상이 아니다 */
   reactionCapPerRequest: 10,
   /** 보호자 — 완료한 돌봄에 후기를 남겼을 때 */
-  reviewWritten: 50,
+  reviewWritten: 500,
 } as const;
 
 export const POINT_SPEND = {
   ribbon: {
-    price: 400,
+    price: 5000,
     days: 7,
     label: "돌봄 스타 리본",
     desc: "지원자 카드와 공개 프로필에 7일간 ⭐ 리본이 달려요. 순서는 그대로, 눈에 띄는 정도만 달라져요.",
   },
   requestBoost: {
-    price: 300,
+    price: 2000,
     days: 7,
     label: "우선 요청",
     desc: "내 돌봄 요청이 7일간 매니저 일자리 목록 상단에 고정되고 배지가 붙어요.",
