@@ -45,7 +45,9 @@ export function toCardFacility(f: FacilityDTO): FacilityDTO {
     phone: f.phone,
     establishedYear: f.establishedYear,
     updatedAt: f.updatedAt,
-    photos: anyF.photos,
+    // 카드 썸네일은 첫 장(외관 대표사진)만 쓴다 — 시설당 12장씩 실으면 300건 응답에
+    // URL 3,600개(약 350KB)가 헛되이 실린다. R2 대량 사진이 붙으면서 실제 문제가 됐다.
+    photos: Array.isArray(anyF.photos) ? (anyF.photos as string[]).slice(0, 1) : undefined,
     // 카드에 표시하거나 필터에서 쓰는 값들만 선별
     capacity: anyF.capacity,
     currentOccupancy: anyF.currentOccupancy,

@@ -378,6 +378,56 @@ p {
   display: none !important;
 }
 
+/* ── 시설 상세 Shared Element Transition ──────────────────────────────
+   카드/배너의 사진·시설명이 상세(스켈레톤 포함)의 같은 이름 자리로 모핑한다.
+   이름 부여는 클릭 순간에만(lib/navTransition.ts) — 화면에 같은 시설이 여러 번
+   떠도 이름이 중복되지 않는다. 전환은 이동을 보조할 뿐(스펙 §5-3): 지속시간을
+   짧게 잡고, 라우트 커밋(≈스켈레톤 표시) 시점에 끝난다. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 160ms;
+}
+::view-transition-group(facility-hero),
+::view-transition-group(facility-title) {
+  animation-duration: 260ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+::view-transition-old(facility-hero),
+::view-transition-new(facility-hero),
+::view-transition-old(facility-title),
+::view-transition-new(facility-title) {
+  animation-duration: 260ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-image-pair(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+/* ── 히어로 배너: 스와이프 진행도에 반응하는 이미지 미세 이동(스펙 §1-4) ──
+   스크롤 드리븐 애니메이션이라 JS·메인스레드 비용 0 — 손가락 위치에 1:1로 따라오고,
+   놓으면 스냅과 함께 제자리로 안착한다. 미지원 브라우저·reduced-motion은
+   아무 효과 없는 정지 이미지(scale도 안 걸려 크롭 차이도 없음). */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view(inline)) {
+    .hero-drift {
+      animation: hero-drift linear both;
+      animation-timeline: view(inline);
+    }
+  }
+}
+@keyframes hero-drift {
+  from {
+    transform: translateX(9px) scale(1.045);
+  }
+  to {
+    transform: translateX(-9px) scale(1.045);
+  }
+}
+
 /* 돌봄 확인서 인쇄 — .print-area만 보이게 하고 헤더/버튼 등 나머지는 전부 숨긴다.
    브라우저의 "PDF로 저장"이 곧 확인서 저장 기능. */
 @media print {

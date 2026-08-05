@@ -3,13 +3,15 @@ import Link from "next/link";
 import { Minus, TrendingDown, TrendingUp } from "lucide-react";
 import { myFacilities, capabilityOf } from "@/lib/facilityOwner";
 import { getMonthlyReport, type MonthlyReport } from "@/lib/monthlyReport";
+import { ViewTrendChart } from "@/components/ViewTrendChart";
 
 // 월간 성과 보고서 — 지역 프리미엄 이상 전용.
 //
 // 원칙: 못 재는 지표는 숨긴다. sponsor/banner가 null이면 그 섹션 자체가 안 나가고,
 // "노출 0"처럼 거짓으로 읽힐 수 있는 값을 만들지 않는다. 차트는 새 라이브러리 없이
-// 기존 브랜드 토큰(primary/mint/ink)만 쓰는 얇은 SVG/CSS — 이 페이지는 시설
-// 담당자 한 명이 한 달에 몇 번 보는 화면이라 무거운 차트 라이브러리가 안 맞는다.
+// 기존 브랜드 토큰(primary/mint/ink)만 쓰는 얇은 CSS(ViewTrendChart, 기업회원 콘솔의
+// 조회 추이 그래프와 공용) — 이 페이지는 시설 담당자 한 명이 한 달에 몇 번 보는
+// 화면이라 무거운 차트 라이브러리가 안 맞는다.
 export const metadata: Metadata = {
   title: "월간 성과 보고서",
   robots: { index: false, follow: false },
@@ -110,7 +112,7 @@ export default async function ReportPage({
             {" "}(지역 평균 {report.regionAvgViews.toLocaleString()}회)
           </p>
         )}
-        <Sparkline points={report.views.last30Days} />
+        <ViewTrendChart series={report.views.last30Days} unit="회" title="최근 30일 조회 추이" />
       </StatCard>
 
       <StatCard
@@ -208,8 +210,12 @@ function DeltaBadge({ pct }: { pct: number | null }) {
   const up = pct > 0;
   return (
     <span
+      // down을 primary(이 앱의 경고·CTA 색)로 쓰지 않는다 — 조회수가 준 것 자체는
+      // 위험 신호가 아니다. 기업회원 콘솔의 증감 배지와 같은 규칙(§ ConsoleClient.tsx의
+      // Delta 컴포넌트 주석)을 여기도 맞춘다 — 같은 데이터를 두 화면에서 다른 색으로
+      // 보여주면 신뢰가 깎인다.
       className={`inline-flex items-center gap-0.5 text-xs font-bold ${
-        up ? "text-mint-700" : "text-primary-700"
+        up ? "text-mint-700" : "text-ink-500"
       }`}
     >
       {up ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
@@ -291,29 +297,3 @@ function AdRow({
   );
 }
 
-// 최근 30일 조회수 — 단일 시계열이라 범례 없이 값만 직접 라벨한다(6번 규칙: 단일
-// 시리즈는 범례 불필요). 막대는 얇게, 끝은 둥글게, 서로 2px 간격을 둔다.
-function Sparkline({ points }: { points: { date: string; count: number }[] }) {
-  const max = Math.max(...points.map((p) => p.count), 1);
-  const last = points[points.length - 1];
-  return (
-    <div className="mt-3">
-      <div className="flex h-16 items-end gap-[2px]">
-        {points.map((p, i) => (
-          <div
-            key={i}
-            className="min-w-[2px] flex-1 rounded-t-sm bg-primary-300"
-            style={{ height: `${Math.max(4, Math.round((p.count / max) * 100))}%` }}
-            title={`${p.date} · ${p.count}회`}
-          />
-        ))}
-      </div>
-      <div className="mt-1 flex justify-between text-[10px] text-ink-300">
-        <span>{points[0]?.date}</span>
-        <span>
-          {last?.date} · {last?.count}회
-        </span>
-      </div>
-    </div>
-  );
-}

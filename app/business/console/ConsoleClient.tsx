@@ -1,8 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
+  ArrowDown,
+  ArrowUp,
+  Building2,
   Camera,
   Check,
   ExternalLink,
@@ -17,14 +20,18 @@ import {
 import { toSquareImage } from "@/lib/squareImage";
 import { toWideImage } from "@/lib/wideImage";
 import { BUSINESS_PLANS, VAT_NOTE, formatPlanPrice } from "@/lib/businessPlans";
+import { pctDelta } from "@/lib/deltaPct";
+import { ViewTrendChart } from "@/components/ViewTrendChart";
 
-// 시설 콘솔 화면.
+// 기업회원 대시보드 화면.
 //
 // UX 원칙: 담당자는 40~60대, 하루에 한두 번 폰으로 연다.
 //  - 시설이 여러 개면 탭으로 전환 (대부분은 1개라 탭이 아예 안 보인다)
 //  - "지금 보호자에게 어떻게 보이는지"로 바로 갈 수 있는 링크를 항상 위에 둔다
 //  - 저장은 명시적 버튼 — 자동저장은 "저장된 건가?" 불안만 만든다
 //  - 섹션 순서 = 매일 보는 것(숫자·상담)부터, 가끔 만지는 것(소개글·사진·소식) 순
+//  - 시설을 여럿 관리하는 기업회원은 탭을 오가며 합산해 암산하고 있었다 — 시설이
+//    2곳 이상이면 탭 위에 전체 합산 요약을 먼저 보여준다(§ CompanyOverview)
 
 interface ConsoleConsult {
   id: string;
@@ -57,8 +64,14 @@ interface ConsoleFacility {
   photos: string[];
   consultTotal: number;
   consultRecent30d: number;
+  /** 그 전 30일(31~60일 전) 상담 신청 — "지난달 대비" 증감 표시용 */
+  consultPrev30d: number;
   views7d: number;
   views30d: number;
+  /** 그 전 30일(31~60일 전) 조회수 — "지난달 대비" 증감 표시용 */
+  viewsPrev30d: number;
+  /** 최근 30일 일별 조회수(오래된 순, 기록 없는 날은 0) — 추이 그래프의 원본 */
+  viewSeries: { date: string; count: number }[];
   consults: ConsoleConsult[];
   posts: ConsolePost[];
   sponsorRegions: string[];
@@ -75,6 +88,47 @@ function formatDate(iso: string): string {
   ).padStart(2, "0")}`;
 }
 
+/** "2026-08-04" → "8/4" — 추이 그래프 축 라벨용 */
+function formatDay(dateStr: string): string {
+  const [, m, d] = dateStr.split("-");
+  return `${Number(m)}/${Number(d)}`;
+}
+
+/**
+ * "지난 30일 대비" 증감 배지. 조회수·상담 신청 둘 다 늘어난 쪽이 좋은 지표라
+ * up=민트(좋음)·down=잉크(중립)로만 구분한다 — 이 앱의 accent/danger 톤은 행정처분·경고
+ * 같은 실제 위험 신호에 예약돼 있어서, 트래픽이 준 것 정도에 빨간색을 쓰면 과하게 읽힌다.
+ *
+ * 이전 구간이 0이면 %가 정의되지 않는다(막 승인된 시설이 흔히 이 경우다) — 그때는
+ * 퍼센트 대신 "신규"만 보여준다. 두 구간 다 0이면 비교할 게 없으니 아예 그리지 않는다.
+ */
+function Delta({ current, previous }: { current: number; previous: number }) {
+  const pct = pctDelta(current, previous);
+  if (pct === null) {
+    if (current === 0) return null;
+    return (
+      <span className="inline-flex items-center rounded-full bg-mint-100 px-1.5 py-0.5 text-[10px] font-bold text-mint-700">
+        신규
+      </span>
+    );
+  }
+  if (pct === 0) return null;
+  const up = pct > 0;
+  const Icon = up ? ArrowUp : ArrowDown;
+  return (
+    <span
+      // "신규" 배지와 같은 칩 모양으로 통일한다 — 예전엔 이것만 배경 없는 맨글씨라
+      // 셋(신규·증가·감소)이 한 화면에 섞일 때 무게감이 안 맞았다.
+      className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+        up ? "bg-mint-100 text-mint-700" : "bg-ink-100 text-ink-500"
+      }`}
+    >
+      <Icon size={9} />
+      {Math.abs(pct)}%
+    </span>
+  );
+}
+
 export function ConsoleClient({ facilities }: { facilities: ConsoleFacility[] }) {
   const [selected, setSelected] = useState(0);
   const f = facilities[selected];
@@ -82,7 +136,7 @@ export function ConsoleClient({ facilities }: { facilities: ConsoleFacility[] })
   return (
     <main className="mx-auto max-w-2xl px-4 py-6 pb-24">
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-bold text-ink-900">시설 콘솔</h1>
+        <h1 className="text-xl font-bold text-ink-900">기업회원 대시보드</h1>
         <span className="flex flex-wrap items-center gap-1.5">
           <span className="rounded-full bg-royal-50 px-2.5 py-1 text-[11px] font-bold text-royal-700">
             {f.planName}
@@ -97,6 +151,10 @@ export function ConsoleClient({ facilities }: { facilities: ConsoleFacility[] })
       <p className="mb-4 text-sm text-ink-500">
         여기서 고친 내용은 보호자가 보는 시설 페이지에 그대로 반영돼요.
       </p>
+
+      {/* 시설을 2곳 이상 관리하는 기업회원 전용 — 탭을 오가며 암산하지 않도록 먼저 합산해 보여준다.
+          시설이 1곳뿐이면 아래 패널과 내용이 그대로 겹쳐서 굳이 안 그린다. */}
+      {facilities.length > 1 && <CompanyOverview facilities={facilities} />}
 
       {facilities.length > 1 && (
         <div className="mb-4 flex flex-wrap gap-1.5">
@@ -117,6 +175,77 @@ export function ConsoleClient({ facilities }: { facilities: ConsoleFacility[] })
 
       <FacilityPanel key={f.facilityId} facility={f} />
     </main>
+  );
+}
+
+/** 시설이 여럿인 기업회원용 — 전체 합산 개요. 탭으로 시설을 골라 들어가기 전에 먼저 보인다. */
+function CompanyOverview({ facilities }: { facilities: ConsoleFacility[] }) {
+  const totals = useMemo(
+    () =>
+      facilities.reduce(
+        (acc, x) => ({
+          views7d: acc.views7d + x.views7d,
+          views30d: acc.views30d + x.views30d,
+          viewsPrev30d: acc.viewsPrev30d + x.viewsPrev30d,
+          consultRecent30d: acc.consultRecent30d + x.consultRecent30d,
+          consultPrev30d: acc.consultPrev30d + x.consultPrev30d,
+          consultTotal: acc.consultTotal + x.consultTotal,
+        }),
+        {
+          views7d: 0,
+          views30d: 0,
+          viewsPrev30d: 0,
+          consultRecent30d: 0,
+          consultPrev30d: 0,
+          consultTotal: 0,
+        }
+      ),
+    [facilities]
+  );
+
+  return (
+    <section className={`${CARD} mb-4`}>
+      <h2 className="mb-3 flex items-center gap-1.5 text-[15px] font-bold text-ink-900">
+        <Building2 size={15} className="text-royal-500" /> 전체 시설 합산 · {facilities.length}곳
+      </h2>
+      <dl className="grid grid-cols-2 gap-2">
+        <div className="rounded-xl bg-royal-50/60 p-3.5 text-center">
+          <dt className="flex items-center justify-center gap-1 text-[11px] text-ink-300">
+            <Eye size={11} /> 조회 합산 (7일)
+          </dt>
+          <dd className="mt-0.5 text-xl font-extrabold text-ink-900">
+            {totals.views7d.toLocaleString()}
+          </dd>
+        </div>
+        <div className="rounded-xl bg-royal-50/60 p-3.5 text-center">
+          <dt className="flex items-center justify-center gap-1 text-[11px] text-ink-300">
+            <Eye size={11} /> 조회 합산 (30일)
+          </dt>
+          <dd className="mt-0.5 flex flex-col items-center gap-0.5">
+            <span className="text-xl font-extrabold text-ink-900">
+              {totals.views30d.toLocaleString()}
+            </span>
+            <Delta current={totals.views30d} previous={totals.viewsPrev30d} />
+          </dd>
+        </div>
+        <div className="rounded-xl bg-royal-50/60 p-3.5 text-center">
+          <dt className="text-[11px] text-ink-300">상담 합산 (30일)</dt>
+          <dd className="mt-0.5 flex flex-col items-center gap-0.5">
+            <span className="text-xl font-extrabold text-ink-900">
+              {totals.consultRecent30d}건
+            </span>
+            <Delta current={totals.consultRecent30d} previous={totals.consultPrev30d} />
+          </dd>
+        </div>
+        <div className="rounded-xl bg-royal-50/60 p-3.5 text-center">
+          <dt className="text-[11px] text-ink-300">상담 합산 (전체)</dt>
+          <dd className="mt-0.5 text-xl font-extrabold text-ink-900">{totals.consultTotal}건</dd>
+        </div>
+      </dl>
+      <p className="mt-2 text-[11px] leading-relaxed text-ink-300">
+        증감은 그 이전 30일과 비교한 값이에요.
+      </p>
+    </section>
   );
 }
 
@@ -265,14 +394,20 @@ function FacilityPanel({ facility }: { facility: ConsoleFacility }) {
             <dt className="flex items-center justify-center gap-1 text-[11px] text-ink-300">
               <Eye size={11} /> 페이지 조회 (30일)
             </dt>
-            <dd className="mt-0.5 text-xl font-extrabold text-ink-900">
-              {facility.views30d.toLocaleString()}
+            <dd className="mt-0.5 flex flex-col items-center gap-0.5">
+              <span className="text-xl font-extrabold text-ink-900">
+                {facility.views30d.toLocaleString()}
+              </span>
+              <Delta current={facility.views30d} previous={facility.viewsPrev30d} />
             </dd>
           </div>
           <div className="rounded-xl bg-ivory-100 p-3.5 text-center">
             <dt className="text-[11px] text-ink-300">상담 신청 (30일)</dt>
-            <dd className="mt-0.5 text-xl font-extrabold text-ink-900">
-              {facility.consultRecent30d}건
+            <dd className="mt-0.5 flex flex-col items-center gap-0.5">
+              <span className="text-xl font-extrabold text-ink-900">
+                {facility.consultRecent30d}건
+              </span>
+              <Delta current={facility.consultRecent30d} previous={facility.consultPrev30d} />
             </dd>
           </div>
           <div className="rounded-xl bg-ivory-100 p-3.5 text-center">
@@ -282,8 +417,14 @@ function FacilityPanel({ facility }: { facility: ConsoleFacility }) {
             </dd>
           </div>
         </dl>
+
+        <ViewTrendChart
+          series={facility.viewSeries.map((d) => ({ date: formatDay(d.date), count: d.count }))}
+        />
+
         <p className="mt-2 text-[11px] leading-relaxed text-ink-300">
-          조회수는 집계를 시작한 날부터 쌓여요. 방문자 개인정보는 수집하지 않습니다.
+          조회수는 집계를 시작한 날부터 쌓여요. 증감은 그 이전 30일과 비교한 값이고,
+          방문자 개인정보는 수집하지 않습니다.
         </p>
       </section>
 

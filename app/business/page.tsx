@@ -2,26 +2,25 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Check, ShieldCheck, Megaphone, LineChart, Lock } from "lucide-react";
 import { SIGNUP_STEPS } from "@/lib/businessPlans";
-import { BusinessInquiryForm } from "./BusinessInquiryForm";
 import { SITE_URL, SITE_NAME, OG_IMAGE } from "@/lib/siteConfig";
 import { jsonLdHtml } from "@/lib/jsonLd";
 
-// 시설 운영자용 입점 안내 (B2B).
+// 기업회원용 입점 안내 (B2B).
 //
 // 앞단(이 페이지)은 **무료 인증의 혜택**만 말한다. 요금제·가격은 인증을 마친 담당자가
-// 시설 콘솔(/business/console)에서 본다 — 아직 신뢰가 없는 첫 방문에서 가격표부터
+// 기업회원 콘솔(/business/console)에서 본다 — 아직 신뢰가 없는 첫 방문에서 가격표부터
 // 내밀면 "결국 돈 내라는 거네"로 읽혀 신청 자체가 줄고, 무료 범위가 넓다는 사실이 묻힌다.
 //
 // 본문은 전부 서버 렌더다(폼만 클라이언트). "요양원 홍보"·"요양시설 마케팅" 같은
 // 검색어로 들어오는 페이지라 크롤러가 내용을 그대로 읽어야 한다.
 
 export const metadata: Metadata = {
-  title: "시설 운영자 무료 등록 — 우리 시설을 찾는 보호자에게",
+  title: "기업회원 무료 등록 — 우리 시설을 찾는 보호자에게",
   description:
-    "요양원·요양병원·주야간보호·방문요양 운영자를 위한 돌보다 무료 인증 안내입니다. 시설 페이지 직접 관리, 상담 신청 수신, 방문 통계까지 무료로 시작하세요.",
+    "요양원·요양병원·주야간보호·방문요양 기업회원을 위한 돌보다 무료 인증 안내입니다. 시설 페이지 직접 관리, 상담 신청 수신, 방문 통계까지 무료로 시작하세요.",
   alternates: { canonical: "/business" },
   openGraph: {
-    title: `${SITE_NAME} 시설 운영자 무료 등록`,
+    title: `${SITE_NAME} 기업회원 무료 등록`,
     description:
       "시설 페이지 직접 관리, 상담 신청 수신, 방문 통계까지 무료로 시작하세요.",
     url: `${SITE_URL}/business`,
@@ -34,7 +33,7 @@ const WHY = [
   {
     icon: ShieldCheck,
     title: "이미 우리 시설 페이지가 있습니다",
-    desc: "국민건강보험공단·건강보험심사평가원 공개 자료로 전국 2만 8천여 곳이 이미 등록돼 있어요. 새로 만드는 게 아니라, 운영자 인증을 하고 그 페이지를 직접 관리하시는 겁니다.",
+    desc: "국민건강보험공단·건강보험심사평가원 공개 자료로 전국 2만 8천여 곳이 이미 등록돼 있어요. 새로 만드는 게 아니라, 기업회원 인증을 하고 그 페이지를 직접 관리하시는 겁니다.",
   },
   {
     icon: LineChart,
@@ -67,7 +66,7 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "인증에 무엇이 필요한가요?",
-    a: "신청서에는 시설명·기관기호(또는 사업자등록번호)·담당자 연락처만 적으시면 됩니다. 이후 공단에 공개된 시설 대표번호로 확인 전화를 드리고, 장기요양기관 지정서 또는 사업자등록증 사본 한 건만 받아요.",
+    a: "신청서에는 시설명·기관기호(또는 사업자등록번호)·담당자 연락처만 적으시면 됩니다. 이후 이메일로 장기요양기관 지정서 또는 사업자등록증 사본 한 건만 회신해 주시면 끝이에요. 전화 통화는 없습니다.",
   },
 ];
 
@@ -80,14 +79,14 @@ const jsonLd = {
       "@type": "BreadcrumbList",
       itemListElement: [
         { "@type": "ListItem", position: 1, name: SITE_NAME, item: SITE_URL },
-        { "@type": "ListItem", position: 2, name: "시설 운영자 입점 안내", item: PAGE_URL },
+        { "@type": "ListItem", position: 2, name: "기업회원 입점 안내", item: PAGE_URL },
       ],
     },
     {
       // 가격은 화면에서 뺐으므로 구조화 데이터에도 싣지 않는다 —
       // 화면에 없는 가격이 검색 결과에 뜨면 그게 곧 어긋남이다.
       "@type": "Service",
-      name: `${SITE_NAME} 시설 운영자 서비스`,
+      name: `${SITE_NAME} 기업회원 서비스`,
       serviceType: "요양시설 페이지 관리·상담 연결",
       areaServed: "KR",
       provider: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
@@ -115,7 +114,7 @@ export default function BusinessPage() {
           홈
         </Link>
         <span className="mx-1">›</span>
-        <span className="text-ink-500">시설 운영자 안내</span>
+        <span className="text-ink-500">기업회원 안내</span>
       </nav>
 
       <h1 className="mb-3 text-2xl font-bold leading-snug text-ink-900 sm:text-3xl">
@@ -125,17 +124,17 @@ export default function BusinessPage() {
       </h1>
       <p className="mb-6 text-[15px] leading-[1.8] text-ink-700">
         돌보다에는 전국 2만 8천여 곳의 요양시설이 공공데이터 기준으로 이미 등록돼 있습니다.
-        운영자 인증을 하시면 그 페이지를 직접 관리하실 수 있어요.{" "}
+        기업회원 인증을 하시면 그 페이지를 직접 관리하실 수 있어요.{" "}
         <strong className="font-bold text-ink-900">인증과 정보 관리는 무료입니다.</strong>
       </p>
 
       <div className="mb-3 flex flex-col gap-2 sm:flex-row">
-        <a
-          href="#apply"
+        <Link
+          href="/business/apply"
           className="flex min-h-[52px] flex-1 items-center justify-center rounded-xl bg-primary-500 text-sm font-bold text-white shadow-soft transition-all duration-200 hover:bg-primary-600"
         >
           무료로 시설 인증 신청하기
-        </a>
+        </Link>
         <a
           href="#benefits"
           className="flex min-h-[52px] flex-1 items-center justify-center rounded-xl border border-ink-100 bg-white text-sm font-bold text-ink-700 transition-colors hover:bg-ink-100"
@@ -147,7 +146,7 @@ export default function BusinessPage() {
       <p className="mb-12 text-center text-[13px] text-ink-300">
         이미 인증하셨나요?{" "}
         <Link href="/business/console" className="font-semibold text-primary-600 hover:underline">
-          시설 콘솔 열기
+          기업회원 콘솔 열기
         </Link>
       </p>
 
@@ -171,8 +170,8 @@ export default function BusinessPage() {
       <section className="mb-12">
         <h2 className="mb-1.5 text-lg font-bold text-ink-900">인증 절차</h2>
         <p className="mb-4 text-sm leading-relaxed text-ink-500">
-          서류를 여러 건 받는 대신, 공단에 공개된 시설 대표번호로 직접 확인 전화를 드립니다.
-          그래서 준비하실 서류는 한 건이면 충분해요.
+          전 과정이 비대면입니다 — 전화 통화 없이 이메일로만 진행되고, 준비하실 서류는 한
+          건이면 충분해요.
         </p>
         <ol className="space-y-3">
           {SIGNUP_STEPS.map((step, i) => (
@@ -199,8 +198,8 @@ export default function BusinessPage() {
           <Lock size={15} className="mt-0.5 shrink-0 text-ink-300" />
           <span>
             받은 서류는 시설 실재와 운영 주체를 확인하는 용도로만 쓰고 확인 후 지체 없이
-            파기합니다. 담당자 개인정보는 상담 목적으로만 보관하며, 신청이 마무리되지 않으면
-            6개월 뒤 파기합니다.
+            파기합니다. 담당자 개인정보의 수집 항목·보유 기간(2년)·파기 방법은 신청
+            페이지의 안내에 전부 적어두었어요.
           </span>
         </p>
       </section>
@@ -243,20 +242,20 @@ export default function BusinessPage() {
           </ul>
         </div>
 
-        <a
-          href="#apply"
+        <Link
+          href="/business/apply"
           className="mt-4 flex min-h-[52px] items-center justify-center rounded-xl bg-primary-500 text-sm font-bold text-white shadow-soft transition-all duration-200 hover:bg-primary-600"
         >
           무료로 시작하기
-        </a>
+        </Link>
       </section>
 
-      {/* 시설 콘솔 미리보기 — 스크린샷 이미지 대신 CSS 목업(전송량 0, 다크·라이트 무관).
+      {/* 기업회원 콘솔 미리보기 — 스크린샷 이미지 대신 CSS 목업(전송량 0, 다크·라이트 무관).
           "가입하면 이 화면을 갖게 된다"가 어떤 설명보다 잘 전달된다. */}
       <section className="mb-12">
         <h2 className="mb-1.5 text-lg font-bold text-ink-900">인증하면 이런 화면이 열려요</h2>
         <p className="mb-4 text-sm leading-relaxed text-ink-500">
-          시설 콘솔에서 소개글과 사진을 직접 올리고, 우리 시설로 들어온 상담 신청을 숫자로
+          기업회원 콘솔에서 소개글과 사진을 직접 올리고, 우리 시설로 들어온 상담 신청을 숫자로
           확인할 수 있어요. 폰에서도 똑같이 됩니다.
         </p>
 
@@ -333,16 +332,22 @@ export default function BusinessPage() {
         </dl>
       </section>
 
-      <section id="apply" className="scroll-mt-20">
-        <h2 className="mb-1.5 text-lg font-bold text-ink-900">입점 신청</h2>
-        <p className="mb-4 text-sm leading-relaxed text-ink-500">
-          아래 정보만 남겨주시면 1영업일 안에 시설 대표번호로 연락드립니다. 서류와 결제는 통화
-          이후에 진행하니, 지금은 결정하지 않으셔도 괜찮아요.
+      {/* 신청은 전용 페이지(/business/apply)에서 — 동의 문서까지 한 호흡으로 받는다.
+          여기는 큰 진입 버튼만 둔다(사용자 결정). */}
+      <section id="apply" className="scroll-mt-20 rounded-3xl bg-gradient-to-br from-primary-500 to-peach-500 p-6 text-center shadow-soft sm:p-8">
+        <h2 className="mb-1.5 text-xl font-extrabold text-white">
+          지금 무료로 시설 인증을 시작하세요
+        </h2>
+        <p className="mb-5 text-sm leading-relaxed text-white/85">
+          신청 2분, 서류 1건. 전화 없이 이메일로만 진행돼요.
         </p>
-        <BusinessInquiryForm />
-        <p className="mt-3 text-center text-[13px] text-ink-300">
-          전화 문의 010-2222-9943 · 이메일 wkdgytls1201@gmail.com
-        </p>
+        <Link
+          href="/business/apply"
+          className="inline-flex min-h-[56px] w-full max-w-sm items-center justify-center rounded-xl bg-white text-base font-extrabold text-primary-600 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover active:translate-y-0 active:scale-[0.98]"
+        >
+          입점 신청하러 가기
+        </Link>
+        <p className="mt-4 text-[13px] text-white/70">이메일 문의 wkdgytls1201@gmail.com</p>
       </section>
     </main>
   );

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireFacilityOwner } from "@/lib/facilityOwner";
 
-// 시설 콘솔 — 우리 시설로 들어온 상담 신청 내역.
+// 기업회원 콘솔 — 우리 시설로 들어온 상담 신청 내역.
 //
 // 이름·연락처를 그대로 보여준다: 상담 신청은 "시설에 전달해 달라"는 뜻으로 남긴
 // 정보이고, 이메일이 있는 시설엔 이미 같은 내용이 메일로 가고 있다. 오히려 이메일이

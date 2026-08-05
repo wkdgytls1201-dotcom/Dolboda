@@ -99,7 +99,7 @@ export function DolbodaScoreCard({
           <div className="min-w-0">
             <span className="inline-flex items-center gap-1 rounded-full bg-white/20 px-3 py-1.5 text-xs font-bold text-white backdrop-blur">
               <Sparkles size={12} />
-              돌보다 공공데이터 기반 안심지수
+              돌보다 AI기반 안심지수
             </span>
             <p className="mt-2 text-2xl font-extrabold text-white">{level.label}</p>
           </div>

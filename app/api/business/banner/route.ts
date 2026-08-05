@@ -13,7 +13,7 @@ import {
   uploadPublicObject,
 } from "@/lib/supabaseStorage";
 
-// 시설 콘솔 — 지역 배너 업로드/삭제 (지역 프리미엄 이상).
+// 기업회원 콘솔 — 지역 배너 업로드/삭제 (지역 프리미엄 이상).
 //
 // FacilityBanner 행은 보통 /admin 승인 시점에 이미 만들어져 있다(스폰서와 같은 지역
 // 슬롯 예약 방식). 여기서는 그 행에 이미지를 채우거나 지운다.

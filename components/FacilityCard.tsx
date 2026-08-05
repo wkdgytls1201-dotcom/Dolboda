@@ -12,6 +12,7 @@ import { useCompare } from "@/lib/compareContext";
 import { useFavorites } from "@/lib/favoritesContext";
 import { FacilityThumbnail } from "./FacilityThumbnail";
 import { useViewGate } from "@/lib/viewGateContext";
+import { tagFacilityTransition } from "@/lib/navTransition";
 
 export function FacilityCard({
   facility,
@@ -100,12 +101,16 @@ export function FacilityCard({
       <Link
         href={`/facility/${facility.id}`}
         onClick={(e) => {
+          // 수정키 클릭(새 탭·창)은 브라우저 기본 동작에 맡긴다 — href가 진짜라서 가능
+          if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
           e.preventDefault();
+          // 클릭한 카드의 사진·시설명만 상세로 이어지는 전환 대상으로 표시
+          tagFacilityTransition(e.currentTarget);
           requestFacilityView(facility.id);
         }}
         className="block transition-transform duration-150 ease-snappy active:scale-[0.98]"
       >
-        <div className="relative mb-3 -mx-4 -mt-4 aspect-[16/9] overflow-hidden rounded-t-2xl">
+        <div data-vt-hero="" className="relative mb-3 -mx-4 -mt-4 aspect-[16/9] overflow-hidden rounded-t-2xl">
           <FacilityThumbnail
             facility={facility}
             className="transition-transform duration-500 group-hover:scale-105"
@@ -170,21 +175,26 @@ export function FacilityCard({
           )}
         </div>
 
-        {/* 시설명은 긴 것이 많다("시립서대문노인종합복지관데이케어센터") — 한 줄로 자르면
-            어느 시설인지 알 수 없어서 두 줄까지 허용한다 */}
-        <h3 className="mb-1 line-clamp-2 text-lg font-bold leading-snug text-ink-900 group-hover:text-primary-600">
+        {/* 시설명·주소 모두 한 줄로 자르고 뒤를 …로 표기한다.
+            예전엔 둘 다 두 줄까지 허용했는데, 긴 것이 겹치면 카드 높이가 제각각이 돼
+            목록이 들쭉날쭉해졌다("의료법인승인의료재단동창원요양병원" +
+            "…, 동창원요양병원 1,2,3,4층 지하1층(103호)호" 조합에서 실제로 4줄이 됐다).
+            잘려도 정보가 남는다 — 시설명은 앞쪽에 법인명이 아니라 고유명이 오는 경우가
+            대부분이고, 주소는 "어느 동네인가"를 정하는 시/군/구·동이 맨 앞에 있어서
+            뒤로 밀리는 건 건물명·층·호수처럼 목록에서는 볼 이유가 없는 부분이다.
+            (전체 값은 상세 페이지에 그대로 있다.) */}
+        <h3
+          data-vt-title=""
+          className="mb-1 truncate text-lg font-bold leading-snug text-ink-900 group-hover:text-primary-600"
+        >
           {facility.name}
         </h3>
 
-        {/* 주소는 "어느 동네인가"를 판단하는 핵심 정보라 잘리면 안 된다.
-            시/도 정식명칭만 줄이고(서울특별시→서울) 그래도 길면 두 줄로 흘린다. */}
-        <div className="mb-1 flex items-start gap-1 text-sm text-ink-500">
-          <MapPin size={14} className="mt-[3px] shrink-0" />
-          <span className="line-clamp-2 min-w-0 flex-1">{shortAddress(facility.address)}</span>
+        <div className="mb-1 flex items-center gap-1 text-sm text-ink-500">
+          <MapPin size={14} className="shrink-0" />
+          <span className="min-w-0 flex-1 truncate">{shortAddress(facility.address)}</span>
           {distanceKm !== undefined && (
-            <span className="mt-[1px] shrink-0 font-medium text-mint-600">
-              {formatDistance(distanceKm)}
-            </span>
+            <span className="shrink-0 font-medium text-mint-600">{formatDistance(distanceKm)}</span>
           )}
         </div>
 

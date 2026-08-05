@@ -2,6 +2,8 @@ node_modules
 .next
 out
 .env*.local
+# .env.local 백업본(R2 키 등 시크릿 포함) — `.env*.local` 패턴이 못 잡아서 별도 규칙
+.env.local.bak*
 npm-debug.log*
 
 # Claude Code local tooling state (not app code)
@@ -15,3 +17,6 @@ tsconfig.tsbuildinfo
 # 일회성 시딩 원본 데이터 — 이미 Supabase DB로 옮겨졌고 앱 런타임에서 안 씀 (30MB+라 repo에 안 올림)
 lib/realNhisData.json
 lib/realNhisDataV2.json
+
+# 시설사진 대량 처리 임시 산출물(대용량 이미지) — 커밋 금지
+tmp-photo-*/

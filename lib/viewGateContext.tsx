@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from "rea
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { canViewFacility, registerFacilityView } from "./viewLimit";
+import { navigateWithViewTransition } from "./navTransition";
 import { AuthModal } from "@/components/AuthModal";
 
 interface ViewGateContextValue {
@@ -24,7 +25,9 @@ export function ViewGateProvider({ children }: { children: React.ReactNode }) {
     (facilityId: string) => {
       if (user || canViewFacility(facilityId)) {
         if (!user) registerFacilityView(facilityId);
-        router.push(`/facility/${facilityId}`);
+        // 모든 시설 카드·배너가 이 한 곳을 지나므로, 상세 전환(Shared Element)도
+        // 여기서만 감싼다. 미지원·reduced-motion이면 그냥 router.push와 동일하다.
+        navigateWithViewTransition(() => router.push(`/facility/${facilityId}`));
         return;
       }
       setPendingId(facilityId);

@@ -1,5 +1,6 @@
 import { prisma } from "./prisma";
 import { REGION_SEO } from "./regionSeo";
+import { pctDelta } from "./deltaPct";
 
 // 월간 성과 보고서 집계 (지역 프리미엄 이상, capabilityOf().hasReport).
 //
@@ -35,12 +36,6 @@ function monthRange(monthsAgo: number): MonthRange {
     instantStart: new Date(dateStart.getTime() - KST_OFFSET_MS),
     instantEnd: new Date(dateEnd.getTime() - KST_OFFSET_MS),
   };
-}
-
-function pctDelta(current: number, previous: number): number | null {
-  // 지난달이 0이면 "몇 % 늘었다"가 의미 없다(분모 0) — 계산하지 않는다
-  if (previous === 0) return null;
-  return Math.round(((current - previous) / previous) * 100);
 }
 
 export interface DailyPoint {

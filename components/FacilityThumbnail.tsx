@@ -70,16 +70,21 @@ export function FacilityThumbnail({
   facility: Facility;
   className?: string;
 }) {
+  // R2 사진이 죽었을 때(도메인 차단·삭제 등) 깨진 이미지 아이콘 대신 일러스트로 내린다.
+  // 카드 크기는 부모(aspect 고정)가 잡고 있어 어느 쪽이든 레이아웃은 안 움직인다.
+  const [photoFailed, setPhotoFailed] = useState(false);
+
   // 시설이 동의하고 제공한 실제 사진이 있으면 로드뷰/일러스트/스톡사진보다 항상 우선한다.
   // 목록에서는 카드 수백 장이 한 번에 마운트되므로 화면 밖 사진은 lazy로 미룬다.
-  if (facility.photos && facility.photos.length > 0) {
+  if (facility.photos && facility.photos.length > 0 && !photoFailed) {
     return (
       <img
         src={facility.photos[0]}
         alt=""
         loading="lazy"
         decoding="async"
-        className={`h-full w-full object-cover ${className}`}
+        onError={() => setPhotoFailed(true)}
+        className={`h-full w-full bg-ink-100 object-cover ${className}`}
       />
     );
   }

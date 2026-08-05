@@ -32,7 +32,6 @@ import { KakaoRoadview } from "@/components/KakaoRoadview";
 import { ConsultModal } from "@/components/ConsultModal";
 import { AuthModal } from "@/components/AuthModal";
 import { DataSourceNote } from "@/components/DataSourceNote";
-import { SimilarFacilities, type SimilarItem } from "@/components/SimilarFacilities";
 import { useCompare } from "@/lib/compareContext";
 import { InfoTooltip } from "@/components/InfoTooltip";
 import { TOOLTIPS } from "@/lib/tooltips";
@@ -73,13 +72,17 @@ const NURSE_GRADE_TABLE = [
 // 검색봇이 읽는 초기 HTML이 비어버려서 28,000여 개 상세페이지가 SEO 자산이 되지 못한다.
 export default function FacilityDetailClient({
   facility,
-  initialSimilar,
+  similarSlot,
   ownerContent,
   ownerPosts,
 }: {
   facility: Facility;
-  /** 서버에서 미리 계산한 "비슷한 곳" 첫 화면분 — 초기 HTML에 링크가 실려야 크롤러가 탄다 */
-  initialSimilar: SimilarItem[];
+  /**
+   * "이 시설과 비슷한 곳" 섹션(SimilarSection). 서버에서 그려져 슬롯으로 꽂힌다 —
+   * 초기 HTML에 인접 시설 링크가 실려야 크롤러가 타고 가고, <Suspense>로 감싸져 있어
+   * 본문은 이 조회를 기다리지 않는다. 섹션 자체가 비면 서버 쪽에서 null을 돌려준다.
+   */
+  similarSlot: React.ReactNode;
   /** 시설이 콘솔에서 직접 쓴 소개·사진 — 대부분 null(아직 인증 안 한 시설) */
   ownerContent?: { intro: string | null; photos: string[]; updatedAt: string } | null;
   /** 시설이 올린 소식 최신 3개 — 없으면 빈 배열 */
@@ -104,7 +107,7 @@ export default function FacilityDetailClient({
     nearestHospitalKm: number | null;
   } | null>(null);
 
-  // 조회수 비컨 — 시설 콘솔의 "페이지 조회" 숫자가 여기서 쌓인다.
+  // 조회수 비컨 — 기업회원 콘솔의 "페이지 조회" 숫자가 여기서 쌓인다.
   // sendBeacon은 페이지 로드를 조금도 막지 않고, 실패해도 아무 일도 일어나지 않는다.
   useEffect(() => {
     const url = `/api/facilities/view?id=${encodeURIComponent(facility.id)}`;
@@ -222,7 +225,12 @@ export default function FacilityDetailClient({
                 </span>
               )}
             </div>
-            <h1 className="text-2xl font-extrabold leading-snug text-ink-900 sm:text-3xl">
+            {/* facility-title: 목록 카드·배너의 시설명이 이 자리로 모핑해 들어온다
+                (스켈레톤의 제목 바와 같은 이름 — lib/navTransition.ts) */}
+            <h1
+              style={{ viewTransitionName: "facility-title" }}
+              className="text-2xl font-extrabold leading-snug text-ink-900 sm:text-3xl"
+            >
               {facility.name}
             </h1>
             <p className="mt-2 text-sm leading-relaxed text-ink-500">{facility.address}</p>
@@ -364,8 +372,8 @@ export default function FacilityDetailClient({
             여백(mb-6)은 컴포넌트 내부에 있다 — 여기서 감싸면 null 렌더 시에도 빈 여백이 남는다. */}
         <CareMatchPoints facility={facility} />
 
-        {/* 돌보다 공공데이터 기반 안심지수 */}
-        <DetailSection id="dolboda-score" title="돌보다 공공데이터 기반 안심지수">
+        {/* 공공데이터 기반 안심지수 */}
+        <DetailSection id="dolboda-score" title="공공데이터 기반 안심지수">
           <DolbodaScoreCard
             score={calcDolbodaScore(facility, {
               nearestHospitalKm: scoreContext?.nearestHospitalKm ?? null,
@@ -1116,15 +1124,7 @@ export default function FacilityDetailClient({
           )}
         </DetailSection>
 
-        {initialSimilar.length > 0 && (
-          <DetailSection id="related" title="이 시설과 비슷한 곳">
-            <p className="mb-3 text-xs leading-relaxed text-ink-500">
-              규모·프로그램 구성·평가등급·비용대를 비교해 비슷한 시설을 찾았어요. 이 시설과
-              무엇이 다른지 함께 보여드려요.
-            </p>
-            <SimilarFacilities facilityId={facility.id} initialItems={initialSimilar} />
-          </DetailSection>
-        )}
+        {similarSlot}
 
         <DataSourceNote updatedAt={facility.updatedAt} />
       </div>

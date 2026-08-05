@@ -9,7 +9,8 @@ import { canonicalRegionKey } from "@/lib/regionSeo";
 //
 // 상태 전이는 화면이 아니라 여기서 지킨다(버튼을 숨기는 것만으로는 막히지 않는다):
 //
-//   접수(null) → contacted(확인전화 완료) → verified(승인) 또는 rejected(거절)
+//   접수(null) → contacted(서류 안내 발송) → verified(승인) 또는 rejected(거절)
+//   (contacted 키 이름은 예전 절차의 것을 그대로 쓴다 — 쌓인 데이터와의 호환을 위해 유지)
 //
 // 승인(verified)은 단순한 상태 변경이 아니라 세 가지를 한 트랜잭션으로 만든다:
 //   1) FacilityOwner  — 담당자 계정이 시설을 관리할 권한

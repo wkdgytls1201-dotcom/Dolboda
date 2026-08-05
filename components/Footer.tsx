@@ -45,7 +45,7 @@ export async function Footer() {
               title: "돌보다",
               links: [
                 { href: "/about", label: "돌보다 소개" },
-                { href: "/business", label: "시설 운영자" },
+                { href: "/business", label: "기업회원" },
                 { href: "/data-policy", label: "데이터 출처" },
               ],
             },

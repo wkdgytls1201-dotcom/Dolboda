@@ -5,16 +5,24 @@ import { prisma } from "@/lib/prisma";
 import { findPlan } from "@/lib/businessPlans";
 import { ConsoleClient } from "./ConsoleClient";
 
-// 시설 콘솔 — 인증된 시설 담당자가 자기 시설 페이지를 관리하는 화면.
+// 기업회원 콘솔 — 인증된 시설 담당자가 자기 시설 페이지를 관리하는 화면.
 // 로그인 + FacilityOwner 행이 있어야 내용이 보인다. 색인 대상이 아니다.
 export const metadata: Metadata = {
-  title: "시설 콘솔",
+  title: "기업회원 대시보드",
   robots: { index: false, follow: false },
 };
 
 export const dynamic = "force-dynamic";
 
 const DAY = 24 * 60 * 60 * 1000;
+
+/** 최근 30일의 날짜 문자열(오늘 포함, 오래된 순)을 만든다. 추이 그래프의 x축 뼈대다. */
+function last30Dates(): string[] {
+  const now = Date.now();
+  return Array.from({ length: 30 }, (_, i) =>
+    new Date(now - (29 - i) * DAY).toISOString().slice(0, 10)
+  );
+}
 
 export default async function ConsolePage() {
   const facilities = await myFacilities();
@@ -24,8 +32,9 @@ export default async function ConsolePage() {
       <main className="mx-auto max-w-md px-4 py-20 text-center">
         <h1 className="mb-2 text-xl font-bold text-ink-900">아직 연결된 시설이 없어요</h1>
         <p className="mb-6 text-sm leading-relaxed text-ink-500">
-          시설 인증을 신청하시면 확인 전화 후 이 화면에서 시설 페이지를 직접 관리하실 수
-          있습니다. 이미 신청하셨다면 확인 전화를 기다려주세요 — 승인되는 순간 여기가 열립니다.
+          시설 인증을 신청하시면 이메일 서류 확인 후 이 화면에서 시설 페이지를 직접 관리하실
+          수 있습니다. 이미 신청하셨다면 안내 메일을 확인해 주세요 — 승인되는 순간 여기가
+          열립니다.
         </p>
         <Link
           href="/business"
@@ -42,9 +51,21 @@ export default async function ConsolePage() {
   const now = Date.now();
   const monthAgo = new Date(now - 30 * DAY);
   const weekAgo = new Date(now - 7 * DAY);
+  // "지난 30일 대비" 증감을 보여주려면 그 이전 30일치도 필요하다 — 조회수는 어차피
+  // 하루 단위로 쌓이는 테이블이라 범위만 넓히면 되고, 상담은 별도 구간 집계를 하나 더 돈다.
+  const prevMonthAgo = new Date(now - 60 * DAY);
 
-  const [contents, consultTotals, consultRecents, latestConsults, posts, views, placements, banners] =
-    await Promise.all([
+  const [
+    contents,
+    consultTotals,
+    consultRecents,
+    consultPrevs,
+    latestConsults,
+    posts,
+    views,
+    placements,
+    banners,
+  ] = await Promise.all([
       prisma.facilityContent.findMany({ where: { facilityId: { in: ids } } }),
       prisma.consultRequest.groupBy({
         by: ["facilityId"],
@@ -54,6 +75,11 @@ export default async function ConsolePage() {
       prisma.consultRequest.groupBy({
         by: ["facilityId"],
         where: { facilityId: { in: ids }, createdAt: { gte: monthAgo } },
+        _count: { _all: true },
+      }),
+      prisma.consultRequest.groupBy({
+        by: ["facilityId"],
+        where: { facilityId: { in: ids }, createdAt: { gte: prevMonthAgo, lt: monthAgo } },
         _count: { _all: true },
       }),
       prisma.consultRequest.findMany({
@@ -76,7 +102,7 @@ export default async function ConsolePage() {
         orderBy: { createdAt: "desc" },
       }),
       prisma.facilityDailyView.findMany({
-        where: { facilityId: { in: ids }, date: { gte: monthAgo } },
+        where: { facilityId: { in: ids }, date: { gte: prevMonthAgo } },
       }),
       prisma.sponsorPlacement.findMany({ where: { facilityId: { in: ids } } }),
       prisma.facilityBanner.findMany({ where: { facilityId: { in: ids } } }),
@@ -86,13 +112,35 @@ export default async function ConsolePage() {
   const contentById = new Map(contents.map((c) => [c.facilityId, c]));
   const totalById = new Map(consultTotals.map((c) => [c.facilityId, c._count._all]));
   const recentById = new Map(consultRecents.map((c) => [c.facilityId, c._count._all]));
+  const prevById = new Map(consultPrevs.map((c) => [c.facilityId, c._count._all]));
+  const dateRange = last30Dates();
+
+  // 시설별로 한 번씩만 묶는다. 예전엔 facilities.map() 안에서 이 네 배열을 매번
+  // .filter()했는데, 그러면 시설이 F곳·조회 기록이 V행일 때 O(F×V)가 된다 — 관리하는
+  // 시설이 많은 기업회원일수록 느려지는 구조라, 미리 한 번 그룹핑해 O(V)로 바꾼다.
+  function groupBy<T>(rows: T[], key: (r: T) => string): Map<string, T[]> {
+    const map = new Map<string, T[]>();
+    for (const row of rows) {
+      const k = key(row);
+      const arr = map.get(k);
+      if (arr) arr.push(row);
+      else map.set(k, [row]);
+    }
+    return map;
+  }
+  const viewsByFacility = groupBy(views, (v) => v.facilityId);
+  const consultsByFacility = groupBy(latestConsults, (c) => c.facilityId);
+  const postsByFacility = groupBy(posts, (p) => p.facilityId);
+  const placementsByFacility = groupBy(placements, (p) => p.facilityId);
 
   return (
     <ConsoleClient
       facilities={facilities.map((f) => {
         const cap = capabilityOf(f.plan);
         const content = contentById.get(f.facilityId);
-        const myViews = views.filter((v) => v.facilityId === f.facilityId);
+        const myViews = viewsByFacility.get(f.facilityId) ?? [];
+        // 날짜별 조회수 맵 — 기록이 없는 날은 0으로 채워야 그래프 막대 간격이 어긋나지 않는다
+        const viewByDate = new Map(myViews.map((v) => [v.date.toISOString().slice(0, 10), v.count]));
         return {
           facilityId: f.facilityId,
           facilityName: f.facilityName,
@@ -107,12 +155,18 @@ export default async function ConsolePage() {
           photos: Array.isArray(content?.photos) ? (content.photos as string[]) : [],
           consultTotal: totalById.get(f.facilityId) ?? 0,
           consultRecent30d: recentById.get(f.facilityId) ?? 0,
-          views30d: myViews.reduce((s, v) => s + v.count, 0),
+          consultPrev30d: prevById.get(f.facilityId) ?? 0,
+          views30d: myViews
+            .filter((v) => v.date >= monthAgo)
+            .reduce((s, v) => s + v.count, 0),
           views7d: myViews
             .filter((v) => v.date >= weekAgo)
             .reduce((s, v) => s + v.count, 0),
-          consults: latestConsults
-            .filter((c) => c.facilityId === f.facilityId)
+          viewsPrev30d: myViews
+            .filter((v) => v.date >= prevMonthAgo && v.date < monthAgo)
+            .reduce((s, v) => s + v.count, 0),
+          viewSeries: dateRange.map((date) => ({ date, count: viewByDate.get(date) ?? 0 })),
+          consults: (consultsByFacility.get(f.facilityId) ?? [])
             .slice(0, 10)
             .map((c) => ({
               id: c.id,
@@ -123,16 +177,14 @@ export default async function ConsolePage() {
               emailed: c.facilityNotifiedAt != null,
               createdAt: c.createdAt.toISOString(),
             })),
-          posts: posts
-            .filter((p) => p.facilityId === f.facilityId)
-            .map((p) => ({
-              id: p.id,
-              title: p.title,
-              body: p.body,
-              createdAt: p.createdAt.toISOString(),
-            })),
-          sponsorRegions: placements
-            .filter((p) => p.facilityId === f.facilityId && p.active)
+          posts: (postsByFacility.get(f.facilityId) ?? []).map((p) => ({
+            id: p.id,
+            title: p.title,
+            body: p.body,
+            createdAt: p.createdAt.toISOString(),
+          })),
+          sponsorRegions: (placementsByFacility.get(f.facilityId) ?? [])
+            .filter((p) => p.active)
             .map((p) => p.regionKey),
         };
       })}

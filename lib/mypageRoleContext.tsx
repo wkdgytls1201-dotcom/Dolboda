@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { useSitterProfileContext } from "./sitterProfileContext";
+import { useIsomorphicLayoutEffect } from "./useIsomorphicLayoutEffect";
 
 // 마이페이지 역할 전환 (보호자 ↔ 돌보다 매니저).
 //
@@ -32,7 +33,10 @@ export function MyPageRoleProvider({ children }: { children: React.ReactNode }) 
   // 기본값이 매니저면 등록도 안 한 사람이 빈 매니저 화면을 보게 된다.
   const [role, setRoleState] = useState<MyPageRole>("guardian");
 
-  useEffect(() => {
+  // 그리기 직전에 복원한다(useEffect가 아닌 이유): useEffect는 화면을 그린 **뒤**에 돌아
+  // 매니저로 보던 사람에게 보호자 화면이 한 번 번쩍인다. 초기값은 서버와 같게 두고
+  // 여기서만 바꾸므로 하이드레이션도 안 깨진다.
+  useIsomorphicLayoutEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved === "manager" || saved === "guardian") setRoleState(saved);

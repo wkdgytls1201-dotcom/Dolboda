@@ -45,8 +45,10 @@ const ACTION =
 
 export function MyPageRoleCard() {
   const { data: session } = useSession();
-  const { profile: sitterProfile, isSitter } = useSitterProfileContext();
-  const { role, setRole, canSwitch } = useMyPageRole();
+  const { profile: sitterProfile, isSitter, isSitterHint } = useSitterProfileContext();
+  // canSwitch(= isSitter === true)는 여기서 안 쓴다 — 확정될 때까지 null이라 첫 진입마다
+  // 자리표시가 번쩍인다. 무엇을 그릴지는 isSitterHint(지난번 확인값)로 정한다.
+  const { role, setRole } = useMyPageRole();
 
   const guardianName = session?.user?.name ?? "회원";
   // 카카오 이름 미동의 계정은 name이 없다 — 매니저 쪽은 닉네임이 더 자기 계정답다
@@ -75,12 +77,13 @@ export function MyPageRoleCard() {
           보호자
         </button>
 
-        {isSitter === null ? (
-          // 아직 매니저인지 모르는 동안(프로필 조회 중)에는 글자를 정하지 않는다.
-          // 예전엔 이 구간에 "매니저 시작"(미등록용)이 그려져서, 이미 등록한 매니저가
-          // 마이페이지에 들어올 때마다 "매니저 시작"이 번쩍 떴다가 "매니저"로 바뀌었다.
-          // 둘 중 하나를 찍기보다 자리만 잡아두는 편이 낫다 — 폭·높이가 같아 확정된
-          // 뒤에도 레이아웃이 흔들리지 않는다.
+        {isSitterHint === null ? (
+          // 이 계정이 매니저인지 **한 번도** 확인된 적이 없을 때만 자리만 잡아둔다.
+          // 둘 중 하나를 찍으면(특히 미등록용 "매니저 시작") 이미 등록한 매니저에게
+          // 매번 잘못된 글자가 번쩍였다가 바뀐다. 폭·높이가 같아 확정 뒤에도 안 흔들린다.
+          //
+          // 두 번째 방문부터는 여기로 오지 않는다 — isSitterHint가 지난번에 확인된 답을
+          // 먼저 돌려주므로(sitterProfileContext) 바로 아래 두 갈래 중 맞는 쪽이 그려진다.
           <span
             aria-hidden
             className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl"
@@ -88,7 +91,7 @@ export function MyPageRoleCard() {
             <Briefcase size={16} className="text-ink-300/40" />
             <span className="h-3 w-10 rounded bg-ink-300/20" />
           </span>
-        ) : canSwitch ? (
+        ) : isSitterHint ? (
           <button
             type="button"
             role="tab"

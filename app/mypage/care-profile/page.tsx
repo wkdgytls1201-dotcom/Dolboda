@@ -159,13 +159,19 @@ function CareProfileContent() {
       <MyPageShell>
         {/* editing 값이 바뀔 때마다(목록↔새로 만들기↔다른 프로필 수정) key로 리마운트해
             매번 살짝 떠오르며 들어오게 한다 — 화면이 툭 끊겨 바뀌지 않게 */}
-        <h2 key={editing} className="animate-fade-up mb-2 text-xl font-bold text-ink-900">
-          {isNew ? "보호자 프로필 만들기" : "보호자 프로필 수정"}
-        </h2>
-        <p className="mb-5 text-sm leading-relaxed text-ink-500">
-          한 번 저장해두면 시설 찾기와 돌봄 요청에서 다시 입력할 필요가 없어요.
-          <span className="block text-ink-400">모든 항목은 선택이고, 언제든 삭제할 수 있어요.</span>
-        </p>
+        {/* 은은한 보라 그라데이션 — 값 끝은 흰색이라 아래 폼(bg-white)과 이어 붙는다 */}
+        <div
+          key={editing}
+          className="animate-fade-up mb-5 rounded-2xl bg-gradient-to-br from-royal-50 to-white p-5"
+        >
+          <h2 className="mb-2 text-xl font-bold text-ink-900">
+            {isNew ? "보호자 프로필 만들기" : "보호자 프로필 수정"}
+          </h2>
+          <p className="text-sm leading-relaxed text-ink-500">
+            한 번 저장해두면 시설 찾기와 돌봄 요청에서 다시 입력할 필요가 없어요.
+            <span className="block text-ink-400">모든 항목은 선택이고, 언제든 삭제할 수 있어요.</span>
+          </p>
+        </div>
 
         {pendingEstimate && (
           <NoticeBox>
@@ -378,13 +384,16 @@ function CareProfileContent() {
   /* ---------- 목록 화면 ---------- */
   return (
     <MyPageShell>
-      <h2 className="mb-2 flex items-center gap-2 text-xl font-bold text-ink-900">
-        <HeartHandshake size={22} className="text-primary-500" />
-        보호자 프로필
-      </h2>
-      <p className="mb-5 text-sm leading-relaxed text-ink-500">
-        모시는 어르신의 상태를 저장해두면 돌봄 요청을 올릴 때 자동으로 채워져요.
-      </p>
+      {/* 은은한 보라 그라데이션 — 값 끝은 흰색이라 아래 목록(bg-white 카드)과 이어 붙는다 */}
+      <div className="mb-5 rounded-2xl bg-gradient-to-br from-royal-50 to-white p-5">
+        <h2 className="mb-2 flex items-center gap-2 text-xl font-bold text-ink-900">
+          <HeartHandshake size={22} className="text-primary-500" />
+          보호자 프로필
+        </h2>
+        <p className="text-sm leading-relaxed text-ink-500">
+          모시는 어르신의 상태를 저장해두면 돌봄 요청을 올릴 때 자동으로 채워져요.
+        </p>
+      </div>
 
       {!loaded && <PageLoader compact />}
 

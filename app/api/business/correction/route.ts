@@ -5,7 +5,7 @@ import { resend, CONSULT_NOTIFY_EMAIL } from "@/lib/resend";
 import { sendTelegram } from "@/lib/telegram";
 import { SITE_URL, SITE_NAME, MAIL_FROM } from "@/lib/siteConfig";
 
-// 시설 콘솔 — 정보 정정 요청.
+// 기업회원 콘솔 — 정보 정정 요청 (시설 운영자가 직접 접수).
 //
 // 시설이 공공데이터 항목(인력·정원·연락처 등)을 직접 고치게 하지 않는다 —
 // 그 값들은 안심지수·필터의 입력이라, 시설 손에 맡기면 지표의 신뢰가 무너진다.

@@ -248,7 +248,7 @@ model EmailOptOut {
 //
 // 보호자가 넣는 ConsultRequest와 성격이 완전히 다르다 — 이쪽은 B2B 리드다.
 // 신청 단계에서는 최소한만 받는다(시설 식별 + 담당자 연락처). 서류·계좌 같은 건
-// 운영자가 대표번호로 확인 전화를 한 다음에야 받는다. 처음부터 다 받으면
+// 이메일로 안내한 뒤 회신받는다(전화 없음 — 운영 방침). 처음부터 다 받으면
 // 신청 자체가 뚝 떨어지고, 우리도 아직 검증되지 않은 개인정보를 떠안게 된다.
 model BusinessInquiry {
   id           String  @id @default(cuid())
@@ -275,7 +275,8 @@ model BusinessInquiry {
   // (null = 동의 안 함). 광고성 정보를 보내려면 이 값이 있는 신청자에게만 보낼 것.
   marketingConsentAt DateTime?
 
-  // 운영자 처리 상태: null=접수 / "contacted"=확인전화 완료 / "verified"=승인 / "rejected"
+  // 운영자 처리 상태: null=접수 / "contacted"=서류 안내 발송 / "verified"=승인 / "rejected"
+  // ("contacted"는 예전 절차의 키 이름을 그대로 쓴다 — 쌓인 데이터와의 호환을 위해 유지한다)
   status String?
   // 운영자 내부 메모 (시설에는 보이지 않는다)
   memo   String?
@@ -481,7 +482,7 @@ model SavedSearch {
   @@index([userId])
 }
 
-// 시설 담당자 ↔ 계정 연결. 운영자가 확인 전화를 마치고 승인했을 때만 생긴다.
+// 시설 담당자 ↔ 계정 연결. 운영자가 서류 확인을 마치고 승인했을 때만 생긴다.
 //
 // 이 행이 있어야 시설 콘솔(/business/console)에 들어갈 수 있다. 즉 "누가 이 시설을
 // 수정할 수 있는가"의 유일한 근거다. 화면에서 버튼을 숨기는 것으로는 막히지 않으므로,

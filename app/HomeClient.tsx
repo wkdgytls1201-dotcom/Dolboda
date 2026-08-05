@@ -6,6 +6,7 @@ import { Sparkles } from "lucide-react";
 import { SearchHero } from "@/components/SearchHero";
 import type { HeroSlide } from "@/components/HeroBanner";
 import { FacilityCard } from "@/components/FacilityCard";
+import { FacilityCardSkeleton } from "@/components/FacilityCardSkeleton";
 import { CompareSelectBar } from "@/components/CompareSelectBar";
 import { StatsStrip } from "@/components/StatsStrip";
 import { Reveal } from "@/components/Reveal";
@@ -143,10 +144,18 @@ export default function HomeClient({
   // 한 번에 넉넉히 받아 "내 주변 시설"(가까운 6곳)·"최근 설립"(주변 후보 중 최신순)·
   // "점수 높은 시설"(주변 100km 이내 등급순)에 함께 쓴다. 300건이면 100km 반경을
   // 등급순으로 훑기에 충분하다(위치 미허용이면 origin이 서울시청 기본값이라 그 기준으로 온다).
-  const { facilities: nearbyPool } = useNearbyFacilities(origin.lat, origin.lng, 300, {
-    enabled: originReady,
-  });
+  const { facilities: nearbyPool, loading: nearbyLoading } = useNearbyFacilities(
+    origin.lat,
+    origin.lng,
+    300,
+    { enabled: originReady }
+  );
   const nearbyFacilities = useMemo(() => nearbyPool.slice(0, 6), [nearbyPool]);
+  // 위치 결정 전(동의 모달·저장분 복원)과 첫 응답 전에는 "기다리는 중"이다.
+  // 이 동안 목록 자리를 빈 그리드(높이 0)로 두면 아래 섹션·푸터가 위로 올라왔다가
+  // 데이터 도착과 함께 화면 전체가 내려앉는다(11차 §1-B에서 겪은 그 증상).
+  // 같은 모양의 뼈대가 자리를 지키면 도착 시 바뀌는 건 내용뿐이다.
+  const nearbyPending = !originReady || nearbyLoading;
 
   // 추천 시설: 서버(/api/facilities/home)가 프리미엄 고정 노출 + 1등급 채움까지
   // 같은 기준으로 계산해서 6곳만 내려준다.
@@ -280,13 +289,29 @@ export default function HomeClient({
           <h2 className="text-xl font-bold text-ink-900">내 주변 시설</h2>
           <span className="text-sm text-ink-300">현재 위치에서 가까운 순</span>
         </Reveal>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {nearbyFacilities.map((f, i) => (
-            <Reveal key={f.id} delay={i * 60}>
-              <FacilityCard facility={f} distanceKm={f.distanceKm} rankBadge={rankBadgeById.get(f.id)} />
-            </Reveal>
-          ))}
-        </div>
+        {nearbyPending && nearbyFacilities.length === 0 ? (
+          <FacilityCardSkeleton />
+        ) : nearbyFacilities.length === 0 ? (
+          // 응답이 왔는데 비었다 = 사실상 API 오류(주변 API는 거리 제한 없이 가까운 순으로
+          // 채워준다). 무한 스켈레톤 대신 다른 길을 안내한다.
+          <div className="rounded-2xl border border-ink-100 bg-white px-5 py-10 text-center">
+            <p className="text-sm text-ink-500">주변 시설을 불러오지 못했어요.</p>
+            <Link
+              href="/search"
+              className="mt-2 inline-block text-sm font-semibold text-royal-600 underline underline-offset-2"
+            >
+              시설찾기에서 지역으로 검색하기
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {nearbyFacilities.map((f, i) => (
+              <Reveal key={f.id} delay={i * 60}>
+                <FacilityCard facility={f} distanceKm={f.distanceKm} rankBadge={rankBadgeById.get(f.id)} />
+              </Reveal>
+            ))}
+          </div>
+        )}
       </section>
 
       {recommended.length > 0 && (
@@ -305,22 +330,40 @@ export default function HomeClient({
         </section>
       )}
 
-      <section className="mx-auto max-w-6xl px-4 pb-12">
+      {/* content-visibility: 첫 화면에서 두 화면 이상 아래에 있는 섹션들은 화면에
+          가까워질 때까지 렌더링을 미룬다(스펙 §3-7). auto 값이라 한 번 그려지면 실제
+          높이를 기억해 스크롤바 튐이 없고, 미지원 브라우저에선 그냥 무시된다.
+          내주변 섹션은 폴드 바로 아래라 추정 높이 오차가 보일 수 있어 제외. */}
+      <section className="mx-auto max-w-6xl px-4 pb-12 [content-visibility:auto] [contain-intrinsic-size:auto_1200px]">
         <Reveal className="mb-5 flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
           <h2 className="text-xl font-bold text-ink-900">점수 높은 시설</h2>
           <span className="text-sm text-ink-300">내 주변 100km 이내 · 평가등급이 높은 시설</span>
         </Reveal>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {topScored.map((f, i) => (
-            <Reveal key={f.id} delay={i * 60}>
-              <FacilityCard facility={f} />
-            </Reveal>
-          ))}
-        </div>
+        {nearbyPending && topScored.length === 0 ? (
+          <FacilityCardSkeleton />
+        ) : topScored.length === 0 ? (
+          <div className="rounded-2xl border border-ink-100 bg-white px-5 py-10 text-center">
+            <p className="text-sm text-ink-500">주변 100km 안에 평가등급이 있는 시설이 없어요.</p>
+            <Link
+              href="/search"
+              className="mt-2 inline-block text-sm font-semibold text-royal-600 underline underline-offset-2"
+            >
+              전국에서 찾아보기
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {topScored.map((f, i) => (
+              <Reveal key={f.id} delay={i * 60}>
+                <FacilityCard facility={f} />
+              </Reveal>
+            ))}
+          </div>
+        )}
       </section>
 
       {recentlyEstablished.length > 0 && (
-        <section className="mx-auto max-w-6xl px-4 pb-12">
+        <section className="mx-auto max-w-6xl px-4 pb-12 [content-visibility:auto] [contain-intrinsic-size:auto_1200px]">
           <Reveal className="mb-5 flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
             <h2 className="text-xl font-bold text-ink-900">가장 최근 설립</h2>
             <span className="text-sm text-ink-300">요양병원은 설립연도순 · 그 외는 평가등급순</span>

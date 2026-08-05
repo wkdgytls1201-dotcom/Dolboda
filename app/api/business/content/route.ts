@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireFacilityOwner } from "@/lib/facilityOwner";
 
-// 시설 콘솔 — 소개글 저장.
+// 기업회원 콘솔 — 소개글 저장.
 //
 // 규칙: 상태를 바꾸는 API에는 반드시 가드를 넣는다. 화면에서 폼을 숨겨도 막히지 않으므로
 // 소유권(requireFacilityOwner)을 여기서 확인한다.

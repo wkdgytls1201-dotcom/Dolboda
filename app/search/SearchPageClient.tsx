@@ -10,11 +10,12 @@ import { FilterBar, FacilityFilters, EMPTY_FILTERS } from "@/components/FilterBa
 import { KakaoMultiMap } from "@/components/KakaoMap";
 import { NHIS_GRADE_LETTER } from "@/components/GradeBadge";
 import { PageLoader } from "@/components/PageLoader";
+import { FacilityCardSkeleton } from "@/components/FacilityCardSkeleton";
 import { useFacilities, useNearbyFacilities } from "@/lib/useFacilities";
-import { haversineDistanceKm } from "@/lib/distance";
 import { useUserOrigin } from "@/lib/userLocation";
-import { FACILITY_TYPE_LABEL, FacilityType, isHospital } from "@/lib/types";
-import { SCORE_LEVEL_THRESHOLDS } from "@/lib/dolbodaScore";
+import { FACILITY_TYPE_LABEL, FacilityType } from "@/lib/types";
+import { filterAndSortFacilityList } from "@/lib/facilityFilters";
+import { useFlipGrid } from "@/lib/useFlipGrid";
 import { PROGRAM_TAG_META, type ProgramTag } from "@/lib/programTaxonomy";
 
 function gradeText(grade: number | null, gradeSource?: "HIRA" | "NHIS") {
@@ -185,85 +186,33 @@ function SearchContent() {
     }
   }, [restoredDone, query, filters, sortKey, view, visibleCount]);
 
-  const results = useMemo(() => {
-    let list = facilities.map((f) => ({
-      f,
-      dist:
-        f.lat !== undefined && f.lng !== undefined
-          ? haversineDistanceKm(origin.lat, origin.lng, f.lat, f.lng)
-          : undefined,
-    }));
+  // 필터·정렬 파이프라인은 lib/facilityFilters.ts의 순수 함수로 옮겼다 — 필터 바텀시트가
+  // "임시 조건으로 몇 곳이 남는지"를 적용 전에 같은 규칙으로 세어야 하기 때문.
+  // hasLocation·useNearest도 조건에 들어간다 — 빠뜨리면 위치를 뒤늦게 허용했을 때
+  // 100km 제한이 안 걸린 옛 목록이 그대로 남는다(§가드와 의존성 배열은 같이 본다)
+  const results = useMemo(
+    () =>
+      filterAndSortFacilityList(facilities, filters, {
+        query,
+        origin,
+        hasLocation,
+        useNearest,
+        sortKey,
+      }),
+    [facilities, query, filters, sortKey, origin, hasLocation, useNearest]
+  );
 
-    if (query.trim()) {
-      const q = query.trim().toLowerCase();
-      list = list.filter(
-        (x) => x.f.name.toLowerCase().includes(q) || x.f.address.toLowerCase().includes(q)
-      );
-    }
-    // 시설 유형은 서버에서 이미 걸러져 온다(위 useFacilities의 types).
-    if (filters.grades.length > 0) {
-      list = list.filter((x) => x.f.grade !== null && filters.grades.includes(x.f.grade));
-    }
-    if (filters.maxDistanceKm !== null) {
-      list = list.filter((x) => x.dist !== undefined && x.dist <= filters.maxDistanceKm!);
-    }
-    // 등급·안심지수순으로 볼 때 위치를 알고 있으면 너무 먼 시설까지 섞이지 않게 100km로
-    // 좁힌다. 거리 필터(위 maxDistanceKm)를 함께 걸면 그보다 좁은 쪽이 자연히 이긴다.
-    if ((sortKey === "grade" || sortKey === "score") && hasLocation && !query.trim()) {
-      list = list.filter((x) => x.dist !== undefined && x.dist <= 100);
-    }
-    if (filters.departments.length > 0) {
-      list = list.filter(
-        (x) =>
-          isHospital(x.f) &&
-          x.f.departments.some((d) => filters.departments.includes(d.name))
-      );
-    }
-    // 프로그램 태그는 서버(/api/facilities)가 전체 시설을 대상으로 걸러 온다.
-    // 다만 거리·등급순으로 nearby 결과를 쓸 때는 서버 필터가 안 걸려 여기서 한 번 더 본다.
-    if (filters.programTags.length > 0 && useNearest) {
-      list = list.filter((x) => {
-        const tags = isHospital(x.f) ? [] : x.f.programTags ?? [];
-        const owned = new Set(tags.map((t) => t.tag));
-        return filters.programTags.every((t) => owned.has(t));
-      });
-    }
-    if (filters.onlyVacancy) {
-      list = list.filter((x) => {
-        if (isHospital(x.f)) return true;
-        if (x.f.capacity === 0) return true;
-        if (x.f.currentOccupancy === undefined) return false;
-        return x.f.capacity - x.f.currentOccupancy > 0;
-      });
-    }
-    if (filters.verifiedOnly) {
-      list = list.filter((x) => x.f.dataSource === "public");
-    }
-    // 안심지수 우수만 — 문턱은 라벨과 같은 값을 쓴다(전국 상위 25%).
-    // 점수가 안 나오는 시설(데이터 부족)은 제외된다.
-    if (filters.goodScoreOnly) {
-      list = list.filter((x) => (x.f.dolbodaTotal ?? 0) >= SCORE_LEVEL_THRESHOLDS.good);
-    }
+  // 필터 바텀시트가 임시 조건의 결과 수를 셀 때 쓰는 문맥(정렬 제외 — 수에는 영향 없음)
+  const countCtx = useMemo(
+    () => ({ query, origin, hasLocation, useNearest }),
+    [query, origin, hasLocation, useNearest]
+  );
 
-    list.sort((a, b) => {
-      if (sortKey === "distance") return (a.dist ?? Infinity) - (b.dist ?? Infinity);
-      if (sortKey === "grade") {
-        if (a.f.grade === null) return 1;
-        if (b.f.grade === null) return -1;
-        const aScore = !isHospital(a.f) ? a.f.evaluationDetail?.totalScore ?? 0 : 0;
-        const bScore = !isHospital(b.f) ? b.f.evaluationDetail?.totalScore ?? 0 : 0;
-        return a.f.grade - b.f.grade || bScore - aScore;
-      }
-      // 안심지수순: 점수 없는 시설(데이터 부족)은 뒤로, 동점이면 가까운 순
-      const aTotal = a.f.dolbodaTotal ?? -1;
-      const bTotal = b.f.dolbodaTotal ?? -1;
-      return bTotal - aTotal || (a.dist ?? Infinity) - (b.dist ?? Infinity);
-    });
-
-    return list;
-    // hasLocation·useNearest도 필터 조건에 들어간다 — 빠뜨리면 위치를 뒤늦게 허용했을 때
-    // 100km 제한이 안 걸린 옛 목록이 그대로 남는다(§가드와 의존성 배열은 같이 본다)
-  }, [facilities, query, filters, sortKey, origin, hasLocation, useNearest]);
+  // 필터·정렬 적용 시 카드가 이전 자리에서 새 자리로 미끄러지는 FLIP — 목록 구성이
+  // 바뀔 때만 발동한다(무한스크롤로 뒤에 붙는 카드는 이전 위치가 없어 자연히 제외).
+  const gridRef = useRef<HTMLDivElement>(null);
+  const flipKey = useMemo(() => results.map((x) => x.f.id).join("|"), [results]);
+  useFlipGrid(gridRef, flipKey);
 
   useEffect(() => {
     // 상세에서 돌아오는 길이면 30장으로 접지 않고 보던 만큼 다시 펼친다.
@@ -360,6 +309,9 @@ function SearchContent() {
           onChange={setFilters}
           facilities={facilities}
           resultCount={results.length}
+          sortKey={sortKey}
+          onSortKeyChange={setSortKey}
+          countCtx={countCtx}
         />
 
         <div className="flex shrink-0 items-center gap-2">
@@ -460,20 +412,27 @@ function SearchContent() {
       )}
 
       {view === "map" ? null : results.length === 0 && loading ? (
-        <PageLoader label="시설을 불러오는 중" compact />
+        <FacilityCardSkeleton />
       ) : results.length === 0 ? (
         <div className="rounded-2xl bg-white p-12 text-center text-sm text-ink-300 shadow-card">
           조건에 맞는 시설이 없습니다. 필터를 조정해보세요.
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div ref={gridRef} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {results.slice(0, visibleCount).map(({ f, dist }, i) => (
               // 인덱스를 6으로 나눈 나머지만 쓴다 — 무한스크롤로 계속 늘어나는 목록이라
               // 절대 인덱스를 그대로 쓰면 아래로 갈수록 지연이 몇 초씩 쌓여 새로 로드된
               // 카드가 한참 빈칸으로 보인다. key가 고정이라 이미 그려진 카드는
               // 리렌더돼도 애니메이션이 다시 재생되지 않는다(React가 새로 마운트할 때만 돈다).
-              <div key={f.id} className="animate-fade-up" style={{ animationDelay: `${(i % 6) * 60}ms` }}>
+              // data-flip-id: 필터 적용 시 살아남은 카드는 useFlipGrid가 이전 자리에서
+              // 새 자리로 미끄러뜨린다(새 카드는 fade-up, 빠진 카드는 즉시 제거).
+              <div
+                key={f.id}
+                data-flip-id={f.id}
+                className="animate-fade-up"
+                style={{ animationDelay: `${(i % 6) * 60}ms` }}
+              >
                 <FacilityCard facility={f} distanceKm={dist} />
               </div>
             ))}

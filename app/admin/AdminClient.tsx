@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Phone, Check, X, ExternalLink, RefreshCw } from "lucide-react";
+import { Mail, Check, X, ExternalLink, RefreshCw } from "lucide-react";
 import { findPlan, formatPlanPrice, SPONSOR_SLOTS_PER_SIGUNGU } from "@/lib/businessPlans";
 import { canonicalRegionKey } from "@/lib/regionSeo";
 
@@ -64,9 +64,11 @@ interface Correction {
   createdAt: string;
 }
 
+// contacted는 "서류 안내 메일을 보낸" 상태다 — 절차에 전화가 없어졌지만(운영 방침)
+// DB에 이미 쌓인 상태값을 갈아엎지 않으려고 키는 그대로 두고 라벨만 새 흐름에 맞췄다.
 const STATUS_LABEL: Record<string, string> = {
   new: "처리 대기",
-  contacted: "확인전화 완료",
+  contacted: "서류 안내 발송",
   verified: "승인됨",
   rejected: "거절",
 };
@@ -586,7 +588,7 @@ function InquiryRow({
             onChange={(e) => setMemo(e.target.value)}
             rows={2}
             maxLength={1000}
-            placeholder="통화 메모 (시설에는 보이지 않아요)"
+            placeholder="처리 메모 (시설에는 보이지 않아요)"
             className="w-full rounded-xl border border-ink-100 px-3 py-2 text-xs outline-none focus:border-primary-400"
           />
           <input
@@ -597,11 +599,16 @@ function InquiryRow({
           />
 
           <div className="flex flex-wrap gap-1.5">
+            {/* 전화는 하지 않는다(운영 방침) — 서류 요청 메일을 바로 쓸 수 있게 미리 채워준다 */}
             <a
-              href={`tel:${inquiry.phone}`}
+              href={`mailto:${inquiry.email}?subject=${encodeURIComponent(
+                `[돌보다] ${inquiry.facilityName} 입점 신청 서류 안내`
+              )}&body=${encodeURIComponent(
+                `안녕하세요, ${inquiry.managerName}님. 돌보다입니다.\n\n${inquiry.facilityName}의 입점 신청이 접수되었습니다.\n시설 운영 주체 확인을 위해 아래 서류 중 한 건의 사본을 이 메일에 회신으로 보내주세요.\n\n· 장기요양기관 지정서 또는 사업자등록증 (요양병원은 의료기관 개설신고증명서)\n\n서류는 확인 즉시 파기되며, 확인이 끝나면 기업회원 콘솔 이용 방법을 안내드리겠습니다.\n\n감사합니다.\n돌보다 드림`
+              )}`}
               className={`${BTN} bg-royal-50 text-royal-700 hover:bg-royal-100`}
             >
-              <Phone size={13} /> 담당자에게 전화
+              <Mail size={13} /> 서류 요청 메일 쓰기
             </a>
             <button
               type="button"
@@ -609,7 +616,7 @@ function InquiryRow({
               onClick={() => onPatch(inquiry.id, { status: "contacted", memo })}
               className={`${BTN} bg-ink-100 text-ink-700 hover:bg-ink-100/70`}
             >
-              확인전화 완료
+              서류 안내 발송함
             </button>
             <button
               type="button"

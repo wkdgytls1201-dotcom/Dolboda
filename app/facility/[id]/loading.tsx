@@ -9,8 +9,8 @@
 // 카드를 눌러도 아무 반응이 없는 것처럼 보였다(네이티브 앱과 가장 크게 달랐던 지점).
 
 /** 회색 덩어리 하나. 실제 요소와 같은 크기로 두어야 내용이 채워질 때 안 튄다. */
-function Bar({ className }: { className: string }) {
-  return <div className={`animate-pulse rounded bg-ink-100 ${className}`} />;
+function Bar({ className, style }: { className: string; style?: React.CSSProperties }) {
+  return <div className={`animate-pulse rounded bg-ink-100 ${className}`} style={style} />;
 }
 
 export default function Loading() {
@@ -23,7 +23,10 @@ export default function Loading() {
             <Bar className="h-6 w-24" />
             <Bar className="h-6 w-16" />
           </div>
-          <Bar className="mb-2 h-9 w-3/4" />
+        {/* view-transition-name: 카드에서 넘어올 때 클릭한 카드의 시설명·사진이
+            이 자리(제목 바·대표 사진 바)로 모핑해 들어온다 — 전환의 도착지가 본문이
+            아니라 스켈레톤이라, 데이터가 늦어도 전환이 화면을 붙잡지 않는다. */}
+          <Bar className="mb-2 h-9 w-3/4" style={{ viewTransitionName: "facility-title" }} />
           <Bar className="h-5 w-1/2" />
         </div>
 
@@ -34,7 +37,10 @@ export default function Loading() {
         </div>
 
         {/* 대표 사진 — 실제와 같은 21:9 */}
-        <Bar className="mb-6 aspect-[21/9] w-full rounded-2xl" />
+        <Bar
+          className="mb-6 aspect-[21/9] w-full rounded-2xl"
+          style={{ viewTransitionName: "facility-hero" }}
+        />
 
         {/* 안심지수 카드 */}
         <Bar className="mb-6 h-44 w-full rounded-2xl" />

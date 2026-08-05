@@ -6,10 +6,10 @@ import { rateLimit, clientIp, tooManyRequests } from "@/lib/rateLimit";
 import { findPlan, formatPlanPrice } from "@/lib/businessPlans";
 import { SITE_URL, SITE_NAME, MAIL_FROM } from "@/lib/siteConfig";
 
-// 시설 운영자 입점·제휴 신청 (/business).
+// 기업회원 입점·제휴 신청 (/business).
 //
 // 로그인을 요구하지 않는다 — 시설 담당자는 아직 우리 계정이 없고, 계정부터 만들라고 하면
-// 거기서 대부분 떠난다. 계정 연결은 확인 전화를 마친 뒤 마지막 단계다.
+// 거기서 대부분 떠난다. 계정 연결은 이메일 서류 확인을 마친 뒤 마지막 단계다(전화 없음).
 // 대신 상담 신청과 같은 방식으로 IP당 상한을 둔다.
 const LIMIT = 5;
 const WINDOW_MS = 60 * 60 * 1000;
@@ -79,6 +79,8 @@ export async function POST(req: Request) {
   if (body.agreed !== true) {
     return NextResponse.json({ error: "개인정보 수집·이용 동의가 필요해요." }, { status: 400 });
   }
+  // 마케팅 동의는 선택 — 동의 시각을 남긴다(언제 동의했는지가 법적으로 중요하다)
+  const marketingConsentAt = body.marketingConsent === true ? new Date() : null;
 
   // 기관기호로 우리 DB의 시설을 찾아 붙여둔다 — 운영자가 어느 페이지인지 바로 열어볼 수 있다.
   // 못 찾아도 신청은 그대로 받는다(신규 개설이라 아직 공단 자료에 없을 수 있다).
@@ -107,6 +109,7 @@ export async function POST(req: Request) {
       email,
       plan: plan.id,
       message: message || null,
+      marketingConsentAt,
     },
   });
 
@@ -120,6 +123,7 @@ export async function POST(req: Request) {
     `연락처: ${phone}`,
     `이메일: ${email}`,
     `관심 상품: ${plan.name} (${formatPlanPrice(plan)})`,
+    `마케팅 수신 동의: ${marketingConsentAt ? "동의함" : "안 함"}`,
     `접수: ${receivedAt}`,
     message ? `\n[남긴 말]\n${message}` : "",
   ].filter(Boolean);
@@ -131,7 +135,7 @@ export async function POST(req: Request) {
         from: `${SITE_NAME} 제휴신청 <${MAIL_FROM}>`,
         to: CONSULT_NOTIFY_EMAIL,
         subject: `[제휴신청] ${facilityName} — ${plan.name}`,
-        text: `${lines.join("\n")}\n\n다음 단계: 공단 공개 대표번호로 확인 전화 → 서류 1건 수령 → 계정 연결`,
+        text: `${lines.join("\n")}\n\n다음 단계: 담당자 이메일로 서류 안내 발송 → 지정서/사업자등록증 1건 수령·대조 → 계정 연결 (전화 없음)`,
       });
     } catch (err) {
       console.error("제휴신청 운영자 알림 실패", err);

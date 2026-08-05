@@ -148,7 +148,8 @@ export function CareRequestDetail({
         </div>
       )}
 
-      <div className="mb-5">
+      {/* 은은한 보라 그라데이션 — 값 끝은 흰색이라 아래 카드들과 이어 붙는다 */}
+      <div className="mb-5 rounded-2xl bg-gradient-to-br from-royal-50 to-white p-5">
         <div className="mb-1 flex flex-wrap items-center gap-2">
           <h1 className="text-xl font-bold text-ink-900">내 돌봄 요청</h1>
           <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${meta.badgeClass}`}>

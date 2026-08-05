@@ -408,7 +408,10 @@ export function MyPageDashboard() {
     cards.push(
       <div
         key="start"
-        className="animate-fade-up rounded-2xl bg-white p-5 shadow-card sm:p-6"
+        // 은은한 보라 그라데이션 — 지원자가 생겨 "진행 중" 상태가 되면 위 카드(진한 royal
+        // 그라데이션)로 바뀐다. 아직 요청이 없는 이 안내 카드도 같은 색 계열로 옅게
+        // 물들여, 요청 전후로 톤이 이어지게 했다(전에는 순백이라 보라색이 여기서만 끊겼다).
+        className="animate-fade-up rounded-2xl bg-gradient-to-br from-royal-50 to-white p-5 shadow-card sm:p-6"
         style={{ animationDelay: `${cards.length * 70}ms` }}
       >
         <p className="mb-1.5 text-[15px] font-bold text-ink-900">
