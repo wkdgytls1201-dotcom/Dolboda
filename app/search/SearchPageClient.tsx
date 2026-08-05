@@ -1,14 +1,16 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { List, Map as MapIcon, Crosshair, Search } from "lucide-react";
 import { FacilityCard } from "@/components/FacilityCard";
 import { CompareSelectBar } from "@/components/CompareSelectBar";
 import { BackToTopButton } from "@/components/BackToTopButton";
 import { FilterBar, FacilityFilters, EMPTY_FILTERS } from "@/components/FilterBar";
-import { KakaoMultiMap } from "@/components/KakaoMap";
-import { NHIS_GRADE_LETTER } from "@/components/GradeBadge";
+
+// 지도 모드는 열 때만 내려받는다 — 목록만 쓰는 대부분의 방문에서 지도 코드 0바이트
+const SearchMapView = dynamic(() => import("@/components/SearchMapView"), { ssr: false });
 import { PageLoader } from "@/components/PageLoader";
 import { FacilityCardSkeleton } from "@/components/FacilityCardSkeleton";
 import { useFacilities, useNearbyFacilities } from "@/lib/useFacilities";
@@ -17,11 +19,6 @@ import { FACILITY_TYPE_LABEL, FacilityType } from "@/lib/types";
 import { filterAndSortFacilityList } from "@/lib/facilityFilters";
 import { useFlipGrid } from "@/lib/useFlipGrid";
 import { PROGRAM_TAG_META, type ProgramTag } from "@/lib/programTaxonomy";
-
-function gradeText(grade: number | null, gradeSource?: "HIRA" | "NHIS") {
-  if (grade === null) return "등급 제외";
-  return gradeSource === "NHIS" ? `${NHIS_GRADE_LETTER[grade - 1] ?? grade}등급` : `${grade}등급`;
-}
 
 // "rating"(평점순)은 실제 이용자 평점 데이터가 없어 등급 대체 정렬에 불과했다 —
 // 실체가 있는 안심지수 정렬로 교체했다.
@@ -354,23 +351,24 @@ function SearchContent() {
         </div>
       </div>
 
-      {/* 지도 보기일 때는 이 안내들을 지도 아래로 내린다 — 위에 쌓아두면 모바일에서
-          지도가 화면 한참 아래에서 시작해 "내 위치" 버튼이 한 화면에 안 들어온다.
-          목록 보기에서는 원래대로 결과 위에 둔다(내용은 그대로, 순서만 바뀜). */}
+      {/* 지도 보기 — 전체 화면 지도 + 드래그 바텀시트(SearchMapView). 인라인 지도 박스가
+          아니라 앱형 오버레이라, 목록으로 돌아오면 이 화면이 그대로 남아 있다. */}
       {view === "map" && (
-        <div className="mb-4">
-          <KakaoMultiMap
-            markers={results.map((x) => ({
-              lat: x.f.lat,
-              lng: x.f.lng,
-              label: x.f.name,
-              sublabel: `${FACILITY_TYPE_LABEL[x.f.facilityType]} · ${gradeText(x.f.grade, x.f.gradeSource)}`,
-              href: `/facility/${x.f.id}`,
-            }))}
-            center={origin}
-            persistKey="dolboda-search-map-view"
-          />
-        </div>
+        <SearchMapView
+          items={results}
+          origin={origin}
+          hasLocation={hasLocation}
+          onClose={() => setView("list")}
+          transformArea={(list) =>
+            filterAndSortFacilityList(list, filters, {
+              query,
+              origin,
+              hasLocation,
+              useNearest,
+              sortKey,
+            })
+          }
+        />
       )}
 
       {/* 로딩 중엔 이 자리에 아무것도 안 띄운다 — 아래 결과 영역에 뜨는 로더로 충분하고,

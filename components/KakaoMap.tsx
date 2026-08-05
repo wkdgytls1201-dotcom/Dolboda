@@ -21,7 +21,9 @@ export function loadKakaoSdk(): Promise<void> {
 
   sdkLoadPromise = new Promise((resolve, reject) => {
     const script = document.createElement("script");
-    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${key}&autoload=false`;
+    // clusterer: 검색 지도(SearchMapView)의 마커 묶음에 필요 — SDK 로드는 이 한 곳뿐이라
+    // 여기서 함께 싣는다(추가 용량 수 KB, 다른 사용처엔 영향 없음).
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${key}&autoload=false&libraries=clusterer`;
     script.onload = () => window.kakao.maps.load(() => resolve());
     script.onerror = () => reject(new Error("카카오맵 SDK 로드 실패"));
     document.head.appendChild(script);
