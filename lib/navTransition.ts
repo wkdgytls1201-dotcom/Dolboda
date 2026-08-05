@@ -32,13 +32,17 @@ export function navigateWithViewTransition(navigate: () => void) {
   const routeCommitted = new Promise<void>((resolve) => {
     pendingDone = resolve;
   });
-  doc.startViewTransition(() => {
+  const transition = doc.startViewTransition(() => {
     navigate();
     return Promise.race([
       routeCommitted,
       new Promise<void>((resolve) => setTimeout(resolve, 450)),
     ]);
-  });
+  }) as { finished?: Promise<void>; ready?: Promise<void> } | undefined;
+  // 전환이 중간에 취소되면(빠른 연속 이동, 탭 백그라운드 등) finished/ready가
+  // InvalidStateError로 reject되며 uncaught로 콘솔에 남는다(실측 2026-08-05) — 삼킨다.
+  transition?.finished?.catch(() => {});
+  transition?.ready?.catch(() => {});
 }
 
 /**

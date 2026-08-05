@@ -54,7 +54,7 @@ export function MobileTabBar() {
   return (
     <>
       {/* 탭바 높이만큼 문서 흐름에 여백을 만들어 마지막 콘텐츠가 탭바에 가려지지 않게 한다. */}
-      <div className="h-[72px] sm:hidden" aria-hidden />
+      <div className="h-[60px] sm:hidden" aria-hidden />
       <nav
         className="fixed inset-x-0 bottom-0 z-40 border-t border-ink-100 bg-white/95 backdrop-blur sm:hidden [padding-bottom:env(safe-area-inset-bottom)]"
         aria-label="주요 메뉴"
@@ -66,11 +66,11 @@ export function MobileTabBar() {
               <Link
                 key={href}
                 href={href}
-                className={`flex min-h-[64px] flex-col items-center justify-center gap-1 py-2 text-xs font-semibold transition-all duration-150 active:scale-90 active:bg-ink-100/60 ${
+                className={`flex min-h-[52px] flex-col items-center justify-center gap-0.5 py-1.5 text-[11px] font-semibold transition-all duration-150 active:scale-90 active:bg-ink-100/60 ${
                   active ? "text-primary-600" : "text-ink-400"
                 }`}
               >
-                <Icon size={23} strokeWidth={active ? 2.4 : 2} />
+                <Icon size={19} strokeWidth={active ? 2.4 : 2} />
                 {label}
               </Link>
             );
@@ -79,20 +79,20 @@ export function MobileTabBar() {
           {session?.user ? (
             <Link
               href="/mypage"
-              className={`flex min-h-[64px] flex-col items-center justify-center gap-1 py-2 text-xs font-semibold transition-all duration-150 active:scale-90 active:bg-ink-100/60 ${
+              className={`flex min-h-[52px] flex-col items-center justify-center gap-0.5 py-1.5 text-[11px] font-semibold transition-all duration-150 active:scale-90 active:bg-ink-100/60 ${
                 myPageActive ? "text-primary-600" : "text-ink-400"
               }`}
             >
-              <User size={23} strokeWidth={myPageActive ? 2.4 : 2} />
+              <User size={19} strokeWidth={myPageActive ? 2.4 : 2} />
               마이페이지
             </Link>
           ) : (
             <button
               type="button"
               onClick={() => setShowAuth(true)}
-              className="flex min-h-[64px] flex-col items-center justify-center gap-1 py-2 text-xs font-semibold text-ink-400 transition-all duration-150 active:scale-90 active:bg-ink-100/60 active:text-primary-600"
+              className="flex min-h-[52px] flex-col items-center justify-center gap-0.5 py-1.5 text-[11px] font-semibold text-ink-400 transition-all duration-150 active:scale-90 active:bg-ink-100/60 active:text-primary-600"
             >
-              <User size={23} />
+              <User size={19} />
               마이페이지
             </button>
           )}

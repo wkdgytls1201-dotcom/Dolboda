@@ -552,7 +552,8 @@ export default function SearchMapView({ items, origin, hasLocation, onClose, tra
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
         style={{ height: sheetHeightStyle, willChange: "transform" }}
-        className="absolute inset-x-0 bottom-0 flex flex-col rounded-t-3xl bg-white shadow-[0_-8px_30px_rgba(27,23,48,0.14)]"
+        // select-none: 안드로이드에서 드래그 중 카드 텍스트가 선택되는 것 방지
+        className="absolute inset-x-0 bottom-0 flex select-none flex-col rounded-t-3xl bg-white shadow-[0_-8px_30px_rgba(27,23,48,0.14)]"
       >
         <div
           data-sheet-handle
@@ -636,7 +637,7 @@ export default function SearchMapView({ items, origin, hasLocation, onClose, tra
                     <a
                       href={`/facility/${f.id}`}
                       onClick={(e) => e.stopPropagation()}
-                      className="shrink-0 rounded-full bg-primary-500 px-3 py-2 text-[12px] font-bold text-white transition-transform active:scale-95"
+                      className="flex min-h-[44px] shrink-0 items-center rounded-full bg-primary-500 px-3.5 text-[12px] font-bold text-white transition-transform active:scale-95"
                     >
                       상세
                     </a>
