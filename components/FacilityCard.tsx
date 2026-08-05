@@ -132,26 +132,6 @@ export function FacilityCard({
             label={FACILITY_TYPE_LABEL[facility.facilityType]}
           />
           <GradeBadge grade={facility.grade} gradeSource={facility.gradeSource} />
-          {/* 안심지수 — 돌보다의 핵심 지표라 등급 바로 옆, 배지들 중 가장 눈에 띄는 톤으로.
-              점수는 목록 API(toCardFacility)가 실어준 것만 쓴다(없으면 안 보여줌).
-              "안심지수" 글자를 다 쓰면 "방문요양센터"(6자)+"등급 제외"(4자) 조합에서
-              375px 폭을 넘어 두 번째 줄로 밀려났다 — 아이콘이 이미 뜻을 전달하니
-              숫자만 남기고, 스크린리더에는 aria-label로 전체 의미를 준다. */}
-          {facility.dolbodaTotal != null && (
-            <span
-              aria-label={`안심지수 ${facility.dolbodaTotal}점`}
-              className={`flex shrink-0 items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-bold ${
-                facility.dolbodaTotal >= SCORE_LEVEL_THRESHOLDS.veryGood
-                  ? "bg-mint-100 text-mint-700"
-                  : facility.dolbodaTotal >= SCORE_LEVEL_THRESHOLDS.good
-                  ? "bg-royal-50 text-royal-600"
-                  : "bg-ink-100/70 text-ink-500"
-              }`}
-            >
-              <ShieldCheck size={11} aria-hidden />
-              {facility.dolbodaTotal}
-            </span>
-          )}
           {facility.adminActions && facility.adminActions.length > 0 && (
             <span className="rounded-full bg-accent-100 px-2 py-0.5 text-[11px] font-bold text-accent-600">
               행정처분 이력
@@ -171,6 +151,28 @@ export function FacilityCard({
           {facility.establishedYear !== undefined && (
             <span className="text-xs text-ink-300">
               설립 {new Date().getFullYear() - facility.establishedYear}년차
+            </span>
+          )}
+          {/* 안심지수 — 돌보다의 핵심 지표. 예전엔 등급 배지 옆에 11px 칩으로 뒀는데
+              옆 배지(text-xs)와 크기가 어긋나 삐뚤어 보였다(사용자 피드백 2026-08-05).
+              배지들과 같은 스케일(text-xs·py-0.5)로 맞추고 ml-auto로 줄 오른쪽 끝에
+              붙인다 — 유형·등급(분류 배지)과 점수(측정값)가 자리로도 구분된다.
+              점수는 목록 API(toCardFacility)가 실어준 것만 쓴다(없으면 안 보여줌).
+              "안심지수" 글자를 다 쓰면 좁은 카드에서 줄이 밀린다 — 아이콘이 뜻을
+              전달하니 숫자만 남기고, 스크린리더에는 aria-label로 전체 의미를 준다. */}
+          {facility.dolbodaTotal != null && (
+            <span
+              aria-label={`안심지수 ${facility.dolbodaTotal}점`}
+              className={`ml-auto flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold ${
+                facility.dolbodaTotal >= SCORE_LEVEL_THRESHOLDS.veryGood
+                  ? "bg-mint-100 text-mint-700"
+                  : facility.dolbodaTotal >= SCORE_LEVEL_THRESHOLDS.good
+                  ? "bg-royal-50 text-royal-600"
+                  : "bg-ink-100/70 text-ink-500"
+              }`}
+            >
+              <ShieldCheck size={12} aria-hidden />
+              {facility.dolbodaTotal}
             </span>
           )}
         </div>
