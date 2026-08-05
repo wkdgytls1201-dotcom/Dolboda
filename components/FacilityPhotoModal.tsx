@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { FacilityPhoto, PHOTO_AREA_LABEL, PHOTO_AREA_ORDER } from "@/lib/types";
+import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
 
 // 사진 전체보기 팝업 — 성능 원칙: 이 컴포넌트가 열리기 전까지는 사진을 단 한 장도
 // 더 받지 않는다(대표사진 1장만 상세페이지 첫 화면에 이미 떠 있음). 열리고 나서도
@@ -49,14 +50,8 @@ export function FacilityPhotoModal({
     return () => window.removeEventListener("keydown", onKey);
   }, [lightboxIndex, onClose]);
 
-  // 모달이 열려 있는 동안 배경 스크롤 잠금
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, []);
+  // 모달이 열려 있는 동안 배경 스크롤 잠금 — 공용 훅으로 통일(iOS 스크롤 위치 복원 포함)
+  useBodyScrollLock();
 
   // 뒤로가기 = 모달 닫기(네이티브 앱 관성). 이게 없으면 사진을 보다 뒤로가기를 눌렀을 때
   // 상세 페이지가 통째로 pop되어 메인/목록으로 튕긴다 — 사용자는 "사진만 닫힐 것"을
@@ -111,7 +106,7 @@ export function FacilityPhotoModal({
         </div>
       )}
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {shown.map((p, i) => (
             <button

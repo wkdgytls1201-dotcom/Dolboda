@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { X, CheckCircle2, ChevronRight } from "lucide-react";
 import { useCareProfiles } from "@/lib/careProfileContext";
+import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
 
 export function ConsultModal({
   facilityId,
@@ -54,9 +55,13 @@ export function ConsultModal({
     }
   }
 
+  // 상담 신청 폼이 떠 있는 동안 뒤 페이지 스크롤 잠금(AuthModal과 같은 훅)
+  useBodyScrollLock();
+
   return (
-    <div className="animate-overlay-in fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-ink-900/40 px-4 py-8">
-      <div className="animate-modal-in my-auto max-h-[85vh] w-full max-w-sm overflow-y-auto rounded-2xl bg-white p-6 shadow-soft">
+    // dvh·overscroll-contain은 AuthModal과 같은 이유(iOS 주소창 높이·스크롤 체이닝)
+    <div className="animate-overlay-in fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overscroll-contain bg-ink-900/40 px-4 py-8">
+      <div className="animate-modal-in my-auto max-h-[85dvh] w-full max-w-sm overflow-y-auto overscroll-contain rounded-2xl bg-white p-6 shadow-soft">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-lg font-bold text-ink-900">상담 신청</h3>
           <button

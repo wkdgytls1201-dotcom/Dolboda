@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { X, BadgeCheck, MapPin, Pencil } from "lucide-react";
 import { typeMeta, type LocationTypeValue } from "@/lib/careLocationTypes";
+import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
 
 interface SitterSummary {
   nickname: string;
@@ -55,14 +56,10 @@ export function ApplyConfirmSheet({
       .catch(() => setSitter(null));
   }, []);
 
-  // 시트가 떠 있는 동안 배경 스크롤 잠금
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, []);
+  // 시트가 떠 있는 동안 배경 스크롤 잠금.
+  // 예전엔 여기서 overflow만 hidden으로 바꿨는데, iOS에서는 그것만으로 배경이 완전히
+  // 멈추지 않고 닫을 때 페이지가 맨 위로 튀었다 — 공용 훅이 스크롤 위치까지 복원한다.
+  useBodyScrollLock();
 
   const amount = Number(amountText.replace(/[^0-9]/g, "")) || 0;
 
@@ -98,7 +95,7 @@ export function ApplyConfirmSheet({
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 sm:px-6">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 sm:px-6">
           <p className="mb-2 text-xs font-bold text-ink-300">보호자에게 이렇게 보여요</p>
           {sitter ? (
             <div className="mb-4 rounded-2xl border border-ink-100 bg-ivory-100/60 p-4">

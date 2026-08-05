@@ -97,7 +97,10 @@ export async function Footer() {
                 <li key={h.slug}>
                   <Link
                     href={`/${encodeURIComponent(h.slug)}`}
-                    className="text-[10px] text-ink-300/50 transition-colors duration-150 hover:text-ink-500"
+                    // inline-block + py-1: 보이는 크기는 그대로 두고 탭 영역만 넓힌다.
+                    // 16px짜리 링크는 손가락으로 정확히 누르기 어렵고 WCAG 2.2 AA(24px)에도
+                    // 못 미쳤다. 패딩은 눈에 안 보이니 "존재감 없게 둔다"는 원래 의도도 유지된다.
+                    className="inline-block py-1 text-[10px] text-ink-300/50 transition-colors duration-150 hover:text-ink-500"
                   >
                     전국 {h.label}
                   </Link>
@@ -119,7 +122,10 @@ export async function Footer() {
                 <li key={r.slug}>
                   <Link
                     href={`/region/${encodeURIComponent(r.slug)}`}
-                    className="text-[10px] text-ink-300/50 transition-colors duration-150 hover:text-ink-500"
+                    // inline-block + py-1: 보이는 크기는 그대로 두고 탭 영역만 넓힌다.
+                    // 16px짜리 링크는 손가락으로 정확히 누르기 어렵고 WCAG 2.2 AA(24px)에도
+                    // 못 미쳤다. 패딩은 눈에 안 보이니 "존재감 없게 둔다"는 원래 의도도 유지된다.
+                    className="inline-block py-1 text-[10px] text-ink-300/50 transition-colors duration-150 hover:text-ink-500"
                   >
                     {r.label} 요양시설
                   </Link>

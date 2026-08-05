@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { X, Lock } from "lucide-react";
+import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
 
 type AuthProviderId = "kakao" | "naver" | "google";
 const READY_PROVIDERS: AuthProviderId[] = ["kakao", "naver"]; // 구글은 아직 미연동
@@ -89,9 +90,14 @@ export function AuthModal({
     signIn(provider);
   }
 
+  // 로그인 창이 떠 있는데 뒤 페이지가 스크롤되면 "덜 만든 웹"처럼 느껴진다
+  useBodyScrollLock();
+
   return (
-    <div className="animate-overlay-in fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-ink-900/40 px-4 py-8">
-      <div className="animate-modal-in my-auto max-h-[85vh] w-full max-w-sm overflow-y-auto rounded-2xl bg-white p-6 shadow-soft">
+    // dvh: iOS 주소창이 접히고 펴질 때 vh는 그대로라 85vh가 화면을 넘친다.
+    // overscroll-contain: 모달 끝까지 밀어도 뒤 페이지로 스크롤이 새지 않게 한다.
+    <div className="animate-overlay-in fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overscroll-contain bg-ink-900/40 px-4 py-8">
+      <div className="animate-modal-in my-auto max-h-[85dvh] w-full max-w-sm overflow-y-auto overscroll-contain rounded-2xl bg-white p-6 shadow-soft">
         <div className="mb-2 flex items-center justify-between">
           <h3 className="text-lg font-bold text-ink-900">로그인</h3>
           <button
