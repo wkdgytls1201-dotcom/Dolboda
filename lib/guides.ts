@@ -521,6 +521,16 @@ export const GUIDES: Guide[] = [
   },
 ];
 
+/** 대략적 읽는 시간(분) — 한국어 성인 평균 550자/분 기준, 최소 2분. 목록·상세가 함께 쓴다. */
+export function guideReadMinutes(g: Guide): number {
+  const chars =
+    g.sections.reduce(
+      (n, s) => n + s.heading.length + s.paragraphs.join("").length + (s.list?.join("").length ?? 0),
+      0
+    ) + g.faq.reduce((n, f) => n + f.q.length + f.a.length, 0);
+  return Math.max(2, Math.round(chars / 550));
+}
+
 export function findGuide(slug: string): Guide | undefined {
   return GUIDES.find((g) => g.slug === slug);
 }

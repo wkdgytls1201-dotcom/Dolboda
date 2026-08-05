@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BookOpen, ChevronRight } from "lucide-react";
-import { GUIDES } from "@/lib/guides";
+import { BookOpen, ChevronRight, Clock3 } from "lucide-react";
+import { GUIDES, guideReadMinutes } from "@/lib/guides";
 import { GuideListHero } from "@/components/GuideIllustration";
 import { SITE_URL } from "@/lib/siteConfig";
 import { jsonLdHtml } from "@/lib/jsonLd";
@@ -11,6 +11,12 @@ const CATEGORY_DOT: Record<string, string> = {
   "시설 선택": "bg-primary-400",
   비용: "bg-accent-400",
   제도: "bg-royal-400",
+};
+// 카드 왼쪽 액센트 — 점과 같은 계열로 카드 자체에도 분류 색이 스며들게
+const CATEGORY_ACCENT: Record<string, string> = {
+  "시설 선택": "border-l-primary-300 hover:border-primary-200",
+  비용: "border-l-accent-300 hover:border-accent-200",
+  제도: "border-l-royal-300 hover:border-royal-200",
 };
 
 export const metadata: Metadata = {
@@ -69,22 +75,30 @@ export default function GuideListPage() {
               {category}
               <span className="font-medium text-ink-300">{list.length}편</span>
             </h2>
-            <div className="space-y-2.5">
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
               {list.map((g) => (
                 <Link
                   key={g.slug}
                   href={`/guide/${g.slug}`}
-                  className="flex items-center gap-3 rounded-2xl border border-ink-100 bg-white p-4 transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:shadow-card active:translate-y-0 active:scale-[0.98]"
+                  className={`group flex items-center gap-3 rounded-2xl border border-l-4 border-ink-100 bg-white p-4 transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:shadow-card active:translate-y-0 active:scale-[0.98] ${
+                    CATEGORY_ACCENT[g.category] ?? ""
+                  }`}
                 >
                   <span className="min-w-0 flex-1">
-                    <span className="mb-1 block text-[17px] font-bold leading-snug text-ink-900">
+                    <span className="mb-1 block break-keep text-[16px] font-bold leading-snug text-ink-900">
                       {g.shortTitle}
                     </span>
-                    <span className="line-clamp-2 block text-[13px] leading-relaxed text-ink-500">
+                    <span className="line-clamp-2 block break-keep text-[13px] leading-relaxed text-ink-500">
                       {g.description}
                     </span>
+                    <span className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold text-ink-300">
+                      <Clock3 size={11} aria-hidden />약 {guideReadMinutes(g)}분
+                    </span>
                   </span>
-                  <ChevronRight size={18} className="shrink-0 text-ink-300" />
+                  <ChevronRight
+                    size={18}
+                    className="shrink-0 text-ink-300 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-primary-400"
+                  />
                 </Link>
               ))}
             </div>
