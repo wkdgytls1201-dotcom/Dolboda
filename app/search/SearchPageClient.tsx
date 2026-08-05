@@ -441,7 +441,10 @@ function SearchContent() {
         </div>
       )}
 
-      {view === "map" ? null : results.length === 0 && loading ? (
+      {/* 지도 모드에서도 목록을 언마운트하지 않는다 — null로 걷어내면 문서가 짧아져
+          스크롤이 푸터로 클램프되고, 지도에서 돌아왔을 때 보던 자리가 사라진다
+          (실측 2026-08-05). 지도는 전체 화면 오버레이라 뒤에 남아 있어도 안 보인다. */}
+      {results.length === 0 && loading ? (
         <FacilityCardSkeleton />
       ) : results.length === 0 ? (
         <div className="rounded-2xl bg-white p-12 text-center text-sm text-ink-300 shadow-card">
