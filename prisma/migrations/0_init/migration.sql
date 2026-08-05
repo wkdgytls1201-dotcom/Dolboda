@@ -116,6 +116,14 @@ CREATE TABLE "CareLogReminder" (
 );
 
 -- CreateTable
+CREATE TABLE "OpenRequestNudge" (
+    "careRequestId" TEXT NOT NULL,
+    "sentAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "OpenRequestNudge_pkey" PRIMARY KEY ("careRequestId")
+);
+
+-- CreateTable
 CREATE TABLE "FacilitySnapshot" (
     "id" BIGSERIAL NOT NULL,
     "facilityId" TEXT NOT NULL,

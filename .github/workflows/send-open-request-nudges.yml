@@ -1,0 +1,38 @@
+# 지원자 없는 요청 넛지 — scripts/send-open-request-nudges.mjs 참고.
+#
+# 다른 알림 워크플로들과 시각(09:00 KST)은 같지만 대상이 또 다르다(보호자 —
+# OPEN 3일+ 지원 0건). 실패해도 서로 영향 없게 계속 별도 워크플로로 둔다.
+# 날짜 입력이 없는 이유: 날짜 창이 아니라 "지금 기준 경과일" 판정이라 지정할 날짜가 없다.
+#
+# 필요한 저장소 시크릿 — 다른 알림 워크플로와 동일(DIRECT_URL·RESEND_API_KEY·MAIL_FROM)
+name: send-open-request-nudges
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # 00:00 UTC = 09:00 KST
+  workflow_dispatch:
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 의존성 설치 (postinstall에서 Prisma Client 생성)
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+        run: npm ci
+
+      - name: 넛지 발송
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          MAIL_FROM: ${{ secrets.MAIL_FROM }}
+          NEXT_PUBLIC_SITE_URL: https://www.dolboda.kr
+        run: node scripts/send-open-request-nudges.mjs --write
