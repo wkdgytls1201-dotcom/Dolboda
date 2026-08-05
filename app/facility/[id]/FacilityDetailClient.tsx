@@ -23,6 +23,7 @@ import {
 import { useSession } from "next-auth/react";
 import { useFavorites } from "@/lib/favoritesContext";
 import { canViewFacility, registerFacilityView } from "@/lib/viewLimit";
+import { recordRecentFacility } from "@/lib/recentFacilities";
 import { FacilityPhotoGallery } from "@/components/FacilityPhotoGallery";
 import { FACILITY_TYPE_LABEL, isHospital, type CareProgram } from "@/lib/types";
 import { GradeBadge, TypeBadge } from "@/components/GradeBadge";
@@ -138,6 +139,11 @@ export default function FacilityDetailClient({
     if (user) return;
     if (canViewFacility(facility.id)) registerFacilityView(facility.id);
   }, [facility.id, user]);
+
+  // 최근 본 시설(홈 섹션용) — 로그인 여부와 무관하게 로컬에만 남긴다.
+  useEffect(() => {
+    recordRecentFacility(facility.id);
+  }, [facility.id]);
 
   const hospital = isHospital(facility) ? facility : null;
   const nhis = isHospital(facility) ? null : facility;

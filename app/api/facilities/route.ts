@@ -23,11 +23,17 @@ export async function GET(req: Request) {
 
   // ids가 있으면 특정 시설들을 정확히 지정해서 가져오는 것 — limit/필터 무시하고 그대로 반환
   // (비교하기·찜한시설처럼 기본 200건 안에 없을 수도 있는 특정 시설을 조회할 때 씀)
+  // view=card는 여기서도 통한다 — 카드만 그리는 화면(홈 최근 본 시설)이 상세용 전체
+  // 페이로드를 받을 이유가 없다. 비교함은 표에 전체 필드가 필요해 기본(전체)을 유지.
   if (ids) {
     const idList = ids.split(",").filter(Boolean);
     const rows = await prisma.facility.findMany({ where: { id: { in: idList } } });
+    const mapped = rows.map(rowToFacility);
     return NextResponse.json(
-      { items: rows.map(rowToFacility), total: rows.length },
+      {
+        items: searchParams.get("view") === "card" ? mapped.map(toCardFacility) : mapped,
+        total: rows.length,
+      },
       { headers: CACHE_HEADERS }
     );
   }

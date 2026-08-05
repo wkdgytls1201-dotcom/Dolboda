@@ -9,6 +9,7 @@ import { FacilityCard } from "@/components/FacilityCard";
 import { FacilityCardSkeleton } from "@/components/FacilityCardSkeleton";
 import { CompareSelectBar } from "@/components/CompareSelectBar";
 import { StatsStrip } from "@/components/StatsStrip";
+import { RecentFacilitiesSection } from "@/components/RecentFacilitiesSection";
 import { Reveal } from "@/components/Reveal";
 import { LocationConsentModal } from "@/components/LocationConsentModal";
 import { useNearbyFacilities, type FacilityStats } from "@/lib/useFacilities";
@@ -329,6 +330,11 @@ export default function HomeClient({
           </div>
         </section>
       )}
+
+      {/* 최근 본 시설 — 로컬 기록이 있는 재방문자에게만 나타난다(신규 방문자는 빈 섹션도
+          자리도 없음). 추천 아래에 두는 이유: 첫 화면의 가치 제안(내주변·추천)은 그대로
+          두되, 재방문자의 "아까 그 시설" 재진입을 스크롤 한 번 안에서 잇는다. */}
+      <RecentFacilitiesSection />
 
       {/* content-visibility: 첫 화면에서 두 화면 이상 아래에 있는 섹션들은 화면에
           가까워질 때까지 렌더링을 미룬다(스펙 §3-7). auto 값이라 한 번 그려지면 실제

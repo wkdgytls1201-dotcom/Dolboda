@@ -86,9 +86,12 @@ export function useFacilities(query: FacilitiesQuery = {}): FacilitiesResult {
   return { facilities: state.facilities, total: state.total, loading };
 }
 
-// 특정 id 여러 개(비교하기·찜한시설 등)를 정확히 조회 — 기본 목록의 limit에 안 걸리게
-export function useFacilitiesByIds(ids: string[]) {
+// 특정 id 여러 개(비교하기·찜한시설 등)를 정확히 조회 — 기본 목록의 limit에 안 걸리게.
+// card: true면 카드 필드만 받는다(홈 최근 본 시설처럼 카드만 그리는 화면용 — 비교함은
+// 표에 전체 필드가 필요해 기본 false).
+export function useFacilitiesByIds(ids: string[], opts?: { card?: boolean }) {
   const key = ids.join(",");
+  const card = opts?.card === true;
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [loading, setLoading] = useState(ids.length > 0);
 
@@ -100,7 +103,7 @@ export function useFacilitiesByIds(ids: string[]) {
     }
     let cancelled = false;
     setLoading(true);
-    fetch(`/api/facilities?ids=${encodeURIComponent(key)}`)
+    fetch(`/api/facilities?ids=${encodeURIComponent(key)}${card ? "&view=card" : ""}`)
       .then((r) => r.json())
       .then((data: { items: Facility[] }) => {
         if (!cancelled) {
@@ -115,7 +118,7 @@ export function useFacilitiesByIds(ids: string[]) {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key]);
+  }, [key, card]);
 
   return { facilities, loading };
 }
