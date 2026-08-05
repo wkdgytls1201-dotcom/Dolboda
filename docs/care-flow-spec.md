@@ -38,7 +38,8 @@
 | 합의서 서명 | `MATCHED` | `매칭확정` | 양측 각자 | `PATCH /api/care-agreement` | 조회 컨텍스트 MATCHED·COMPLETED만, **재서명 409**, **동시 첫 서명 409**(unique 충돌 안내). 첫 서명이 내용 봉인+SHA-256. **확정된 제안 금액이 있으면 그 값을 봉인** | 양측 완료 시 사본 발송(각자 따로) |
 | 요청 수정 | `OPEN` | — | 보호자 | `PATCH /api/care-requests/[id]` | **OPEN만(409)**, **날짜 역전 400**(수정에도), 유형별 필수값 재검증 | 없음 |
 | 요청 취소 | `OPEN`·`MATCHED`→`CANCELLED` | `지원완료`·`매칭확정`→`요청취소` | 보호자 | `DELETE /api/care-requests/[id]` | **OPEN·MATCHED만(409)** — 완료된 돌봄이 취소로 뒤집히면 매니저 실적이 사라진다. **지원자 상태 함께 정리** | §3-13 지원자 전원(matchUpdate 존중). 취소된 건의 합의서 비노출은 **의도된 동작**(care-agreement-spec §1) |
-| 돌봄일지 | `MATCHED`·`COMPLETED` | `매칭확정`·`돌봄완료` | 확정 매니저 | `POST /api/care-log` | `careDate` 형식·미래 날짜 거부, **하루 1원본(409)** — 정정은 `correctsId`로 append-only | §3-12 하루 첫 원본에 보호자(특이사항 메일과 두 통 금지) |
+| 돌봄일지 | `MATCHED`·`COMPLETED` | `매칭확정`·`돌봄완료` | 확정 매니저 | `POST /api/care-log` | `careDate` 형식, **날짜 창**(시작일~종료일, 종료 후 7일 유예 — `careLogWindow`), **하루 1원본(409)**, **정정은 같은 날짜만** — 정정은 `correctsId`로 append-only | §3-12 하루 첫 원본에 보호자(**오늘·어제 날짜만** — 밀린 날짜 일괄 작성 시 메일 폭탄 방지). 특이사항 메일과 두 통 금지 |
+| 빠른 알림 | `MATCHED`·`COMPLETED` | `매칭확정`·`돌봄완료` | 확정 매니저 | `POST /api/care-log/quick-note` | **날짜 창 안에서만**(일지와 동일), 같은 종류 30분 쿨다운(429), 취소는 1분 이내 | custom(특이사항)만 즉시 메일 |
 | 돌봄 완료 | `MATCHED`→`COMPLETED` | `매칭확정`→`돌봄완료` | 보호자 | `PATCH /api/care-requests/[id]` `action=complete` | **MATCHED만(409)** | §3-11 매니저 |
 | 후기 작성 | `COMPLETED` | `돌봄완료` | 보호자 | `POST /api/care-reviews` | **COMPLETED만**, **요청당 1건(409)**, 실제 돌봄완료된 매니저만, 별점 1~5 정수 | 없음 |
 
@@ -68,6 +69,12 @@
    (alert-system-spec §3-13 아래 원칙 참고).
 5. `CareAgreement`는 User·CareRequest에 **관계를 걸지 않는다** — 탈퇴 Cascade로
    합의서가 사라지면 남은 당사자가 권리를 증명할 수 없다(care-agreement-spec §2).
+6. **매니저의 "지금 돌봄 건"은 `lib/careLogContext.ts` 하나로만 찾는다**
+   (2026-08-06). 보호자는 진행 중 1건 제한(advisory lock)이지만 **매니저 쪽엔 상한이
+   없어** 동시에 여러 건을 맡을 수 있다. 각 라우트가 `findFirst orderBy createdAt desc`를
+   복붙해 쓰면 완료된 최신 건이 진행 중 건을 가려, 오늘 기록이 엉뚱한 건에 들어간다.
+   진행 중(`매칭확정`)을 완료보다 먼저 고르고, 둘 이상이면 `activeCount`로 화면에 알린다.
+   여러 건을 동시에 다루려면 URL에 `careRequestId`를 실어야 한다(미구현).
 
 ## 5. 이력
 
@@ -76,3 +83,4 @@
 | 2026-08-02 | 5차 §7로 최초 작성(상태 가드 4건 추가와 함께) |
 | 2026-08-04 | 즉시형 알림 4종(§3-8~3-11) 연결 |
 | 2026-08-05 | 역경매(제안·재제안)·취소 알림(§3-13)·advisory lock·동시 첫 서명 409·일지 도착 알림(§3-12)·정렬 명시. 이 문서로 승격 |
+| 2026-08-06 | 돌봄일지 경우의 수 감사 — 날짜 창(시작 전·기간 밖·완료 후 7일 유예)·정정 같은 날짜·빠른 알림 행 추가·컨텍스트 단일 구현(§4-6)·도착 알림 최근 날짜 한정 |
