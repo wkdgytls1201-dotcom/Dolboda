@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
     inputs:
       date:
-        description: "대상일 (YYYY-MM-DD, 비우면 오늘 KST)"
+        description: "대상일 (YYYY-MM-DD 그 하루만, 비우면 어제~오늘 이틀 창 — 09:00 크론 사각지대 방지)"
         required: false
         type: string
 

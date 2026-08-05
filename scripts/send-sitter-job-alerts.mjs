@@ -29,7 +29,7 @@
 // 사용법:
 //   node --env-file=.env.local scripts/send-sitter-job-alerts.mjs           # 드라이런(실제 발송 안 함)
 //   node --env-file=.env.local scripts/send-sitter-job-alerts.mjs --write   # 실제 발송
-//   node ... --date=2026-08-04                                              # 날짜 지정(기본 오늘 KST)
+//   node ... --date=2026-08-04                                              # 그 하루만 지정(기본은 어제~오늘 이틀 창)
 
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
@@ -147,14 +147,26 @@ async function sendMail(to, subject, body) {
   if (!res.ok) throw new Error(`resend ${res.status}: ${(await res.text()).slice(0, 200)}`);
 }
 
+/** dateStr의 하루 전 날짜 문자열. */
+function prevDay(dateStr) {
+  const d = new Date(`${dateStr}T00:00:00+09:00`);
+  return new Date(d.getTime() - 24 * 3600 * 1000 + 9 * 3600 * 1000).toISOString().slice(0, 10);
+}
+
 async function main() {
   const date = dateArg ? dateArg.split("=")[1] : todayKst();
-  console.log(`대상일: ${date}${WRITE ? "" : " (드라이런)"}`);
 
-  const { start: dayStart, end: dayEnd } = kstDayRange(date);
+  // 기본 실행(--date 없음)은 어제~오늘 이틀 창으로 본다. 크론이 09:00 KST 하루 한 번이라
+  // 당일 창만 보면 09:00 이후 올라온 공고는 당일 실행엔 아직 없고 다음날 실행은 다음날
+  // 날짜를 봐서 영영 알림이 안 나갔다(실측: 8/4 경기·8/5 울산 공고 발송 기록 0건).
+  // 창이 겹쳐도 SitterJobAlertDelivery의 [userId, careRequestId] 유니크(발송 전 기록)가
+  // 중복 발송을 막는다. --date 지정 시엔 그 하루만(수동 재발송·검증용 의미 유지).
+  const { start: dayStart } = kstDayRange(dateArg ? date : prevDay(date));
+  const { end: dayEnd } = kstDayRange(date);
+  console.log(`대상 창: ${dateArg ? date : `${prevDay(date)}~${date}`}${WRITE ? "" : " (드라이런)"}`);
 
-  // 1) 오늘 새로 등록된 공고. status가 OPEN인 것만(취소·마감된 걸 새로 올라온 것처럼
-  //    알리면 안 된다).
+  // 1) 창 안에 새로 등록된 공고. status가 OPEN인 것만(취소·마감된 걸 새로 올라온 것처럼
+  //    알리면 안 된다 — 어제 올라왔어도 지금 닫혔으면 제외되는 게 맞다).
   const newJobs = await prisma.careRequest.findMany({
     where: { status: "OPEN", createdAt: { gte: dayStart, lt: dayEnd } },
     select: {
@@ -167,7 +179,7 @@ async function main() {
       budgetUnit: true,
     },
   });
-  console.log(`오늘 새로 올라온 공고: ${newJobs.length}건`);
+  console.log(`창 안에 새로 올라온 공고: ${newJobs.length}건`);
   if (newJobs.length === 0) {
     await prisma.$disconnect();
     return;
