@@ -55,10 +55,16 @@ export async function GET() {
   const sitterIds = careRequest.applications.map((a) => a.sitterProfile.id);
   let statsById = new Map<
     string,
-    { completedCount: number; reviewCount: number; avgRating: number | null; logDayCount: number }
+    {
+      completedCount: number;
+      reviewCount: number;
+      avgRating: number | null;
+      logDayCount: number;
+      reactionCount: number;
+    }
   >();
   if (sitterIds.length > 0) {
-    const [completed, reviews, logDays] = await Promise.all([
+    const [completed, reviews, logDays, reactions] = await Promise.all([
       prisma.careRequestApplication.groupBy({
         by: ["sitterProfileId"],
         where: { sitterProfileId: { in: sitterIds }, status: "돌봄완료" },
@@ -77,12 +83,20 @@ export async function GET() {
         where: { sitterProfileId: { in: sitterIds }, correctsId: null },
         _count: { _all: true },
       }),
+      // 보호자 원탭 반응(🙏😊💪)을 받은 횟수 — "사건" 단위로 센다(정정 전 기록에 남은
+      // 반응도 실제로 받았던 마음이라 그대로 포함). 4사에 없는 양방향 인정의 축적.
+      prisma.careLog.groupBy({
+        by: ["sitterProfileId"],
+        where: { sitterProfileId: { in: sitterIds }, guardianReaction: { not: null } },
+        _count: { _all: true },
+      }),
     ]);
     statsById = new Map(
       sitterIds.map((id) => {
         const c = completed.find((x) => x.sitterProfileId === id);
         const r = reviews.find((x) => x.sitterProfileId === id);
         const l = logDays.find((x) => x.sitterProfileId === id);
+        const re = reactions.find((x) => x.sitterProfileId === id);
         return [
           id,
           {
@@ -90,6 +104,7 @@ export async function GET() {
             reviewCount: r?._count._all ?? 0,
             avgRating: r?._avg.rating != null ? Math.round(r._avg.rating * 10) / 10 : null,
             logDayCount: l?._count._all ?? 0,
+            reactionCount: re?._count._all ?? 0,
           },
         ];
       })

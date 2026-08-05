@@ -349,7 +349,9 @@ export function CareRequestDetail({
                   {/* 돌보다 안에서 검증된 실적 — 자기 신고 경력과 구분되는 신뢰 신호.
                       실적이 없으면 아무것도 안 붙인다(0건을 굳이 광고하지 않는다) */}
                   {app.stats &&
-                    (app.stats.completedCount > 0 || app.stats.logDayCount > 0) && (
+                    (app.stats.completedCount > 0 ||
+                      app.stats.logDayCount > 0 ||
+                      app.stats.reactionCount > 0) && (
                       <p className="mb-1.5 flex items-center gap-1 text-xs font-semibold text-royal-600">
                         <CheckCircle2 size={12} className="shrink-0" />
                         {[
@@ -361,6 +363,10 @@ export function CareRequestDetail({
                             : null,
                           // 일지 기록일 — "기록을 성실히 남기는 매니저"라는 신호
                           app.stats.logDayCount > 0 ? `돌봄일지 ${app.stats.logDayCount}일` : null,
+                          // 보호자 반응 — 다른 보호자들이 고마움을 표한 횟수(인정의 축적)
+                          app.stats.reactionCount > 0
+                            ? `보호자 반응 🙏 ${app.stats.reactionCount}회`
+                            : null,
                         ]
                           .filter(Boolean)
                           .join(" · ")}

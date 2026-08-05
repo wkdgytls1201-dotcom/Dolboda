@@ -23,6 +23,8 @@ export interface Applicant {
     avgRating: number | null;
     /** 돌봄일지를 기록한 날 수(원본 기준) — 성실함의 신호 */
     logDayCount: number;
+    /** 보호자 원탭 반응(🙏😊💪)을 받은 횟수 — 인정의 축적 */
+    reactionCount: number;
   };
 }
 

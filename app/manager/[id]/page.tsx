@@ -39,7 +39,7 @@ async function getPublicManager(id: string) {
   });
   if (!profile || !profile.publicProfileAt) return null;
 
-  const [completedCount, review, logDayCount] = await Promise.all([
+  const [completedCount, review, logDayCount, reactionCount] = await Promise.all([
     prisma.careRequestApplication.count({
       where: { sitterProfileId: id, status: "돌봄완료" },
     }),
@@ -52,6 +52,10 @@ async function getPublicManager(id: string) {
     prisma.careLog.count({
       where: { sitterProfileId: id, correctsId: null },
     }),
+    // 보호자 원탭 반응(🙏😊💪)을 받은 횟수 — 지원자 카드와 같은 셈법(사건 단위)
+    prisma.careLog.count({
+      where: { sitterProfileId: id, guardianReaction: { not: null } },
+    }),
   ]);
 
   return {
@@ -60,6 +64,7 @@ async function getPublicManager(id: string) {
     reviewCount: review._count._all,
     avgRating: review._avg.rating != null ? Math.round(review._avg.rating * 10) / 10 : null,
     logDayCount,
+    reactionCount,
   };
 }
 
@@ -89,7 +94,7 @@ export default async function ManagerPublicProfilePage({
 }) {
   const data = await getPublicManager(params.id);
   if (!data) notFound();
-  const { profile, completedCount, reviewCount, avgRating, logDayCount } = data;
+  const { profile, completedCount, reviewCount, avgRating, logDayCount, reactionCount } = data;
   const sinceYear = profile.createdAt.getFullYear();
 
   const jsonLd = {
@@ -163,6 +168,13 @@ export default async function ManagerPublicProfilePage({
             <p className="mt-0.5 text-[11px] text-ink-500">돌봄일지 기록</p>
           </div>
         </div>
+        {/* 보호자 반응 — 일지에 보호자들이 원탭으로 남긴 고마움의 누적(0이면 광고하지 않는다) */}
+        {reactionCount > 0 && (
+          <p className="border-t border-ink-100 py-2.5 text-center text-[12px] font-semibold text-ink-700">
+            🙏 보호자 반응 <span className="font-extrabold text-primary-600">{reactionCount}회</span>
+            <span className="ml-1.5 font-normal text-ink-400">일지에 보호자들이 남긴 고마움</span>
+          </p>
+        )}
         <p className="flex items-center justify-center gap-1.5 rounded-b-2xl border-t border-mint-100 bg-mint-50/60 py-2.5 text-center text-xs font-bold text-mint-700">
           <BadgeCheck size={14} aria-hidden />
           돌보다가 실제 매칭 기록으로 확인한 실적이에요

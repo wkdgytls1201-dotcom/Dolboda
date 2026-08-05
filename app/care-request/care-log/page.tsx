@@ -62,6 +62,8 @@ interface ApiResponse {
   availableViews: ("guardian" | "sitter")[];
   sitterNickname: string;
   guardianName: string | null;
+  /** 돌봄 시작일(ISO) — 14일 스트립이 돌봄 전 날짜를 "빈 날"로 오해하지 않게 쓴다 */
+  startDate: string;
   taskChips: string[];
   options: {
     meal: readonly string[];
@@ -769,6 +771,20 @@ function PastLogs({ logs }: { logs: CareLogRow[] }) {
                     정정됨
                   </span>
                 )}
+                {/* 받았던 반응은 지난 기록에도 남는다 — 오늘 카드에서 사라지면 끝이던
+                    고마움이 쌓여 보이는 것이 인정의 축적이다(2026-08-05). */}
+                {current.guardianReaction &&
+                  (() => {
+                    const r = REACTION_META.find((x) => x.key === current.guardianReaction);
+                    return r ? (
+                      <span
+                        title={`보호자 반응: ${r.label}`}
+                        className="rounded-full bg-primary-50 px-1.5 py-0.5 text-[10px] font-bold text-primary-600"
+                      >
+                        {r.emoji} {r.label}
+                      </span>
+                    ) : null;
+                  })()}
               </p>
               <p className="text-ink-500">
                 {[current.meal, current.mood].filter(Boolean).join(" · ") || "기록 없음"}
@@ -817,6 +833,26 @@ function GuardianView({ data }: { data: ApiResponse }) {
   const alertDays = currentPerDay.filter((l) => l.alertNote).length;
   const recentNotes = data.quickNotes.filter((n) => !n.canceledAt).slice(0, 8);
 
+  // 최근 14일 스트립(§4-5 "빈 날은 빈 날로 보여준다") — 기록 목록만으로는 공백이 안
+  // 보인다. 돌봄 시작 전 날짜는 빈 날이 아니라 "기간 밖"이라 스트립에서 제외한다.
+  const byDate = new Map(dayGroups.map((g) => [g.careDate, g.entries[g.entries.length - 1]]));
+  const startYmd = data.startDate.slice(0, 10);
+  const strip: { ymd: string; day: number; state: "alert" | "logged" | "empty" }[] = [];
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const ymd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+      d.getDate()
+    ).padStart(2, "0")}`;
+    if (ymd < startYmd) continue;
+    const entry = byDate.get(ymd);
+    strip.push({
+      ymd,
+      day: d.getDate(),
+      state: entry ? (entry.alertNote ? "alert" : "logged") : "empty",
+    });
+  }
+
   return (
     <div className="space-y-5">
       <section className="rounded-2xl bg-royal-50 p-4">
@@ -825,6 +861,34 @@ function GuardianView({ data }: { data: ApiResponse }) {
           전체 {dayGroups.length}일 · 식사 잘하신 날 {mealDays}일
           {alertDays > 0 && ` · 특이사항 ${alertDays}건`}
         </p>
+        {strip.length > 1 && (
+          <ul className="mt-3 flex gap-1" aria-label="최근 14일 기록 현황">
+            {strip.map((s) => (
+              <li
+                key={s.ymd}
+                title={`${s.ymd} — ${
+                  s.state === "alert" ? "특이사항 기록" : s.state === "logged" ? "기록 있음" : "기록 없음"
+                }`}
+                className="flex min-w-0 flex-1 flex-col items-center gap-1"
+              >
+                <span
+                  aria-hidden
+                  className={`h-2.5 w-2.5 rounded-full ${
+                    s.state === "alert"
+                      ? "bg-primary-500"
+                      : s.state === "logged"
+                        ? "bg-royal-400"
+                        : "border border-ink-200 bg-transparent"
+                  }`}
+                />
+                <span className="text-[9px] leading-none text-ink-300">{s.day}</span>
+                <span className="sr-only">
+                  {s.ymd} {s.state === "alert" ? "특이사항 기록" : s.state === "logged" ? "기록 있음" : "기록 없음"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       {recentNotes.length > 0 && (
