@@ -53,10 +53,10 @@ export async function GET() {
   const sitterIds = careRequest.applications.map((a) => a.sitterProfile.id);
   let statsById = new Map<
     string,
-    { completedCount: number; reviewCount: number; avgRating: number | null }
+    { completedCount: number; reviewCount: number; avgRating: number | null; logDayCount: number }
   >();
   if (sitterIds.length > 0) {
-    const [completed, reviews] = await Promise.all([
+    const [completed, reviews, logDays] = await Promise.all([
       prisma.careRequestApplication.groupBy({
         by: ["sitterProfileId"],
         where: { sitterProfileId: { in: sitterIds }, status: "돌봄완료" },
@@ -68,17 +68,26 @@ export async function GET() {
         _count: { _all: true },
         _avg: { rating: true },
       }),
+      // 돌봄일지 기록일 수 — "기록을 성실히 남기는 매니저"는 그 자체가 신뢰 신호다.
+      // 원본만 센다(correctsId=null) — 하루 1원본 가드 덕에 이 수가 곧 "기록한 날 수"다.
+      prisma.careLog.groupBy({
+        by: ["sitterProfileId"],
+        where: { sitterProfileId: { in: sitterIds }, correctsId: null },
+        _count: { _all: true },
+      }),
     ]);
     statsById = new Map(
       sitterIds.map((id) => {
         const c = completed.find((x) => x.sitterProfileId === id);
         const r = reviews.find((x) => x.sitterProfileId === id);
+        const l = logDays.find((x) => x.sitterProfileId === id);
         return [
           id,
           {
             completedCount: c?._count._all ?? 0,
             reviewCount: r?._count._all ?? 0,
             avgRating: r?._avg.rating != null ? Math.round(r._avg.rating * 10) / 10 : null,
+            logDayCount: l?._count._all ?? 0,
           },
         ];
       })

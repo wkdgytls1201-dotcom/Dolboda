@@ -62,11 +62,59 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       sitterProfile: { select: { user: { select: { id: true, email: true } } } },
     },
   });
-  if (!application || application.careRequest.guardianId !== session.user.id) {
+  if (!application) {
     return NextResponse.json({ error: "처리할 수 없어요." }, { status: 404 });
   }
 
-  const { action } = (await req.json()) as { action?: "confirm" };
+  const body = (await req.json()) as {
+    action?: "confirm" | "propose";
+    proposedAmount?: unknown;
+    message?: unknown;
+  };
+
+  // 재제안(역경매) — 매니저 본인이 아직 답을 기다리는 동안(지원완료 + 요청 OPEN)
+  // 제안 사례비·한마디를 고칠 수 있다. 확정 뒤 수정을 막는 이유: 합의서가 확정 시점의
+  // 제안 금액을 봉인하므로, 그 후에 바뀌면 기록과 실제가 어긋난다.
+  if (body.action === "propose") {
+    if (application.sitterProfile.user.id !== session.user.id) {
+      return NextResponse.json({ error: "처리할 수 없어요." }, { status: 404 });
+    }
+    if (application.status !== "지원완료" || application.careRequest.status !== "OPEN") {
+      return NextResponse.json(
+        { error: "매칭이 확정된 뒤에는 제안을 바꿀 수 없어요." },
+        { status: 409 }
+      );
+    }
+    const proposedAmount =
+      typeof body.proposedAmount === "number" &&
+      Number.isInteger(body.proposedAmount) &&
+      body.proposedAmount > 0 &&
+      body.proposedAmount <= 1_000_000
+        ? body.proposedAmount
+        : null;
+    const message =
+      typeof body.message === "string" && body.message.trim()
+        ? body.message.trim().slice(0, 200)
+        : null;
+    const updated = await prisma.careRequestApplication.update({
+      where: { id: params.id },
+      data: {
+        proposedAmount,
+        proposedUnit:
+          proposedAmount != null
+            ? (application.proposedUnit ?? application.careRequest.budgetUnit ?? "일")
+            : null,
+        message,
+      },
+    });
+    return NextResponse.json(updated);
+  }
+
+  // 이하 확정(confirm) — 보호자만
+  if (application.careRequest.guardianId !== session.user.id) {
+    return NextResponse.json({ error: "처리할 수 없어요." }, { status: 404 });
+  }
+  const { action } = body;
   if (action !== "confirm") {
     return NextResponse.json({ error: "알 수 없는 처리예요." }, { status: 400 });
   }

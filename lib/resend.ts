@@ -326,11 +326,19 @@ function matchingFlowEmailHtml(params: {
 export function applicationReceivedEmailHtml(params: {
   sitterNickname: string;
   requestSummary: string; // 예: "병원 간병 · 서울 · 8.4~8.17"
+  /** 역경매 제안(있을 때만) — 예: "하루 90,000원". 메일에서 바로 보이면 열어볼 이유가 강해진다 */
+  proposedLabel?: string | null;
+  /** 지원 한마디(있을 때만, 이미 200자 제한) */
+  message?: string | null;
 }): string {
+  const proposalLine = params.proposedLabel
+    ? ` 제안 사례비는 ${esc2(params.proposedLabel)}이에요.`
+    : "";
+  const messageLine = params.message ? ` — “${esc2(params.message)}”` : "";
   return matchingFlowEmailHtml({
     eyebrow: "새 지원자",
     title: `${params.sitterNickname}님이 돌봄 요청에 지원했어요`,
-    body: `${esc2(params.requestSummary)} 요청에 새 지원자가 도착했어요. 프로필을 확인하고 마음에 드는 분을 골라 확정해 주세요.`,
+    body: `${esc2(params.requestSummary)} 요청에 새 지원자가 도착했어요.${proposalLine}${messageLine} 프로필을 확인하고 마음에 드는 분을 골라 확정해 주세요.`,
     ctaLabel: "지원자 확인하러 가기",
     ctaUrl: `${SITE_URL}/care-request`,
   });

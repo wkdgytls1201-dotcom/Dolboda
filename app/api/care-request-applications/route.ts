@@ -100,6 +100,12 @@ export async function POST(req: Request) {
           html: applicationReceivedEmailHtml({
             sitterNickname: sitterProfile.nickname,
             requestSummary: careRequestSummary(careRequest),
+            // 역경매 — 제안 금액·한마디가 메일에서 바로 보이면 열어볼 이유가 강해진다
+            proposedLabel:
+              application.proposedAmount != null
+                ? `${application.proposedUnit === "시간" ? "시간당" : "하루"} ${application.proposedAmount.toLocaleString()}원`
+                : null,
+            message: application.message,
           }),
         });
       }

@@ -348,14 +348,24 @@ export function CareRequestDetail({
                   )}
                   {/* 돌보다 안에서 검증된 실적 — 자기 신고 경력과 구분되는 신뢰 신호.
                       실적이 없으면 아무것도 안 붙인다(0건을 굳이 광고하지 않는다) */}
-                  {app.stats && app.stats.completedCount > 0 && (
-                    <p className="mb-1.5 flex items-center gap-1 text-xs font-semibold text-royal-600">
-                      <CheckCircle2 size={12} className="shrink-0" />
-                      돌보다에서 돌봄 완료 {app.stats.completedCount}건
-                      {app.stats.avgRating != null &&
-                        ` · ★${app.stats.avgRating} (후기 ${app.stats.reviewCount})`}
-                    </p>
-                  )}
+                  {app.stats &&
+                    (app.stats.completedCount > 0 || app.stats.logDayCount > 0) && (
+                      <p className="mb-1.5 flex items-center gap-1 text-xs font-semibold text-royal-600">
+                        <CheckCircle2 size={12} className="shrink-0" />
+                        {[
+                          app.stats.completedCount > 0
+                            ? `돌보다에서 돌봄 완료 ${app.stats.completedCount}건`
+                            : null,
+                          app.stats.avgRating != null
+                            ? `★${app.stats.avgRating} (후기 ${app.stats.reviewCount})`
+                            : null,
+                          // 일지 기록일 — "기록을 성실히 남기는 매니저"라는 신호
+                          app.stats.logDayCount > 0 ? `돌봄일지 ${app.stats.logDayCount}일` : null,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </p>
+                    )}
                   {/* 지원 한마디 — 이 요청을 보고 쓴 말이라 소개글보다 위 */}
                   {app.message && (
                     <p className="mb-1.5 rounded-xl bg-white px-3 py-2 text-sm leading-relaxed text-ink-700">

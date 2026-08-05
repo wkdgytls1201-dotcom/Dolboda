@@ -637,10 +637,18 @@ function SitterView({
           </div>
         )}
 
-        <p className="mt-4 border-t border-ink-100 pt-3 text-[11px] leading-relaxed text-ink-300">
-          일지는 의무가 아니에요. 다만 남겨두시면 보호자님이 어떤 돌봄이었는지 알 수 있어
-          후기를 남기기 쉬워지고, 그 후기가 다음 일자리를 구하실 때 도움이 돼요.
-        </p>
+        {/* 동기부여 — 지어낸 수치("95%") 대신 실제로 참인 사실을 강하게 말한다:
+            일지 기록일 수는 지원자 카드·공개 프로필에 실적으로 표시된다(2026-08-05). */}
+        <div className="mt-4 flex items-start gap-2 rounded-xl bg-mint-50/70 p-3.5">
+          <Sparkles size={15} className="mt-0.5 shrink-0 text-mint-600" aria-hidden />
+          <p className="text-[12px] leading-relaxed text-ink-700">
+            <span className="font-bold text-mint-700">오늘 남긴 일지는 그대로 실적이 돼요.</span>
+            <br />
+            보호자는 지원자를 고를 때 완료 건수·평점과 함께{" "}
+            <span className="font-bold">돌봄일지 기록일 수</span>를 봐요. 꾸준한 기록이
+            다음 매칭에서 선택받을 확률을 크게 높여요.
+          </p>
+        </div>
       </section>
 
       <PastLogs logs={data.logs.filter((l) => l.careDate !== todayKst)} />

@@ -54,6 +54,10 @@ interface MyApplication {
   id: string;
   status: string;
   createdAt: string;
+  /** 역경매 — 내가 낸 제안(지원완료 상태면 수정 가능) */
+  proposedAmount: number | null;
+  proposedUnit: string | null;
+  message: string | null;
   careRequest: JobRequest & { status: string };
 }
 
@@ -260,6 +264,8 @@ export default function SitterJobsPage() {
   const [applications, setApplications] = useState<MyApplication[]>([]);
   const [applyingId, setApplyingId] = useState<string | null>(null);
   const [confirmingJob, setConfirmingJob] = useState<JobRequest | null>(null);
+  // 역경매 — 지원 현황에서 제안을 고치는 중인 지원 건
+  const [editingProposal, setEditingProposal] = useState<MyApplication | null>(null);
   const [showFilters, setShowFilters] = useState(false);
 
   const [typeFilter, setTypeFilter] = useState<LocationTypeValue | "">("");
@@ -605,13 +611,33 @@ export default function SitterJobsPage() {
                       다른 일자리 둘러보기
                     </button>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => handleWithdraw(a.id)}
-                      className="min-h-[48px] w-full rounded-xl border border-ink-100 text-sm font-semibold text-ink-500 transition-colors duration-150 hover:bg-ink-100 active:scale-[0.98]"
-                    >
-                      지원 취소
-                    </button>
+                    <div className="space-y-2">
+                      {/* 내 제안 — 보호자에게 이렇게 보이고 있다는 확인 */}
+                      {(a.proposedAmount != null || a.message) && (
+                        <p className="rounded-xl bg-primary-50/60 px-3 py-2 text-[12px] leading-relaxed text-ink-700">
+                          내 제안
+                          {a.proposedAmount != null &&
+                            ` · ${a.proposedUnit === "시간" ? "시간당" : "하루"} ${a.proposedAmount.toLocaleString()}원`}
+                          {a.message && ` · “${a.message}”`}
+                        </p>
+                      )}
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setEditingProposal(a)}
+                          className="min-h-[48px] flex-1 rounded-xl bg-primary-50 text-sm font-bold text-primary-700 transition-colors duration-150 hover:bg-primary-100 active:scale-[0.98]"
+                        >
+                          제안 수정
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleWithdraw(a.id)}
+                          className="min-h-[48px] flex-1 rounded-xl border border-ink-100 text-sm font-semibold text-ink-500 transition-colors duration-150 hover:bg-ink-100 active:scale-[0.98]"
+                        >
+                          지원 취소
+                        </button>
+                      </div>
+                    </div>
                   )
                 }
               />
@@ -710,6 +736,133 @@ export default function SitterJobsPage() {
           onClose={() => setConfirmingJob(null)}
         />
       )}
+      {editingProposal && (
+        <ProposalEditSheet
+          application={editingProposal}
+          onClose={() => setEditingProposal(null)}
+          onSaved={loadApplications}
+        />
+      )}
     </MyPageShell>
+  );
+}
+
+// 역경매 재제안 — 보호자 답을 기다리는 동안(지원완료)만 금액·한마디를 고칠 수 있다.
+// 확정 뒤에는 서버가 409로 막는다(합의서가 확정 시점 제안을 봉인하므로).
+function ProposalEditSheet({
+  application,
+  onClose,
+  onSaved,
+}: {
+  application: MyApplication;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [amountText, setAmountText] = useState(
+    application.proposedAmount ? String(application.proposedAmount) : ""
+  );
+  const [message, setMessage] = useState(application.message ?? "");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const unitLabel =
+    (application.proposedUnit ?? application.careRequest.budgetUnit ?? "일") === "시간"
+      ? "시간당"
+      : "하루";
+  const amount = Number(amountText.replace(/[^0-9]/g, "")) || 0;
+
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
+
+  async function save() {
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/care-request-applications/${application.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "propose",
+          proposedAmount: amount > 0 ? amount : undefined,
+          message: message.trim() || undefined,
+        }),
+      });
+      const d = (await res.json().catch(() => null)) as { error?: string } | null;
+      if (!res.ok) throw new Error(d?.error ?? "");
+      onSaved();
+      onClose();
+    } catch (e) {
+      setError((e instanceof Error && e.message) || "저장하지 못했어요. 잠시 후 다시 시도해주세요.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
+      <button
+        type="button"
+        aria-label="닫기"
+        onClick={onClose}
+        className="animate-overlay-in absolute inset-0 bg-ink-900/50 backdrop-blur-[2px]"
+      />
+      <div className="animate-slide-up relative w-full max-w-md rounded-t-3xl bg-white p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-card-hover sm:rounded-3xl sm:p-6">
+        <h2 className="mb-1 text-lg font-bold text-ink-900">제안 수정</h2>
+        <p className="mb-4 text-xs text-ink-500">
+          보호자가 아직 확인 중이라 제안을 바꿀 수 있어요.
+        </p>
+
+        <p className="mb-1.5 text-[12px] font-semibold text-ink-500">제안 사례비</p>
+        <label className="mb-3 flex items-center gap-2 rounded-xl border border-ink-100 px-3.5 py-2.5 focus-within:border-primary-400">
+          <span className="shrink-0 text-[13px] font-semibold text-ink-500">{unitLabel}</span>
+          <input
+            type="text"
+            inputMode="numeric"
+            value={amount ? amount.toLocaleString() : ""}
+            onChange={(e) => setAmountText(e.target.value)}
+            placeholder="비워두면 협의로 전달돼요"
+            className="min-w-0 flex-1 bg-transparent text-right text-[15px] font-bold text-ink-900 outline-none"
+          />
+          <span className="shrink-0 text-[13px] text-ink-400">원</span>
+        </label>
+
+        <p className="mb-1.5 text-[12px] font-semibold text-ink-500">보호자께 한마디</p>
+        <textarea
+          value={message}
+          onChange={(e) => setMessage(e.target.value.slice(0, 200))}
+          rows={2}
+          placeholder="이 요청에 맞춰 어떻게 돌볼 수 있는지 짧게"
+          className="mb-3 w-full resize-none rounded-xl border border-ink-100 px-3.5 py-2.5 text-sm outline-none focus:border-primary-400"
+        />
+
+        {error && (
+          <p className="mb-3 rounded-xl bg-primary-50 px-3.5 py-2.5 text-xs font-semibold text-primary-700">
+            {error}
+          </p>
+        )}
+
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="min-h-[50px] flex-1 rounded-xl border border-ink-100 text-sm font-bold text-ink-500 transition-colors duration-150 hover:bg-ink-100"
+          >
+            취소
+          </button>
+          <button
+            type="button"
+            disabled={saving}
+            onClick={save}
+            className="min-h-[50px] flex-[2] rounded-xl bg-primary-500 text-sm font-bold text-white shadow-soft transition-all duration-200 ease-snappy hover:bg-primary-600 active:scale-[0.98] disabled:opacity-60"
+          >
+            {saving ? "저장 중..." : "이 제안으로 바꾸기"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

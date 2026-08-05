@@ -39,7 +39,7 @@ async function getPublicManager(id: string) {
   });
   if (!profile || !profile.publicProfileAt) return null;
 
-  const [completedCount, review] = await Promise.all([
+  const [completedCount, review, logDayCount] = await Promise.all([
     prisma.careRequestApplication.count({
       where: { sitterProfileId: id, status: "돌봄완료" },
     }),
@@ -48,6 +48,10 @@ async function getPublicManager(id: string) {
       _count: { _all: true },
       _avg: { rating: true },
     }),
+    // 돌봄일지 기록일 수 — 원본만 센다(하루 1원본 가드 덕에 곧 "기록한 날 수")
+    prisma.careLog.count({
+      where: { sitterProfileId: id, correctsId: null },
+    }),
   ]);
 
   return {
@@ -55,6 +59,7 @@ async function getPublicManager(id: string) {
     completedCount,
     reviewCount: review._count._all,
     avgRating: review._avg.rating != null ? Math.round(review._avg.rating * 10) / 10 : null,
+    logDayCount,
   };
 }
 
@@ -84,7 +89,7 @@ export default async function ManagerPublicProfilePage({
 }) {
   const data = await getPublicManager(params.id);
   if (!data) notFound();
-  const { profile, completedCount, reviewCount, avgRating } = data;
+  const { profile, completedCount, reviewCount, avgRating, logDayCount } = data;
   const sinceYear = profile.createdAt.getFullYear();
 
   const jsonLd = {
@@ -124,6 +129,7 @@ export default async function ManagerPublicProfilePage({
           </h1>
           <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-sm text-ink-500">
             <span>경력 {profile.experienceYears}년</span>
+            <span>{sinceYear}년부터 활동</span>
             {profile.regions.length > 0 && (
               <span className="flex items-center gap-0.5">
                 <MapPin size={12} aria-hidden />
@@ -149,10 +155,12 @@ export default async function ManagerPublicProfilePage({
             </p>
             <p className="mt-0.5 text-[11px] text-ink-500">보호자 평점{reviewCount > 0 ? ` (${reviewCount})` : ""}</p>
           </div>
+          {/* 활동 시작 연도는 헤더로 올리고, 이 칸은 일지 기록일로 — "기록을 성실히
+              남기는 매니저"가 더 강한 신뢰 신호다(2026-08-05 사용자 지시). */}
           <div className="flex flex-col items-center px-1 py-4 text-center">
             <Award size={16} className="mb-1.5 text-royal-400" aria-hidden />
-            <p className="text-lg font-extrabold text-primary-600">{sinceYear}년</p>
-            <p className="mt-0.5 text-[11px] text-ink-500">활동 시작</p>
+            <p className="text-lg font-extrabold text-primary-600">{logDayCount}일</p>
+            <p className="mt-0.5 text-[11px] text-ink-500">돌봄일지 기록</p>
           </div>
         </div>
         <p className="flex items-center justify-center gap-1.5 rounded-b-2xl border-t border-mint-100 bg-mint-50/60 py-2.5 text-center text-xs font-bold text-mint-700">

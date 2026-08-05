@@ -21,6 +21,8 @@ export interface Applicant {
     completedCount: number;
     reviewCount: number;
     avgRating: number | null;
+    /** 돌봄일지를 기록한 날 수(원본 기준) — 성실함의 신호 */
+    logDayCount: number;
   };
 }
 

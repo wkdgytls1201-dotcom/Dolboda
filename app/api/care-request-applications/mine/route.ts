@@ -46,6 +46,10 @@ export async function GET() {
         id: a.id,
         status: a.status,
         createdAt: a.createdAt,
+        // 역경매 — 내가 낸 제안(지원 현황 탭에서 보여주고, 지원완료 상태면 수정 가능)
+        proposedAmount: a.proposedAmount,
+        proposedUnit: a.proposedUnit,
+        message: a.message,
         careRequest,
       };
     }),
