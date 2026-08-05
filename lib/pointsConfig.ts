@@ -49,6 +49,7 @@ export const POINT_KIND_LABEL: Record<string, string> = {
   spend_request_boost: "우선 요청 사용",
   referral_referrer: "친구 초대 보상",
   referral_referee: "초대받고 가입",
+  admin_grant: "돌보다 지급",
 };
 
 /** 포인트 유효기간(개월) — 약관·화면 고지와 같은 값 */
