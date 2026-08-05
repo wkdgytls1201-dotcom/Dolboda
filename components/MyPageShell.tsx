@@ -14,6 +14,7 @@ import {
   ChevronRight,
   ClipboardCheck,
   ClipboardList,
+  NotebookPen,
   Gift,
   Heart,
   Scale,
@@ -147,10 +148,13 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
   ];
   const [guardianPrimary, ...guardianGrid] = guardianItems;
 
-  // 자주 쓰는 순서대로 — 일자리 확인이 매니저의 주 목적이라 맨 앞에 둔다.
-  // 모바일에서는 이 순서가 그대로 위계가 된다: 대표 카드(일자리) → 그리드 4개 → 알림은 얇은 줄.
+  // 모바일에서는 이 순서가 그대로 위계가 된다: 대표 카드 → 그리드 → 얇은 줄.
+  // 대표 카드는 돌봄일지 관리(2026-08-05 사용자 지시) — 바로 아래 대시보드 카드가
+  // 지원중·매칭·완료 숫자로 일자리 관리에 이미 직행하고 있어, 대표 자리에 일자리를
+  // 두면 같은 목적지가 연달아 두 번 나왔다. 일자리 관리는 얇은 줄로 남긴다.
   const sitterItems: NavItem[] = [
-    { href: "/mypage/sitter/jobs", label: "일자리 관리", icon: <Briefcase size={20} />, hint: "새 일자리와 지원·매칭 현황" },
+    { href: "/care-request/care-log", label: "돌봄일지 관리", icon: <NotebookPen size={20} />, hint: "오늘 기록 남기고 보호자 반응 확인" },
+    { href: "/mypage/sitter/jobs", label: "일자리 관리", icon: <Briefcase size={18} />, hint: "새 일자리와 지원·매칭 현황" },
     { href: "/mypage/sitter/profile", label: "매니저 프로필", icon: <HeartHandshake size={18} />, hint: "보호자에게 보이는 내 정보" },
     { href: "/mypage/sitter/workplaces", label: "일하기 좋은 시설", icon: <Building2 size={18} />, hint: "근무환경 지수 순", ribbon: "돌보다 단독" },
     { href: "/mypage/sitter/tips", label: "매니저 가이드", icon: <BookOpen size={18} />, hint: "지원 성공률 높이기", ribbon: "꿀팁" },
@@ -247,9 +251,11 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
         }`}
         style={delayIndex !== undefined ? { animationDelay: `${delayIndex * 70}ms` } : undefined}
       >
-        {/* 우상단 강조 띠 — 새로 만든 메뉴가 6개 사이에 묻히지 않게 */}
+        {/* 우상단 강조 칩 — 모서리에 딱 붙이면 카드의 rounded-2xl + overflow-hidden이
+            칩 오른쪽을 곡선으로 깎아 글자가 잘렸다("돌보다 단독" 실측 2026-08-05).
+            모서리 곡선 안쪽으로 살짝 들여 붙인다. */}
         {item.ribbon && (
-          <span className="absolute right-0 top-0 rounded-bl-xl bg-gradient-to-r from-royal-500 to-primary-500 px-2 py-0.5 text-[9px] font-extrabold text-white">
+          <span className="absolute right-1 top-1 rounded-full bg-gradient-to-r from-royal-500 to-primary-500 px-2 py-0.5 text-[9px] font-extrabold text-white">
             {item.ribbon}
           </span>
         )}
