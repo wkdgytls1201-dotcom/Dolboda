@@ -51,6 +51,9 @@ import { DolbodaScoreCard } from "@/components/DolbodaScoreCard";
 import { CareMatchPoints } from "@/components/CareMatchPoints";
 import { calcDolbodaScore } from "@/lib/dolbodaScore";
 import { checkFee, MONTHLY_BASIS_NOTE } from "@/lib/feeQuality";
+import { feeBenchmarkFor } from "@/lib/feeBenchmarks.generated";
+import { FeeCompareBar } from "@/components/FeeCompareBar";
+import { findRegionByAddress } from "@/lib/regionSeo";
 import { PROGRAM_TAG_META } from "@/lib/programTaxonomy";
 
 const DOCTOR_GRADE_TABLE = [
@@ -99,6 +102,9 @@ export default function FacilityDetailClient({
   const { toggle, isSelected, canAddMore } = useCompare();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { data: session } = useSession();
+  // 비급여 비용 비교에 쓸 시/도 라벨("서울"·"경기"…). 주소가 깨진 시설(공단 원본 결손)은
+  // null이 되어 비교 막대가 그냥 안 뜬다.
+  const regionLabel = findRegionByAddress(facility.address)?.label ?? null;
   const user = session?.user;
   const [showConsult, setShowConsult] = useState(false);
   // 비회원이 상담 신청을 누르면 먼저 뜨는 로그인/가입 창
@@ -773,16 +779,35 @@ export default function FacilityDetailClient({
                       <div key={`${fee.name}-${i}`} className="px-4 py-3">
                         <p className="mb-1.5 text-sm text-ink-700">{fee.name}</p>
                         {quality.kind === "ok" ? (
-                          <div className="flex flex-wrap gap-2">
-                            <span className="rounded-full bg-ink-100/60 px-2.5 py-1 text-xs font-semibold text-ink-900">
-                              월 {fee.monthly.toLocaleString()}원
-                            </span>
-                            {fee.daily > 0 && (
-                              <span className="rounded-full bg-ink-100/60 px-2.5 py-1 text-xs text-ink-500">
-                                1일 {fee.daily.toLocaleString()}원
+                          <>
+                            <div className="flex flex-wrap gap-2">
+                              <span className="rounded-full bg-ink-100/60 px-2.5 py-1 text-xs font-semibold text-ink-900">
+                                월 {fee.monthly.toLocaleString()}원
                               </span>
-                            )}
-                          </div>
+                              {fee.daily > 0 && (
+                                <span className="rounded-full bg-ink-100/60 px-2.5 py-1 text-xs text-ink-500">
+                                  1일 {fee.daily.toLocaleString()}원
+                                </span>
+                              )}
+                            </div>
+                            {/* 금액만으론 비싼지 싼지 알 수 없다 — 같은 지역·같은 유형의
+                                중앙값과 나란히 놓는다. 기준값은 미리 구운 상수라 조회 0.
+                                표본이 부족한 지역·항목은 benchmark가 null이라 그냥 안 뜬다. */}
+                            {(() => {
+                              const bench = feeBenchmarkFor(
+                                facility.facilityType,
+                                regionLabel,
+                                fee.name
+                              );
+                              return bench ? (
+                                <FeeCompareBar
+                                  monthly={fee.monthly}
+                                  benchmark={bench}
+                                  regionLabel={regionLabel ?? ""}
+                                />
+                              ) : null;
+                            })()}
+                          </>
                         ) : quality.kind === "unpublished" ? (
                           <p className="text-xs text-ink-300">공개된 금액이 없어요</p>
                         ) : (
