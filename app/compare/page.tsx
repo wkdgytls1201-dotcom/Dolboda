@@ -1,9 +1,9 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Crown, Plus, X } from "lucide-react";
+import { Crown, Plus, Share2, X } from "lucide-react";
 import { useFacilitiesByIds } from "@/lib/useFacilities";
 import { Facility, FACILITY_TYPE_LABEL, isHospital } from "@/lib/types";
 import { GradeBadge, TypeBadge, NHIS_GRADE_LETTER } from "@/components/GradeBadge";
@@ -143,6 +143,43 @@ function CompareContent() {
     .map((id) => fetched.find((f) => f.id === id))
     .filter((f): f is Facility => !!f);
 
+  // 가족에게 공유 — 시설 결정은 대부분 가족 합의라, 이 화면을 그대로 보낼 수 있어야 한다.
+  // 링크는 ?ids=만 실어서(개인 데이터 없음) 받는 쪽 비교함을 덮어쓰지 않고 열린다
+  // (위 idsParam 분기가 이미 그렇게 동작한다). 모바일은 네이티브 공유 시트(카톡 포함),
+  // 미지원 환경은 클립보드 복사로.
+  const [shareNote, setShareNote] = useState<string | null>(null);
+  const shareNoteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  function showShareNote(msg: string) {
+    if (shareNoteTimer.current) clearTimeout(shareNoteTimer.current);
+    setShareNote(msg);
+    shareNoteTimer.current = setTimeout(() => setShareNote(null), 3500);
+  }
+  async function handleShare() {
+    const url = `${window.location.origin}/compare?ids=${facilities.map((f) => f.id).join(",")}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "돌보다 시설 비교",
+          text: `${facilities[0].name} 외 ${facilities.length - 1}곳, 어디가 좋을까요?`,
+          url,
+        });
+        return; // 공유 시트 자체가 피드백이라 별도 안내 없음
+      } catch (e) {
+        if ((e as DOMException)?.name === "AbortError") return; // 시트를 그냥 닫음
+        // 그 외 실패는 클립보드로 이어서 시도
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      showShareNote("링크를 복사했어요 — 카톡에 붙여넣어 가족과 함께 보세요");
+    } catch {
+      // 클립보드까지 막힌 환경(일부 웹뷰 등) — 막다른 안내 대신 주소창이라도
+      // 공유 가능한 링크(?ids=)로 맞춰주고 직접 복사하게 안내한다
+      window.history.replaceState(null, "", url);
+      showShareNote("주소창의 링크를 길게 눌러 복사해주세요");
+    }
+  }
+
   const hasMixedTypes =
     facilities.some((f) => isHospital(f)) && facilities.some((f) => !isHospital(f));
 
@@ -172,7 +209,25 @@ function CompareContent() {
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
-      <h1 className="mb-1 text-xl font-bold text-ink-900">시설 비교하기</h1>
+      <div className="mb-1 flex items-center justify-between gap-3">
+        <h1 className="text-xl font-bold text-ink-900">시설 비교하기</h1>
+        {/* 1곳뿐일 땐 비교랄 게 없어서 공유 버튼을 숨긴다 */}
+        {facilities.length >= 2 && (
+          <button
+            type="button"
+            onClick={handleShare}
+            className="flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-xl border border-ink-100 bg-white px-3.5 text-sm font-bold text-ink-700 shadow-card transition-all duration-150 hover:border-primary-300 hover:text-primary-600 active:scale-95"
+          >
+            <Share2 size={15} aria-hidden />
+            가족에게 공유
+          </button>
+        )}
+      </div>
+      {shareNote && (
+        <p role="status" className="mb-2 text-xs font-semibold text-mint-700">
+          {shareNote}
+        </p>
+      )}
       <p className="mb-6 indent-[-1rem] pl-4 text-sm text-ink-500">
         최대 {maxCompare}개까지 나란히 비교할 수 있어요. 항목별로 더 나은 쪽에는 왕관 표시가
         붙어요.
