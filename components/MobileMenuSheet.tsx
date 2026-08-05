@@ -220,6 +220,7 @@ export function MobileMenuSheet({
             <p className="flex flex-wrap gap-x-4 gap-y-2.5 px-2 text-[13px] font-medium text-ink-600">
               <Link href="/about" onClick={onClose} className="py-1">회사 소개</Link>
               <Link href="/data-policy" onClick={onClose} className="py-1">데이터 출처</Link>
+              <Link href="/editorial-policy" onClick={onClose} className="py-1">콘텐츠 원칙</Link>
               <Link href="/terms" onClick={onClose} className="py-1">이용약관</Link>
               <Link href="/privacy" onClick={onClose} className="py-1">개인정보처리방침</Link>
             </p>

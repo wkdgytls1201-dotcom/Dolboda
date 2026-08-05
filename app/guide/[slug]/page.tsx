@@ -41,7 +41,11 @@ export default function GuidePage({ params }: { params: { slug: string } }) {
         headline: guide.title,
         description: guide.description,
         dateModified: guide.updated,
-        author: { "@type": "Organization", name: "돌보다" },
+        author: { "@type": "Organization", name: "돌보다 콘텐츠팀", url: `${SITE_URL}/editorial-policy` },
+        // 검수자는 실존할 때만 넣는다 — reviewedBy는 스키마 표준이 아니라 Person으로 명시
+        ...(guide.reviewer && {
+          reviewedBy: { "@type": "Person", name: guide.reviewer.name, jobTitle: guide.reviewer.title },
+        }),
         publisher: { "@type": "Organization", name: "돌보다", url: SITE_URL },
         mainEntityOfPage: `${SITE_URL}/guide/${guide.slug}`,
       },
@@ -229,6 +233,42 @@ export default function GuidePage({ params }: { params: { slug: string } }) {
           </div>
         </section>
       </article>
+
+      {/* 바이라인 — 누가·언제·무엇을 근거로 썼는지(E-E-A-T). 검수자는 실존할 때만 표시된다 */}
+      <section
+        aria-label="글 정보"
+        className="mt-10 rounded-2xl border border-ink-100 bg-ivory-100/60 p-4"
+      >
+        <dl className="space-y-1.5 text-[13px] leading-relaxed text-ink-500">
+          <div className="flex gap-2">
+            <dt className="w-[72px] shrink-0 font-bold text-ink-700">작성</dt>
+            <dd>돌보다 콘텐츠팀</dd>
+          </div>
+          {guide.reviewer && (
+            <div className="flex gap-2">
+              <dt className="w-[72px] shrink-0 font-bold text-ink-700">검수</dt>
+              <dd>
+                {guide.reviewer.name} ({guide.reviewer.title})
+              </dd>
+            </div>
+          )}
+          <div className="flex gap-2">
+            <dt className="w-[72px] shrink-0 font-bold text-ink-700">최근 검토일</dt>
+            <dd>{guide.updated}</dd>
+          </div>
+          <div className="flex gap-2">
+            <dt className="w-[72px] shrink-0 font-bold text-ink-700">근거자료</dt>
+            <dd className="break-keep">국민건강보험공단 · 보건복지부 고시 · 건강보험심사평가원</dd>
+          </div>
+        </dl>
+        <Link
+          href="/editorial-policy"
+          className="mt-3 inline-flex min-h-[36px] items-center gap-1 text-[13px] font-bold text-primary-600 hover:text-primary-700"
+        >
+          콘텐츠 작성·검수 원칙 보기
+          <ChevronRight size={14} aria-hidden />
+        </Link>
+      </section>
 
       {/* CTA — 가이드에서 실제 검색·테스트로 연결 */}
       <div className="mt-10 space-y-2">

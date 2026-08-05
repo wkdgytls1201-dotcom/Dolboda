@@ -138,8 +138,10 @@ export default async function RegionTypePage({
           ...(f.photo ? { image: f.photo } : {}),
         })),
       },
-      // total은 이 유형의 시설 수다 — typeSeo를 함께 넘겨야 질문도 그 유형으로 나온다
-      regionFaqJsonLd({ regionName: sigungu, total: summary.total, typeSeo }),
+      // total은 이 유형의 시설 수다 — typeSeo를 함께 넘겨야 질문도 그 유형으로 나온다.
+      // FAQ는 1페이지에만 싣는다 — 2페이지 이후까지 같은 FAQ가 반복되면 페이지마다
+      // 내용이 같은 중복 블록이 되어 색인 품질을 깎는다(본문 렌더도 같은 조건).
+      ...(page === 1 ? [regionFaqJsonLd({ regionName: sigungu, total: summary.total, typeSeo })] : []),
     ],
   };
 
@@ -263,7 +265,7 @@ export default async function RegionTypePage({
         </span>
       </Link>
 
-      <RegionFaq regionName={sigungu} total={summary.total} typeSeo={typeSeo} />
+      {page === 1 && <RegionFaq regionName={sigungu} total={summary.total} typeSeo={typeSeo} />}
     </main>
   );
 }

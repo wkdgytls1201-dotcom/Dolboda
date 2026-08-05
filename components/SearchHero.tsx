@@ -46,8 +46,10 @@ export function SearchHero({ heroSlides }: { heroSlides: HeroSlide[] }) {
         <span className="mb-4 inline-block rounded-full bg-white/80 px-4 py-1.5 text-sm font-semibold text-primary-700 shadow-sm">
           공공데이터 기반 요양시설 정보
         </span>
-        <h1 className="text-3xl font-extrabold leading-snug text-ink-900 sm:text-5xl">
-          소중한 부모님,
+        {/* H1에 핵심 검색어(요양원·요양병원)를 담는다 — 감성 문구만 있으면 검색엔진이
+            페이지 주제를 못 읽는다. break-keep으로 모바일에서 어절 경계 줄바꿈. */}
+        <h1 className="break-keep text-3xl font-extrabold leading-snug text-ink-900 sm:text-5xl">
+          부모님께 맞는 요양원·요양병원,
           <br />
           <span className="text-primary-500">어디에 모시겠어요?</span>
         </h1>

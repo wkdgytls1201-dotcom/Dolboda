@@ -21,6 +21,8 @@ export interface Guide {
   description: string;
   category: "비용" | "제도" | "시설 선택";
   updated: string;
+  /** 전문가 검수를 받은 글만 채운다 — 실존 인물·실제 자격만. 가짜 검수자는 신뢰를 통째로 무너뜨린다. */
+  reviewer?: { name: string; title: string };
   /** 글 상단 3줄 요약 — 바쁜 보호자가 여기까지만 읽어도 답을 얻게 */
   keyPoints: string[];
   sections: GuideSection[];
