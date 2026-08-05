@@ -44,7 +44,8 @@ export function SponsorSlots({
             >
               <span className="min-w-0 flex-1">
                 <span className="mb-0.5 flex flex-wrap items-center gap-1.5">
-                  <span className="font-bold text-ink-900">{f.name}</span>
+                  {/* 긴 시설명이 컨테이너를 밀어내지 않게 — RegionSeoParts와 같은 이유 */}
+                  <span className="min-w-0 font-bold text-ink-900 [overflow-wrap:anywhere]">{f.name}</span>
                   {f.grade != null && (
                     <span className="rounded-full bg-royal-50 px-2 py-0.5 text-[11px] font-bold text-royal-700">
                       {f.grade}등급

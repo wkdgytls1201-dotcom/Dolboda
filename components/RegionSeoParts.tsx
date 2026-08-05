@@ -70,7 +70,12 @@ export function FacilityLinkList({
             )}
             <span className="min-w-0 flex-1">
               <span className="mb-0.5 flex flex-wrap items-center gap-1.5">
-                <span className="font-bold text-ink-900">{f.name}</span>
+                {/* 공단 원본에 띄어쓰기 없는 긴 시설명이 있다("(A)"+1건강드림실버케어통합재가센터).
+                    전역 word-break:keep-all이 그걸 못 끊어 360px에서 페이지가 좌우로
+                    스크롤됐다(실측 396px > 360px). min-w-0으로 flex 항목이 줄어들 수 있게
+                    하고, 다른 방법이 없을 때만 끊는다(anywhere) — 이름은 잘라내면 정보가
+                    사라지므로 truncate 대신 줄바꿈을 택했다. */}
+                <span className="min-w-0 font-bold text-ink-900 [overflow-wrap:anywhere]">{f.name}</span>
                 {f.grade != null && (
                   <span className="rounded-full bg-royal-50 px-2 py-0.5 text-[11px] font-bold text-royal-700">
                     {f.grade}등급
