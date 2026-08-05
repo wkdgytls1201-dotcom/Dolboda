@@ -147,6 +147,11 @@ model CareLog {
 
   readAt DateTime? // 보호자가 열람한 시각 — 매니저 쪽에 "확인했어요"로 표시
 
+  // 보호자의 원탭 반응 — "thanks"(감사해요) | "relieved"(안심돼요) | "cheer"(수고하셨어요).
+  // 읽음 확인의 다음 단계다: 매니저가 "읽혔다"를 넘어 "고마워한다"를 보는 것이
+  // 감정노동의 보상이 된다(요양보호사 이탈의 큰 원인이 인정 부재 — 2026-08-05 조사).
+  guardianReaction String?
+
   // 정정 기록 — 원본을 고치지 않고 새 행을 만들어 잇는다(append-only, 합의서와 같은 사상)
   correctsId String?
 

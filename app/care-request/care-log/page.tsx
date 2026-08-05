@@ -31,8 +31,17 @@ interface CareLogRow {
   workStart: string | null;
   workEnd: string | null;
   readAt: string | null;
+  guardianReaction: string | null;
   correctsId: string | null;
 }
+
+// 보호자 원탭 반응 — 읽음 확인의 다음 단계. 매니저가 "읽혔다"를 넘어 "고마워한다"를
+// 보는 것이 감정노동의 보상이 된다(서버 검증 목록은 api/care-log의 REACTIONS와 동일).
+const REACTION_META = [
+  { key: "thanks", emoji: "🙏", label: "감사해요" },
+  { key: "relieved", emoji: "😊", label: "안심돼요" },
+  { key: "cheer", emoji: "💪", label: "수고하셨어요" },
+] as const;
 
 interface QuickNoteRow {
   id: string;
@@ -386,9 +395,18 @@ function SitterView({
             {todayLog.alertNote && (
               <p className="font-semibold text-primary-600">⚠️ {todayLog.alertNote}</p>
             )}
-            {todayLog.readAt && (
+            {todayLog.readAt && !todayLog.guardianReaction && (
               <p className="text-[11px] text-mint-600">보호자님이 확인했어요</p>
             )}
+            {todayLog.guardianReaction &&
+              (() => {
+                const r = REACTION_META.find((x) => x.key === todayLog.guardianReaction);
+                return r ? (
+                  <p className="text-[11px] font-semibold text-primary-600">
+                    보호자님이 {r.emoji} “{r.label}” 반응을 남겼어요
+                  </p>
+                ) : null;
+              })()}
             <button
               type="button"
               onClick={() => {
@@ -665,6 +683,28 @@ function PastLogs({ logs }: { logs: CareLogRow[] }) {
 // ────────────────────────────── 보호자 — 열람 ──────────────────────────────
 
 function GuardianView({ data }: { data: ApiResponse }) {
+  // 반응은 화면부터 바꾸고 서버는 뒤따른다(낙관적) — 실패하면 되돌린다.
+  const [reactions, setReactions] = useState<Record<string, string | null>>({});
+  const [reactingId, setReactingId] = useState<string | null>(null);
+
+  async function react(logId: string, current: string | null, next: string) {
+    const value = current === next ? null : next; // 같은 걸 또 누르면 취소
+    setReactingId(logId);
+    setReactions((prev) => ({ ...prev, [logId]: value }));
+    try {
+      const res = await fetch("/api/care-log", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ logId, reaction: value }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      setReactions((prev) => ({ ...prev, [logId]: current }));
+    } finally {
+      setReactingId(null);
+    }
+  }
+
   // 하루에 정정까지 여러 행이 쌓일 수 있으니, 날짜별로 묶어 최신 버전 하나씩만 센다
   // (그렇지 않으면 정정한 날이 두 번 잡혀 "식사 잘하신 날" 숫자가 부풀려진다).
   const dayGroups = groupByDate(data.logs);
@@ -737,12 +777,42 @@ function GuardianView({ data }: { data: ApiResponse }) {
                   {l.meal && <p>🍚 식사: {l.meal}</p>}
                   {l.mood && <p>😊 컨디션: {l.mood}</p>}
                   {l.sleep && <p>😴 수면: {l.sleep}</p>}
+                  {/* 복약·배변은 보호자가 가장 궁금해하는 항목인데 빠져 있었다(2026-08-05) */}
+                  {l.medication && <p>💊 복약: {l.medication}</p>}
+                  {l.bowel && <p>🚻 배변: {l.bowel}</p>}
                   {l.tasks.length > 0 && <p>오늘 한 일: {l.tasks.join(", ")}</p>}
                   {l.memo && <p className="italic text-ink-500">“{l.memo}”</p>}
                   {l.alertNote && (
                     <p className="font-semibold text-primary-600">⚠️ {l.alertNote}</p>
                   )}
                 </dl>
+
+                {/* 원탭 반응 — 확인만 하고 끝나던 일지에 "마음을 돌려주는" 한 번의 탭.
+                    같은 버튼을 다시 누르면 취소된다. */}
+                {(() => {
+                  const current =
+                    reactions[l.id] !== undefined ? reactions[l.id] : l.guardianReaction;
+                  return (
+                    <div className="mt-3 flex gap-1.5 border-t border-ink-100 pt-2.5">
+                      {REACTION_META.map((r) => (
+                        <button
+                          key={r.key}
+                          type="button"
+                          aria-pressed={current === r.key}
+                          disabled={reactingId === l.id}
+                          onClick={() => react(l.id, current ?? null, r.key)}
+                          className={`min-h-[44px] flex-1 rounded-xl text-[12px] font-semibold transition-all duration-150 active:scale-95 disabled:opacity-60 ${
+                            current === r.key
+                              ? "bg-primary-50 text-primary-700 ring-1 ring-primary-200"
+                              : "bg-ink-100/50 text-ink-500 hover:bg-ink-100"
+                          }`}
+                        >
+                          {r.emoji} {r.label}
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })()}
               </li>
             );
           })}

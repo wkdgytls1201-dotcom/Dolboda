@@ -134,6 +134,41 @@ export async function GET(req: Request) {
   });
 }
 
+// 보호자의 원탭 반응(감사해요·안심돼요·수고하셨어요) — 읽음 확인의 다음 단계.
+// 매니저가 "읽혔다"를 넘어 "고마워한다"를 보는 것이 감정노동의 보상이 된다.
+const REACTIONS = new Set(["thanks", "relieved", "cheer"]);
+
+export async function PATCH(req: Request) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "로그인이 필요해요." }, { status: 401 });
+  }
+
+  const body = (await req.json().catch(() => ({}))) as { logId?: unknown; reaction?: unknown };
+  const logId = typeof body.logId === "string" ? body.logId : "";
+  // null이면 반응 취소(잘못 눌렀을 때) — 그 외에는 정해진 세 가지만
+  const reaction = body.reaction === null ? null : typeof body.reaction === "string" ? body.reaction : "";
+  if (!logId || (reaction !== null && !REACTIONS.has(reaction))) {
+    return NextResponse.json({ error: "잘못된 요청이에요." }, { status: 400 });
+  }
+
+  // 반응은 보호자만 남긴다 — 자기 돌봄 건의 기록인지도 확인한다
+  const ctx = await findGuardianContext(session.user.id);
+  if (!ctx) {
+    return NextResponse.json({ error: "반응은 보호자만 남길 수 있어요." }, { status: 403 });
+  }
+  const log = await prisma.careLog.findUnique({ where: { id: logId } });
+  if (!log || log.careRequestId !== ctx.request.id) {
+    return NextResponse.json({ error: "기록을 찾을 수 없어요." }, { status: 404 });
+  }
+
+  const updated = await prisma.careLog.update({
+    where: { id: logId },
+    data: { guardianReaction: reaction },
+  });
+  return NextResponse.json({ log: updated });
+}
+
 /** 특이사항이 있으면 보호자에게 즉시 메일로 알린다 — 발송 실패가 저장을 되돌리면 안 된다. */
 async function notifyAlert(guardianEmail: string | null, sitterNickname: string, note: string) {
   if (!resend || !guardianEmail) return;
