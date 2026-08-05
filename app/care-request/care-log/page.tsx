@@ -1022,7 +1022,8 @@ function GuardianView({ data, readOnly = false }: { data: ApiResponse; readOnly?
         </p>
         <p className="mt-2 border-y py-1.5 text-[11px] leading-relaxed">
           이 내역은 돌보다에 저장된 돌봄일지를 그대로 출력한 것입니다. 돌보다는 기록의 보관과
-          출력만 제공하며, 기록 내용은 작성자(매니저)와 확인자(보호자)에게 있습니다.
+          출력만 제공하며, 기록 내용에 대한 책임은 작성자에게 있고 돌보다는 내용의 사실 여부를
+          보증하지 않습니다. 돌보다 매니저는 돌보다가 고용·감독하는 사람이 아닙니다.
         </p>
       </div>
 

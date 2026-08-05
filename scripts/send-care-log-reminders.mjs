@@ -58,19 +58,40 @@ function daysBetween(fromDateStr, toDateStr) {
   return Math.round((b.getTime() - a.getTime()) / 86400000);
 }
 
+// 보호자 반응(🙏😊💪)의 라벨 — 화면(care-log 페이지 REACTION_META)과 같은 값.
+// 독려의 핵심은 강제가 아니라 "읽히고 고마워한다"는 증거를 되돌려주는 것이다(스펙 §10-5).
+const REACTION_LABEL = {
+  thanks: "🙏 감사해요",
+  relieved: "😊 안심돼요",
+  cheer: "💪 수고하셨어요",
+};
+
 function mailBody(t) {
+  // ⚠️ 문구 원칙(스펙 §10-5, 2026-08-05 확정): 돌보다 매니저는 플랫폼이 고용한 사람이
+  // 아니다. "일지가 없어요" 같은 채근·관리 어투는 업무 지시(사용자성 징표)로 읽힐 수
+  // 있어 쓰지 않는다. 기대의 주체는 보호자(당사자)로 두고, 플랫폼은 소통을 "안내"만
+  // 하며, 자율 기록임을 메일마다 명시한다.
+  //
+  // 지난 기록에 보호자가 남긴 반응이 있으면 그대로 인용한다 — 지어낸 수치가 아니라
+  // 실제로 받은 마음. 채근보다 강한 동기가 된다.
+  const reactionLine = t.lastReaction
+    ? `지난 ${t.lastReactionDate} 기록에 보호자님이 "${REACTION_LABEL[t.lastReaction] ?? t.lastReaction}" 반응을 남기셨어요. 오늘 소식도 기다리고 계실 거예요.`
+    : `일지는 보호자가 어르신 소식을 확인하는 통로예요. 오늘 있었던 일을 3탭이면 남길 수 있어요.`;
+  const autonomyNote =
+    "돌봄일지는 의무가 아닌 자율 기록이에요. 이 메일은 보호자와의 소통을 돕는 안내일 뿐, 돌보다가 작성 여부를 관리하지 않아요.";
   const text =
-    `${t.sitterName}님, ${t.daysSince}일째 돌봄일지가 없어요.\n\n` +
-    `보호자가 매일 확인할 수 있는 유일한 통로예요. 오늘 있었던 일을 3탭이면 남길 수 있어요.\n\n` +
-    `${SITE_URL}/care-request/care-log`;
+    `${t.sitterName}님, 보호자님이 ${t.daysSince}일째 소식을 기다리고 있어요.\n\n` +
+    `${reactionLine}\n\n` +
+    `${SITE_URL}/care-request/care-log\n\n${autonomyNote}`;
   const html = `<!doctype html><html lang="ko"><body style="margin:0;padding:0;background:#FFFBF3;font-family:-apple-system,BlinkMacSystemFont,'Malgun Gothic',sans-serif;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FFFBF3;padding:32px 16px;"><tr><td align="center">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:460px;background:#fff;border-radius:20px;overflow:hidden;">
 <tr><td style="padding:18px 24px;border-bottom:1px solid #F0EDF6;"><a href="${SITE_URL}" style="text-decoration:none;color:#FF6250;font-size:19px;font-weight:800;">${SITE_NAME}</a></td></tr>
 <tr><td style="padding:24px;">
-<p style="margin:0 0 12px;font-size:15px;font-weight:700;color:#1B1730;">${esc(t.sitterName)}님, ${t.daysSince}일째 돌봄일지가 없어요.</p>
-<p style="margin:0 0 20px;font-size:14px;line-height:1.7;color:#3A3452;">보호자가 매일 확인할 수 있는 유일한 통로예요. 오늘 있었던 일을 3탭이면 남길 수 있어요.</p>
+<p style="margin:0 0 12px;font-size:15px;font-weight:700;color:#1B1730;">${esc(t.sitterName)}님, 보호자님이 ${t.daysSince}일째 소식을 기다리고 있어요.</p>
+<p style="margin:0 0 20px;font-size:14px;line-height:1.7;color:#3A3452;">${esc(reactionLine)}</p>
 <a href="${SITE_URL}/care-request/care-log" style="display:inline-block;background:#FF6250;color:#fff;font-size:14px;font-weight:700;text-decoration:none;padding:12px 20px;border-radius:12px;">돌봄일지 쓰러 가기 →</a>
+<p style="margin:20px 0 0;font-size:11px;line-height:1.6;color:#9C97AC;">${esc(autonomyNote)}</p>
 </td></tr>
 </table></td></tr></table></body></html>`;
   return { text, html };
@@ -130,12 +151,21 @@ async function main() {
     const daysSince = daysBetween(baselineDate, date);
     if (daysSince < REMINDER_AFTER_DAYS) continue;
 
+    // 보호자가 마지막으로 남긴 반응 — 메일에 실제 받은 마음을 인용하기 위해(§10-5)
+    const lastReacted = await prisma.careLog.findFirst({
+      where: { careRequestId: r.id, guardianReaction: { not: null } },
+      orderBy: { careDate: "desc" },
+      select: { careDate: true, guardianReaction: true },
+    });
+
     targets.push({
       careRequestId: r.id,
       sitterUserId: app.sitterProfile.user.id,
       sitterEmail: app.sitterProfile.user.email,
       sitterName: app.sitterProfile.nickname,
       daysSince,
+      lastReaction: lastReacted?.guardianReaction ?? null,
+      lastReactionDate: lastReacted?.careDate ?? null,
     });
   }
   console.log(`체크인 대상(마지막 기록 ${REMINDER_AFTER_DAYS}일 이상): ${targets.length}건`);
@@ -168,7 +198,7 @@ async function main() {
     try {
       await sendMail(
         t.sitterEmail,
-        `[${SITE_NAME}] ${t.daysSince}일째 돌봄일지가 없어요`,
+        `[${SITE_NAME}] 보호자님이 어르신 소식을 기다리고 있어요`,
         mailBody(t)
       );
       // ★ 발송 성공 후에 기록한다 — 실패했는데 쿨다운에 들어가면 그 사이 사흘은
