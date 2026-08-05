@@ -5,6 +5,7 @@ import { parseLocationType, buildCareRequestData } from "@/lib/careRequestValida
 import { resend, careCompletedEmailHtml, requestCancelledEmailHtml } from "@/lib/resend";
 import { SITE_NAME, MAIL_FROM } from "@/lib/siteConfig";
 import { careRequestSummary } from "@/lib/careLocationTypes";
+import { findOtherOpenJobSummaries } from "@/lib/otherOpenJobs";
 
 async function getOwnedRequest(id: string, userId: string) {
   const careRequest = await prisma.careRequest.findUnique({ where: { id } });
@@ -176,6 +177,12 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   // 같은 무게의 소식이라 같은 방식(matchUpdate 설정 존중, 사람별 발송)으로 보낸다.
   if (resend && toNotify.length > 0) {
     const summary = careRequestSummary(existing);
+    // 미선정 메일과 같은 이유로, 같은 지역·유형의 다른 OPEN 공고를 동봉한다.
+    const otherJobs = await findOtherOpenJobSummaries(
+      params.id,
+      existing.region,
+      existing.locationType
+    );
     for (const t of toNotify) {
       const { id: userId, email } = t.sitterProfile.user;
       if (!email) continue;
@@ -189,7 +196,7 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
           from: `${SITE_NAME} <${MAIL_FROM}>`,
           to: email,
           subject: `[${SITE_NAME}] 보호자가 요청을 취소했어요`,
-          html: requestCancelledEmailHtml({ requestSummary: summary }),
+          html: requestCancelledEmailHtml({ requestSummary: summary, otherJobs }),
         })
         .catch(() => {});
     }

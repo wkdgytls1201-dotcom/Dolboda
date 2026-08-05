@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { resend, matchConfirmedEmailHtml, applicationNotSelectedEmailHtml } from "@/lib/resend";
 import { SITE_NAME, MAIL_FROM } from "@/lib/siteConfig";
 import { careRequestSummary } from "@/lib/careLocationTypes";
+import { findOtherOpenJobSummaries } from "@/lib/otherOpenJobs";
 
 /** 매니저 알림 설정에서 matchUpdate가 켜져 있는지. 설정을 한 번도 안 바꾼 사람은
  * 행 자체가 없는데, 기본값이 "켜짐"이라 그 경우도 true로 본다
@@ -20,7 +21,8 @@ async function wantsMatchUpdate(userId: string) {
 async function notifyMatchOutcome(
   summary: string,
   confirmed: { email: string | null; id: string } | null,
-  notSelected: { email: string | null; id: string }[]
+  notSelected: { email: string | null; id: string }[],
+  otherJobs: string[]
 ) {
   if (!resend) return;
 
@@ -42,7 +44,7 @@ async function notifyMatchOutcome(
         from: `${SITE_NAME} <${MAIL_FROM}>`,
         to: s.email,
         subject: `[${SITE_NAME}] 이번엔 다른 분과 진행하게 됐어요`,
-        html: applicationNotSelectedEmailHtml({ requestSummary: summary }),
+        html: applicationNotSelectedEmailHtml({ requestSummary: summary, otherJobs }),
       })
       .catch(() => {});
   }
@@ -165,10 +167,20 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     });
 
     // 상태 변경은 이미 끝났다 — 메일은 실패해도 응답에 영향을 주지 않는다.
+    // 미선정 메일에는 같은 지역·유형의 다른 OPEN 공고를 동봉해 다음 지원으로 잇는다.
+    const otherJobs =
+      toNotify.length > 0
+        ? await findOtherOpenJobSummaries(
+            application.careRequestId,
+            application.careRequest.region,
+            application.careRequest.locationType
+          )
+        : [];
     await notifyMatchOutcome(
       careRequestSummary(application.careRequest),
       application.sitterProfile.user,
-      toNotify.map((t) => t.sitterProfile.user)
+      toNotify.map((t) => t.sitterProfile.user),
+      otherJobs
     ).catch(() => {});
 
     return NextResponse.json(updatedApplication);

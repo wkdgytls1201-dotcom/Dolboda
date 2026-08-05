@@ -355,12 +355,30 @@ export function matchConfirmedEmailHtml(params: { requestSummary: string }): str
   });
 }
 
-/** 매니저에게 — 다른 분이 확정돼서 내가 떨어졌을 때 */
-export function applicationNotSelectedEmailHtml(params: { requestSummary: string }): string {
+/** 미선정·취소 메일에 붙는 "지금 지원할 수 있는 다른 공고" 목록.
+ * 떨어진/취소된 그 순간이 매니저가 이탈하는 지점이라, 위로 문구로 끝내지 않고
+ * 같은 지역·유형의 살아 있는 공고를 바로 보여줘 다음 지원으로 잇는다. */
+function otherOpenJobsHtml(jobs: string[]): string {
+  if (jobs.length === 0) return "";
+  const items = jobs
+    .map(
+      (j) =>
+        `<li style="margin:0 0 6px;font-size:13px;line-height:1.6;color:#3A3452;">${esc2(j)}</li>`
+    )
+    .join("");
+  return `<p style="margin:20px 0 8px;font-size:13px;font-weight:700;color:#1B1730;">지금 지원할 수 있는 비슷한 공고</p><ul style="margin:0 0 4px;padding-left:18px;">${items}</ul>`;
+}
+
+/** 매니저에게 — 다른 분이 확정돼서 내가 떨어졌을 때.
+ * otherJobs: 같은 지역·유형의 다른 OPEN 공고 요약(최대 3건) — 재지원 유도. */
+export function applicationNotSelectedEmailHtml(params: {
+  requestSummary: string;
+  otherJobs?: string[];
+}): string {
   return matchingFlowEmailHtml({
     eyebrow: "지원 결과",
     title: "이번엔 다른 분과 진행하게 됐어요",
-    body: `${esc2(params.requestSummary)} 요청은 다른 지원자로 확정됐어요. 아쉽지만 다른 요청도 활동 지역에 계속 올라오니 다음 기회에 다시 만나요.`,
+    body: `${esc2(params.requestSummary)} 요청은 다른 지원자로 확정됐어요. 아쉽지만 다른 요청도 활동 지역에 계속 올라오니 다음 기회에 다시 만나요.${otherOpenJobsHtml(params.otherJobs ?? [])}`,
     ctaLabel: "다른 일자리 보러 가기",
     ctaUrl: `${SITE_URL}/mypage/sitter/jobs`,
   });
@@ -368,11 +386,14 @@ export function applicationNotSelectedEmailHtml(params: { requestSummary: string
 
 /** 매니저에게 — 보호자가 요청 자체를 취소했을 때(§3-13). 매니저가 부족해서가 아니라는
  * 구분을 메일에서도 해준다 — 미선정과 헷갈리면 자신감만 깎인다. */
-export function requestCancelledEmailHtml(params: { requestSummary: string }): string {
+export function requestCancelledEmailHtml(params: {
+  requestSummary: string;
+  otherJobs?: string[];
+}): string {
   return matchingFlowEmailHtml({
     eyebrow: "요청 취소",
     title: "보호자가 요청을 취소했어요",
-    body: `${esc2(params.requestSummary)} 요청이 보호자 사정으로 취소됐어요. 지원 내용에 문제가 있었던 게 아니에요 — 활동 지역의 다른 요청을 확인해보세요.`,
+    body: `${esc2(params.requestSummary)} 요청이 보호자 사정으로 취소됐어요. 지원 내용에 문제가 있었던 게 아니에요 — 활동 지역의 다른 요청을 확인해보세요.${otherOpenJobsHtml(params.otherJobs ?? [])}`,
     ctaLabel: "다른 일자리 보러 가기",
     ctaUrl: `${SITE_URL}/mypage/sitter/jobs`,
   });
