@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { PageLoader } from "@/components/PageLoader";
 import { QUICK_NOTE_KINDS } from "@/lib/careLog";
+import { shareOrCopyLink } from "@/lib/shareLink";
 import { toResizedImage } from "@/lib/squareImage";
 
 interface CareLogRow {
@@ -58,8 +59,11 @@ interface QuickNoteRow {
 }
 
 interface ApiResponse {
-  viewer: "guardian" | "sitter";
+  /** family = 보호자가 초대한 가족의 읽기 전용 열람(§9-5) */
+  viewer: "guardian" | "sitter" | "family";
   availableViews: ("guardian" | "sitter")[];
+  /** 함께 보는 가족 수 — 매니저도 독자가 누군지 알게 한다 */
+  familyCount: number;
   sitterNickname: string;
   guardianName: string | null;
   /** 돌봄 시작일(ISO) — 14일 스트립이 돌봄 전 날짜를 "빈 날"로 오해하지 않게 쓴다 */
@@ -233,13 +237,14 @@ function CareLogPageInner() {
             돌봄 합의서
           </Link>
           를 기준으로 이야기해 보세요.
+          {data.familyCount > 0 && ` 가족 ${data.familyCount}명이 함께 보고 있어요.`}
         </p>
       </section>
 
       {data.viewer === "sitter" ? (
         <SitterView data={data} onSaved={load} onError={setError} />
       ) : (
-        <GuardianView data={data} />
+        <GuardianView data={data} readOnly={data.viewer === "family"} />
       )}
     </main>
   );
@@ -632,7 +637,7 @@ function SitterView({
                 )}
               </div>
               <p className="mt-1.5 text-[11px] leading-relaxed text-ink-300">
-                사진은 이 돌봄의 보호자에게만 보여요. 촬영 전 어르신과 보호자께 동의를
+                사진은 이 돌봄의 보호자와 보호자가 초대한 가족에게만 보여요. 촬영 전 어르신과 보호자께 동의를
                 받아주세요. (최대 3장)
               </p>
             </div>
@@ -830,7 +835,125 @@ function PastLogs({ logs }: { logs: CareLogRow[] }) {
 
 // ────────────────────────────── 보호자 — 열람 ──────────────────────────────
 
-function GuardianView({ data }: { data: ApiResponse }) {
+// 가족 공유 관리(§9-5) — 초대 링크 생성·재공유·해제. 보호자 화면에서만 그려진다.
+function FamilySection() {
+  const [members, setMembers] = useState<
+    | { id: string; accepted: boolean; acceptedAt: string | null; name: string | null; token: string | null }[]
+    | null
+  >(null);
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/care-log/family")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setMembers(d?.members ?? []))
+      .catch(() => setMembers([]));
+  }, []);
+
+  async function shareToken(token: string) {
+    const outcome = await shareOrCopyLink({
+      url: `${window.location.origin}/care-request/care-log/join?token=${token}`,
+      title: "돌봄일지 가족 초대",
+      text: "돌봄일지를 함께 볼 수 있게 초대했어요.",
+    });
+    setNotice(
+      outcome === "copied"
+        ? "초대 링크를 복사했어요. 가족에게 붙여넣어 보내주세요."
+        : outcome === "fallback"
+          ? "주소창의 링크를 가족에게 전달해주세요."
+          : null
+    );
+  }
+
+  async function createInvite() {
+    setBusy(true);
+    setNotice(null);
+    try {
+      const res = await fetch("/api/care-log/family", { method: "POST" });
+      const d = await res.json();
+      if (!res.ok) {
+        setNotice(d.error ?? "초대를 만들지 못했어요.");
+        return;
+      }
+      setMembers((prev) => [
+        ...(prev ?? []),
+        { id: d.id, accepted: false, acceptedAt: null, name: null, token: d.token },
+      ]);
+      await shareToken(d.token);
+    } catch {
+      setNotice("초대를 만들지 못했어요. 잠시 후 다시 시도해주세요.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function revoke(id: string) {
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/care-log/family?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+      if (res.ok) setMembers((prev) => (prev ?? []).filter((m) => m.id !== id));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (members === null) return null; // 조회 전엔 자리 없이 조용히
+
+  return (
+    <section className="print-hide rounded-2xl bg-white p-4 shadow-card">
+      <p className="mb-1 text-sm font-bold text-ink-900">가족과 함께 보기</p>
+      <p className="text-[12px] leading-relaxed text-ink-500">
+        형제자매 등 가족을 초대하면 이 기록을 함께 볼 수 있어요. 가족은 열람만 할 수 있고,
+        언제든 해제할 수 있어요.
+      </p>
+      {members.length > 0 && (
+        <ul className="mt-2.5 space-y-1.5">
+          {members.map((m) => (
+            <li key={m.id} className="flex items-center gap-2 text-[13px]">
+              <span className="min-w-0 flex-1 truncate text-ink-700">
+                {m.accepted
+                  ? `${m.name ?? "가족"} — 함께 보는 중`
+                  : "초대 대기 중 (7일 안에 수락해야 해요)"}
+              </span>
+              {!m.accepted && m.token && (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => shareToken(m.token!)}
+                  className="shrink-0 rounded-full bg-ink-100/60 px-2.5 py-1.5 text-[12px] font-semibold text-ink-500 hover:bg-ink-100"
+                >
+                  다시 공유
+                </button>
+              )}
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => revoke(m.id)}
+                className="shrink-0 rounded-full bg-ink-100/60 px-2.5 py-1.5 text-[12px] font-semibold text-ink-500 hover:bg-ink-100"
+              >
+                해제
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <button
+        type="button"
+        disabled={busy}
+        onClick={createInvite}
+        className="mt-2.5 flex min-h-[44px] w-full items-center justify-center rounded-xl border border-primary-200 bg-primary-50 text-[13px] font-bold text-primary-700 transition-all duration-150 hover:bg-primary-100 active:scale-[0.98] disabled:opacity-60"
+      >
+        {busy ? "처리 중..." : "＋ 가족 초대 링크 만들기"}
+      </button>
+      {notice && <p className="mt-2 text-[12px] font-semibold text-ink-500">{notice}</p>}
+    </section>
+  );
+}
+
+function GuardianView({ data, readOnly = false }: { data: ApiResponse; readOnly?: boolean }) {
   // 반응은 화면부터 바꾸고 서버는 뒤따른다(낙관적) — 실패하면 되돌린다.
   const [reactions, setReactions] = useState<Record<string, string | null>>({});
   const [reactingId, setReactingId] = useState<string | null>(null);
@@ -967,6 +1090,15 @@ function GuardianView({ data }: { data: ApiResponse }) {
         </section>
       )}
 
+      {readOnly ? (
+        <p className="print-hide rounded-2xl bg-ink-100/40 px-4 py-3 text-[12px] leading-relaxed text-ink-500">
+          가족 열람 화면이에요. 기록 읽기와 인쇄만 할 수 있고, 읽음 표시와 반응은 보호자만
+          남길 수 있어요.
+        </p>
+      ) : (
+        <FamilySection />
+      )}
+
       {data.logs.length > 0 && (
         <button
           type="button"
@@ -1047,8 +1179,9 @@ function GuardianView({ data }: { data: ApiResponse }) {
                 )}
 
                 {/* 원탭 반응 — 확인만 하고 끝나던 일지에 "마음을 돌려주는" 한 번의 탭.
-                    같은 버튼을 다시 누르면 취소된다. */}
-                {(() => {
+                    같은 버튼을 다시 누르면 취소된다. 가족 열람에선 숨긴다 —
+                    반응은 보호자의 목소리다(§9-1·§9-5). */}
+                {!readOnly && (() => {
                   const current =
                     reactions[l.id] !== undefined ? reactions[l.id] : l.guardianReaction;
                   return (

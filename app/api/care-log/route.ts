@@ -37,6 +37,28 @@ async function findGuardianContext(userId: string) {
   return { request, application: request.applications[0], viewer: "guardian" as const };
 }
 
+// 가족 열람(care-log-spec §9-5) — 보호자·매니저 컨텍스트가 둘 다 없을 때만 찾는다.
+// 보호자 화면과 같은 모양의 "읽기 전용"이다: 읽음 표시를 남기지 않고(읽음은 보호자의
+// 약속 — §4-4), 반응도 못 남긴다(반응은 보호자의 목소리 — §9-1).
+async function findFamilyContext(userId: string) {
+  const access = await prisma.careLogFamilyAccess.findFirst({
+    where: { userId, acceptedAt: { not: null }, revokedAt: null },
+    orderBy: { acceptedAt: "desc" },
+  });
+  if (!access) return null;
+  const request = await prisma.careRequest.findFirst({
+    where: { id: access.careRequestId, status: { in: ["MATCHED", "COMPLETED"] } },
+    include: {
+      applications: {
+        where: { status: { in: ["매칭확정", "돌봄완료"] } },
+        include: { sitterProfile: { select: { id: true, nickname: true, userId: true } } },
+      },
+    },
+  });
+  if (!request?.applications[0]) return null;
+  return { request, application: request.applications[0], viewer: "family" as const };
+}
+
 async function findSitterContext(userId: string) {
   const profile = await prisma.sitterProfile.findUnique({ where: { userId }, select: { id: true } });
   if (!profile) return null;
@@ -72,12 +94,15 @@ export async function GET(req: Request) {
   ];
   const { searchParams } = new URL(req.url);
   const requested = searchParams.get("as");
-  const ctx =
+  const partyCtx =
     requested === "guardian" && guardianCtx
       ? guardianCtx
       : requested === "sitter" && sitterCtx
       ? sitterCtx
       : sitterCtx ?? guardianCtx;
+
+  // 가족 열람은 당사자 컨텍스트가 없을 때만 — 보호자·매니저는 각자의 화면이 우선이다.
+  const ctx = partyCtx ?? (await findFamilyContext(session.user.id));
 
   if (!ctx) {
     return NextResponse.json({ error: "확정된 돌봄이 없어요." }, { status: 404 });
@@ -112,7 +137,7 @@ export async function GET(req: Request) {
     });
   }
 
-  const [logs, quickNotes, guardianUser] = await Promise.all([
+  const [logs, quickNotes, guardianUser, familyCount] = await Promise.all([
     prisma.careLog.findMany({
       where: { careRequestId: ctx.request.id },
       orderBy: { careDate: "desc" },
@@ -123,6 +148,10 @@ export async function GET(req: Request) {
       take: 100,
     }),
     prisma.user.findUnique({ where: { id: ctx.request.guardianId }, select: { name: true } }),
+    // 함께 보는 가족 수 — 매니저도 독자가 누군지 알게 한다(투명성, §9-5)
+    prisma.careLogFamilyAccess.count({
+      where: { careRequestId: ctx.request.id, acceptedAt: { not: null }, revokedAt: null },
+    }),
   ]);
 
   // 보호자가 열면 그 즉시 "확인했어요"로 남긴다 — 매니저가 자기 기록이 읽히는지 아는 것이
@@ -165,6 +194,7 @@ export async function GET(req: Request) {
         : ctx.request.budgetAmount != null
           ? { amount: ctx.request.budgetAmount, unit: ctx.request.budgetUnit ?? "일", agreed: false }
           : null,
+    familyCount,
     taskChips: taskChipsFor(ctx.request),
     options: {
       meal: MEAL_OPTIONS,

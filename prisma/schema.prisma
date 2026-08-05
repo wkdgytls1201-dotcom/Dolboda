@@ -198,6 +198,24 @@ model OpenRequestNudge {
   sentAt        DateTime @default(now())
 }
 
+// 돌봄일지 가족 공유(care-log-spec §9-5) — 보호자가 초대 링크를 만들고, 가족이
+// 로그인 후 수락하면 읽기 전용 열람이 열린다. 비로그인 링크를 쓰지 않는 이유:
+// 일지는 식사·배변·복약이 담긴 민감정보라 "누가 보는지"가 남아야 하고, 보호자가
+// 언제든 해제(revokedAt)할 수 있어야 한다. 삭제 대신 revokedAt을 쓰는 것도 같은
+// 이유 — 언제 누구에게 열람을 줬다 거뒀는지가 기록으로 남는다.
+model CareLogFamilyAccess {
+  id            String    @id @default(cuid())
+  careRequestId String
+  token         String    @unique // 초대 링크 토큰(수락 전까지만 의미)
+  userId        String? // 수락한 가족 계정(수락 전 null)
+  createdAt     DateTime  @default(now())
+  acceptedAt    DateTime?
+  revokedAt     DateTime?
+
+  @@index([careRequestId])
+  @@index([userId])
+}
+
 // 시설 시계열 스냅샷 — 매일 새벽 공단 데이터를 자동 수집(scripts/daily-nhis-sync.mjs)하면서
 // 정원·현원·대기·등급이 "바뀐 시설만" 그날 값으로 적재한다(첫 실행일은 전체 기준선).
 // 쌓이면: 자리 난 시설 감지 → 찜한 시설 알림 → 대기 소진 속도 → 등급 변동 추적의 재료가 된다.

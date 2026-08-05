@@ -22,4 +22,7 @@
 
 **전환 전까지는 지금처럼 `db push`를 계속 써도 된다** — 이 폴더의 존재는 push에
 아무 영향이 없다. 단, 전환 전에 스키마가 또 바뀌면 이 베이스라인은 낡는다.
-그 경우 0_init을 다시 뜨면 된다(같은 diff 명령).
+그 경우 0_init을 다시 뜨면 된다(같은 diff 명령). ⚠️ 이미 `resolve --applied`를
+실행한 뒤라면 `_prisma_migrations`에 옛 체크섬이 남아 있으므로, 다시 뜬 뒤엔
+그 행을 지우고 resolve를 다시 실행해야 체크섬이 맞는다
+(2026-08-05 resolve 이후 CareLogFamilyAccess가 추가돼 이미 이 상태다).
