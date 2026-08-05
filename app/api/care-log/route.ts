@@ -225,6 +225,24 @@ export async function POST(req: Request) {
   const str = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
   const arr = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
 
+  // 사진(§9-2) — 우리 저장소(care-log 경로)에서 나온 URL만 받는다. 임의 URL을 그대로
+  // 저장하면 보호자 화면에 아무 이미지나 끼워 넣을 수 있게 된다. 최대 3장.
+  const photoBase = process.env.SUPABASE_URL
+    ? `${process.env.SUPABASE_URL.replace(/\/$/, "")}/storage/v1/object/public/sitter-photos/care-log/`
+    : null;
+  const photos = (Array.isArray(body.photos) ? body.photos : [])
+    .map((p) => {
+      const url = typeof (p as { url?: unknown })?.url === "string" ? (p as { url: string }).url : null;
+      if (!url || !photoBase || !url.startsWith(photoBase)) return null;
+      const takenAt =
+        typeof (p as { takenAt?: unknown })?.takenAt === "string"
+          ? (p as { takenAt: string }).takenAt
+          : new Date().toISOString();
+      return { url, takenAt };
+    })
+    .filter((p): p is { url: string; takenAt: string } => p !== null)
+    .slice(0, 3);
+
   const meal = str(body.meal);
   const mood = str(body.mood);
   const dayStatus = str(body.dayStatus);
@@ -280,6 +298,7 @@ export async function POST(req: Request) {
       alertNote,
       workStart: str(body.workStart),
       workEnd: str(body.workEnd),
+      ...(photos.length > 0 && { photos }),
       correctsId,
     },
   });

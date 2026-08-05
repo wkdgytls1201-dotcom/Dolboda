@@ -9,16 +9,20 @@ import {
   ChevronDown,
   Check,
   AlertTriangle,
+  Camera,
   Undo2,
   Sparkles,
+  X,
 } from "lucide-react";
 import { PageLoader } from "@/components/PageLoader";
 import { QUICK_NOTE_KINDS } from "@/lib/careLog";
+import { toResizedImage } from "@/lib/squareImage";
 
 interface CareLogRow {
   id: string;
   careDate: string;
   createdAt: string;
+  photos: { url: string; takenAt?: string }[] | null;
   meal: string | null;
   mood: string | null;
   dayStatus: string | null;
@@ -241,8 +245,32 @@ function SitterView({
   const [medication, setMedication] = useState<string | null>(null);
   const [tasks, setTasks] = useState<string[]>([]);
   const [memo, setMemo] = useState("");
+  // 오늘 사진 — 업로드가 끝난 URL만 담는다(§9-2, 최대 3장)
+  const [photos, setPhotos] = useState<{ url: string; takenAt: string }[]>([]);
+  const [photoBusy, setPhotoBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const [correcting, setCorrecting] = useState(false);
+
+  async function addPhoto(file: File) {
+    onError(null);
+    if (photos.length >= 3) return;
+    setPhotoBusy(true);
+    try {
+      const { blob } = await toResizedImage(file);
+      const res = await fetch("/api/care-log/photo", {
+        method: "POST",
+        headers: { "Content-Type": blob.type },
+        body: blob,
+      });
+      const d = (await res.json().catch(() => null)) as { url?: string; error?: string } | null;
+      if (!res.ok || !d?.url) throw new Error(d?.error ?? "사진을 올리지 못했어요.");
+      setPhotos((prev) => [...prev, { url: d.url!, takenAt: new Date().toISOString() }]);
+    } catch (e) {
+      onError(e instanceof Error ? e.message : "사진을 올리지 못했어요.");
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
 
   async function sendQuickNote(kind: string, body?: string) {
     onError(null);
@@ -308,6 +336,7 @@ function SitterView({
           medication,
           tasks,
           memo: memo.trim() || undefined,
+          photos: photos.length > 0 ? photos : undefined,
           correctsId: correcting ? todayLog?.id : undefined,
         }),
       });
@@ -315,6 +344,7 @@ function SitterView({
       if (!res.ok) throw new Error(d.error);
       onSaved();
       setCorrecting(false);
+      setPhotos([]);
     } catch (e) {
       onError(e instanceof Error ? e.message : "저장하지 못했어요.");
     } finally {
@@ -392,6 +422,20 @@ function SitterView({
             {todayLog.meal && <p>🍚 식사: {todayLog.meal}</p>}
             {todayLog.mood && <p>😊 컨디션: {todayLog.mood}</p>}
             {todayLog.dayStatus && <p>오늘 하루: {todayLog.dayStatus}</p>}
+            {(todayLog.photos?.length ?? 0) > 0 && (
+              <div className="flex gap-1.5">
+                {todayLog.photos!.map((p, i) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={i}
+                    src={p.url}
+                    alt={`오늘 사진 ${i + 1}`}
+                    loading="lazy"
+                    className="h-14 w-14 rounded-lg bg-ink-100 object-cover"
+                  />
+                ))}
+              </div>
+            )}
             {todayLog.alertNote && (
               <p className="font-semibold text-primary-600">⚠️ {todayLog.alertNote}</p>
             )}
@@ -420,6 +464,12 @@ function SitterView({
                 setMedication(todayLog.medication);
                 setTasks(todayLog.tasks);
                 setMemo(todayLog.memo ?? "");
+                setPhotos(
+                  (todayLog.photos ?? []).map((p) => ({
+                    url: p.url,
+                    takenAt: p.takenAt ?? new Date().toISOString(),
+                  }))
+                );
                 setExpanded(Boolean(todayLog.sleep || todayLog.bowel || todayLog.medication || todayLog.tasks.length));
                 setCorrecting(true);
               }}
@@ -509,6 +559,52 @@ function SitterView({
                 placeholder="가족분께 전하고 싶은 말이 있다면 (선택)"
                 className="w-full resize-none rounded-xl border border-ink-100 px-3.5 py-2.5 text-sm outline-none focus:border-primary-400"
               />
+            </div>
+
+            {/* 오늘 사진(§9-2) — 카메라 촬영 유도(capture). 업계 관행(카톡·밴드 공유)의
+                핵심이 사진인데, 여기 남기면 흩어지지 않고 그날 일지에 붙는다. */}
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                {photos.map((p, i) => (
+                  <span key={p.url} className="relative h-16 w-16 overflow-hidden rounded-xl bg-ink-100">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={p.url} alt={`올린 사진 ${i + 1}`} className="h-full w-full object-cover" />
+                    <button
+                      type="button"
+                      aria-label="사진 빼기"
+                      onClick={() => setPhotos((prev) => prev.filter((x) => x.url !== p.url))}
+                      className="absolute right-0.5 top-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-ink-900/60 text-white"
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                ))}
+                {photos.length < 3 && (
+                  <label
+                    className={`flex h-16 w-16 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-xl border border-dashed border-ink-100 text-ink-400 transition-colors hover:border-primary-300 hover:text-primary-500 ${
+                      photoBusy ? "pointer-events-none opacity-50" : ""
+                    }`}
+                  >
+                    <Camera size={18} aria-hidden />
+                    <span className="text-[10px] font-semibold">{photoBusy ? "올리는 중" : "사진"}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        e.target.value = ""; // 같은 파일을 다시 골라도 change가 다시 온다
+                        if (f) addPhoto(f);
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
+              <p className="mt-1.5 text-[11px] leading-relaxed text-ink-300">
+                사진은 이 돌봄의 보호자에게만 보여요. 촬영 전 어르신과 보호자께 동의를
+                받아주세요. (최대 3장)
+              </p>
             </div>
 
             <button
@@ -786,6 +882,29 @@ function GuardianView({ data }: { data: ApiResponse }) {
                     <p className="font-semibold text-primary-600">⚠️ {l.alertNote}</p>
                   )}
                 </dl>
+
+                {/* 사진(§9-2) — 탭하면 원본을 새 탭으로(라이트박스 없는 0-JS 확대) */}
+                {(l.photos?.length ?? 0) > 0 && (
+                  <div className="mt-2.5 grid grid-cols-3 gap-1.5">
+                    {l.photos!.map((p, i) => (
+                      <a
+                        key={i}
+                        href={p.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="block aspect-square overflow-hidden rounded-xl bg-ink-100"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={p.url}
+                          alt={`돌봄 사진 ${i + 1}`}
+                          loading="lazy"
+                          className="h-full w-full object-cover transition-transform duration-200 active:scale-95"
+                        />
+                      </a>
+                    ))}
+                  </div>
+                )}
 
                 {/* 원탭 반응 — 확인만 하고 끝나던 일지에 "마음을 돌려주는" 한 번의 탭.
                     같은 버튼을 다시 누르면 취소된다. */}

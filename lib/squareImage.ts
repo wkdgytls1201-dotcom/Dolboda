@@ -47,6 +47,45 @@ function encode(canvas: HTMLCanvasElement, type: string, quality: number): Promi
   return new Promise((resolve) => canvas.toBlob(resolve, type, quality));
 }
 
+/**
+ * 비율 유지 축소 — 돌봄일지 사진용. 프로필과 달리 자르면 안 되는 사진(식사 상차림,
+ * 상처 부위, 산책 풍경)이라 긴 변만 maxEdge로 줄인다. 인코딩·용량 원칙은 위와 동일.
+ */
+export async function toResizedImage(
+  file: File,
+  maxEdge = 1280,
+  maxBytes = 500 * 1024
+): Promise<SquareImageResult> {
+  const bitmap = await loadBitmap(file);
+  const w = "width" in bitmap ? bitmap.width : 0;
+  const h = "height" in bitmap ? bitmap.height : 0;
+  if (!w || !h) throw new Error("이미지를 읽지 못했어요.");
+
+  const scale = Math.min(1, maxEdge / Math.max(w, h));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(w * scale);
+  canvas.height = Math.round(h * scale);
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("이미지를 처리하지 못했어요.");
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(bitmap as CanvasImageSource, 0, 0, canvas.width, canvas.height);
+  if ("close" in bitmap) bitmap.close();
+
+  let type = "image/webp";
+  let blob = await encode(canvas, type, 0.78);
+  if (!blob || blob.type !== type) {
+    type = "image/jpeg";
+    blob = await encode(canvas, type, 0.8);
+  }
+  if (blob && blob.size > maxBytes) {
+    blob = (await encode(canvas, type, 0.62)) ?? blob;
+  }
+  if (!blob) throw new Error("이미지를 변환하지 못했어요.");
+  if (blob.size > maxBytes) throw new Error("사진 용량이 너무 커요. 다른 사진을 골라주세요.");
+
+  return { blob, previewUrl: canvas.toDataURL(type, 0.6) };
+}
+
 export async function toSquareImage(file: File): Promise<SquareImageResult> {
   const bitmap = await loadBitmap(file);
   const w = "width" in bitmap ? bitmap.width : 0;
