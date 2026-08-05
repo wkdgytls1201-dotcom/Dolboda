@@ -18,6 +18,8 @@ import { createPortal } from "react-dom";
 import { ChevronLeft, Crosshair, RotateCw } from "lucide-react";
 import { loadKakaoSdk } from "@/components/KakaoMap";
 import { NHIS_GRADE_LETTER } from "@/components/GradeBadge";
+import { useViewGate } from "@/lib/viewGateContext";
+import { tagFacilityTransition } from "@/lib/navTransition";
 import { shortAddress } from "@/lib/shortAddress";
 import { FACILITY_TYPE_LABEL, type Facility } from "@/lib/types";
 import { PROMOTED_FACILITY_IDS } from "@/lib/promotedFacilities";
@@ -69,6 +71,9 @@ function circleMarkerDataUri(size: number, fill: string, ring: string) {
 }
 
 export default function SearchMapView({ items, origin, hasLocation, onClose, transformArea }: Props) {
+  // 상세 진입은 반드시 ViewGate를 지난다 — 열람 제한(비회원 5곳)과 Shared Element
+  // 전환이 전부 그 한 곳에 있다(일반 <a>로 가면 둘 다 우회된다 — 실측 수정 2026-08-05)
+  const { requestFacilityView } = useViewGate();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const clustererRef = useRef<any>(null);
@@ -609,6 +614,7 @@ export default function SearchMapView({ items, origin, hasLocation, onClose, tra
                         width={56}
                         height={56}
                         loading="lazy"
+                        data-vt-hero=""
                         className="h-14 w-14 shrink-0 rounded-xl bg-ink-100 object-cover"
                       />
                     ) : (
@@ -618,7 +624,9 @@ export default function SearchMapView({ items, origin, hasLocation, onClose, tra
                     )}
                     <span className="min-w-0 flex-1">
                       <span className="mb-0.5 flex flex-wrap items-center gap-1.5">
-                        <span className="truncate text-[15px] font-bold text-ink-900">{f.name}</span>
+                        <span data-vt-title="" className="truncate text-[15px] font-bold text-ink-900">
+                          {f.name}
+                        </span>
                         <span className="shrink-0 rounded-full bg-royal-50 px-1.5 py-0.5 text-[10px] font-bold text-royal-700">
                           {gradeLabel(f)}
                         </span>
@@ -634,13 +642,19 @@ export default function SearchMapView({ items, origin, hasLocation, onClose, tra
                         )}
                       </span>
                     </span>
-                    <a
-                      href={`/facility/${f.id}`}
-                      onClick={(e) => e.stopPropagation()}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // 카드의 사진·이름이 상세 히어로·제목으로 모핑해 들어간다
+                        const row = (e.currentTarget as HTMLElement).closest("li");
+                        if (row) tagFacilityTransition(row as HTMLElement);
+                        requestFacilityView(f.id);
+                      }}
                       className="flex min-h-[44px] shrink-0 items-center rounded-full bg-primary-500 px-3.5 text-[12px] font-bold text-white transition-transform active:scale-95"
                     >
                       상세
-                    </a>
+                    </button>
                   </div>
                 </li>
               ))}
