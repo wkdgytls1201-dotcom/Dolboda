@@ -220,6 +220,24 @@ model PointLedger {
   @@index([userId, createdAt])
 }
 
+// 추천인 코드(points-spec §5 2단계) — 사용자당 1개, 잃어버릴 일 없게 지연 생성.
+model ReferralCode {
+  userId    String   @id
+  code      String   @unique // 8자 대문자·숫자(혼동 문자 제외)
+  createdAt DateTime @default(now())
+}
+
+// 추천 귀속 — 가입자당 1회. 보상은 가입 시점이 아니라 "귀속된 사람이 첫 돌봄을
+// 완료했을 때" 양쪽 지급(rewardedAt) — 가입만으로 주면 유령 계정 어뷰징 통로가 된다.
+model ReferralAttribution {
+  userId     String    @id // 초대받은 사람(신규 가입자)
+  referrerId String // 초대한 사람
+  createdAt  DateTime  @default(now())
+  rewardedAt DateTime? // 첫 돌봄 완료 보상 지급 시각(null = 아직)
+
+  @@index([referrerId])
+}
+
 model CareLogFamilyAccess {
   id            String    @id @default(cuid())
   careRequestId String
@@ -422,6 +440,9 @@ model User {
   email                  String?                 @unique
   emailVerified          DateTime?
   image                  String?
+  // 가입 시각(2026-08-05 추가) — 추천 귀속의 "신규 회원" 판정 등에 쓴다.
+  // ⚠️ 추가 시점의 기존 회원들은 default(now())로 이 날짜가 찍혔다(실제 가입일 아님).
+  createdAt              DateTime                @default(now())
   accounts               Account[]
   sessions               Session[]
   sitterProfile          SitterProfile?

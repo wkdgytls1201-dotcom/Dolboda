@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getPointBalance } from "@/lib/points";
 import { POINT_SPEND } from "@/lib/pointsConfig";
+import { getOrCreateReferralCode } from "@/lib/referral";
 
 // 돌봄 포인트(docs/points-spec.md) — 잔액·내역 조회와 사용처 구매.
 // 원장(PointLedger)의 합이 곧 잔액이라 별도 잔액 컬럼과 어긋날 수 없다.
@@ -14,7 +15,8 @@ export async function GET() {
   }
   const userId = session.user.id;
 
-  const [balance, entries, sitterProfile, openRequest] = await Promise.all([
+  const [balance, entries, sitterProfile, openRequest, referralCode, invited, rewarded] =
+    await Promise.all([
     getPointBalance(userId),
     prisma.pointLedger.findMany({
       where: { userId },
@@ -32,11 +34,17 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
       select: { id: true, boostUntil: true },
     }),
+    getOrCreateReferralCode(userId),
+    prisma.referralAttribution.count({ where: { referrerId: userId } }),
+    prisma.referralAttribution.count({
+      where: { referrerId: userId, rewardedAt: { not: null } },
+    }),
   ]);
 
   return NextResponse.json({
     balance,
     entries,
+    referral: { code: referralCode, invited, rewarded },
     ribbon: {
       eligible: sitterProfile !== null,
       until: sitterProfile?.ribbonUntil ?? null,

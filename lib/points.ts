@@ -3,7 +3,13 @@
 // 실패하면 안 된다 — 호출부는 항상 실패를 무시할 수 있게 award가 throw하지 않는다.
 import { prisma } from "@/lib/prisma";
 
-export type EarnKind = "review_received" | "review_five_star" | "reaction" | "review_written";
+export type EarnKind =
+  | "review_received"
+  | "review_five_star"
+  | "reaction"
+  | "review_written"
+  | "referral_referrer"
+  | "referral_referee";
 
 /** 적립 — 같은 사건(userId+kind+refId) 중복 지급은 유니크 제약이 조용히 막는다. */
 export async function awardPoints(params: {

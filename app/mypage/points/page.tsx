@@ -5,8 +5,9 @@
 // (약관 제12조의2와 같은 내용 — 선불전자지급수단·보수 지급으로 오해되지 않게).
 
 import { useEffect, useState } from "react";
-import { Coins, Star, Megaphone } from "lucide-react";
+import { Coins, Star, Megaphone, UserPlus } from "lucide-react";
 import { PageLoader } from "@/components/PageLoader";
+import { shareOrCopyLink } from "@/lib/shareLink";
 import {
   POINT_EARN,
   POINT_SPEND,
@@ -17,6 +18,7 @@ import {
 interface PointsData {
   balance: number;
   entries: { id: string; amount: number; kind: string; createdAt: string }[];
+  referral: { code: string; invited: number; rewarded: number };
   ribbon: { eligible: boolean; until: string | null };
   requestBoost: { eligible: boolean; until: string | null };
 }
@@ -180,6 +182,50 @@ export default function PointsPage() {
               : data.balance < POINT_SPEND.requestBoost.price
                 ? `포인트가 ${POINT_SPEND.requestBoost.price - data.balance}P 더 필요해요`
                 : `${POINT_SPEND.requestBoost.price}P로 ${POINT_SPEND.requestBoost.days}일 적용하기`}
+          </button>
+        </div>
+      </section>
+
+      {/* 친구 초대 — 초대받은 사람이 "첫 돌봄을 완료"해야 양쪽 지급(가입 즉시 지급은
+          유령 계정 통로 — points-spec §5) */}
+      <section className="rounded-2xl border border-royal-200 bg-royal-50/50 p-4">
+        <p className="mb-1 flex items-center gap-1.5 text-[14px] font-bold text-ink-900">
+          <UserPlus size={15} className="text-royal-500" aria-hidden />
+          친구 초대
+          <span className="ml-auto shrink-0 text-[12px] font-extrabold text-royal-600">
+            나 +{POINT_EARN.referralReferrer.toLocaleString()}P · 친구 +
+            {POINT_EARN.referralReferee.toLocaleString()}P
+          </span>
+        </p>
+        <p className="mb-2.5 break-keep text-[12px] leading-relaxed text-ink-500">
+          초대받은 분이 가입하고 <strong className="font-bold text-ink-700">첫 돌봄을 완료하면</strong>{" "}
+          두 분 모두에게 포인트를 드려요.
+          {data.referral.invited > 0 &&
+            ` 지금까지 ${data.referral.invited}명 초대 · ${data.referral.rewarded}명 보상 완료.`}
+        </p>
+        <div className="flex items-center gap-2">
+          <code className="min-w-0 flex-1 truncate rounded-xl bg-white px-3 py-2.5 text-center text-[15px] font-extrabold tracking-[3px] text-royal-700 ring-1 ring-royal-100">
+            {data.referral.code}
+          </code>
+          <button
+            type="button"
+            onClick={async () => {
+              const outcome = await shareOrCopyLink({
+                url: `${window.location.origin}/?ref=${data.referral.code}`,
+                title: "돌보다 초대",
+                text: "돌보다에서 요양시설 찾기부터 돌봄 매칭까지 — 초대 링크로 시작해보세요.",
+              });
+              setNotice(
+                outcome === "copied"
+                  ? "초대 링크를 복사했어요. 붙여넣어 보내주세요."
+                  : outcome === "fallback"
+                    ? "주소창의 링크를 전달해주세요."
+                    : null
+              );
+            }}
+            className="min-h-[44px] shrink-0 rounded-xl bg-royal-500 px-4 text-[13px] font-bold text-white transition-all duration-150 hover:bg-royal-600 active:scale-[0.98]"
+          >
+            링크 공유
           </button>
         </div>
       </section>

@@ -5,6 +5,7 @@ import { Footer } from "@/components/Footer";
 import { MobileTabBar } from "@/components/MobileTabBar";
 import { CompareProvider } from "@/lib/compareContext";
 import { NavTransitionWatcher } from "@/components/NavTransitionWatcher";
+import { ReferralCatcher } from "@/components/ReferralCatcher";
 import { SessionProvider } from "next-auth/react";
 import { ViewGateProvider } from "@/lib/viewGateContext";
 import { FavoritesProvider } from "@/lib/favoritesContext";
@@ -148,6 +149,7 @@ export default function RootLayout({
                 <FavoritesProvider>
                   <AlertPreferencesProvider>
                     <NavTransitionWatcher />
+                    <ReferralCatcher />
                     <Header />
                     {children}
                     <Footer />

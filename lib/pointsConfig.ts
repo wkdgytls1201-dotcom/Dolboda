@@ -15,7 +15,14 @@ export const POINT_EARN = {
   reactionCapPerRequest: 10,
   /** 보호자 — 완료한 돌봄에 후기를 남겼을 때 */
   reviewWritten: 500,
+  /** 추천인 — 내가 초대한 사람이 첫 돌봄을 완료했을 때 */
+  referralReferrer: 2000,
+  /** 초대받은 사람 — 본인의 첫 돌봄을 완료했을 때 */
+  referralReferee: 1000,
 } as const;
+
+/** 추천 귀속 가능 기간(가입 후 일수) — 기존 회원끼리 코드를 주고받는 어뷰징 차단 */
+export const REFERRAL_CLAIM_WINDOW_DAYS = 14;
 
 export const POINT_SPEND = {
   ribbon: {
@@ -40,6 +47,8 @@ export const POINT_KIND_LABEL: Record<string, string> = {
   review_written: "후기 작성",
   spend_ribbon: "돌봄 스타 리본 사용",
   spend_request_boost: "우선 요청 사용",
+  referral_referrer: "친구 초대 보상(첫 돌봄 완료)",
+  referral_referee: "초대받고 첫 돌봄 완료",
 };
 
 /** 포인트 유효기간(개월) — 약관·화면 고지와 같은 값 */
