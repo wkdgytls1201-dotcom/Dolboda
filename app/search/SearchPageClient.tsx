@@ -218,15 +218,47 @@ function SearchContent() {
     setVisibleCount(pendingRestoreRef.current?.count ?? PAGE_SIZE);
   }, [query, filters, sortKey, facilities]);
 
-  // 데이터가 도착해 카드가 실제로 그려질 만큼 쌓이면, 보던 스크롤 위치로 한 번만 되돌린다.
+  // 데이터가 도착해 카드가 실제로 그려질 만큼 쌓이면, 보던 스크롤 위치로 되돌린다.
+  //
+  // 단발 scrollTo 한 번으로는 부족했다(실측 버그 2026-08-05): 뒤로가기 직후 본문이
+  // 아직 짧은 찰나에 브라우저·Next의 자체 복원이 바닥(푸터)으로 클램프되고, 카드가
+  // 위로 채워지는 동안 스크롤 앵커링이 푸터를 계속 붙잡아 — 우리가 먼저 옮겨놔도
+  // 그 뒤의 보정에 밀려 "목록 8~10번째에서 돌아왔는데 푸터"가 됐다. 그래서 목표
+  // 위치가 몇 프레임 연속 유지될 때까지 짧게 재주장한다(최대 800ms). 사용자가 그새
+  // 스크롤을 시작하면 즉시 물러난다 — 복원이 손과 싸우면 안 된다.
   useEffect(() => {
     const pending = pendingRestoreRef.current;
     if (!pending || loading || results.length === 0) return;
     pendingRestoreRef.current = null;
+
+    let raf = 0;
+    let stable = 0;
+    let cancelled = false;
+    const start = performance.now();
+    const cancel = () => {
+      cancelled = true;
+    };
     // 전역 scroll-behavior:smooth가 끼어들면 복원이 애니메이션으로 보인다 — 즉시 이동
-    setTimeout(() => {
+    const assert = () => {
+      if (cancelled) return;
       window.scrollTo({ top: pending.y, left: 0, behavior: "instant" as ScrollBehavior });
-    }, 0);
+      stable = Math.abs(window.scrollY - pending.y) < 2 ? stable + 1 : 0;
+      if (stable >= 3 || performance.now() - start > 800) {
+        window.removeEventListener("wheel", cancel);
+        window.removeEventListener("touchstart", cancel);
+        return;
+      }
+      raf = requestAnimationFrame(assert);
+    };
+    window.addEventListener("wheel", cancel, { passive: true });
+    window.addEventListener("touchstart", cancel, { passive: true });
+    raf = requestAnimationFrame(assert);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf);
+      window.removeEventListener("wheel", cancel);
+      window.removeEventListener("touchstart", cancel);
+    };
   }, [loading, results.length]);
 
   // 스크롤 위치는 상태 변화 없이도 계속 바뀐다 — 300ms 간격으로 저장분에 덧씌운다.
