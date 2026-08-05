@@ -151,7 +151,11 @@ export default function RootLayout({
                     <NavTransitionWatcher />
                     <ReferralCatcher />
                     <Header />
-                    {children}
+                    {/* 본문 최소 높이 = 한 화면. 로딩·전환으로 본문이 잠깐 짧아져도
+                        푸터가 첫 화면에 올라와 보이는 일이 전 라우트에서 사라진다
+                        (같은 계열 버그 4번째에 내린 전역 일반해 — 2026-08-05).
+                        짧은 페이지에서 푸터가 스크롤 아래로 내려가는 건 의도된 맞바꿈. */}
+                    <div className="min-h-screen [min-height:100dvh]">{children}</div>
                     <Footer />
                     <MobileTabBar />
                   </AlertPreferencesProvider>
