@@ -12,6 +12,9 @@ import { useSitterProfileContext } from "@/lib/sitterProfileContext";
 const STEP_TITLES = ["약관 동의", "기본 정보", "경력 · 자격", "활동 지역", "정산 계좌 (선택)"];
 const MAX_REGIONS = 10;
 const NATIONALITIES = ["내국인", "외국인"];
+// 프로필 관리 화면·서버(/api/sitter-profile)와 같은 값 — 밴드형만 받는다(정확한 나이 안 받음)
+const GENDERS = ["여성", "남성"] as const;
+const AGE_BANDS = ["20대", "30대", "40대", "50대", "60대", "70대 이상"] as const;
 
 interface Certification {
   name: string;
@@ -44,6 +47,8 @@ export default function SitterRegisterPage() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [nationality, setNationality] = useState("내국인");
+  const [gender, setGender] = useState<string | null>(null);
+  const [ageBand, setAgeBand] = useState<string | null>(null);
   const [intro, setIntro] = useState("");
 
   // 3. 경력 · 자격
@@ -124,6 +129,8 @@ export default function SitterRegisterPage() {
         body: JSON.stringify({
           nickname: nickname.trim(),
           nationality,
+          gender,
+          ageBand,
           intro: intro.trim() || undefined,
           experienceYears,
           regions,
@@ -373,6 +380,52 @@ export default function SitterRegisterPage() {
                 </button>
               ))}
             </div>
+          </div>
+          {/* 성별·연령대(선택) — 정확한 나이가 아니라 밴드만. 보호자가 선호 성별·연령대를
+              보고 매니저를 고르기 때문에, 등록 때 채워두면 선택될 확률이 올라간다
+              (프로필 관리 화면과 같은 UI·같은 서버 화이트리스트). */}
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-ink-700">
+              성별 <span className="font-normal text-ink-300">(선택)</span>
+            </label>
+            <div className="flex flex-wrap gap-1.5">
+              {GENDERS.map((g) => (
+                <button
+                  key={g}
+                  type="button"
+                  aria-pressed={gender === g}
+                  onClick={() => setGender((prev) => (prev === g ? null : g))}
+                  className={`min-h-[44px] rounded-full px-4 text-[13px] font-bold transition-all duration-150 active:scale-95 ${
+                    gender === g ? "bg-primary-500 text-white" : "bg-ink-100/60 text-ink-500"
+                  }`}
+                >
+                  {g}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-ink-700">
+              연령대 <span className="font-normal text-ink-300">(선택)</span>
+            </label>
+            <div className="flex flex-wrap gap-1.5">
+              {AGE_BANDS.map((band) => (
+                <button
+                  key={band}
+                  type="button"
+                  aria-pressed={ageBand === band}
+                  onClick={() => setAgeBand((prev) => (prev === band ? null : band))}
+                  className={`min-h-[44px] rounded-full px-3.5 text-[13px] font-bold transition-all duration-150 active:scale-95 ${
+                    ageBand === band ? "bg-primary-500 text-white" : "bg-ink-100/60 text-ink-500"
+                  }`}
+                >
+                  {band}
+                </button>
+              ))}
+            </div>
+            <p className="mt-1.5 text-[11px] leading-relaxed text-ink-300">
+              보호자가 매니저를 고를 때 참고하는 정보예요. 입력하시면 지원자 카드에 함께 보여요.
+            </p>
           </div>
           <div>
             <label className="mb-1 block text-xs font-semibold text-ink-700">

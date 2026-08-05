@@ -104,6 +104,8 @@ export async function POST(req: Request) {
     bankAccountHolder,
     marketingOptIn,
     certifications,
+    gender,
+    ageBand,
   } = body as {
     nickname?: string;
     photoUrl?: string;
@@ -116,6 +118,8 @@ export async function POST(req: Request) {
     bankAccountHolder?: string;
     marketingOptIn?: boolean;
     certifications?: { name: string; issuedBy?: string }[];
+    gender?: string | null;
+    ageBand?: string | null;
   };
 
   const cleanNickname = text(nickname, MAX_NICKNAME);
@@ -145,6 +149,10 @@ export async function POST(req: Request) {
       bankAccountNumber: text(bankAccountNumber, MAX_BANK_FIELD),
       bankAccountHolder: text(bankAccountHolder, MAX_BANK_FIELD),
       marketingOptIn: marketingOptIn === true,
+      // 선택 항목 — PATCH와 같은 화이트리스트만 통과시키고, 밖의 값은 조용히 버린다
+      // (등록을 400으로 막을 만큼 중요한 값이 아니다)
+      gender: typeof gender === "string" && GENDERS.includes(gender) ? gender : null,
+      ageBand: typeof ageBand === "string" && AGE_BANDS.includes(ageBand) ? ageBand : null,
       agreedAt: new Date(),
       certifications: certList.length ? { create: certList } : undefined,
     },
