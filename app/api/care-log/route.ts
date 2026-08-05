@@ -149,6 +149,27 @@ async function notifyAlert(guardianEmail: string | null, sitterNickname: string,
   }
 }
 
+/** 일지 "도착" 알림 (alert-system-spec §3-12) — 보호자가 앱을 열어보지 않아도 오늘 기록이
+ * 생겼다는 걸 안다. 매일 확인하고 싶은 것이 이 기능의 존재 이유라, 알림이 없으면
+ * 보호자가 매번 먼저 열어봐야 한다. 발송 실패가 저장을 되돌리면 안 되는 건 위와 동일. */
+async function notifyLogArrived(
+  guardianEmail: string | null,
+  sitterNickname: string,
+  careDate: string
+) {
+  if (!resend || !guardianEmail) return;
+  try {
+    await resend.emails.send({
+      from: `${SITE_NAME} 돌봄일지 <${MAIL_FROM}>`,
+      to: guardianEmail,
+      subject: `[${SITE_NAME}] ${careDate} 돌봄일지가 도착했어요`,
+      text: `${sitterNickname}님이 ${careDate} 돌봄일지를 남겼어요.\n\n마이페이지 > 돌봄일지에서 식사·복약·하루 상태를 확인하실 수 있어요.`,
+    });
+  } catch (err) {
+    console.error("돌봄일지 도착 메일 실패", err);
+  }
+}
+
 export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -228,12 +249,19 @@ export async function POST(req: Request) {
     },
   });
 
-  if (alertNote) {
+  // 보호자 알림 — 특이사항이 있으면 그 메일이 "도착 소식"까지 겸한다(두 통 금지).
+  // 특이사항이 없으면 하루의 첫 기록에만 도착 알림을 보낸다: 정정(correctsId)이 아닌
+  // 기록은 위의 "이미 이 날짜 기록이 있어요" 409 가드 덕에 careDate당 정확히 1건이라,
+  // 별도 발송 기록 테이블 없이도 같은 날짜에 두 번 나갈 수 없다(§2-3 원칙을 유니크
+  // 가드가 대신한다). 스위치는 아직 없다 — 새 지원자 알림(§3-8)과 같은 거래성 원칙.
+  if (alertNote || !correctsId) {
     const guardian = await prisma.user.findUnique({
       where: { id: ctx.request.guardianId },
       select: { email: true },
     });
-    await notifyAlert(guardian?.email ?? null, ctx.application.sitterProfile.nickname, alertNote);
+    const nickname = ctx.application.sitterProfile.nickname;
+    if (alertNote) await notifyAlert(guardian?.email ?? null, nickname, alertNote);
+    else await notifyLogArrived(guardian?.email ?? null, nickname, careDate);
   }
 
   return NextResponse.json({ log: created });
