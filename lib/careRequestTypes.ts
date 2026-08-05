@@ -3,11 +3,17 @@ import type { LocationTypeValue } from "./careLocationTypes";
 export interface Applicant {
   id: string;
   status: string;
+  /** 역경매 — 매니저가 지원하며 제시한 사례비·한마디(선택) */
+  proposedAmount: number | null;
+  proposedUnit: string | null;
+  message: string | null;
   sitterProfile: {
     id: string;
     nickname: string;
     experienceYears: number;
     intro: string | null;
+    gender: string | null;
+    ageBand: string | null;
     certifications: { id: string; name: string }[];
   };
   /** 돌보다 안에서 쌓인 실적 — 자기 신고 경력과 달리 플랫폼이 보증하는 숫자 */

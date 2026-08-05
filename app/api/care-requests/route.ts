@@ -11,12 +11,18 @@ const APPLICANT_SELECT = {
   id: true,
   status: true,
   createdAt: true,
+  // 역경매 — 매니저가 지원하며 제시한 사례비·한마디
+  proposedAmount: true,
+  proposedUnit: true,
+  message: true,
   sitterProfile: {
     select: {
       id: true,
       nickname: true,
       experienceYears: true,
       intro: true,
+      gender: true,
+      ageBand: true,
       certifications: { select: { id: true, name: true } },
     },
   },

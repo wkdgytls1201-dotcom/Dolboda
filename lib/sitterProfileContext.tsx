@@ -23,6 +23,9 @@ export interface SitterProfileData {
   bankAccountHolder: string | null;
   /** 공개 프로필(/manager/[id]) 동의 시각 — null이면 비공개 */
   publicProfileAt: string | null;
+  /** 역경매 지원자 카드용(선택) — "여성"|"남성", "20대"~"70대 이상" */
+  gender: string | null;
+  ageBand: string | null;
   certifications: SitterCertification[];
 }
 

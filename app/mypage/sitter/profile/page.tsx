@@ -16,6 +16,9 @@ import { shareOrCopyLink } from "@/lib/shareLink";
 type SitterProfile = SitterProfileData;
 
 const MAX_REGIONS = 10;
+// 역경매 지원자 카드용(선택) — 대략적인 밴드만 버튼으로 받는다(정확한 나이는 안 받는다)
+const GENDERS = ["여성", "남성"] as const;
+const AGE_BANDS = ["20대", "30대", "40대", "50대", "60대", "70대 이상"] as const;
 
 export default function SitterProfilePage() {
   const { data: session, status } = useSession();
@@ -28,6 +31,8 @@ export default function SitterProfilePage() {
   const [nickname, setNickname] = useState("");
   const [intro, setIntro] = useState("");
   const [experienceYears, setExperienceYears] = useState(0);
+  const [gender, setGender] = useState<string | null>(null);
+  const [ageBand, setAgeBand] = useState<string | null>(null);
   const [regions, setRegions] = useState<string[]>([]);
   const [bankName, setBankName] = useState("");
   const [bankAccountNumber, setBankAccountNumber] = useState("");
@@ -53,6 +58,8 @@ export default function SitterProfilePage() {
       setNickname(contextProfile.nickname);
       setIntro(contextProfile.intro ?? "");
       setExperienceYears(contextProfile.experienceYears);
+      setGender(contextProfile.gender);
+      setAgeBand(contextProfile.ageBand);
       setRegions(contextProfile.regions);
       setBankName(contextProfile.bankName ?? "");
       setBankAccountNumber(contextProfile.bankAccountNumber ?? "");
@@ -322,7 +329,14 @@ export default function SitterProfilePage() {
             <div className="min-w-0">
               <p className="font-bold text-ink-900">{profile.nickname}</p>
               <p className="text-xs text-ink-300">
-                {profile.nationality} · 경력 {profile.experienceYears}년
+                {[
+                  profile.nationality,
+                  `경력 ${profile.experienceYears}년`,
+                  profile.gender,
+                  profile.ageBand,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
               </p>
             </div>
           </div>
@@ -384,6 +398,55 @@ export default function SitterProfilePage() {
                 />
                 <span className="text-sm text-ink-500">년 경력</span>
               </div>
+
+              {/* 성별·연령대(선택) — 정확한 나이가 아니라 대략적인 밴드만 버튼으로.
+                  보호자가 선호 성별·연령대를 보고 매니저를 고르기 때문에, 채워두면
+                  선택될 확률이 올라간다. 같은 버튼을 다시 누르면 지워진다. */}
+              <div>
+                <p className="mb-1.5 text-[12px] font-semibold text-ink-500">
+                  성별 <span className="font-normal text-ink-300">(선택)</span>
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {GENDERS.map((g) => (
+                    <button
+                      key={g}
+                      type="button"
+                      aria-pressed={gender === g}
+                      onClick={() => setGender((prev) => (prev === g ? null : g))}
+                      className={`min-h-[40px] rounded-full px-4 text-[13px] font-bold transition-colors ${
+                        gender === g ? "bg-primary-500 text-white" : "bg-ink-100/60 text-ink-500"
+                      }`}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="mb-1.5 text-[12px] font-semibold text-ink-500">
+                  연령대 <span className="font-normal text-ink-300">(선택)</span>
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {AGE_BANDS.map((band) => (
+                    <button
+                      key={band}
+                      type="button"
+                      aria-pressed={ageBand === band}
+                      onClick={() => setAgeBand((prev) => (prev === band ? null : band))}
+                      className={`min-h-[40px] rounded-full px-3.5 text-[13px] font-bold transition-colors ${
+                        ageBand === band ? "bg-primary-500 text-white" : "bg-ink-100/60 text-ink-500"
+                      }`}
+                    >
+                      {band}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-1.5 text-[11px] leading-relaxed text-ink-300">
+                  보호자가 매니저를 고를 때 참고하는 정보예요. 입력하시면 지원자 카드에 함께
+                  보여요.
+                </p>
+              </div>
+
               <div className="flex justify-end gap-2">
                 <button
                   type="button"
@@ -396,7 +459,7 @@ export default function SitterProfilePage() {
                   type="button"
                   disabled={saving}
                   onClick={async () => {
-                    await patch({ nickname, intro, experienceYears });
+                    await patch({ nickname, intro, experienceYears, gender, ageBand });
                     setEditSection(null);
                   }}
                   className="flex min-h-[44px] items-center rounded-lg bg-primary-500 px-4 text-xs font-bold text-white transition-all duration-150 ease-snappy hover:bg-primary-600 active:scale-95 disabled:opacity-60"

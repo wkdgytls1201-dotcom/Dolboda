@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { MyPageShell } from "@/components/MyPageShell";
 import { PageLoader } from "@/components/PageLoader";
-import { ApplyConfirmSheet } from "@/components/ApplyConfirmSheet";
+import { ApplyConfirmSheet, type ApplyPayload } from "@/components/ApplyConfirmSheet";
 import { typeMeta, LOCATION_TYPES, type LocationTypeValue } from "@/lib/careLocationTypes";
 import { formatTimeRange, daysBetween } from "@/lib/careOptions";
 
@@ -311,13 +311,17 @@ export default function SitterJobsPage() {
     loadApplications();
   }, [loadApplications]);
 
-  // 지원 버튼 → 확인 시트("내 프로필이 이렇게 보여요") → 확정 시에만 실제 POST
-  async function handleApply(id: string) {
+  // 지원 버튼 → 확인 시트("내 프로필이 이렇게 보여요" + 제안 사례비·한마디) → 확정 시에만 실제 POST
+  async function handleApply(id: string, payload: ApplyPayload) {
     setApplyingId(id);
     const res = await fetch("/api/care-request-applications", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ careRequestId: id }),
+      body: JSON.stringify({
+        careRequestId: id,
+        proposedAmount: payload.proposedAmount ?? undefined,
+        message: payload.message ?? undefined,
+      }),
     });
     if (res.ok || res.status === 409) {
       setJobs((prev) => prev.map((j) => (j.id === id ? { ...j, alreadyApplied: true } : j)));
@@ -702,7 +706,7 @@ export default function SitterJobsPage() {
         <ApplyConfirmSheet
           job={confirmingJob}
           applying={applyingId === confirmingJob.id}
-          onConfirm={() => handleApply(confirmingJob.id)}
+          onConfirm={(payload) => handleApply(confirmingJob.id, payload)}
           onClose={() => setConfirmingJob(null)}
         />
       )}

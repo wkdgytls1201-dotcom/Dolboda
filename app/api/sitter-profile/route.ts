@@ -14,6 +14,9 @@ const MAX_BANK_FIELD = 40;
 const MAX_CERT_NAME = 50;
 const MAX_CERTIFICATIONS = 20;
 const NATIONALITIES = ["내국인", "외국인"];
+// 역경매 지원자 카드용(선택 항목) — 밴드형만 받는다(정확한 나이·주민번호류는 안 받는다)
+const GENDERS = ["여성", "남성"];
+const AGE_BANDS = ["20대", "30대", "40대", "50대", "60대", "70대 이상"];
 
 function text(v: unknown, maxLen: number): string | null {
   if (typeof v !== "string") return null;
@@ -175,6 +178,8 @@ export async function PATCH(req: Request) {
     bankAccountHolder,
     marketingOptIn,
     publicProfile,
+    gender,
+    ageBand,
   } = body as Partial<{
     nickname: string;
     photoUrl: string | null;
@@ -187,7 +192,16 @@ export async function PATCH(req: Request) {
     bankAccountHolder: string | null;
     marketingOptIn: boolean;
     publicProfile: boolean;
+    gender: string | null;
+    ageBand: string | null;
   }>;
+
+  if (gender !== undefined && gender !== null && !GENDERS.includes(gender)) {
+    return NextResponse.json({ error: "성별 값이 올바르지 않아요." }, { status: 400 });
+  }
+  if (ageBand !== undefined && ageBand !== null && !AGE_BANDS.includes(ageBand)) {
+    return NextResponse.json({ error: "연령대 값이 올바르지 않아요." }, { status: 400 });
+  }
 
   // 닉네임·활동지역은 값이 왔는데 통째로 걸러지면(빈 문자열, 목록에 없는 지역) 조용히
   // 지워버리는 대신 오류로 알린다 — 이 둘은 없으면 매칭 자체가 안 되는 필수값이다.
@@ -232,6 +246,9 @@ export async function PATCH(req: Request) {
         publicProfileAt:
           publicProfile === true ? (existing.publicProfileAt ?? new Date()) : null,
       }),
+      // 성별·연령대는 null로 지울 수 있다(선택 항목)
+      ...(gender !== undefined && { gender }),
+      ...(ageBand !== undefined && { ageBand }),
     },
     include: { certifications: true },
   });

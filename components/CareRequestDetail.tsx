@@ -324,10 +324,28 @@ export function CareRequestDetail({
                     </span>
                   </div>
                   <p className="mb-1 text-xs text-ink-300">
-                    경력 {app.sitterProfile.experienceYears}년
-                    {app.sitterProfile.certifications.length > 0 &&
-                      ` · ${app.sitterProfile.certifications.map((c) => c.name).join(", ")}`}
+                    {[
+                      `경력 ${app.sitterProfile.experienceYears}년`,
+                      [app.sitterProfile.gender, app.sitterProfile.ageBand]
+                        .filter(Boolean)
+                        .join(" "),
+                      app.sitterProfile.certifications.length > 0
+                        ? app.sitterProfile.certifications.map((c) => c.name).join(", ")
+                        : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
                   </p>
+                  {/* 역경매 — 제안 사례비는 선택의 핵심 정보라 배지로 도드라지게.
+                      제안이 없으면 "협의"를 굳이 박지 않는다(없음이 기본이라). */}
+                  {app.proposedAmount != null && (
+                    <p className="mb-1.5">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-primary-50 px-2.5 py-1 text-xs font-bold text-primary-700 ring-1 ring-inset ring-primary-200">
+                        제안 사례비 {app.proposedUnit === "시간" ? "시간당" : "하루"}{" "}
+                        {app.proposedAmount.toLocaleString()}원
+                      </span>
+                    </p>
+                  )}
                   {/* 돌보다 안에서 검증된 실적 — 자기 신고 경력과 구분되는 신뢰 신호.
                       실적이 없으면 아무것도 안 붙인다(0건을 굳이 광고하지 않는다) */}
                   {app.stats && app.stats.completedCount > 0 && (
@@ -336,6 +354,12 @@ export function CareRequestDetail({
                       돌보다에서 돌봄 완료 {app.stats.completedCount}건
                       {app.stats.avgRating != null &&
                         ` · ★${app.stats.avgRating} (후기 ${app.stats.reviewCount})`}
+                    </p>
+                  )}
+                  {/* 지원 한마디 — 이 요청을 보고 쓴 말이라 소개글보다 위 */}
+                  {app.message && (
+                    <p className="mb-1.5 rounded-xl bg-white px-3 py-2 text-sm leading-relaxed text-ink-700">
+                      “{app.message}”
                     </p>
                   )}
                   {app.sitterProfile.intro && (

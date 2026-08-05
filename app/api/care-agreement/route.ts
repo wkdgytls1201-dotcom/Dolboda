@@ -99,7 +99,8 @@ function buildContent(
     ? never
     : NonNullable<Awaited<ReturnType<typeof findMatchedContext>>>["request"],
   sitter: { nickname: string; experienceYears: number },
-  guardianName: string | null
+  guardianName: string | null,
+  application: { proposedAmount: number | null; proposedUnit: string | null }
 ): AgreementContent {
   const meta = typeMeta(request.locationType);
   const duties = [
@@ -131,8 +132,11 @@ function buildContent(
       "두 당사자가 협의한 시간",
     recipient,
     duties,
-    payAmount: request.budgetAmount,
-    payUnit: request.budgetUnit,
+    // 역경매(2026-08-05): 매니저가 제안한 사례비로 확정됐다면 그 값이 실제 합의다 —
+    // 보호자 희망가만 적으면 합의서가 실제 합의와 어긋난다. 회사는 여전히 "두 당사자가
+    // 정한 값"을 기록만 한다(§1의 선 그대로 — 금액 결정에 개입하지 않음).
+    payAmount: application.proposedAmount ?? request.budgetAmount,
+    payUnit: application.proposedAmount != null ? application.proposedUnit : request.budgetUnit,
     specialRequests: request.specialRequests ?? [],
     note: request.requestNote,
   };
@@ -183,7 +187,7 @@ export async function GET() {
     where: { id: ctx.request.guardianId },
     select: { name: true },
   });
-  const content = buildContent(ctx.request, ctx.application.sitterProfile, guardianUser?.name ?? null);
+  const content = buildContent(ctx.request, ctx.application.sitterProfile, guardianUser?.name ?? null, ctx.application);
 
   return NextResponse.json({
     agreement: null,
@@ -349,7 +353,7 @@ export async function PATCH(req: Request) {
     where: { id: ctx.request.guardianId },
     select: { name: true },
   });
-  const content = buildContent(ctx.request, ctx.application.sitterProfile, guardianUser?.name ?? null);
+  const content = buildContent(ctx.request, ctx.application.sitterProfile, guardianUser?.name ?? null, ctx.application);
   const contentHash = hashAgreement(content);
 
   let created;

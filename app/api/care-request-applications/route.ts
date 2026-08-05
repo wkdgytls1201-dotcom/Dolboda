@@ -19,10 +19,29 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "등록된 돌보다 매니저 프로필이 없어요." }, { status: 404 });
   }
 
-  const { careRequestId } = (await req.json()) as { careRequestId?: string };
+  const body = (await req.json()) as {
+    careRequestId?: string;
+    proposedAmount?: unknown;
+    message?: unknown;
+  };
+  const careRequestId = body.careRequestId;
   if (!careRequestId) {
     return NextResponse.json({ error: "careRequestId가 필요해요." }, { status: 400 });
   }
+
+  // 역경매 — 제안 사례비(선택). 상한은 케어네이션류 시세의 넉넉한 위(하루 100만원)로만
+  // 막는다: 오타(0 하나 더)로 비현실 금액이 보호자에게 그대로 보이는 것 방지.
+  const proposedAmount =
+    typeof body.proposedAmount === "number" &&
+    Number.isInteger(body.proposedAmount) &&
+    body.proposedAmount > 0 &&
+    body.proposedAmount <= 1_000_000
+      ? body.proposedAmount
+      : null;
+  const message =
+    typeof body.message === "string" && body.message.trim()
+      ? body.message.trim().slice(0, 200)
+      : null;
 
   const careRequest = await prisma.careRequest.findUnique({ where: { id: careRequestId } });
   if (!careRequest || careRequest.status !== "OPEN") {
@@ -52,7 +71,14 @@ export async function POST(req: Request) {
   let application;
   try {
     application = await prisma.careRequestApplication.create({
-      data: { careRequestId, sitterProfileId: sitterProfile.id },
+      data: {
+        careRequestId,
+        sitterProfileId: sitterProfile.id,
+        proposedAmount,
+        // 단위는 지원 시점의 요청 단위를 고정 저장 — 요청이 나중에 바뀌어도 제안의 뜻이 안 뒤집힌다
+        proposedUnit: proposedAmount != null ? (careRequest.budgetUnit ?? "일") : null,
+        message,
+      },
     });
   } catch {
     return NextResponse.json({ error: "이미 지원한 요청이에요." }, { status: 409 });
