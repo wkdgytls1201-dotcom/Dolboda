@@ -134,6 +134,8 @@ export default async function RegionTypePage({
           position: i + 1,
           name: f.name,
           url: `${SITE_URL}/facility/${f.id}`,
+          // 실사진이 있으면 구조화 데이터에도 싣는다 — 리치 결과·AI 검색(GEO)의 재료
+          ...(f.photo ? { image: f.photo } : {}),
         })),
       },
       // total은 이 유형의 시설 수다 — typeSeo를 함께 넘겨야 질문도 그 유형으로 나온다

@@ -37,7 +37,15 @@ export function TypeCountChips({
 export function FacilityLinkList({
   facilities,
 }: {
-  facilities: { id: string; name: string; facilityType: string; grade: number | null; address: string }[];
+  facilities: {
+    id: string;
+    name: string;
+    facilityType: string;
+    grade: number | null;
+    address: string;
+    /** 대표 실사진(있는 지역만 — 경기도부터). 없으면 썸네일 칸 자체를 안 그린다. */
+    photo?: string | null;
+  }[];
 }) {
   return (
     <ul className="space-y-2">
@@ -47,6 +55,19 @@ export function FacilityLinkList({
             href={`/facility/${f.id}`}
             className="flex items-center gap-3 rounded-2xl border border-ink-100 bg-white p-4 transition-all duration-150 ease-snappy hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-card active:translate-y-0 active:scale-[0.98]"
           >
+            {f.photo && (
+              // 고정 크기 상자 + lazy — 목록이 길어도 CLS 0, 화면 밖 사진은 안 받는다
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={f.photo}
+                alt={`${f.name} 사진`}
+                width={56}
+                height={56}
+                loading="lazy"
+                decoding="async"
+                className="h-14 w-14 shrink-0 rounded-xl object-cover"
+              />
+            )}
             <span className="min-w-0 flex-1">
               <span className="mb-0.5 flex flex-wrap items-center gap-1.5">
                 <span className="font-bold text-ink-900">{f.name}</span>

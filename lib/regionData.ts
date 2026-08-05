@@ -191,7 +191,7 @@ export const getTopFacilities = cache(
     const conditions: object[] = [prefixWhere(region), NOT_MOCK];
     if (sigungu) conditions.push({ address: { contains: ` ${sigungu} ` } });
     if (facilityType) conditions.push({ facilityType });
-    return prisma.facility.findMany({
+    const rows = await prisma.facility.findMany({
       where: { AND: conditions },
       orderBy: [{ grade: { sort: "asc", nulls: "last" } }, { name: "asc" }],
       take,
@@ -202,7 +202,18 @@ export const getTopFacilities = cache(
         facilityType: true,
         grade: true,
         address: true,
+        // 대표 사진 1장(공단 실사진 파이프라인이 채운 extra.photos[0])만 뽑아 쓴다.
+        // extra 통짜는 서버-DB 사이에서만 오가고, 페이지엔 URL 한 줄만 실린다(SSG 일 1회).
+        extra: true,
       },
+    });
+    return rows.map(({ extra, ...f }) => {
+      const photos = (extra as { photos?: unknown } | null)?.photos;
+      return {
+        ...f,
+        photo:
+          Array.isArray(photos) && typeof photos[0] === "string" ? (photos[0] as string) : null,
+      };
     });
   }
 );

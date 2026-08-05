@@ -107,6 +107,8 @@ export default async function RegionSigunguPage({
           position: i + 1,
           name: f.name,
           url: `${SITE_URL}/facility/${f.id}`,
+          // 실사진이 있으면 구조화 데이터에도 싣는다 — 리치 결과·AI 검색(GEO)의 재료
+          ...(f.photo ? { image: f.photo } : {}),
         })),
       },
       regionFaqJsonLd({ regionName: sigungu, total: summary.total, typeCounts: summary.typeCounts }),
