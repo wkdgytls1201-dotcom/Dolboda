@@ -151,12 +151,11 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
   const [guardianPrimary, ...guardianGrid] = guardianItems;
 
   // 모바일에서는 이 순서가 그대로 위계가 된다: 대표 카드 → 그리드 → 얇은 줄.
-  // 대표 카드는 돌봄일지 관리(2026-08-05 사용자 지시) — 바로 아래 대시보드 카드가
-  // 지원중·매칭·완료 숫자로 일자리 관리에 이미 직행하고 있어, 대표 자리에 일자리를
-  // 두면 같은 목적지가 연달아 두 번 나왔다. 일자리 관리는 얇은 줄로 남긴다.
+  // 대표 카드는 일자리 관리, 돌봄일지 관리는 얇은 줄(2026-08-05 사용자 확정 —
+  // 한 차례 서로 자리를 바꿨다가 이 배치로 최종 결정).
   const sitterItems: NavItem[] = [
-    { href: "/care-request/care-log", label: "돌봄일지 관리", icon: <NotebookPen size={20} />, hint: "오늘 기록 남기고 보호자 반응 확인" },
-    { href: "/mypage/sitter/jobs", label: "일자리 관리", icon: <Briefcase size={18} />, hint: "새 일자리와 지원·매칭 현황" },
+    { href: "/mypage/sitter/jobs", label: "일자리 관리", icon: <Briefcase size={20} />, hint: "새 일자리와 지원·매칭 현황" },
+    { href: "/care-request/care-log", label: "돌봄일지 관리", icon: <NotebookPen size={18} />, hint: "오늘 기록 남기고 보호자 반응 확인" },
     { href: "/mypage/sitter/profile", label: "매니저 프로필", icon: <HeartHandshake size={18} />, hint: "보호자에게 보이는 내 정보" },
     { href: "/mypage/sitter/workplaces", label: "일하기 좋은 시설", icon: <Building2 size={18} />, hint: "근무환경 지수 순", ribbon: "돌보다 단독" },
     { href: "/mypage/sitter/tips", label: "매니저 가이드", icon: <BookOpen size={18} />, hint: "지원 성공률 높이기", ribbon: "꿀팁" },
