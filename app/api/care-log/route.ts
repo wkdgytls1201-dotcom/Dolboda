@@ -82,6 +82,33 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "확정된 돌봄이 없어요." }, { status: 404 });
   }
 
+  // 요약 전용 모드(?stats=1) — 돌봄 확인서가 "기록 N일 · 특이사항 N건"을 붙일 때 쓴다.
+  // 일반 GET과 달리 **읽음 처리를 하지 않는다**: 확인서를 연 것은 일지를 읽은 게 아닌데
+  // 읽음으로 남으면 매니저가 "읽혔다"를 잘못 믿게 된다. 정정 체인은 날짜당 최신 1건으로 접는다.
+  if (searchParams.get("stats") === "1") {
+    const rows = await prisma.careLog.findMany({
+      where: { careRequestId: ctx.request.id },
+      select: { careDate: true, alertNote: true, photos: true, createdAt: true },
+      orderBy: { createdAt: "asc" },
+    });
+    const latestByDate = new Map<string, (typeof rows)[number]>();
+    for (const r of rows) latestByDate.set(r.careDate, r); // 오름차순이라 마지막 할당이 최신
+    const perDay = [...latestByDate.values()];
+    const dates = [...latestByDate.keys()].sort();
+    return NextResponse.json({
+      stats: {
+        dayCount: perDay.length,
+        alertCount: perDay.filter((r) => r.alertNote).length,
+        photoCount: perDay.reduce(
+          (n, r) => n + (Array.isArray(r.photos) ? r.photos.length : 0),
+          0
+        ),
+        firstDate: dates[0] ?? null,
+        lastDate: dates[dates.length - 1] ?? null,
+      },
+    });
+  }
+
   const [logs, quickNotes, guardianUser] = await Promise.all([
     prisma.careLog.findMany({
       where: { careRequestId: ctx.request.id },

@@ -26,9 +26,29 @@ function maskName(name: string | null) {
   return name[0] + "*".repeat(name.length - 1);
 }
 
+interface LogStats {
+  dayCount: number;
+  alertCount: number;
+  photoCount: number;
+  firstDate: string | null;
+  lastDate: string | null;
+}
+
 export default function CareConfirmationPage() {
   const { status } = useSession();
   const [data, setData] = useState<ConfirmationData | null | undefined>(undefined);
+  // 돌봄일지 요약(§9-3) — 실패해도 확인서 본문은 그대로다(요약 섹션만 빠짐)
+  const [logStats, setLogStats] = useState<LogStats | null>(null);
+
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    fetch("/api/care-log?stats=1")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { stats?: LogStats } | null) => {
+        if (d?.stats) setLogStats(d.stats);
+      })
+      .catch(() => {});
+  }, [status]);
 
   useEffect(() => {
     if (status !== "authenticated") return;
@@ -225,6 +245,45 @@ export default function CareConfirmationPage() {
             ))}
           </dl>
         </section>
+
+        {/* 돌봄 기록 요약(§9-3) — 케어네이션의 "기록→증명" 구조에서 배운 것: 일지가
+            확인서에 집계로 붙으면 이 종이 한 장이 "실제로 돌봄이 이루어졌다"의 근거가 된다.
+            기록이 하나도 없으면 섹션 자체를 그리지 않는다. */}
+        {logStats && logStats.dayCount > 0 && (
+          <section className="mb-6">
+            <h2 className="mb-2 text-sm font-bold text-ink-900">돌봄 기록 요약</h2>
+            <dl className="divide-y divide-ink-100 rounded-xl border border-ink-100 text-sm">
+              <div className="flex justify-between px-3.5 py-2.5">
+                <dt className="text-ink-500">돌봄일지 작성</dt>
+                <dd className="font-medium text-ink-900">
+                  {logStats.dayCount}일
+                  {logStats.firstDate && logStats.lastDate && (
+                    <span className="text-ink-400">
+                      {" "}
+                      ({logStats.firstDate} ~ {logStats.lastDate})
+                    </span>
+                  )}
+                </dd>
+              </div>
+              {logStats.alertCount > 0 && (
+                <div className="flex justify-between px-3.5 py-2.5">
+                  <dt className="text-ink-500">특이사항 공유</dt>
+                  <dd className="font-medium text-ink-900">{logStats.alertCount}건</dd>
+                </div>
+              )}
+              {logStats.photoCount > 0 && (
+                <div className="flex justify-between px-3.5 py-2.5">
+                  <dt className="text-ink-500">사진 기록</dt>
+                  <dd className="font-medium text-ink-900">{logStats.photoCount}장</dd>
+                </div>
+              )}
+            </dl>
+            <p className="mt-1.5 text-[11px] leading-relaxed text-ink-300">
+              돌보다 돌봄일지에 남은 기록을 집계한 값이에요. 상세 내용은 마이페이지 &gt;
+              돌봄일지에서 확인할 수 있어요.
+            </p>
+          </section>
+        )}
 
         <p className="text-xs leading-relaxed text-ink-300">
           비용 등 세부 조건은 보호자와 돌보다 매니저가 직접 협의해 정해요. 돌보다는 두 분을
