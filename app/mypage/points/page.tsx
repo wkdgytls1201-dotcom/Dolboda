@@ -95,7 +95,8 @@ export default function PointsPage() {
   const boostActive = activeUntil(data.requestBoost.until);
 
   return (
-    <div className="space-y-7">
+    // pb: 마지막 섹션이 푸터에 붙지 않게 숨 쉴 여백(사용자 피드백 2026-08-05)
+    <div className="space-y-7 pb-12">
       {/* 잔액 */}
       <section className="rounded-2xl bg-gradient-to-br from-primary-500 to-peach-400 p-5 text-white shadow-card">
         <p className="mb-1 flex items-center gap-1.5 text-[14px] font-semibold opacity-90">
@@ -185,6 +186,13 @@ export default function PointsPage() {
           </button>
         </div>
       </section>
+
+      {/* 화면 폭에 따라 사용하기 카드가 폴드에 딱 걸려 "여기가 끝"으로 보일 수 있다 —
+          아래에 더 있음을 항상 알리는 0-JS 힌트(사용자 피드백 2026-08-05) */}
+      <p className="!mt-4 flex items-center justify-center gap-1 text-[12px] font-semibold text-ink-300">
+        아래에 친구 초대·적립 방법이 더 있어요
+        <span aria-hidden className="text-[13px]">⌄</span>
+      </p>
 
       {/* 친구 초대 — 가입(귀속) 즉시 양쪽 지급(points-spec §5, 2026-08-05 사용자 결정
           — 포인트가 현금성이 없어 유령 계정으로 캐도 실익이 없다) */}
