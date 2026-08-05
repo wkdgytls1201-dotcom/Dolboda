@@ -266,27 +266,41 @@ export default function SitterJobsPage() {
   const [sort, setSort] = useState("recent");
   const [hideClosed, setHideClosed] = useState(true);
 
+  // 네트워크 자체가 끊긴 경우(fetch reject) — 예전엔 isSitter가 null로 남아 로더가
+  // 영영 안 사라졌다. 화면은 그리되 배너로 알리고 재시도 버튼을 준다.
+  const [loadError, setLoadError] = useState(false);
+
   const loadJobs = useCallback(async () => {
-    const params = new URLSearchParams({ sort, hideClosed: String(hideClosed) });
-    if (typeFilter) params.set("type", typeFilter);
-    const res = await fetch(`/api/care-requests/open?${params}`);
-    if (res.status === 404) {
-      setIsSitter(false);
-      return;
+    try {
+      const params = new URLSearchParams({ sort, hideClosed: String(hideClosed) });
+      if (typeFilter) params.set("type", typeFilter);
+      const res = await fetch(`/api/care-requests/open?${params}`);
+      if (res.status === 404) {
+        setIsSitter(false);
+        return;
+      }
+      // 404 외의 실패(로그인 만료 401 등)에서 그냥 진행하면 에러 응답을 목록으로 읽어
+      // "공고가 하나도 없는 매니저"처럼 보인다. 목록은 건드리지 않고 그대로 둔다.
+      if (!res.ok) return;
+      setIsSitter(true);
+      const data = await res.json();
+      setJobs(data.items ?? []);
+      setLoadError(false);
+    } catch {
+      setLoadError(true);
+      setIsSitter((prev) => (prev === null ? true : prev));
     }
-    // 404 외의 실패(로그인 만료 401 등)에서 그냥 진행하면 에러 응답을 목록으로 읽어
-    // "공고가 하나도 없는 매니저"처럼 보인다. 목록은 건드리지 않고 그대로 둔다.
-    if (!res.ok) return;
-    setIsSitter(true);
-    const data = await res.json();
-    setJobs(data.items ?? []);
   }, [sort, hideClosed, typeFilter]);
 
   const loadApplications = useCallback(async () => {
-    const res = await fetch("/api/care-request-applications/mine");
-    if (!res.ok) return;
-    const data = await res.json();
-    setApplications(data.items ?? []);
+    try {
+      const res = await fetch("/api/care-request-applications/mine");
+      if (!res.ok) return;
+      const data = await res.json();
+      setApplications(data.items ?? []);
+    } catch {
+      setLoadError(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -361,6 +375,23 @@ export default function SitterJobsPage() {
   return (
     <MyPageShell>
       <h2 className="mb-4 text-xl font-bold text-ink-900">일자리 관리</h2>
+
+      {loadError && (
+        <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-accent-200 bg-accent-100/40 px-4 py-3">
+          <p className="text-sm text-ink-700">목록을 불러오지 못했어요. 연결을 확인해주세요.</p>
+          <button
+            type="button"
+            onClick={() => {
+              setLoadError(false);
+              loadJobs();
+              loadApplications();
+            }}
+            className="min-h-[44px] shrink-0 rounded-lg bg-white px-3 text-sm font-bold text-ink-700 shadow-card transition-all duration-150 active:scale-95"
+          >
+            다시 시도
+          </button>
+        </div>
+      )}
 
       {/* px를 줄여 360px(안드로이드 최소 폭)에서도 탭 4개가 한 줄에 들어가게 했다.
           그래도 넘칠 때를 대비해 가로 스크롤은 남기되 스크롤바는 감춘다(no-scrollbar) */}

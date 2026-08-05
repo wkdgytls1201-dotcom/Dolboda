@@ -32,6 +32,62 @@ interface NavItem {
   ribbon?: string;
 }
 
+// 얇은 한 줄짜리 — 알림 설정처럼 가끔 한 번 들어가는 메뉴는 카드 자리를 차지할 필요가 없다
+function CompactNavRow({ item, delayIndex }: { item: NavItem; delayIndex?: number }) {
+  const pathname = usePathname();
+  const active = pathname === item.href;
+  return (
+    <Link
+      href={item.href}
+      className={`animate-fade-up flex min-h-[52px] items-center gap-3 rounded-2xl px-4 transition-colors duration-150 active:scale-[0.99] ${
+        active ? "bg-primary-50 ring-1 ring-primary-200" : "bg-white shadow-card"
+      }`}
+      style={delayIndex !== undefined ? { animationDelay: `${delayIndex * 70}ms` } : undefined}
+    >
+      <span className={active ? "text-primary-600" : "text-ink-400"}>{item.icon}</span>
+      <span
+        className={`flex-1 text-[15px] font-bold ${active ? "text-primary-700" : "text-ink-900"}`}
+      >
+        {item.label}
+      </span>
+      {item.hint && <span className="text-[12px] text-ink-300">{item.hint}</span>}
+      <ChevronRight size={16} className="shrink-0 text-ink-200" />
+    </Link>
+  );
+}
+
+// 가끔 들춰보는 기록 메뉴(등급 테스트·상담 신청 내역) — 마이페이지 첫 화면에서
+// 대시보드 "바로 아래"에 놓으라고 page.tsx가 직접 가져다 쓴다.
+// 예전엔 셸이 {children} 뒤에 그렸는데, children(계정 페이지)의 맨 끝이 한참 아래
+// 내려간 회원탈퇴라 이 메뉴가 탈퇴보다 아래로 떨어졌다 — 버그처럼 보였고 동선도 나빴다.
+// 데스크톱은 사이드바(infoItems)에 상담 내역이, 상단 내비에 등급 테스트가 그대로 있다.
+const GUARDIAN_RECORD_ITEMS: NavItem[] = [
+  {
+    href: "/grade-test",
+    label: "등급 테스트",
+    icon: <ClipboardCheck size={18} />,
+    hint: "1분 자가진단",
+  },
+  {
+    href: "/mypage/consults",
+    label: "상담 신청 내역",
+    icon: <ClipboardList size={18} />,
+    hint: "시설에 남긴 상담",
+  },
+];
+
+export function GuardianRecordsMenu() {
+  const { role } = useMyPageRole();
+  if (role !== "guardian") return null;
+  return (
+    <nav className="mt-6 flex flex-col gap-2.5 sm:hidden">
+      {GUARDIAN_RECORD_ITEMS.map((item, i) => (
+        <CompactNavRow key={item.href} item={item} delayIndex={i} />
+      ))}
+    </nav>
+  );
+}
+
 // 시터 프로필 데이터(SitterProfileProvider)는 app/mypage/layout.tsx에서 한 번만
 // 불러와 여기와 하위 화면(프로필관리·정산관리 등)이 공유한다 — 예전엔 화면마다
 // /api/sitter-profile를 따로 불러서 페이지를 옮길 때마다 중복 요청이 나갔다.
@@ -84,30 +140,18 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
     },
     { href: "/favorites", label: "관심 시설", icon: <Heart size={18} />, hint: "찜해둔 시설" },
     { href: "/compare", label: "시설 비교", icon: <Scale size={18} />, hint: "최대 3곳 나란히" },
-    {
-      href: "/grade-test",
-      label: "등급 테스트",
-      icon: <ClipboardCheck size={18} />,
-      hint: "1분 자가진단",
-    },
-    {
-      href: "/mypage/consults",
-      label: "상담 신청 내역",
-      icon: <ClipboardList size={18} />,
-      hint: "시설에 남긴 상담",
-    },
+    // 등급 테스트·상담 신청 내역은 GUARDIAN_RECORD_ITEMS(모듈 상단)로 옮겼다 —
+    // 대시보드 아래 자리에 page.tsx가 직접 그린다.
     // 정보 수정은 여기 두지 않는다 — 역할 카드 앞면에 이미 버튼이 있어 한 화면에
     // 같은 링크가 두 번 나왔다. 데스크톱 사이드바(infoItems)에도 그대로 남아 있다.
   ];
-  const [guardianPrimary, ...guardianRest] = guardianItems;
-  const guardianGrid = guardianRest.slice(0, 4);
-  const guardianCompact = guardianRest.slice(4);
+  const [guardianPrimary, ...guardianGrid] = guardianItems;
 
   // 자주 쓰는 순서대로 — 일자리 확인이 매니저의 주 목적이라 맨 앞에 둔다.
   // 모바일에서는 이 순서가 그대로 위계가 된다: 대표 카드(일자리) → 그리드 4개 → 알림은 얇은 줄.
   const sitterItems: NavItem[] = [
     { href: "/mypage/sitter/jobs", label: "일자리 관리", icon: <Briefcase size={20} />, hint: "새 일자리와 지원·매칭 현황" },
-    { href: "/mypage/sitter/profile", label: "프로필 관리", icon: <HeartHandshake size={18} />, hint: "보호자에게 보이는 내 정보" },
+    { href: "/mypage/sitter/profile", label: "매니저 프로필", icon: <HeartHandshake size={18} />, hint: "보호자에게 보이는 내 정보" },
     { href: "/mypage/sitter/workplaces", label: "일하기 좋은 시설", icon: <Building2 size={18} />, hint: "근무환경 지수 순", ribbon: "돌보다 단독" },
     { href: "/mypage/sitter/tips", label: "매니저 가이드", icon: <BookOpen size={18} />, hint: "지원 성공률 높이기", ribbon: "꿀팁" },
     { href: "/mypage/sitter/settlements", label: "정산 관리", icon: <Wallet size={18} />, hint: "계좌 등록" },
@@ -179,29 +223,6 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
             active ? (guardian ? "text-royal-400" : "text-primary-400") : "text-white/70"
           }`}
         />
-      </Link>
-    );
-  }
-
-  // 얇은 한 줄짜리 — 알림 설정처럼 가끔 한 번 들어가는 메뉴는 카드 자리를 차지할 필요가 없다
-  function CompactNavRow({ item, delayIndex }: { item: NavItem; delayIndex?: number }) {
-    const active = pathname === item.href;
-    return (
-      <Link
-        href={item.href}
-        className={`animate-fade-up flex min-h-[52px] items-center gap-3 rounded-2xl px-4 transition-colors duration-150 active:scale-[0.99] ${
-          active ? "bg-primary-50 ring-1 ring-primary-200" : "bg-white shadow-card"
-        }`}
-        style={delayIndex !== undefined ? { animationDelay: `${delayIndex * 70}ms` } : undefined}
-      >
-        <span className={active ? "text-primary-600" : "text-ink-400"}>{item.icon}</span>
-        <span
-          className={`flex-1 text-[15px] font-bold ${active ? "text-primary-700" : "text-ink-900"}`}
-        >
-          {item.label}
-        </span>
-        {item.hint && <span className="text-[12px] text-ink-300">{item.hint}</span>}
-        <ChevronRight size={16} className="shrink-0 text-ink-200" />
       </Link>
     );
   }
@@ -292,7 +313,7 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
                 ))}
               </div>
               {/* 얇은 줄(등급 테스트·상담 신청 내역)은 여기 두지 않는다 —
-                  아래 대시보드로 내렸다(이유는 그 자리 주석 참고). */}
+                  대시보드 바로 아래(GuardianRecordsMenu, page.tsx)로 내렸다. */}
             </nav>
 
             {/* 데스크톱 사이드바용 내 정보 목록 (모바일에서는 위 카드들이 대신한다) */}
@@ -373,20 +394,6 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
           </Link>
         )}
         {children}
-
-        {/* 자주 안 쓰는 메뉴(등급 테스트·상담 신청 내역)는 대시보드 **아래**에 둔다.
-            예전엔 메뉴 묶음에 함께 있어서, "상담 신청 내역" 줄이 정작 지금 무슨 일이
-            벌어지고 있는지 알려주는 카드("매니저들의 지원을 기다리고 있어요")보다
-            위에 나왔다. 지금 진행 중인 일이 먼저고, 가끔 들춰보는 기록은 그다음이다.
-            데스크톱은 사이드바(infoItems)에 그대로 있어 접근성이 줄지 않는다.
-            마이페이지 첫 화면에서만 — 하위 화면에서는 메뉴 자체를 안 그린다. */}
-        {atRoot && role === "guardian" && guardianCompact.length > 0 && (
-          <nav className="mt-2.5 flex flex-col gap-2.5 sm:hidden">
-            {guardianCompact.map((item, i) => (
-              <CompactNavRow key={item.href} item={item} delayIndex={i} />
-            ))}
-          </nav>
-        )}
       </div>
     </main>
   );

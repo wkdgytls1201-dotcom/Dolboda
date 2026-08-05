@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Building2, Award, DoorOpen, type LucideIcon } from "lucide-react";
+import { Building2, Award, DoorOpen, BadgeCheck, type LucideIcon } from "lucide-react";
 import { InfoTooltip } from "./InfoTooltip";
 import { useInViewOnce } from "@/lib/useInViewOnce";
 
@@ -93,16 +93,26 @@ function StatNumber({ value, suffix }: { value: number; suffix: string }) {
       aria-label={`${formatted}${suffix}`}
       className="whitespace-nowrap [font-variant-numeric:tabular-nums]"
     >
-      {/* 시각 트랙 — 스크린리더에는 위 aria-label만 들린다 */}
-      <span aria-hidden>
+      {/* 시각 트랙 — 스크린리더에는 위 aria-label만 들린다.
+          모든 글자를 굴림 슬롯과 똑같은 1em 박스에 넣는다: overflow:hidden inline-block의
+          기준선은 글자가 아니라 박스 바닥이라, 슬롯 자리와 평문 자리를 섞으면 높이가
+          어긋나 숫자가 삐뚤빼뚤해 보였다. 전부 같은 박스면 어긋날 기준 자체가 없다. */}
+      <span aria-hidden className="inline-flex leading-none">
         {chars.map((c, i) => {
           if (animate[i]) {
             const delay = rollIndex++ * 30;
             return <DigitReel key={i} digit={Number(c)} play={play} delayMs={delay} />;
           }
-          return <span key={i}>{c}</span>;
+          return (
+            <span
+              key={i}
+              className={`inline-block h-[1em] leading-[1em] ${/\d/.test(c) ? "w-[1ch]" : ""}`}
+            >
+              {c}
+            </span>
+          );
         })}
-        {suffix}
+        <span className="inline-block h-[1em] leading-[1em]">{suffix}</span>
       </span>
     </span>
   );
@@ -142,7 +152,11 @@ export function StatsStrip({
           );
         })}
       </div>
-      <p className="border-t border-ink-100 py-2 text-center text-[11px] text-ink-300">
+      {/* 신뢰 라벨 — 흐린 각주가 아니라 패널의 결론처럼 보이게. 민트는 안심지수와 같은
+          "데이터 신뢰" 톤이다. 실제 파이프라인(daily-nhis-sync, 매일 04:00)과 연결된
+          사실만 말한다 — "실시간" 같은 과장 금지(스펙 §2-4). */}
+      <p className="flex items-center justify-center gap-1.5 rounded-b-2xl border-t border-mint-100 bg-mint-50/60 py-2.5 text-center text-xs font-bold text-mint-700">
+        <BadgeCheck size={14} aria-hidden />
         공공데이터 기준 · 매일 갱신
       </p>
     </div>

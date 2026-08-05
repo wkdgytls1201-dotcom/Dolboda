@@ -222,7 +222,7 @@ export default function SitterProfilePage() {
 
   return (
     <MyPageShell>
-      <h2 className="mb-2 text-xl font-bold text-ink-900">프로필 관리</h2>
+      <h2 className="mb-2 text-xl font-bold text-ink-900">매니저 프로필</h2>
       {/* 보호자를 앞에 둔다 — 지금 실제로 이 프로필을 보고 고르는 쪽은 돌봄 요청에
           지원했을 때의 보호자다(가입 화면 닉네임 문구도 같은 이유로 보호자 기준). */}
       <p className="mb-6 text-sm text-ink-500">보호자와 시설·업체에게 보여지는 내 프로필이에요.</p>

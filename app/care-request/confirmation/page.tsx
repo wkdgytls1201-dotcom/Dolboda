@@ -34,39 +34,44 @@ export default function CareConfirmationPage() {
     if (status !== "authenticated") return;
     // 보호자/시터 어느 쪽이든 자기 매칭확정 건을 찾는다.
     (async () => {
-      const [guardianRes, sitterRes] = await Promise.all([
-        fetch("/api/care-requests"),
-        fetch("/api/care-request-applications/mine"),
-      ]);
+      try {
+        const [guardianRes, sitterRes] = await Promise.all([
+          fetch("/api/care-requests"),
+          fetch("/api/care-request-applications/mine"),
+        ]);
 
-      if (guardianRes.ok) {
-        const r = await guardianRes.json();
-        const confirmed = r?.applications?.find(
-          (a: { status: string }) => a.status === "매칭확정"
-        );
-        if (r?.status === "MATCHED" && confirmed) {
-          setData({
-            careRequest: r,
-            sitter: confirmed.sitterProfile,
-            guardianName: null, // 보호자 본인 화면 — 아래에서 세션 이름으로 채움
-          });
-          return;
+        if (guardianRes.ok) {
+          const r = await guardianRes.json();
+          const confirmed = r?.applications?.find(
+            (a: { status: string }) => a.status === "매칭확정"
+          );
+          if (r?.status === "MATCHED" && confirmed) {
+            setData({
+              careRequest: r,
+              sitter: confirmed.sitterProfile,
+              guardianName: null, // 보호자 본인 화면 — 아래에서 세션 이름으로 채움
+            });
+            return;
+          }
         }
-      }
 
-      if (sitterRes.ok) {
-        const r = await sitterRes.json();
-        if (r?.application) {
-          setData({
-            careRequest: r.application.careRequest,
-            sitter: r.application.sitterProfile,
-            guardianName: r.application.careRequest.guardian?.name ?? null,
-          });
-          return;
+        if (sitterRes.ok) {
+          const r = await sitterRes.json();
+          if (r?.application) {
+            setData({
+              careRequest: r.application.careRequest,
+              sitter: r.application.sitterProfile,
+              guardianName: r.application.careRequest.guardian?.name ?? null,
+            });
+            return;
+          }
         }
-      }
 
-      setData(null);
+        setData(null);
+      } catch {
+        // 네트워크 실패로 로더가 영영 안 사라지는 것 방지 — "확정 없음" 화면으로 떨어뜨린다
+        setData(null);
+      }
     })();
   }, [status]);
 

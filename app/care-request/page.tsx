@@ -32,7 +32,10 @@ function CareRequestContent() {
     }
     fetch("/api/care-requests")
       .then((r) => (r.ok ? r.json() : null))
-      .then(setCurrent);
+      .then(setCurrent)
+      // 네트워크가 끊겨 있으면 current가 undefined로 남아 로더가 영영 안 사라졌다 —
+      // 요청 없음(null)으로 떨어뜨려 새 요청 폼이라도 그리게 한다.
+      .catch(() => setCurrent(null));
   }, [status]);
 
   if (status === "loading" || current === undefined) return <PageLoader />;

@@ -81,35 +81,47 @@ export function CareRequestDetail({
     onChange(await res.json());
   }
 
+  // 세 핸들러 모두 try/finally — 네트워크가 끊기면 fetch가 throw해서 setBusy(null)에
+  // 못 미치고, 버튼이 영영 잠긴 채 남았다. 실패해도 refresh를 안 했으니 화면 상태는
+  // 그대로라 다시 누르면 된다(서버 가드가 중복 처리를 막아준다).
   async function handleCancel() {
     setShowCancelConfirm(false);
     setBusy("cancel");
-    await fetch(`/api/care-requests/${careRequest.id}`, { method: "DELETE" });
-    await refresh();
-    setBusy(null);
+    try {
+      await fetch(`/api/care-requests/${careRequest.id}`, { method: "DELETE" });
+      await refresh();
+    } finally {
+      setBusy(null);
+    }
   }
 
   async function handleConfirm(applicationId: string) {
     setBusy(applicationId);
-    await fetch(`/api/care-request-applications/${applicationId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "confirm" }),
-    });
-    await refresh();
-    setBusy(null);
+    try {
+      await fetch(`/api/care-request-applications/${applicationId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "confirm" }),
+      });
+      await refresh();
+    } finally {
+      setBusy(null);
+    }
   }
 
   async function handleComplete() {
     setShowCompleteConfirm(false);
     setBusy("complete");
-    await fetch(`/api/care-requests/${careRequest.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "complete" }),
-    });
-    await refresh();
-    setBusy(null);
+    try {
+      await fetch(`/api/care-requests/${careRequest.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "complete" }),
+      });
+      await refresh();
+    } finally {
+      setBusy(null);
+    }
   }
 
   const recipientLine = [
@@ -133,7 +145,7 @@ export function CareRequestDetail({
           </p>
           <ul className="mx-auto max-w-[300px] space-y-2 text-left">
             {[
-              "시터가 지원하면 이 화면에 지원자 목록이 떠요",
+              "매니저가 지원하면 이 화면에 지원자 목록이 떠요",
               "프로필을 보고 마음에 드는 분을 확정하세요",
               "확정 전까지 내용은 언제든 수정할 수 있어요",
             ].map((t, i) => (
@@ -291,7 +303,7 @@ export function CareRequestDetail({
         <Section title={`지원한 돌보다 매니저 ${careRequest.applications.length}명`}>
           {careRequest.applications.length === 0 ? (
             <p className="py-2 text-sm text-ink-300">
-              아직 지원한 시터가 없어요. 보통 하루 이내에 지원이 들어와요.
+              아직 지원한 매니저가 없어요. 보통 하루 이내에 지원이 들어와요.
             </p>
           ) : (
             <div className="space-y-3">

@@ -290,7 +290,7 @@ export function ServicesShowcase() {
       <section className="mt-14">
         <h2 className="mb-1 text-center text-xl font-bold text-ink-900">어떻게 진행되나요</h2>
         <p className="mb-6 text-center text-sm text-ink-500">
-          요청을 올리시면 시터가 지원하고, 보호자가 직접 고르시는 방식이에요.
+          요청을 올리시면 매니저가 지원하고, 보호자가 직접 고르시는 방식이에요.
         </p>
         <ol className="relative space-y-4 before:absolute before:left-[19px] before:top-4 before:h-[calc(100%-2rem)] before:w-px before:bg-ink-100">
           {SERVICE_STEPS.map((step, i) => (

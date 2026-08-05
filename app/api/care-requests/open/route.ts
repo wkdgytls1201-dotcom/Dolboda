@@ -64,29 +64,51 @@ export async function GET(req: Request) {
       ? [{ budgetAmount: { sort: "desc", nulls: "last" } }, { createdAt: "desc" }]
       : [{ createdAt: "desc" }];
 
+  // 화면(JobCard·ApplyConfirmSheet)이 쓰는 필드만 select한다 — 예전엔 전 컬럼을 통짜로
+  // 내려 공고 100건이면 안 쓰는 필드(요청 메모·특별 요청·타임스탬프류)까지 실려 나갔다.
+  //
+  // guardianId·recipientName은 아예 조회하지 않는다 — 보호자 식별자와 돌봄 받으실 분의
+  // 성함을 아직 매칭되지도 않은 매니저 전원에게 줄 이유가 없다(2026-08-04에 응답에서
+  // 뺐고, 이제 select 단계에서 배제). 지원 여부를 정하는 데 필요한 건 연령대·성별·
+  // 체중대·업무 범위이지 이름이 아니다. 매칭 확정 뒤에는 돌봄 확인서에서 정상적으로
+  // 보인다(그때는 알아야 한다).
   const openRequests = await prisma.careRequest.findMany({
     where,
     orderBy,
     take: 100,
-    include: { applications: { where: { sitterProfileId: sitterProfile.id } } },
+    select: {
+      id: true,
+      locationType: true,
+      region: true,
+      locationNote: true,
+      startDate: true,
+      endDate: true,
+      startTime: true,
+      endTime: true,
+      roundTheClock: true,
+      recipientGender: true,
+      recipientAgeBand: true,
+      recipientWeightBand: true,
+      situation: true,
+      mobilityLevel: true,
+      mealAssistLevel: true,
+      toiletAssistLevel: true,
+      conditions: true,
+      householdTasks: true,
+      visitsPerWeek: true,
+      visitHours: true,
+      sitterGenderPref: true,
+      budgetAmount: true,
+      budgetUnit: true,
+      applications: { where: { sitterProfileId: sitterProfile.id }, select: { id: true } },
+    },
   });
 
   return NextResponse.json({
-    // guardianId는 화면에서 안 쓰는데 나가고 있었다 — 보호자 식별자를 시터에게 줄 이유가 없다.
-    //
-    // recipientName도 같은 이유로 뺀다(2026-08-04). 아직 매칭되지도 않은 매니저 전원에게
-    // 돌봄 받으실 분의 성함이 나가고 있었다 — 화면(JobCard·ApplyConfirmSheet)은 이 값을
-    // 쓰지 않으므로 보이지만 않았을 뿐, 응답에는 그대로 실려 있었다. 지원 여부를 정하는 데
-    // 필요한 건 연령대·성별·체중대·업무 범위이지 이름이 아니다.
-    // 매칭이 확정된 뒤에는 돌봄 확인서에서 정상적으로 보인다(그때는 알아야 한다).
-    items: openRequests.map(({ applications, guardianId, recipientName, ...r }) => {
-      void guardianId;
-      void recipientName;
-      return {
-        ...r,
-        alreadyApplied: applications.length > 0,
-        applicationId: applications[0]?.id ?? null,
-      };
-    }),
+    items: openRequests.map(({ applications, ...r }) => ({
+      ...r,
+      alreadyApplied: applications.length > 0,
+      applicationId: applications[0]?.id ?? null,
+    })),
   });
 }

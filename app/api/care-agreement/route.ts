@@ -352,16 +352,27 @@ export async function PATCH(req: Request) {
   const content = buildContent(ctx.request, ctx.application.sitterProfile, guardianUser?.name ?? null);
   const contentHash = hashAgreement(content);
 
-  const created = await prisma.careAgreement.create({
-    data: {
-      careRequestId: ctx.request.id,
-      applicationId: ctx.application.id,
-      guardianId: ctx.request.guardianId,
-      sitterProfileId: ctx.application.sitterProfile.id,
-      content: content as unknown as object,
-      contentHash,
-      ...signData,
-    },
-  });
+  let created;
+  try {
+    created = await prisma.careAgreement.create({
+      data: {
+        careRequestId: ctx.request.id,
+        applicationId: ctx.application.id,
+        guardianId: ctx.request.guardianId,
+        sitterProfileId: ctx.application.sitterProfile.id,
+        content: content as unknown as object,
+        contentHash,
+        ...signData,
+      },
+    });
+  } catch {
+    // 보호자·매니저가 거의 동시에 첫 서명을 누르면 둘 다 "합의서 없음"을 보고 create를
+    // 시도한다 — careRequestId unique에 막힌 쪽이 500으로 죽는 대신, 새로고침해서
+    // 상대가 만든 합의서 위에 자기 서명을 얹도록 안내한다(내용 봉인은 먼저 만든 쪽 기준).
+    return NextResponse.json(
+      { error: "동시에 서명이 진행됐어요. 화면을 새로고침한 뒤 다시 서명해주세요." },
+      { status: 409 }
+    );
+  }
   return NextResponse.json({ agreement: created });
 }

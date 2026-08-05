@@ -36,12 +36,19 @@ export async function GET() {
   );
 
   return NextResponse.json({
-    items: applications.map((a) => ({
-      id: a.id,
-      status: a.status,
-      createdAt: a.createdAt,
-      careRequest: a.careRequest,
-    })),
+    // 지원 내역(items)에는 보호자 이름을 싣지 않는다 — 지원완료·미선정 단계의 매니저에게
+    // 보호자가 누구인지 알려줄 이유가 없다(open API가 recipientName을 뺀 것과 같은 원칙).
+    // 확정 건(아래 application)은 그대로 둔다 — 돌봄 확인서가 그때부터 이름을 쓴다.
+    items: applications.map((a) => {
+      const { guardian, ...careRequest } = a.careRequest;
+      void guardian;
+      return {
+        id: a.id,
+        status: a.status,
+        createdAt: a.createdAt,
+        careRequest,
+      };
+    }),
     sitter,
     application: confirmed
       ? {

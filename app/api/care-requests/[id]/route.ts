@@ -108,6 +108,14 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     return NextResponse.json({ error: "필요한 집안일을 1개 이상 선택해주세요." }, { status: 400 });
   }
 
+  // 날짜 역전 검증 — 등록(POST)에는 있는데 수정에는 빠져 있었다. 한쪽 날짜만 고치면
+  // (예: 시작일만 뒤로) 종료일이 시작일보다 앞서는 요청이 저장될 수 있었다.
+  const nextStart = startDate !== undefined ? new Date(startDate) : existing.startDate;
+  const nextEnd = endDate !== undefined ? new Date(endDate) : existing.endDate;
+  if (nextEnd < nextStart) {
+    return NextResponse.json({ error: "종료일이 시작일보다 빨라요." }, { status: 400 });
+  }
+
   const careRequest = await prisma.careRequest.update({
     where: { id: params.id },
     data: {

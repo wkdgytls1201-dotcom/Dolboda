@@ -32,7 +32,8 @@ export function ApplyConfirmSheet({
   useEffect(() => {
     fetch("/api/sitter-profile")
       .then((r) => (r.ok ? r.json() : null))
-      .then(setSitter);
+      .then(setSitter)
+      .catch(() => setSitter(null));
   }, []);
 
   // 시트가 떠 있는 동안 배경 스크롤 잠금

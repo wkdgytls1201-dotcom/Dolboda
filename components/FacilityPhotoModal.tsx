@@ -43,7 +43,7 @@ export function FacilityPhotoModal({
     function onKey(e: KeyboardEvent) {
       if (e.key !== "Escape") return;
       if (lightboxIndex !== null) setLightboxIndex(null);
-      else onClose();
+      else requestClose();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -58,6 +58,31 @@ export function FacilityPhotoModal({
     };
   }, []);
 
+  // 뒤로가기 = 모달 닫기(네이티브 앱 관성). 이게 없으면 사진을 보다 뒤로가기를 눌렀을 때
+  // 상세 페이지가 통째로 pop되어 메인/목록으로 튕긴다 — 사용자는 "사진만 닫힐 것"을
+  // 기대한다.
+  //
+  // 설계: 닫힘의 단일 경로는 popstate다 — X·ESC도 history.back()을 불러 같은 길로 온다.
+  // 그래서 어느 쪽으로 닫아도 쌓아둔 히스토리 한 칸이 정확히 걷힌다.
+  // (처음엔 effect 정리에서 back()을 불렀는데, StrictMode의 이중 실행에서 그 back()이
+  // 스스로 popstate를 쏴 모달을 여는 즉시 닫아버렸다 — 정리에서는 리스너만 걷고
+  // 히스토리는 건드리지 않는다. push도 이미 쌓여 있으면 건너뛰어 이중 실행에 안전하다.)
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  useEffect(() => {
+    if (window.history.state?.dolbodaPhotoModal !== true) {
+      window.history.pushState({ dolbodaPhotoModal: true }, "");
+    }
+    const onPop = () => onCloseRef.current();
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  function requestClose() {
+    if (window.history.state?.dolbodaPhotoModal === true) window.history.back();
+    else onCloseRef.current();
+  }
+
   if (!mounted) return null;
 
   return createPortal(
@@ -69,7 +94,7 @@ export function FacilityPhotoModal({
         </div>
         <button
           type="button"
-          onClick={onClose}
+          onClick={requestClose}
           aria-label="닫기"
           className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white/80 hover:bg-white/10"
         >

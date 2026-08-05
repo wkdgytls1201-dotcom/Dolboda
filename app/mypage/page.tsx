@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { signOutAndClear } from "@/lib/signOutAndClear";
 import { authProviderLabel } from "@/lib/authProviderLabel";
 import { ChevronDown, LogOut, User } from "lucide-react";
-import { MyPageShell } from "@/components/MyPageShell";
+import { MyPageShell, GuardianRecordsMenu } from "@/components/MyPageShell";
 import { MyPageDashboard } from "@/components/MyPageDashboard";
 import { PageLoader } from "@/components/PageLoader";
 
@@ -47,6 +47,10 @@ export default function MyPageAccountPage() {
     <MyPageShell>
       {/* 지금 할 일(진행 중 요청·프로필 완성도·새 일자리)을 계정 정보보다 먼저 보여준다 */}
       <MyPageDashboard />
+
+      {/* 가끔 들춰보는 기록(등급 테스트·상담 신청 내역) — 대시보드 다음, 계정·탈퇴보다 위.
+          예전엔 셸이 children 뒤에 그려서 회원탈퇴보다 아래로 떨어져 있었다. */}
+      <GuardianRecordsMenu />
 
       {/* 계정 설정 — 보호자·매니저 어느 역할이든 마지막에 오는 부수적인 영역이라
           작게, 그리고 위쪽 메뉴와 선으로 확실히 끊어서 둔다. 담고 있는 내용

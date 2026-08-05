@@ -175,7 +175,13 @@ export function CareRequestWizard({
 }) {
   // 새로 작성하는 경우에만 임시 저장을 살린다(위 DRAFT_KEY 주석 참고).
   const persistDraft = !initial && !template;
-  const draft = persistDraft ? loadDraft() : null;
+  // 임시 저장 읽기는 마운트 때 한 번만(lazy initializer) — 예전엔 렌더 본문에서 매번
+  // loadDraft()를 불러 키 입력 한 번마다 sessionStorage 읽기+JSON.parse가 통째로 돌았다.
+  // "렌더 중 storage 읽기 금지" 규칙(CLAUDE.md)에 안 걸리는 근거: 이 위저드는 세션 확인과
+  // 기존 요청 fetch가 끝난 뒤 클라이언트에서만 마운트되므로(app/care-request/page.tsx가
+  // 그 전까지 PageLoader를 그림) 서버 HTML에 실릴 일이 없어 하이드레이션 불일치가 생길 수
+  // 없다. 페이지 구조가 SSR로 바뀌면 이 초기화는 useLayoutEffect 복원으로 옮길 것.
+  const [draft] = useState(() => (persistDraft ? loadDraft() : null));
 
   // 유형을 정해서 들어왔으면 1단계(유형 선택)를 건너뛰고 바로 2단계에서 시작한다.
   // 재요청(template)도 내용은 이미 차 있으니 유형 단계는 건너뛰고 일정부터 고르게 한다.
@@ -628,7 +634,7 @@ export function CareRequestWizard({
             </div>
           )}
           <div>
-            <FieldLabel optional hint="성만 적어주셔도 괜찮아요. 시터에게는 이 이름으로 안내돼요.">
+            <FieldLabel optional hint="성만 적어주셔도 괜찮아요. 매니저에게는 이 이름으로 안내돼요.">
               돌봄 받으실 분 성함
             </FieldLabel>
             <TextInput
@@ -662,7 +668,7 @@ export function CareRequestWizard({
             />
           </div>
           <div>
-            <FieldLabel optional hint="부축이나 체위 변경이 필요할 때 시터가 미리 준비할 수 있어요.">
+            <FieldLabel optional hint="부축이나 체위 변경이 필요할 때 매니저가 미리 준비할 수 있어요.">
               체중
             </FieldLabel>
             <ChipSelect
@@ -742,7 +748,7 @@ export function CareRequestWizard({
           )}
 
           <div>
-            <FieldLabel optional hint="지금 상황을 편하게 적어주시면 시터가 이해하는 데 큰 도움이 돼요.">
+            <FieldLabel optional hint="지금 상황을 편하게 적어주시면 매니저가 이해하는 데 큰 도움이 돼요.">
               상황 설명
             </FieldLabel>
             <textarea
@@ -764,7 +770,7 @@ export function CareRequestWizard({
       {step === 4 && (
         <div className="space-y-6">
           <div>
-            <FieldLabel>선호하는 시터 성별</FieldLabel>
+            <FieldLabel>선호하는 매니저 성별</FieldLabel>
             <ChipSelect
               options={GENDER_PREFS}
               value={form.sitterGenderPref}
@@ -773,7 +779,7 @@ export function CareRequestWizard({
           </div>
 
           <div>
-            <FieldLabel optional>시터에게 특별히 부탁하고 싶은 것</FieldLabel>
+            <FieldLabel optional>매니저에게 특별히 부탁하고 싶은 것</FieldLabel>
             <ChipMultiSelect
               options={SPECIAL_REQUESTS}
               values={form.specialRequests}
@@ -784,7 +790,7 @@ export function CareRequestWizard({
           <div>
             <FieldLabel
               optional
-              hint="정하신 금액이 있다면 적어주세요. 없으면 비워두고 시터와 상의해도 괜찮아요."
+              hint="정하신 금액이 있다면 적어주세요. 없으면 비워두고 매니저와 상의해도 괜찮아요."
             >
               생각하시는 사례비
             </FieldLabel>

@@ -176,6 +176,11 @@ export async function POST(req: Request) {
   const careDate = str(body.careDate) ?? todayKst();
   const correctsId = str(body.correctsId);
 
+  // 형식부터 확인 — 아래 비교가 문자열 비교라, 형식이 다른 값("2026/8/5", 빈 문자열 등)은
+  // 우연히 통과하거나 우연히 막히는 식으로 흘러가 DB에 쓰레기 날짜가 남을 수 있다.
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(careDate)) {
+    return NextResponse.json({ error: "날짜 형식이 올바르지 않아요." }, { status: 400 });
+  }
   // 미래 날짜는 막는다 — 아직 하지 않은 돌봄을 기록할 수는 없다
   if (careDate > todayKst()) {
     return NextResponse.json({ error: "미래 날짜는 기록할 수 없어요." }, { status: 400 });

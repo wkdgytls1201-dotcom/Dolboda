@@ -94,16 +94,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "로그인이 필요해요." }, { status: 401 });
   }
 
-  const existing = await prisma.careRequest.findFirst({
-    where: { guardianId: session.user.id, status: { in: ["OPEN", "MATCHED"] } },
-  });
-  if (existing) {
-    return NextResponse.json(
-      { error: "이미 진행 중인 돌봄 요청이 있어요.", careRequestId: existing.id },
-      { status: 409 }
-    );
-  }
-
   const body = (await req.json()) as Record<string, unknown>;
   const { locationType, region, startDate, endDate } = body as {
     locationType?: string;
@@ -130,20 +120,45 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "필요한 집안일을 1개 이상 선택해주세요." }, { status: 400 });
   }
 
-  // 등록 직후 상세 화면이 바로 뜰 수 있게 applications(빈 배열)까지 포함해 돌려준다.
-  const careRequest = await prisma.careRequest.create({
-    include: {
-      applications: { select: APPLICANT_SELECT },
-    },
-    data: {
-      ...fields,
-      guardianId: session.user.id,
-      locationType: type,
-      region,
-      startDate: new Date(startDate),
-      endDate: new Date(endDate),
-    } as never,
+  // "진행 중인 요청은 1건" 확인과 생성을 한 트랜잭션에서, 보호자별 자문 잠금(advisory
+  // xact lock)으로 줄 세워 처리한다. 예전엔 조회→생성 사이에 틈이 있어 이중 클릭·중복
+  // 탭이 거의 동시에 POST하면 둘 다 "없음"을 보고 지나가 OPEN 요청이 2건 생길 수 있었다.
+  // 부분 유니크 인덱스가 아니라 잠금으로 막는 이유: 이 프로젝트는 마이그레이션 없이
+  // prisma db push로 스키마를 맞추는데, 스키마 파일에 적을 수 없는 수동 인덱스는 다음
+  // db push 때 소리 없이 사라질 수 있다. 잠금 키는 보호자 id 해시라 다른 보호자끼리는
+  // 서로 기다리지 않고, 트랜잭션이 끝나면 자동 해제된다.
+  const result = await prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${session.user.id}))`;
+
+    const existing = await tx.careRequest.findFirst({
+      where: { guardianId: session.user.id, status: { in: ["OPEN", "MATCHED"] } },
+      select: { id: true },
+    });
+    if (existing) return { duplicateId: existing.id, careRequest: null };
+
+    // 등록 직후 상세 화면이 바로 뜰 수 있게 applications(빈 배열)까지 포함해 돌려준다.
+    const careRequest = await tx.careRequest.create({
+      include: {
+        applications: { select: APPLICANT_SELECT },
+      },
+      data: {
+        ...fields,
+        guardianId: session.user.id,
+        locationType: type,
+        region,
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+      } as never,
+    });
+    return { duplicateId: null, careRequest };
   });
 
-  return NextResponse.json(careRequest, { status: 201 });
+  if (result.duplicateId) {
+    return NextResponse.json(
+      { error: "이미 진행 중인 돌봄 요청이 있어요.", careRequestId: result.duplicateId },
+      { status: 409 }
+    );
+  }
+
+  return NextResponse.json(result.careRequest, { status: 201 });
 }

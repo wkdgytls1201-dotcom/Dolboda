@@ -55,10 +55,18 @@ function RoadviewThumb({ lat, lng }: { lat: number; lng: number }) {
   }, [pano.status, pano.panoId, lat, lng]);
 
   return (
-    <div ref={wrapRef} className="h-full w-full">
-      {pano.status === "good" && (
-        <div ref={containerRef} className="pointer-events-none h-full w-full" />
-      )}
+    // contain: 로드뷰 SDK가 내부에 DOM을 채워 넣어도 레이아웃 변화가 밖으로 새지 않게 격리
+    <div ref={wrapRef} className="h-full w-full [contain:content]">
+      {/* 컨테이너는 항상 마운트해둔다 — 로드뷰가 준비된 "순간"에 조건부로 끼워 넣으면,
+          가로 스냅 캐러셀(비슷한 시설) 안에서는 그 DOM 변화 때문에 브라우저가 직전 스냅
+          대상(첫 카드)으로 재스냅해서, 2~3번째 카드로 넘기던 스크롤이 첫 카드로 튕겼다.
+          삽입 대신 opacity로만 드러낸다(레이아웃 불변). */}
+      <div
+        ref={containerRef}
+        className={`pointer-events-none h-full w-full transition-opacity duration-300 ${
+          pano.status === "good" ? "opacity-100" : "opacity-0"
+        }`}
+      />
     </div>
   );
 }

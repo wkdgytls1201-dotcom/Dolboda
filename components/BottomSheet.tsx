@@ -495,6 +495,20 @@ export function BottomSheet({
           </div>
         )}
       </div>
+
+      {/* 중간 스냅에서는 화면 하단 모서리가 콘텐츠를 자르는 경계다 — 거기에 페이드를 얹어
+          "아래 더 있음"을 말없이 보여준다(사용자 피드백: 시설유형·거리 아래에 뭐가 더
+          있는지 몰라서 내려야 하는지 알 수 없었다). 전체로 펼치면 콘텐츠가 실제로
+          스크롤되므로 페이드를 걷는다. 시트가 inset-x-0이라 이 띠 아래는 전부 시트 흰
+          배경 — 흰 그라데이션이 자연스럽게 섞인다. */}
+      {!isDesktop && (
+        <div
+          aria-hidden
+          className={`pointer-events-none fixed inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white via-white/70 to-transparent transition-opacity duration-200 ${
+            snap === "mid" ? "opacity-100" : "opacity-0"
+          }`}
+        />
+      )}
     </div>,
     document.body
   );

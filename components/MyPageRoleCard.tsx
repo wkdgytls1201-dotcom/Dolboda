@@ -164,13 +164,14 @@ export function MyPageRoleCard() {
               </div>
             </div>
             <div className="flex gap-2">
+              {/* 매니저 프로필을 앞에, 워딩은 "매니저 프로필" — 사용자 지시(2026-08-05) */}
+              <Link href="/mypage/sitter/profile" className={ACTION} tabIndex={flipped ? 0 : -1}>
+                <HeartHandshake size={16} className="text-primary-500" />
+                매니저 프로필
+              </Link>
               <Link href="/mypage/sitter/jobs" className={ACTION} tabIndex={flipped ? 0 : -1}>
                 <Briefcase size={16} className="text-primary-500" />
                 일자리 관리
-              </Link>
-              <Link href="/mypage/sitter/profile" className={ACTION} tabIndex={flipped ? 0 : -1}>
-                <HeartHandshake size={16} className="text-primary-500" />
-                프로필 관리
               </Link>
             </div>
           </div>
