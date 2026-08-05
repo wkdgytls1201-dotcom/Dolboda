@@ -11,9 +11,15 @@
 //   node scripts/closure-report.mjs                          # 전체 기간, 시도별
 //   node scripts/closure-report.mjs --from 2026-08-01        # 기간 시작
 //   node scripts/closure-report.mjs --from 2026-08-01 --to 2026-11-01
-//   node scripts/closure-report.mjs --region 경기            # 그 시도의 시군구별로
+//   node scripts/closure-report.mjs --region 경남            # 그 시도의 시군구별로
+//   node scripts/closure-report.mjs --region 경남 --sigungu 김해시   # 그 시군구의 읍면동별로
+//   node scripts/closure-report.mjs --addr 진영읍            # 주소에 이 말이 들어간 것만
+//   node scripts/closure-report.mjs --list                   # 시설 목록을 화면에 바로(주소 포함)
 //   node scripts/closure-report.mjs --confirmed              # 7일 이상 사라진 것만(노출 차단 기준과 동일)
 //   node scripts/closure-report.mjs --tsv report.tsv         # 시설 목록까지 파일로
+//
+// 예) 2026년 김해시 진영읍에서 사라진 시설을 주소까지:
+//   node scripts/closure-report.mjs --from 2026-01-01 --to 2026-12-31 --addr 진영읍 --list
 
 import fs from "fs";
 import path from "path";
@@ -45,8 +51,11 @@ function arg(name) {
 const FROM = arg("from");
 const TO = arg("to");
 const REGION = arg("region");
+const SIGUNGU = arg("sigungu");
+const ADDR = arg("addr");
 const TSV = arg("tsv");
 const CONFIRMED_ONLY = process.argv.includes("--confirmed");
+const LIST = process.argv.includes("--list");
 
 /** 주소 → 시/도 라벨. 전남광주 통합 표기는 두 번째 토큰(광주 5개 자치구)으로 가른다. */
 function sidoOf(address) {
@@ -76,6 +85,28 @@ function sigunguOf(address) {
   const parts = rest.split(/\s+/);
   const idx = address.startsWith(MERGED) ? 0 : 1;
   return parts[idx] ?? "(불명)";
+}
+
+/** 주소 → 읍/면/동.
+ *  도로명주소는 끝 괄호에 법정동·읍면을 담는다("… 김해대로 123 (진영읍)",
+ *  "… 도봉로 727-1 2층 (방학동, 금천빌딩)"). 그게 가장 정확하다.
+ *  괄호가 없으면 시군구 다음 토큰이 읍/면/동으로 끝나는 경우만 인정한다
+ *  (도로명이 들어와 "○○로"가 읍면동으로 둔갑하는 걸 막는다). */
+function dongOf(address) {
+  const paren = address.match(/\(([^)]+)\)\s*$/);
+  if (paren) {
+    const first = paren[1].split(",")[0].trim();
+    if (/(읍|면|동|리|가)$/.test(first)) return first;
+  }
+  const rest = address.startsWith(MERGED) ? address.slice(MERGED.length).trim() : address;
+  const parts = rest.split(/\s+/);
+  const idx = address.startsWith(MERGED) ? 1 : 2;
+  const cand = parts[idx] ?? "";
+  // "○○구" 다음에 읍면동이 오는 주소(고양시 덕양구 …)도 한 칸 더 본다
+  if (/(구|군)$/.test(cand) && parts[idx + 1]) {
+    if (/(읍|면|동|리)$/.test(parts[idx + 1])) return parts[idx + 1];
+  }
+  return /(읍|면|동|리)$/.test(cand) ? cand : "(동 불명)";
 }
 
 function dbUrl() {
@@ -117,18 +148,26 @@ async function main() {
     if (REGION) {
       rows = rows.filter((r) => sidoOf(r.address) === REGION);
     }
+    if (SIGUNGU) {
+      rows = rows.filter((r) => sigunguOf(r.address) === SIGUNGU);
+    }
+    if (ADDR) {
+      rows = rows.filter((r) => r.address.includes(ADDR));
+    }
 
+    const scope = [REGION, SIGUNGU, ADDR && `"${ADDR}" 포함`].filter(Boolean).join(" ") || "전국";
     const period = `${FROM ?? "전체"} ~ ${TO ?? "현재"}`;
     console.log(`\n=== 폐업 추정 집계 (${period}${CONFIRMED_ONLY ? ` · ${CONFIRM_DAYS}일+ 연속만` : ""}) ===`);
-    console.log(`대상: ${REGION ?? "전국"} · 총 ${rows.length.toLocaleString()}곳\n`);
+    console.log(`대상: ${scope} · 총 ${rows.length.toLocaleString()}곳\n`);
 
     if (rows.length === 0) {
       console.log("해당 조건에 기록된 시설이 없습니다.");
       return;
     }
 
-    // 지역별 — 시도를 지정했으면 그 안의 시군구로 한 단계 내려간다
-    const keyOf = REGION ? sigunguOf : sidoOf;
+    // 좁힐수록 한 단계씩 내려간다: 전국→시도, 시도→시군구, 시군구→읍면동
+    const drill = SIGUNGU || ADDR ? "읍면동" : REGION ? "시군구" : "시도";
+    const keyOf = drill === "읍면동" ? dongOf : drill === "시군구" ? sigunguOf : sidoOf;
     const byRegion = new Map();
     for (const r of rows) {
       const k = keyOf(r.address);
@@ -136,7 +175,7 @@ async function main() {
     }
     const sorted = [...byRegion.entries()].sort((a, b) => b[1] - a[1]);
     const max = sorted[0][1];
-    console.log(`── ${REGION ? "시군구별" : "시도별"} ──`);
+    console.log(`── ${drill}별 ──`);
     for (const [k, n] of sorted) {
       console.log(`${String(k).padEnd(12, " ")} ${String(n).padStart(4)}곳  ${bar(n, max)}`);
     }
@@ -163,6 +202,18 @@ async function main() {
       console.log(`\n── 월별(사라진 달 기준) ──`);
       for (const [k, n] of [...byMonth.entries()].sort()) {
         console.log(`${k}  ${String(n).padStart(4)}곳  ${bar(n, monthMax)}`);
+      }
+    }
+
+    // 목록 — "각각 정확한 주소"를 화면에서 바로 본다. 좁혀 물었으면 자동으로 켠다.
+    if (LIST || (rows.length <= 30 && (SIGUNGU || ADDR))) {
+      console.log(`\n── 시설 목록 (${rows.length}곳) ──`);
+      for (const r of rows) {
+        const t = TYPE_LABEL[r.facilityType] ?? r.facilityType;
+        console.log(
+          `${r.missingSince.toISOString().slice(0, 10)}  ${r.name} [${t}${r.grade ? ` ${r.grade}등급` : ""}]`
+        );
+        console.log(`            ${r.address}`);
       }
     }
 
