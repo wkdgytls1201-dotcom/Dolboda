@@ -95,45 +95,45 @@ export default function PointsPage() {
   const boostActive = activeUntil(data.requestBoost.until);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-7">
       {/* 잔액 */}
       <section className="rounded-2xl bg-gradient-to-br from-primary-500 to-peach-400 p-5 text-white shadow-card">
-        <p className="mb-1 flex items-center gap-1.5 text-[13px] font-semibold opacity-90">
+        <p className="mb-1 flex items-center gap-1.5 text-[14px] font-semibold opacity-90">
           <Coins size={14} aria-hidden />내 돌봄 포인트
         </p>
-        <p className="text-3xl font-extrabold">
+        <p className="text-4xl font-extrabold">
           {data.balance.toLocaleString()}
           <span className="ml-1 text-lg font-bold">P</span>
         </p>
-        <p className="mt-1.5 text-[11px] leading-relaxed opacity-80">
+        <p className="mt-1.5 text-[12px] leading-relaxed opacity-80">
           보호자의 후기와 감사가 쌓이는 리워드예요. 현금·상품권으로 바꿀 수 없고, 돌보다
           안에서만 쓸 수 있어요.
         </p>
       </section>
 
       {notice && (
-        <p className="rounded-xl bg-primary-50 px-3.5 py-2.5 text-[13px] font-semibold text-primary-700">
+        <p className="rounded-xl bg-primary-50 px-3.5 py-2.5 text-[14px] font-semibold text-primary-700">
           {notice}
         </p>
       )}
 
       {/* 사용처 */}
       <section className="space-y-2.5">
-        <h2 className="px-1 text-sm font-bold text-ink-900">포인트 사용하기</h2>
+        <h2 className="px-1 text-[16px] font-bold text-ink-900">포인트 사용하기</h2>
 
-        <div className="rounded-2xl border border-ink-100 bg-white p-4">
-          <p className="mb-0.5 flex items-center gap-1.5 text-[14px] font-bold text-ink-900">
+        <div className="rounded-2xl border border-ink-100 bg-white p-5">
+          <p className="mb-0.5 flex items-center gap-1.5 text-[15px] font-bold text-ink-900">
             <Star size={15} className="text-accent-500" aria-hidden />
             {POINT_SPEND.ribbon.label}
             <span className="ml-auto shrink-0 text-primary-600">
               {POINT_SPEND.ribbon.price.toLocaleString()}P
             </span>
           </p>
-          <p className="mb-2.5 break-keep text-[12px] leading-relaxed text-ink-500">
+          <p className="mb-2.5 break-keep text-[13px] leading-relaxed text-ink-500">
             {POINT_SPEND.ribbon.desc}
           </p>
           {ribbonActive ? (
-            <p className="rounded-xl bg-mint-100/70 px-3 py-2 text-[12px] font-bold text-mint-700">
+            <p className="rounded-xl bg-mint-100/70 px-3 py-2 text-[13px] font-bold text-mint-700">
               적용 중 — {ribbonActive.getMonth() + 1}.{ribbonActive.getDate()}까지. 다시 사면
               기간이 이어져요.
             </p>
@@ -142,7 +142,7 @@ export default function PointsPage() {
             type="button"
             disabled={busy || !data.ribbon.eligible || data.balance < POINT_SPEND.ribbon.price}
             onClick={() => buy("ribbon")}
-            className="mt-1 min-h-[44px] w-full rounded-xl bg-primary-500 text-[13px] font-bold text-white transition-all duration-150 hover:bg-primary-600 active:scale-[0.98] disabled:bg-ink-100 disabled:text-ink-300"
+            className="mt-1 min-h-[44px] w-full rounded-xl bg-primary-500 text-[14px] font-bold text-white transition-all duration-150 hover:bg-primary-600 active:scale-[0.98] disabled:bg-ink-100 disabled:text-ink-300"
           >
             {!data.ribbon.eligible
               ? "매니저 프로필이 있어야 쓸 수 있어요"
@@ -152,20 +152,20 @@ export default function PointsPage() {
           </button>
         </div>
 
-        <div className="rounded-2xl border border-ink-100 bg-white p-4">
-          <p className="mb-0.5 flex items-center gap-1.5 text-[14px] font-bold text-ink-900">
+        <div className="rounded-2xl border border-ink-100 bg-white p-5">
+          <p className="mb-0.5 flex items-center gap-1.5 text-[15px] font-bold text-ink-900">
             <Megaphone size={15} className="text-royal-500" aria-hidden />
             {POINT_SPEND.requestBoost.label}
             <span className="ml-auto shrink-0 text-primary-600">
               {POINT_SPEND.requestBoost.price.toLocaleString()}P
             </span>
           </p>
-          <p className="mb-2.5 break-keep text-[12px] leading-relaxed text-ink-500">
+          <p className="mb-2.5 break-keep text-[13px] leading-relaxed text-ink-500">
             {POINT_SPEND.requestBoost.desc} 매니저로 활동하며 모은 포인트를 내 가족의 돌봄을
             구할 때 쓸 수 있어요.
           </p>
           {boostActive ? (
-            <p className="rounded-xl bg-mint-100/70 px-3 py-2 text-[12px] font-bold text-mint-700">
+            <p className="rounded-xl bg-mint-100/70 px-3 py-2 text-[13px] font-bold text-mint-700">
               적용 중 — {boostActive.getMonth() + 1}.{boostActive.getDate()}까지
             </p>
           ) : null}
@@ -175,7 +175,7 @@ export default function PointsPage() {
               busy || !data.requestBoost.eligible || data.balance < POINT_SPEND.requestBoost.price
             }
             onClick={() => buy("requestBoost")}
-            className="mt-1 min-h-[44px] w-full rounded-xl bg-royal-500 text-[13px] font-bold text-white transition-all duration-150 hover:bg-royal-600 active:scale-[0.98] disabled:bg-ink-100 disabled:text-ink-300"
+            className="mt-1 min-h-[44px] w-full rounded-xl bg-royal-500 text-[14px] font-bold text-white transition-all duration-150 hover:bg-royal-600 active:scale-[0.98] disabled:bg-ink-100 disabled:text-ink-300"
           >
             {!data.requestBoost.eligible
               ? "지원자를 받는 중인 요청이 있어야 쓸 수 있어요"
@@ -186,25 +186,25 @@ export default function PointsPage() {
         </div>
       </section>
 
-      {/* 친구 초대 — 초대받은 사람이 "첫 돌봄을 완료"해야 양쪽 지급(가입 즉시 지급은
-          유령 계정 통로 — points-spec §5) */}
-      <section className="rounded-2xl border border-royal-200 bg-royal-50/50 p-4">
-        <p className="mb-1 flex items-center gap-1.5 text-[14px] font-bold text-ink-900">
+      {/* 친구 초대 — 가입(귀속) 즉시 양쪽 지급(points-spec §5, 2026-08-05 사용자 결정
+          — 포인트가 현금성이 없어 유령 계정으로 캐도 실익이 없다) */}
+      <section className="rounded-2xl border border-royal-200 bg-royal-50/50 p-5">
+        <p className="mb-1 flex items-center gap-1.5 text-[15px] font-bold text-ink-900">
           <UserPlus size={15} className="text-royal-500" aria-hidden />
           친구 초대
-          <span className="ml-auto shrink-0 text-[12px] font-extrabold text-royal-600">
+          <span className="ml-auto shrink-0 text-[13px] font-extrabold text-royal-600">
             나 +{POINT_EARN.referralReferrer.toLocaleString()}P · 친구 +
             {POINT_EARN.referralReferee.toLocaleString()}P
           </span>
         </p>
-        <p className="mb-2.5 break-keep text-[12px] leading-relaxed text-ink-500">
-          초대받은 분이 가입하고 <strong className="font-bold text-ink-700">첫 돌봄을 완료하면</strong>{" "}
-          두 분 모두에게 포인트를 드려요.
+        <p className="mb-2.5 break-keep text-[13px] leading-relaxed text-ink-500">
+          초대받은 분이 <strong className="font-bold text-ink-700">가입만 해도 바로</strong> 두 분
+          모두에게 포인트를 드려요.
           {data.referral.invited > 0 &&
             ` 지금까지 ${data.referral.invited}명 초대 · ${data.referral.rewarded}명 보상 완료.`}
         </p>
         <div className="flex items-center gap-2">
-          <code className="min-w-0 flex-1 truncate rounded-xl bg-white px-3 py-2.5 text-center text-[15px] font-extrabold tracking-[3px] text-royal-700 ring-1 ring-royal-100">
+          <code className="min-w-0 flex-1 truncate rounded-xl bg-white px-3 py-2.5 text-center text-[16px] font-extrabold tracking-[3px] text-royal-700 ring-1 ring-royal-100">
             {data.referral.code}
           </code>
           <button
@@ -223,7 +223,7 @@ export default function PointsPage() {
                     : null
               );
             }}
-            className="min-h-[44px] shrink-0 rounded-xl bg-royal-500 px-4 text-[13px] font-bold text-white transition-all duration-150 hover:bg-royal-600 active:scale-[0.98]"
+            className="min-h-[44px] shrink-0 rounded-xl bg-royal-500 px-4 text-[14px] font-bold text-white transition-all duration-150 hover:bg-royal-600 active:scale-[0.98]"
           >
             링크 공유
           </button>
@@ -232,11 +232,11 @@ export default function PointsPage() {
 
       {/* 적립 방법 */}
       <section className="rounded-2xl bg-white p-4 shadow-card">
-        <h2 className="mb-2.5 text-sm font-bold text-ink-900">이렇게 쌓여요</h2>
-        <ul className="space-y-2">
+        <h2 className="mb-3.5 text-[16px] font-bold text-ink-900">이렇게 쌓여요</h2>
+        <ul className="space-y-3">
           {EARN_ROWS.map((r) => (
-            <li key={r.label} className="flex items-baseline gap-2 text-[13px]">
-              <span className="shrink-0 rounded-full bg-ink-100/60 px-1.5 py-0.5 text-[10px] font-bold text-ink-500">
+            <li key={r.label} className="flex items-baseline gap-2 text-[14px]">
+              <span className="shrink-0 rounded-full bg-ink-100/60 px-1.5 py-0.5 text-[11px] font-bold text-ink-500">
                 {r.who}
               </span>
               <span className="min-w-0 flex-1 break-keep leading-relaxed text-ink-700">
@@ -246,7 +246,7 @@ export default function PointsPage() {
             </li>
           ))}
         </ul>
-        <p className="mt-3 break-keep text-[11px] leading-relaxed text-ink-400">
+        <p className="mt-3 break-keep text-[12px] leading-relaxed text-ink-400">
           포인트는 돌봄의 대가가 아니라, 보호자가 남긴 후기·감사에 대해 돌보다가 드리는
           리워드예요. 적립일로부터 {POINT_EXPIRY_MONTHS}개월이 지나면 사라지고, 부정한 방법으로
           모은 포인트는 회수될 수 있어요.
@@ -256,10 +256,10 @@ export default function PointsPage() {
       {/* 내역 */}
       {data.entries.length > 0 && (
         <section className="rounded-2xl bg-white p-4 shadow-card">
-          <h2 className="mb-2.5 text-sm font-bold text-ink-900">최근 내역</h2>
-          <ul className="space-y-1.5">
+          <h2 className="mb-3.5 text-[16px] font-bold text-ink-900">최근 내역</h2>
+          <ul className="space-y-2.5">
             {data.entries.map((e) => (
-              <li key={e.id} className="flex items-center gap-2 text-[13px]">
+              <li key={e.id} className="flex items-center gap-2 text-[14px]">
                 <span className="shrink-0 text-ink-300">{fmtDate(e.createdAt)}</span>
                 <span className="min-w-0 flex-1 truncate text-ink-700">
                   {POINT_KIND_LABEL[e.kind] ?? e.kind}

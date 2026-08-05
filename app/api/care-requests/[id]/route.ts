@@ -6,7 +6,6 @@ import { resend, careCompletedEmailHtml, requestCancelledEmailHtml } from "@/lib
 import { SITE_NAME, MAIL_FROM } from "@/lib/siteConfig";
 import { careRequestSummary } from "@/lib/careLocationTypes";
 import { findOtherOpenJobSummaries } from "@/lib/otherOpenJobs";
-import { settleReferralOnFirstCompletion } from "@/lib/referral";
 
 async function getOwnedRequest(id: string, userId: string) {
   const careRequest = await prisma.careRequest.findUnique({ where: { id } });
@@ -55,13 +54,6 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         where: { careRequestId: params.id, status: "매칭확정" },
         data: { status: "돌봄완료" },
       }),
-    ]);
-
-    // 추천 보상(points-spec §5) — 완료에 관여한 두 사람 중 "초대받고 첫 완료"인
-    // 사람이 있으면 이 순간 양쪽 지급. 멱등이라 재호출돼도 한 번만 나간다.
-    await settleReferralOnFirstCompletion([
-      session.user.id,
-      matchedSitter?.sitterProfile.user.id,
     ]);
 
     // 메일은 완료 처리 뒤에 보낸다 — 실패해도 완료 처리 자체는 이미 끝난 상태.

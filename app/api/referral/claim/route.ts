@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { REFERRAL_CLAIM_WINDOW_DAYS } from "@/lib/pointsConfig";
+import { awardPoints } from "@/lib/points";
+import { POINT_EARN, REFERRAL_CLAIM_WINDOW_DAYS } from "@/lib/pointsConfig";
 
 // 추천 코드 귀속(points-spec §5 2단계) — 초대 링크로 들어와 가입한 계정을 추천인에게
-// 묶는다. 보상은 여기서 지급하지 않는다 — 귀속된 사람이 "첫 돌봄을 완료"하는 순간
-// 양쪽에 지급된다(care-requests [id] 완료 훅). 가입만으로 주면 유령 계정이 통로가 된다.
+// 묶고, 그 자리에서 양쪽에 지급한다(2026-08-05 사용자 결정 — 처음엔 "첫 돌봄 완료 시
+// 지급"이었지만, 포인트가 현금성이 없어 유령 계정으로 캐도 실익이 없으므로 가입 즉시
+// 지급으로 완화. 남는 방어선: 14일 귀속 창·가입자당 1회·본인 코드 차단·원장 유니크).
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -46,10 +48,27 @@ export async function POST(req: Request) {
 
   try {
     await prisma.referralAttribution.create({
-      data: { userId, referrerId: referral.userId },
+      data: { userId, referrerId: referral.userId, rewardedAt: new Date() },
     });
   } catch {
-    // 동시 요청으로 이미 만들어졌으면 성공으로 본다(가입자당 1회 — id가 곧 유니크)
+    // 동시 요청으로 이미 만들어졌으면 성공으로 본다(가입자당 1회 — id가 곧 유니크).
+    // 지급도 건너뛴다 — 먼저 만든 요청이 이미 지급했다.
+    return NextResponse.json({ ok: true, already: true });
   }
-  return NextResponse.json({ ok: true });
+
+  // 귀속 성공 시 즉시 양쪽 지급 — 실패해도 귀속은 유효(원장 유니크가 재지급을 막는다)
+  await awardPoints({
+    userId: referral.userId,
+    kind: "referral_referrer",
+    refId: userId,
+    amount: POINT_EARN.referralReferrer,
+  });
+  await awardPoints({
+    userId,
+    kind: "referral_referee",
+    refId: userId,
+    amount: POINT_EARN.referralReferee,
+  });
+
+  return NextResponse.json({ ok: true, rewarded: true });
 }
