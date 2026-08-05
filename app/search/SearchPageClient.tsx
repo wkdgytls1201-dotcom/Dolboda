@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { List, Map as MapIcon, Crosshair, Search } from "lucide-react";
@@ -92,7 +92,15 @@ function SearchContent() {
   // 돌아온 사람이 처음부터 다시 내려야 했다.
   const pendingRestoreRef = useRef<{ count: number; y: number } | null>(null);
 
-  useEffect(() => {
+  // 데이터가 오기 전 스켈레톤 구간에 깔아둘 최소 높이(px) — 뒤로가기 직후 문서가
+  // 짧으면 브라우저·Next의 자체 복원이 바닥으로 클램프돼 "넘어가는 동안 푸터"가
+  // 스쳤다(실측 3회, 2026-08-05). 저장된 scrollY만큼 자리를 미리 만들어두면
+  // 첫 프레임부터 푸터가 화면 근처에 올 수 없다. 데이터 복원이 끝나면 걷는다.
+  const [restoreSpacerPx, setRestoreSpacerPx] = useState<number | null>(null);
+
+  // useLayoutEffect: 첫 페인트 "전"에 스페이서를 깔고 보던 위치로 이동해야
+  // 푸터가 한 프레임도 안 보인다(useEffect면 그 한 프레임이 그대로 노출된다).
+  useLayoutEffect(() => {
     if (!fromUrl) {
       const saved = readPersistedState();
       if (saved) {
@@ -105,6 +113,10 @@ function SearchContent() {
             count: saved.visibleCount ?? 30,
             y: saved.scrollY ?? 0,
           };
+          if (saved.scrollY) {
+            setRestoreSpacerPx(saved.scrollY + window.innerHeight);
+            window.scrollTo({ top: saved.scrollY, left: 0, behavior: "instant" as ScrollBehavior });
+          }
         }
       }
     }
@@ -237,6 +249,8 @@ function SearchContent() {
     const start = performance.now();
     const cancel = () => {
       cancelled = true;
+      // 사용자가 직접 스크롤을 시작했으면 복원을 접고 스페이서도 걷는다
+      setRestoreSpacerPx(null);
     };
     // 전역 scroll-behavior:smooth가 끼어들면 복원이 애니메이션으로 보인다 — 즉시 이동
     const assert = () => {
@@ -246,6 +260,8 @@ function SearchContent() {
       if (stable >= 3 || performance.now() - start > 800) {
         window.removeEventListener("wheel", cancel);
         window.removeEventListener("touchstart", cancel);
+        // 실제 카드가 채워졌으니 임시 스페이서를 걷는다 — 남겨두면 목록 끝에 빈 공간이 남는다
+        setRestoreSpacerPx(null);
         return;
       }
       raf = requestAnimationFrame(assert);
@@ -445,7 +461,11 @@ function SearchContent() {
           스크롤이 푸터로 클램프되고, 지도에서 돌아왔을 때 보던 자리가 사라진다
           (실측 2026-08-05). 지도는 전체 화면 오버레이라 뒤에 남아 있어도 안 보인다. */}
       {results.length === 0 && loading ? (
-        <FacilityCardSkeleton />
+        // 복귀 중이면 저장된 스크롤 위치만큼 자리를 미리 확보 — 문서가 짧아
+        // 푸터로 클램프되는 것을 원천 차단(위 restoreSpacerPx 주석 참조)
+        <div style={restoreSpacerPx ? { minHeight: restoreSpacerPx } : undefined}>
+          <FacilityCardSkeleton />
+        </div>
       ) : results.length === 0 ? (
         <div className="rounded-2xl bg-white p-12 text-center text-sm text-ink-300 shadow-card">
           조건에 맞는 시설이 없습니다. 필터를 조정해보세요.
