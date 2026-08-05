@@ -9,6 +9,7 @@ import { Facility, FACILITY_TYPE_LABEL, isHospital } from "@/lib/types";
 import { GradeBadge, TypeBadge, NHIS_GRADE_LETTER } from "@/components/GradeBadge";
 import { useCompare } from "@/lib/compareContext";
 import { useViewGate } from "@/lib/viewGateContext";
+import { shareOrCopyLink } from "@/lib/shareLink";
 import { PageLoader } from "@/components/PageLoader";
 import { shortAddress } from "@/lib/shortAddress";
 
@@ -155,29 +156,13 @@ function CompareContent() {
     shareNoteTimer.current = setTimeout(() => setShareNote(null), 3500);
   }
   async function handleShare() {
-    const url = `${window.location.origin}/compare?ids=${facilities.map((f) => f.id).join(",")}`;
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: "돌보다 시설 비교",
-          text: `${facilities[0].name} 외 ${facilities.length - 1}곳, 어디가 좋을까요?`,
-          url,
-        });
-        return; // 공유 시트 자체가 피드백이라 별도 안내 없음
-      } catch (e) {
-        if ((e as DOMException)?.name === "AbortError") return; // 시트를 그냥 닫음
-        // 그 외 실패는 클립보드로 이어서 시도
-      }
-    }
-    try {
-      await navigator.clipboard.writeText(url);
-      showShareNote("링크를 복사했어요 — 카톡에 붙여넣어 가족과 함께 보세요");
-    } catch {
-      // 클립보드까지 막힌 환경(일부 웹뷰 등) — 막다른 안내 대신 주소창이라도
-      // 공유 가능한 링크(?ids=)로 맞춰주고 직접 복사하게 안내한다
-      window.history.replaceState(null, "", url);
-      showShareNote("주소창의 링크를 길게 눌러 복사해주세요");
-    }
+    const outcome = await shareOrCopyLink({
+      url: `${window.location.origin}/compare?ids=${facilities.map((f) => f.id).join(",")}`,
+      title: "돌보다 시설 비교",
+      text: `${facilities[0].name} 외 ${facilities.length - 1}곳, 어디가 좋을까요?`,
+    });
+    if (outcome === "copied") showShareNote("링크를 복사했어요 — 카톡에 붙여넣어 가족과 함께 보세요");
+    else if (outcome === "fallback") showShareNote("주소창의 링크를 길게 눌러 복사해주세요");
   }
 
   const hasMixedTypes =

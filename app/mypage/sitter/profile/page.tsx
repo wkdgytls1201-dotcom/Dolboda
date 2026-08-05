@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { Camera, Pencil, Plus, X, User } from "lucide-react";
+import { Camera, Pencil, Plus, Share2, X, User } from "lucide-react";
 import { MyPageShell } from "@/components/MyPageShell";
 import { PageLoader } from "@/components/PageLoader";
 import { REGIONS } from "@/lib/regions";
@@ -11,6 +11,7 @@ import { useSitterProfileContext, SitterProfileData } from "@/lib/sitterProfileC
 import { sitterProgress } from "@/lib/sitterProgress";
 import { maskAccount } from "@/lib/maskAccount";
 import { PhotoCropModal } from "@/components/PhotoCropModal";
+import { shareOrCopyLink } from "@/lib/shareLink";
 
 type SitterProfile = SitterProfileData;
 
@@ -42,6 +43,8 @@ export default function SitterProfilePage() {
   const [photoBusy, setPhotoBusy] = useState(false);
   // 크롭 창에 넘길 파일 — null이면 창이 닫힌 상태
   const [cropFile, setCropFile] = useState<File | null>(null);
+  // 공개 프로필 공유 안내(복사됨 등) — 잠깐 보였다 사라진다
+  const [shareNote, setShareNote] = useState<string | null>(null);
 
   useEffect(() => {
     if (contextProfile === undefined) return; // 아직 로딩 중
@@ -607,6 +610,80 @@ export default function SitterProfilePage() {
             </p>
           ) : (
             <p className="text-sm text-ink-300">등록된 계좌가 없어요.</p>
+          )}
+        </section>
+
+        {/* 공개 프로필 — 돌보다 실적 명함(리텐션 제안 4번).
+            완료 건수·보호자 평점은 플랫폼이 매칭 기록으로 보증하는 숫자라, 매니저가
+            바깥에 내밀 수 있는 커리어 자산이 된다. 반드시 본인이 직접 켜야 공개된다. */}
+        <section className="rounded-2xl border border-ink-100 bg-white p-5 shadow-card">
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <h3 className="font-bold text-ink-900">공개 프로필</h3>
+            {profile.publicProfileAt && (
+              <span className="rounded-full bg-mint-100 px-2.5 py-0.5 text-[11px] font-bold text-mint-700">
+                공개 중
+              </span>
+            )}
+          </div>
+          <p className="mb-3 text-xs leading-relaxed text-ink-500">
+            돌보다가 매칭 기록으로 확인한 완료 실적·보호자 평점을 명함처럼 공유하는 페이지예요.
+            활동명·경력·자격증·활동 지역·실적만 보이고, 실명·연락처·계좌·후기 본문은 공개되지
+            않아요.
+          </p>
+          {profile.publicProfileAt ? (
+            <div className="flex flex-col gap-2.5">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const outcome = await shareOrCopyLink({
+                      url: `${window.location.origin}/manager/${profile.id}`,
+                      title: "돌보다 매니저 프로필",
+                      text: `${profile.nickname} 매니저 — 돌보다 실적 프로필이에요`,
+                    });
+                    if (outcome === "copied") setShareNote("링크를 복사했어요");
+                    else if (outcome === "fallback")
+                      setShareNote("주소창의 링크를 길게 눌러 복사해주세요");
+                    if (outcome === "copied" || outcome === "fallback") {
+                      setTimeout(() => setShareNote(null), 3000);
+                    }
+                  }}
+                  className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-primary-500 text-sm font-bold text-white transition-all duration-150 ease-snappy hover:bg-primary-600 active:scale-[0.98]"
+                >
+                  <Share2 size={15} aria-hidden />
+                  프로필 공유
+                </button>
+                <Link
+                  href={`/manager/${profile.id}`}
+                  target="_blank"
+                  className="flex min-h-[44px] items-center justify-center rounded-xl border border-ink-100 px-4 text-sm font-semibold text-ink-700 transition-colors duration-150 hover:bg-ink-100/60"
+                >
+                  미리보기
+                </Link>
+              </div>
+              {shareNote && (
+                <p role="status" className="text-xs font-semibold text-mint-700">
+                  {shareNote}
+                </p>
+              )}
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => patch({ publicProfile: false })}
+                className="self-start text-xs text-ink-300 underline underline-offset-2 transition-colors duration-150 hover:text-ink-500 disabled:opacity-60"
+              >
+                공개 끄기
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => patch({ publicProfile: true })}
+              className="flex min-h-[44px] w-full items-center justify-center rounded-xl bg-primary-500 text-sm font-bold text-white transition-all duration-150 ease-snappy hover:bg-primary-600 active:scale-[0.98] disabled:opacity-60"
+            >
+              공개 프로필 켜기
+            </button>
           )}
         </section>
       </div>

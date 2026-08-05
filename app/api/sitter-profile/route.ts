@@ -174,6 +174,7 @@ export async function PATCH(req: Request) {
     bankAccountNumber,
     bankAccountHolder,
     marketingOptIn,
+    publicProfile,
   } = body as Partial<{
     nickname: string;
     photoUrl: string | null;
@@ -185,6 +186,7 @@ export async function PATCH(req: Request) {
     bankAccountNumber: string | null;
     bankAccountHolder: string | null;
     marketingOptIn: boolean;
+    publicProfile: boolean;
   }>;
 
   // 닉네임·활동지역은 값이 왔는데 통째로 걸러지면(빈 문자열, 목록에 없는 지역) 조용히
@@ -224,6 +226,12 @@ export async function PATCH(req: Request) {
         bankAccountHolder: text(bankAccountHolder, MAX_BANK_FIELD),
       }),
       ...(marketingOptIn !== undefined && { marketingOptIn: marketingOptIn === true }),
+      // 공개 프로필 옵트인 — 켠 "시각"을 남긴다(공개 동의의 근거). 끄면 즉시 null,
+      // 이미 켜져 있는데 또 true가 오면 최초 동의 시각을 보존한다.
+      ...(publicProfile !== undefined && {
+        publicProfileAt:
+          publicProfile === true ? (existing.publicProfileAt ?? new Date()) : null,
+      }),
     },
     include: { certifications: true },
   });

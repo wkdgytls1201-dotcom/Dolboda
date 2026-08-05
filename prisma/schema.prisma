@@ -724,6 +724,10 @@ model SitterProfile {
   bankAccountHolder String?
   agreedAt          DateTime // 필수 약관 동의 시각
   marketingOptIn    Boolean                  @default(false)
+  // 공개 프로필(/manager/[id]) 동의 시각 — null이면 비공개(기본).
+  // 매니저가 프로필 관리에서 직접 켠 시각을 남긴다(공개 동의의 근거 기록).
+  // 보호자용으로 쓴 프로필을 동의 없이 오픈웹에 내지 않기 위한 옵트인 스위치다.
+  publicProfileAt   DateTime?
   createdAt         DateTime                 @default(now())
   updatedAt         DateTime                 @updatedAt
   certifications    SitterCertification[]
