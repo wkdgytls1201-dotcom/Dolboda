@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { awardPoints } from "@/lib/points";
+import { POINT_EARN } from "@/lib/pointsConfig";
 
 // 완료된 돌봄에 보호자가 남기는 후기 — 매니저 "돌보다 인증 경력"의 원천 데이터.
 // 만들 수 있는 조건을 좁게 잡는다:
@@ -33,7 +35,10 @@ export async function POST(req: Request) {
     where: { id: careRequestId },
     include: {
       review: { select: { id: true } },
-      applications: { where: { status: "돌봄완료" }, select: { sitterProfileId: true } },
+      applications: {
+        where: { status: "돌봄완료" },
+        select: { sitterProfileId: true, sitterProfile: { select: { userId: true } } },
+      },
     },
   });
   if (!careRequest || careRequest.guardianId !== session.user.id) {
@@ -53,5 +58,34 @@ export async function POST(req: Request) {
   const review = await prisma.careReview.create({
     data: { careRequestId, sitterProfileId, rating, comment },
   });
+
+  // 돌봄 포인트(docs/points-spec.md) — 완료 자체가 아니라 "보호자의 좋은 반응"이 지급
+  // 조건이다(근무 대가가 아니라 감사에 대한 플랫폼 리워드 — 매니저 법적 거리 방침).
+  // 요청당 후기 1건 가드가 곧 중복 지급 방지이고, 유니크 제약이 한 번 더 막는다.
+  // 지급 실패는 무시 — 포인트 때문에 후기 저장이 실패하면 안 된다.
+  const sitterUserId = careRequest.applications[0]?.sitterProfile.userId;
+  if (sitterUserId) {
+    await awardPoints({
+      userId: sitterUserId,
+      kind: "review_received",
+      refId: careRequestId,
+      amount: POINT_EARN.reviewReceived,
+    });
+    if (rating === 5) {
+      await awardPoints({
+        userId: sitterUserId,
+        kind: "review_five_star",
+        refId: careRequestId,
+        amount: POINT_EARN.fiveStarBonus,
+      });
+    }
+  }
+  await awardPoints({
+    userId: session.user.id,
+    kind: "review_written",
+    refId: careRequestId,
+    amount: POINT_EARN.reviewWritten,
+  });
+
   return NextResponse.json(review, { status: 201 });
 }

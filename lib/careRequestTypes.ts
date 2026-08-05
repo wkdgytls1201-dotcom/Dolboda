@@ -14,6 +14,8 @@ export interface Applicant {
     intro: string | null;
     gender: string | null;
     ageBand: string | null;
+    /** 돌봄 스타 리본 만료(ISO) — 유효하면 카드에 리본 표시(정렬은 불변) */
+    ribbonUntil: string | null;
     certifications: { id: string; name: string }[];
   };
   /** 돌보다 안에서 쌓인 실적 — 자기 신고 경력과 달리 플랫폼이 보증하는 숫자 */

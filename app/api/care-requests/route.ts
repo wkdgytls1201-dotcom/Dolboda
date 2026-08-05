@@ -23,6 +23,8 @@ const APPLICANT_SELECT = {
       intro: true,
       gender: true,
       ageBand: true,
+      // 돌봄 스타 리본(포인트 사용처) — 시각 강조만, 정렬은 불변(먼저 지원한 순 유지)
+      ribbonUntil: true,
       certifications: { select: { id: true, name: true } },
     },
   },

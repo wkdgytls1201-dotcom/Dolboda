@@ -34,6 +34,7 @@ async function getPublicManager(id: string) {
       regions: true,
       createdAt: true,
       publicProfileAt: true,
+      ribbonUntil: true,
       certifications: { select: { id: true, name: true, issuedBy: true } },
     },
   });
@@ -125,9 +126,16 @@ export default async function ManagerPublicProfilePage({
           </span>
         )}
         <div className="min-w-0">
-          <span className="mb-1 inline-flex items-center gap-1 rounded-full bg-mint-100 px-2.5 py-0.5 text-[11px] font-bold text-mint-700">
-            <BadgeCheck size={12} aria-hidden />
-            돌보다 활동 매니저
+          <span className="mb-1 inline-flex flex-wrap items-center gap-1">
+            <span className="inline-flex items-center gap-1 rounded-full bg-mint-100 px-2.5 py-0.5 text-[11px] font-bold text-mint-700">
+              <BadgeCheck size={12} aria-hidden />
+              돌보다 활동 매니저
+            </span>
+            {profile.ribbonUntil && profile.ribbonUntil > new Date() && (
+              <span className="rounded-full bg-gradient-to-r from-accent-400 to-primary-400 px-2.5 py-0.5 text-[11px] font-extrabold text-white">
+                ⭐ 돌봄 스타
+              </span>
+            )}
           </span>
           <h1 className="text-xl font-extrabold leading-snug text-ink-900">
             {profile.nickname} 매니저

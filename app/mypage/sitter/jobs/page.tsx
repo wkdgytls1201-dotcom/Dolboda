@@ -48,6 +48,8 @@ interface JobRequest {
   budgetUnit: string | null;
   status?: string;
   alreadyApplied?: boolean;
+  /** 우선 요청(보호자가 포인트로 켠 상단 노출) — 목록 상단 고정 + 배지 */
+  boosted?: boolean;
 }
 
 interface MyApplication {
@@ -521,11 +523,18 @@ export default function SitterJobsPage() {
                   key={job.id}
                   job={job}
                   badge={
-                    job.sitterGenderPref !== "무관" ? (
-                      <span className="rounded-full bg-royal-50 px-2.5 py-1 text-xs font-semibold text-royal-700">
-                        {job.sitterGenderPref} 선호
-                      </span>
-                    ) : null
+                    <>
+                      {job.boosted && (
+                        <span className="rounded-full bg-gradient-to-r from-royal-500 to-primary-500 px-2.5 py-1 text-xs font-extrabold text-white">
+                          ⚡ 우선 요청
+                        </span>
+                      )}
+                      {job.sitterGenderPref !== "무관" && (
+                        <span className="rounded-full bg-royal-50 px-2.5 py-1 text-xs font-semibold text-royal-700">
+                          {job.sitterGenderPref} 선호
+                        </span>
+                      )}
+                    </>
                   }
                   footer={
                     <button

@@ -3,6 +3,8 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { rateLimit, clientIp, tooManyRequests } from "@/lib/rateLimit";
 import { careRequestSummary } from "@/lib/careLocationTypes";
+import { awardPoints } from "@/lib/points";
+import { POINT_EARN } from "@/lib/pointsConfig";
 import { resend } from "@/lib/resend";
 import { SITE_NAME, MAIL_FROM } from "@/lib/siteConfig";
 import {
@@ -241,6 +243,30 @@ export async function PATCH(req: Request) {
     where: { id: logId },
     data: { guardianReaction: reaction },
   });
+
+  // 돌봄 포인트(docs/points-spec.md) — 반응을 "받은" 매니저에게 소액 적립.
+  // 기록 1건당 평생 1회(유니크: userId+kind+logId — 취소했다 다시 눌러도 재지급 없음),
+  // 요청당 상한 10회. 실패는 무시 — 포인트 때문에 반응 저장이 실패하면 안 된다.
+  if (reaction !== null) {
+    try {
+      const sitterUserId = ctx.application.sitterProfile.userId;
+      const grantedForRequest = await prisma.pointLedger.count({
+        where: { userId: sitterUserId, kind: "reaction", memo: ctx.request.id },
+      });
+      if (grantedForRequest < POINT_EARN.reactionCapPerRequest) {
+        await awardPoints({
+          userId: sitterUserId,
+          kind: "reaction",
+          refId: logId,
+          amount: POINT_EARN.reactionPerLog,
+          memo: ctx.request.id,
+        });
+      }
+    } catch {
+      /* 적립 실패 무시 */
+    }
+  }
+
   return NextResponse.json({ log: updated });
 }
 

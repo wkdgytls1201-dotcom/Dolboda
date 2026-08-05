@@ -16,6 +16,7 @@
 - **모바일이 최우선이다(안드로이드·iOS 앱화 예정).** 새 화면은 360~430px 모바일 뷰포트를 기준으로 먼저 만들고 데스크톱은 나중에 확장한다. 터치 타깃 44px 이상, safe-area(`env(safe-area-inset-*)`) 대응을 기본으로 한다.
 
 - **돌보다 공공데이터 기반 안심지수(`lib/dolbodaScore.ts`)는 핵심 자산이다.** 가중치·신호 매핑·보정 로직을 바꿀 때는 반드시 [docs/ai-score-spec.md](docs/ai-score-spec.md)의 매핑 표와 변경 이력을 함께 갱신하고, 사용자 확인 없이 가중치를 바꾸지 않는다.
+- **돌봄 포인트(`lib/pointsConfig.ts`)는 법적 설계가 걸린 기능이다.** 금액·지급 조건을 바꾸기 전에 [docs/points-spec.md](docs/points-spec.md) §1을 읽을 것 — 환전·현금성 금지, "완료가 아니라 보호자의 감사에 지급", 리본은 정렬 불변이 선이다. 값 변경 시 그 문서와 약관 제12조의2를 함께 갱신한다.
 - **근무환경 지수(`lib/workIndex.ts`)도 같은 급의 자산이다.** 매니저용 지표로, 수정 시 [docs/work-index-spec.md](docs/work-index-spec.md)를 함께 갱신한다. 구간 기준은 실제 데이터 분포(사분위수)에서 뽑은 값이라 임의로 바꾸지 않는다.
 
 - **돌봄 합의서(`lib/careAgreement.ts`)는 법적 포지션이 걸린 기능이다.** 조항 문구나 흐름을 바꾸기 전에 반드시 [docs/care-agreement-spec.md](docs/care-agreement-spec.md) §1을 읽을 것. 회사는 "표준 양식 제공 + 서명 기록 보관"까지가 선이고, 이 선을 넘어 계약 당사자가 되면 직업안정법상 유료직업소개사업 등록 문제가 생긴다.

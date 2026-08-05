@@ -100,13 +100,20 @@ export async function GET(req: Request) {
       sitterGenderPref: true,
       budgetAmount: true,
       budgetUnit: true,
+      boostUntil: true,
       applications: { where: { sitterProfileId: sitterProfile.id }, select: { id: true } },
     },
   });
 
+  // 우선 요청(포인트 사용처) — 유효한 부스트만 정렬 유지한 채 앞으로 끌어올린다.
+  const now = new Date();
+  const boosted = openRequests.filter((r) => r.boostUntil && r.boostUntil > now);
+  const rest = openRequests.filter((r) => !(r.boostUntil && r.boostUntil > now));
+
   return NextResponse.json({
-    items: openRequests.map(({ applications, ...r }) => ({
+    items: [...boosted, ...rest].map(({ applications, boostUntil, ...r }) => ({
       ...r,
+      boosted: Boolean(boostUntil && boostUntil > now),
       alreadyApplied: applications.length > 0,
       applicationId: applications[0]?.id ?? null,
     })),

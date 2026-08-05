@@ -14,6 +14,7 @@ import {
   ChevronRight,
   ClipboardCheck,
   ClipboardList,
+  Coins,
   NotebookPen,
   Gift,
   Heart,
@@ -141,6 +142,7 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
     },
     { href: "/favorites", label: "관심 시설", icon: <Heart size={18} />, hint: "찜해둔 시설" },
     { href: "/compare", label: "시설 비교", icon: <Scale size={18} />, hint: "최대 3곳 나란히" },
+    { href: "/mypage/points", label: "돌봄 포인트", icon: <Coins size={18} />, hint: "후기·감사가 쌓이는 리워드" },
     // 등급 테스트·상담 신청 내역은 GUARDIAN_RECORD_ITEMS(모듈 상단)로 옮겼다 —
     // 대시보드 아래 자리에 page.tsx가 직접 그린다.
     // 정보 수정은 여기 두지 않는다 — 역할 카드 앞면에 이미 버튼이 있어 한 화면에
@@ -158,6 +160,7 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
     { href: "/mypage/sitter/profile", label: "매니저 프로필", icon: <HeartHandshake size={18} />, hint: "보호자에게 보이는 내 정보" },
     { href: "/mypage/sitter/workplaces", label: "일하기 좋은 시설", icon: <Building2 size={18} />, hint: "근무환경 지수 순", ribbon: "돌보다 단독" },
     { href: "/mypage/sitter/tips", label: "매니저 가이드", icon: <BookOpen size={18} />, hint: "지원 성공률 높이기", ribbon: "꿀팁" },
+    { href: "/mypage/points", label: "돌봄 포인트", icon: <Coins size={18} />, hint: "후기·감사가 쌓이는 리워드" },
     { href: "/mypage/sitter/settlements", label: "정산 관리", icon: <Wallet size={18} />, hint: "계좌 등록" },
     { href: "/mypage/sitter/notifications", label: "알림 설정", icon: <Bell size={18} />, hint: "받을 알림 고르기" },
   ];

@@ -203,6 +203,23 @@ model OpenRequestNudge {
 // 일지는 식사·배변·복약이 담긴 민감정보라 "누가 보는지"가 남아야 하고, 보호자가
 // 언제든 해제(revokedAt)할 수 있어야 한다. 삭제 대신 revokedAt을 쓰는 것도 같은
 // 이유 — 언제 누구에게 열람을 줬다 거뒀는지가 기록으로 남는다.
+// 돌봄 포인트 원장(docs/points-spec.md) — 잔액은 이 표의 합이다(별도 잔액 컬럼 없음 —
+// 원장과 잔액이 어긋날 수 없다). 현금·상품권 교환이 불가능한 플랫폼 내 리워드라
+// 선불전자지급수단이 아니고, 적립 명목은 근무 대가가 아니라 "보호자의 감사·후기에
+// 대한 플랫폼 리워드"다(매니저 법적 거리 방침). 같은 사건 중복 지급은 유니크가 막는다.
+model PointLedger {
+  id        String   @id @default(cuid())
+  userId    String
+  amount    Int // 적립 +, 사용 -
+  kind      String // review_received | review_five_star | reaction | review_written | spend_ribbon | spend_request_boost
+  refId     String   @default("") // 사건의 근원(careRequestId·careLogId) — 사용 건은 고유 난수
+  memo      String?
+  createdAt DateTime @default(now())
+
+  @@unique([userId, kind, refId])
+  @@index([userId, createdAt])
+}
+
 model CareLogFamilyAccess {
   id            String    @id @default(cuid())
   careRequestId String
@@ -763,6 +780,9 @@ model SitterProfile {
   // 성별을 알 길이 없었다. 매니저가 직접 입력하는 선택 항목(밴드형 — 정확 나이는 안 받음).
   gender            String? // "여성" | "남성"
   ageBand           String? // "20대" ~ "70대 이상"
+  // 돌봄 스타 리본(포인트 사용처) 만료 시각 — 지원자 카드·공개 프로필의 시각 강조만
+  // 하고 정렬은 절대 바꾸지 않는다(지원자 목록은 먼저 지원한 순 — care-flow-spec §4-1).
+  ribbonUntil       DateTime?
   createdAt         DateTime                 @default(now())
   updatedAt         DateTime                 @updatedAt
   certifications    SitterCertification[]
@@ -887,6 +907,9 @@ model CareRequest {
   budgetUnit   String? // "일" | "시간"
 
   completedAt DateTime?
+
+  // 우선 요청(포인트 사용처) 만료 시각 — 일자리 목록 상단 고정 + 배지 표시
+  boostUntil DateTime?
 
   createdAt    DateTime                 @default(now())
   updatedAt    DateTime                 @updatedAt
