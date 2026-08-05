@@ -47,12 +47,18 @@ function CompactNavRow({ item, delayIndex }: { item: NavItem; delayIndex?: numbe
       style={delayIndex !== undefined ? { animationDelay: `${delayIndex * 70}ms` } : undefined}
     >
       <span className={active ? "text-primary-600" : "text-ink-400"}>{item.icon}</span>
+      {/* 라벨은 한 줄 고정 — 힌트가 길면 라벨이 두 줄로 꺾이던 것("돌봄일지 관리" 실측
+          2026-08-05)을 뒤집어, 라벨이 자리를 먼저 갖고 긴 힌트 쪽이 말줄임되게 한다 */}
       <span
-        className={`flex-1 text-[15px] font-bold ${active ? "text-primary-700" : "text-ink-900"}`}
+        className={`shrink-0 whitespace-nowrap text-[15px] font-bold ${active ? "text-primary-700" : "text-ink-900"}`}
       >
         {item.label}
       </span>
-      {item.hint && <span className="text-[12px] text-ink-300">{item.hint}</span>}
+      {item.hint && (
+        <span className="min-w-0 flex-1 truncate text-right text-[12px] text-ink-300">
+          {item.hint}
+        </span>
+      )}
       <ChevronRight size={16} className="shrink-0 text-ink-200" />
     </Link>
   );
@@ -253,14 +259,6 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
         }`}
         style={delayIndex !== undefined ? { animationDelay: `${delayIndex * 70}ms` } : undefined}
       >
-        {/* 우상단 강조 칩 — 모서리에 딱 붙이면 카드의 rounded-2xl + overflow-hidden이
-            칩 오른쪽을 곡선으로 깎아 글자가 잘렸다("돌보다 단독" 실측 2026-08-05).
-            모서리 곡선 안쪽으로 살짝 들여 붙인다. */}
-        {item.ribbon && (
-          <span className="absolute right-1 top-1 rounded-full bg-gradient-to-r from-royal-500 to-primary-500 px-2 py-0.5 text-[9px] font-extrabold text-white">
-            {item.ribbon}
-          </span>
-        )}
         <span
           className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-xl ${
             active ? "bg-white text-primary-600 shadow-soft" : "bg-ivory-100 text-ink-400"
@@ -269,6 +267,13 @@ export function MyPageShell({ children }: { children: React.ReactNode }) {
           {item.icon}
         </span>
         <span className="min-w-0 flex-1">
+          {/* 강조 칩 — 절대 배치(우상단)로 두면 좁은 카드에서 라벨과 겹쳤다(실측 2회,
+              2026-08-05). 텍스트 열 안에 라벨 위로 쌓아 어떤 폭에서도 겹칠 수 없게 한다. */}
+          {item.ribbon && (
+            <span className="mb-0.5 inline-block rounded-full bg-gradient-to-r from-royal-500 to-primary-500 px-1.5 py-[1px] text-[9px] font-extrabold leading-normal text-white">
+              {item.ribbon}
+            </span>
+          )}
           <span
             className={`block truncate text-[13px] font-bold leading-tight ${
               active ? "text-primary-700" : "text-ink-900"
