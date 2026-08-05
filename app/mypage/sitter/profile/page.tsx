@@ -690,8 +690,14 @@ export default function SitterProfilePage() {
           </div>
           <p className="mb-3 text-xs leading-relaxed text-ink-500">
             돌보다가 매칭 기록으로 확인한 완료 실적·보호자 평점을 명함처럼 공유하는 페이지예요.
-            활동명·경력·자격증·활동 지역·실적만 보이고, 실명·연락처·계좌·후기 본문은 공개되지
-            않아요.
+            <strong className="font-bold text-ink-700">
+              {" "}
+              공개해두면 프로필을 본 보호자가 돌봄 요청을 올려 매니저님께 돌봄을 제안할 수
+              있어요
+            </strong>
+            {" "}
+            — 프로필이 새 매칭의 입구가 됩니다. 활동명·경력·자격증·활동 지역·실적만 보이고,
+            실명·연락처·계좌·후기 본문은 공개되지 않아요.
           </p>
           {profile.publicProfileAt ? (
             <div className="flex flex-col gap-2.5">
