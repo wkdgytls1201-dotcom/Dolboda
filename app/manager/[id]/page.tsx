@@ -40,7 +40,7 @@ async function getPublicManager(id: string) {
   });
   if (!profile || !profile.publicProfileAt) return null;
 
-  const [completedCount, review, logDayCount, reactionCount] = await Promise.all([
+  const [completedCount, review, logDayCount, reactionCount, reactionBreakdown] = await Promise.all([
     prisma.careRequestApplication.count({
       where: { sitterProfileId: id, status: "돌봄완료" },
     }),
@@ -57,6 +57,15 @@ async function getPublicManager(id: string) {
     prisma.careLog.count({
       where: { sitterProfileId: id, guardianReaction: { not: null } },
     }),
+    // 반응의 종류별 분포 — "몇 번 받았나"보다 "무엇을 받았나"가 이 매니저를 더 잘 말한다.
+    // ★ 이건 우리가 매기는 점수가 아니라 보호자가 직접 남긴 말의 집계다. 회사가 매니저를
+    //   평가하는 지표를 만들면 매니저 법적 거리 방침(2026-08-06)에 어긋나므로,
+    //   "기록률" 같은 성실도 점수 대신 보호자의 목소리만 그대로 보여준다.
+    prisma.careLog.groupBy({
+      by: ["guardianReaction"],
+      where: { sitterProfileId: id, guardianReaction: { not: null } },
+      _count: { _all: true },
+    }),
   ]);
 
   return {
@@ -66,6 +75,10 @@ async function getPublicManager(id: string) {
     avgRating: review._avg.rating != null ? Math.round(review._avg.rating * 10) / 10 : null,
     logDayCount,
     reactionCount,
+    // 화면이 쓰기 좋은 형태로 — { thanks: 3, relieved: 1, cheer: 0 }
+    reactionByKind: Object.fromEntries(
+      reactionBreakdown.map((r) => [r.guardianReaction as string, r._count._all])
+    ) as Record<string, number>,
   };
 }
 
@@ -95,7 +108,8 @@ export default async function ManagerPublicProfilePage({
 }) {
   const data = await getPublicManager(params.id);
   if (!data) notFound();
-  const { profile, completedCount, reviewCount, avgRating, logDayCount, reactionCount } = data;
+  const { profile, completedCount, reviewCount, avgRating, logDayCount, reactionCount, reactionByKind } =
+    data;
   const sinceYear = profile.createdAt.getFullYear();
 
   const jsonLd = {
@@ -178,10 +192,44 @@ export default async function ManagerPublicProfilePage({
         </div>
         {/* 보호자 반응 — 일지에 보호자들이 원탭으로 남긴 고마움의 누적(0이면 광고하지 않는다) */}
         {reactionCount > 0 && (
-          <p className="border-t border-ink-100 py-2.5 text-center text-[12px] font-semibold text-ink-700">
-            🙏 보호자 반응 <span className="font-extrabold text-primary-600">{reactionCount}회</span>
-            <span className="ml-1.5 font-normal text-ink-400">일지에 보호자들이 남긴 고마움</span>
-          </p>
+          <div className="border-t border-ink-100 px-4 py-3">
+            <p className="mb-2 text-center text-[12px] font-semibold text-ink-700">
+              🙏 보호자 반응 <span className="font-extrabold text-primary-600">{reactionCount}회</span>
+              <span className="ml-1.5 font-normal text-ink-400">일지에 보호자들이 남긴 고마움</span>
+            </p>
+            {/* 종류별 분포 — "무엇을 받았나"가 "몇 번 받았나"보다 이 매니저를 잘 말한다.
+                우리가 매긴 점수가 아니라 보호자가 직접 누른 버튼의 집계라, 매니저를
+                평가하지 않는다는 원칙(법적 거리)을 지키면서도 인정이 쌓여 보인다.
+                0인 종류는 보여주지 않는다 — 없는 것을 강조하면 그게 곧 감점처럼 읽힌다. */}
+            <ul className="space-y-1">
+              {(
+                [
+                  { key: "thanks", emoji: "🙏", label: "감사해요" },
+                  { key: "relieved", emoji: "😊", label: "안심돼요" },
+                  { key: "cheer", emoji: "💪", label: "수고하셨어요" },
+                ] as const
+              )
+                .map((r) => ({ ...r, n: reactionByKind[r.key] ?? 0 }))
+                .filter((r) => r.n > 0)
+                .map((r) => (
+                  <li key={r.key} className="flex items-center gap-2 text-[12px]">
+                    <span className="w-[86px] shrink-0 text-ink-500">
+                      {r.emoji} {r.label}
+                    </span>
+                    <span className="h-2 flex-1 overflow-hidden rounded-full bg-ink-100/70">
+                      <span
+                        aria-hidden
+                        className="block h-full rounded-full bg-primary-400"
+                        style={{ width: `${(r.n / reactionCount) * 100}%` }}
+                      />
+                    </span>
+                    <span className="w-8 shrink-0 text-right font-bold tabular-nums text-ink-700">
+                      {r.n}
+                    </span>
+                  </li>
+                ))}
+            </ul>
+          </div>
         )}
         <p className="flex items-center justify-center gap-1.5 rounded-b-2xl border-t border-mint-100 bg-mint-50/60 py-2.5 text-center text-xs font-bold text-mint-700">
           <BadgeCheck size={14} aria-hidden />

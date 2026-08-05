@@ -132,7 +132,93 @@ export default async function ReportPage({
             </div>
           ))}
         </dl>
+        {/* 전환율 — "노출을 늘릴 문제인가, 페이지를 손볼 문제인가"를 가른다.
+            조회 30회 미만이면 null이라 아예 안 나온다(한 건이 수치를 흔든다). */}
+        {report.consults.conversionPct !== null && (
+          <p className="mt-2 break-keep rounded-lg bg-royal-50 px-3 py-2 text-[12px] leading-relaxed text-royal-700">
+            시설 페이지를 본 100명 중{" "}
+            <strong className="font-extrabold">{report.consults.conversionPct}명</strong>이 상담을
+            신청했어요.
+          </p>
+        )}
       </StatCard>
+
+      {/* 비급여 비용 지역 비교 — 운영자가 가장 자주 묻는 "우리가 비싼 편인가요"에 답한다.
+          공단 공개자료만 보면 자기 시설 금액밖에 못 보지만, 우리는 전국 값을 갖고 있어
+          중앙값을 낼 수 있다(docs/data-assets-spec.md §2).
+          비교 가능한 항목이 없으면 섹션을 통째로 감춘다 — "비교 불가"를 "차이 없음"처럼
+          보이게 하면 안 된다. */}
+      {report.fees.length > 0 && (
+        <section className="mb-4 rounded-2xl bg-white p-5 shadow-card">
+          <h2 className="mb-1 text-[15px] font-bold text-ink-900">비급여 비용 · 지역 비교</h2>
+          <p className="mb-3 text-[11px] leading-relaxed text-ink-300">
+            같은 지역 같은 유형 시설들의 중앙값과 비교한 값이에요. 금액 조정을 권하는 게
+            아니라, 보호자가 보는 화면에서 어떻게 비치는지 알려드리는 참고 자료예요.
+          </p>
+          <ul className="space-y-3">
+            {report.fees.map((f, i) => {
+              // ⚠️ 같은 항목명이 한 시설에 여러 번 올 수 있다 — "상급침실사용료"가 1인실·
+              //    2인실로 각각 등록된 경우다(실측: 155,000원과 310,000원 두 행).
+              //    이름만으로 key를 잡으면 중복되므로 순번을 함께 쓴다.
+              //    기준값(중앙값)은 이름 단위라 두 행이 같은 값과 비교된다 — 공단 원본이
+              //    병실 등급을 구분하지 않아 지금은 여기까지가 정확한 한계다.
+              // 두 막대를 같은 축에 놓아 길이 차이가 그대로 금액 차이가 되게 한다
+              const scale = Math.max(f.monthly, f.regionMedian, 1);
+              const higher = f.diffPct > 5;
+              const lower = f.diffPct < -5;
+              return (
+                <li key={`${f.name}-${i}`}>
+                  <div className="mb-1 flex flex-wrap items-baseline justify-between gap-x-2">
+                    <span className="text-[13px] font-bold text-ink-900">{f.name}</span>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                        higher
+                          ? "bg-accent-100 text-accent-600"
+                          : lower
+                            ? "bg-mint-100 text-mint-700"
+                            : "bg-ink-100 text-ink-500"
+                      }`}
+                    >
+                      {higher || lower
+                        ? `지역 중앙값보다 ${Math.abs(f.diffPct)}% ${higher ? "높음" : "낮음"}`
+                        : "지역 중앙값과 비슷"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-[52px] shrink-0 text-[11px] font-bold text-ink-700">우리 시설</span>
+                    <span className="h-2.5 flex-1 overflow-hidden rounded-full bg-ink-100/70">
+                      <span
+                        aria-hidden
+                        className="block h-full rounded-full bg-primary-500"
+                        style={{ width: `${(f.monthly / scale) * 100}%` }}
+                      />
+                    </span>
+                    <span className="w-[76px] shrink-0 text-right text-[11px] font-bold tabular-nums text-ink-900">
+                      {f.monthly.toLocaleString()}원
+                    </span>
+                  </div>
+                  <div className="mt-1 flex items-center gap-2">
+                    <span className="w-[52px] shrink-0 text-[11px] text-ink-400">지역 중앙</span>
+                    <span className="h-2.5 flex-1 overflow-hidden rounded-full bg-ink-100/70">
+                      <span
+                        aria-hidden
+                        className="block h-full rounded-full bg-ink-300"
+                        style={{ width: `${(f.regionMedian / scale) * 100}%` }}
+                      />
+                    </span>
+                    <span className="w-[76px] shrink-0 text-right text-[11px] tabular-nums text-ink-400">
+                      {f.regionMedian.toLocaleString()}원
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[10px] text-ink-300">
+                    {report.regionLabel ?? "지역"} 같은 유형 {f.sampleN.toLocaleString()}곳 기준
+                  </p>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
       {(report.sponsor || report.banner) && (
         <section className="mb-4 rounded-2xl bg-white p-5 shadow-card">

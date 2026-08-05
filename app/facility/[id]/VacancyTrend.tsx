@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { buildVacancySeries, trendHeadline, ymdKst } from "@/lib/vacancyTrend";
+import { computeVacancyInsight, insightSentences } from "@/lib/vacancyInsight";
 
 // 자리 추이 — 매일 쌓이는 FacilitySnapshot(정원·현원·대기)을 처음으로 화면에 쓴다.
 //
@@ -14,6 +15,10 @@ import { buildVacancySeries, trendHeadline, ymdKst } from "@/lib/vacancyTrend";
 //
 // 서버 컴포넌트라 HTML에 그대로 실린다(SEO·AI 검색이 읽을 수 있는 고유 정보).
 // 차트 라이브러리를 쓰지 않는다 — 막대는 CSS 높이(%)뿐이라 클라이언트 JS 0바이트.
+//
+// 지표(회전 횟수·만실 비율·대기 소진 속도·예상 대기)는 lib/vacancyInsight.ts가 계산하고,
+// 관측 7일 미만이면 아예 만들지 않는다. 설계·한계는 docs/vacancy-insight-spec.md 참고 —
+// 특히 §4(하면 안 되는 것)는 문구를 손대기 전에 반드시 읽을 것.
 
 export async function VacancyTrend({
   facilityId,
@@ -43,6 +48,9 @@ export async function VacancyTrend({
   const waitDelta = latest.waitlist - first.waitlist;
   const days = series.length;
   const headline = trendHeadline(series);
+  // 관측 7일 미만이면 null — 짧은 기간으로 "회전율"을 말하면 갱신 지연을 추세로 오해한다
+  const insight = computeVacancyInsight(series);
+  const sentences = insight ? insightSentences(insight) : null;
 
   return (
     <section className="rounded-2xl bg-white p-4 shadow-card">
@@ -95,6 +103,35 @@ export async function VacancyTrend({
           </dd>
         </div>
       </dl>
+
+      {/* 자리 인사이트 — 관측 7일 이상일 때만 나온다(그 미만은 insight가 null).
+          관측된 사실(facts)과 추정(estimate)을 시각적으로 구분한다: 사실은 본문 색,
+          추정은 별도 상자에 "추정" 딱지를 달아 우리가 보증하는 말이 아님을 분명히 한다.
+          docs/vacancy-insight-spec.md §4 참고. */}
+      {insight && (
+        <div className="mt-3 border-t border-ink-100 pt-3">
+          <p className="mb-1.5 text-[11px] font-bold text-ink-500">
+            이 기간에 관찰된 것
+          </p>
+          <ul className="space-y-1">
+            {sentences!.facts.map((s) => (
+              <li key={s} className="flex gap-1.5 break-keep text-[12px] leading-relaxed text-ink-700">
+                <span aria-hidden className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-ink-300" />
+                {s}
+              </li>
+            ))}
+          </ul>
+          {sentences!.estimate && (
+            <p className="mt-2 break-keep rounded-xl bg-royal-50 px-3 py-2 text-[12px] leading-relaxed text-royal-700">
+              <span className="mr-1 rounded-full bg-white/80 px-1.5 py-0.5 text-[10px] font-bold">
+                추정
+              </span>
+              {sentences!.estimate}
+            </p>
+          )}
+          <p className="mt-1.5 text-[11px] leading-relaxed text-ink-300">{sentences!.caveat}</p>
+        </div>
+      )}
 
       <p className="mt-2 text-[11px] leading-relaxed text-ink-300">
         공단이 공개하는 값을 매일 저장해 그린 그래프예요. 실제 입소 가능 여부는 시설에 직접

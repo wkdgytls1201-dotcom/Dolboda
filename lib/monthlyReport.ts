@@ -1,6 +1,7 @@
 import { prisma } from "./prisma";
-import { REGION_SEO } from "./regionSeo";
+import { REGION_SEO, findRegionByAddress } from "./regionSeo";
 import { pctDelta } from "./deltaPct";
+import { feeBenchmarkFor } from "./feeBenchmarks.generated";
 
 // 월간 성과 보고서 집계 (지역 프리미엄 이상, capabilityOf().hasReport).
 //
@@ -64,6 +65,12 @@ export interface MonthlyReport {
     lastMonth: number;
     deltaPct: number | null;
     byStatus: { label: string; count: number }[];
+    /**
+     * 조회 대비 상담 전환율(%) — "본 사람 중 몇 %가 문의했나".
+     * 조회수가 적으면(30회 미만) 한 건이 전환율을 크게 흔들어 오해를 만들므로 null.
+     * 노출을 늘릴지(조회↑) 페이지를 손볼지(전환↑)를 가르는 지표라 판매 대화의 근거가 된다.
+     */
+    conversionPct: number | null;
   };
 
   content: {
@@ -75,9 +82,30 @@ export interface MonthlyReport {
   /** 스폰서·배너를 사지 않은 요금제면 통째로 null — "0"이 아니라 "해당 없음"으로 구분 */
   sponsor: { impressions: number; clicks: number; ctr: number | null } | null;
   banner: { impressions: number; clicks: number; ctr: number | null } | null;
+
+  /**
+   * 비급여 비용 지역 비교(docs/data-assets-spec.md §2).
+   *
+   * 시설 운영자가 가장 자주 묻는 것이 "우리가 비싼 편인가요"인데, 공단 공개자료만으론
+   * 자기 시설 금액밖에 못 본다. 우리는 전국 값을 갖고 있어 중앙값을 낼 수 있다.
+   *
+   * 기준값은 미리 구운 상수(lib/feeBenchmarks.generated.ts)라 조회 비용이 없다.
+   * 표본 10곳 미만인 지역·항목, 형식이 다른 유형(요양병원)은 빠진다 — 빈 배열이면
+   * 화면에서 섹션 자체를 감춘다("비교할 수 없음"을 "차이 없음"처럼 보이면 안 된다).
+   */
+  fees: {
+    name: string;
+    monthly: number;
+    regionMedian: number;
+    /** 지역 중앙값 대비 증감률(%) — 양수면 이 시설이 더 비싸다 */
+    diffPct: number;
+    sampleN: number;
+  }[];
 }
 
 const MIN_REGION_SAMPLES = 2; // 비교 대상이 자신뿐이면 "평균"이 의미가 없다
+/** 전환율을 낼 최소 조회수 — 이보다 적으면 한 건이 수치를 크게 흔들어 오해를 만든다 */
+const MIN_VIEWS_FOR_CONVERSION = 30;
 
 async function regionAverageViews(
   facilityId: string,
@@ -132,7 +160,8 @@ export async function getMonthlyReport(
 ): Promise<MonthlyReport | null> {
   const facility = await prisma.facility.findUnique({
     where: { id: facilityId },
-    select: { address: true },
+    // 비급여 비교에 유형과 extra(비용 배열)가 필요하다 — 같은 조회에서 함께 받는다
+    select: { address: true, facilityType: true, extra: true },
   });
   if (!facility) return null;
 
@@ -190,6 +219,30 @@ export async function getMonthlyReport(
   const statusCount = (label: string | null) =>
     consultsThisRows.filter((c) => c.status === label).length;
 
+  // 비급여 비용 지역 비교 — 미리 구운 기준값이라 추가 조회가 없다.
+  // 원본에 "월 1원" 같은 오염값이 있어(lib/feeQuality.ts가 화면에서 거르는 그 값들)
+  // 여기서도 1만원 이하를 뺀다. 기준값이 없는 항목은 조용히 빠진다.
+  const feeSido = findRegionByAddress(facility.address)?.label ?? null;
+  const rawFees = (facility.extra as { nonCoveredFees?: unknown })?.nonCoveredFees;
+  const fees = (Array.isArray(rawFees) ? rawFees : [])
+    .map((f) => {
+      const name = typeof (f as { name?: unknown })?.name === "string" ? (f as { name: string }).name : null;
+      const monthly = typeof (f as { monthly?: unknown })?.monthly === "number" ? (f as { monthly: number }).monthly : 0;
+      if (!name || monthly <= 10_000) return null;
+      const bench = feeBenchmarkFor(facility.facilityType, feeSido, name);
+      if (!bench) return null;
+      return {
+        name,
+        monthly,
+        regionMedian: bench.median,
+        diffPct: Math.round(((monthly - bench.median) / bench.median) * 100),
+        sampleN: bench.n,
+      };
+    })
+    .filter((f): f is NonNullable<typeof f> => f !== null)
+    // 차이가 큰 항목부터 — 운영자가 가장 먼저 봐야 할 것이 위로
+    .sort((a, b) => Math.abs(b.diffPct) - Math.abs(a.diffPct));
+
   return {
     facilityId,
     facilityName,
@@ -214,6 +267,10 @@ export async function getMonthlyReport(
         { label: "연락받음", count: statusCount("연락받음") },
         { label: "입소 결정", count: statusCount("입소결정") },
       ],
+      conversionPct:
+        (viewsThis._sum.count ?? 0) >= MIN_VIEWS_FOR_CONVERSION
+          ? Math.round((consultsThisRows.length / (viewsThis._sum.count ?? 1)) * 1000) / 10
+          : null,
     },
 
     content: {
@@ -242,5 +299,7 @@ export async function getMonthlyReport(
               : null,
         }
       : null,
+
+    fees,
   };
 }
