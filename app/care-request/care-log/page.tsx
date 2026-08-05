@@ -64,6 +64,10 @@ interface ApiResponse {
   guardianName: string | null;
   /** 돌봄 시작일(ISO) — 14일 스트립이 돌봄 전 날짜를 "빈 날"로 오해하지 않게 쓴다 */
   startDate: string;
+  /** "병원 간병 · 서울 · 8.4~8.17" — 조건 카드·인쇄 헤더가 쓴다 */
+  requestSummary: string;
+  /** 합의 기준 사례비 — agreed=true면 확정된 제안 금액(합의서 봉인과 같은 우선순위) */
+  pay: { amount: number; unit: string; agreed: boolean } | null;
   taskChips: string[];
   options: {
     meal: readonly string[];
@@ -207,6 +211,30 @@ function CareLogPageInner() {
           {error}
         </p>
       )}
+
+      {/* 합의 조건 카드 — 요금 분쟁(보호자 1위 불만)은 "서로 다른 기억"에서 시작된다.
+          보호자·매니저가 같은 화면에서 같은 조건을 매일 보게 해 어긋남을 예방한다.
+          회사가 금액에 개입하는 게 아니라 기록된 값의 재표시(care-agreement-spec §1). */}
+      <section className="mb-4 rounded-2xl border border-ink-100 bg-white p-3.5 print-hide">
+        <p className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+          <span className="text-[13px] font-bold text-ink-900">{data.requestSummary}</span>
+          {data.pay && (
+            <span className="text-[13px] font-bold text-primary-600">
+              {data.pay.unit === "시간" ? "시간당" : "하루"} {data.pay.amount.toLocaleString()}원
+              <span className="ml-1 font-normal text-ink-400">
+                {data.pay.agreed ? "확정된 제안 금액" : "등록 시 희망 금액"}
+              </span>
+            </span>
+          )}
+        </p>
+        <p className="mt-1 text-[11px] leading-relaxed text-ink-400">
+          두 분이 같은 조건을 보고 있어요. 조건이 달라져야 한다면 기록으로 남는{" "}
+          <Link href="/care-request/agreement" className="font-semibold underline underline-offset-2">
+            돌봄 합의서
+          </Link>
+          를 기준으로 이야기해 보세요.
+        </p>
+      </section>
 
       {data.viewer === "sitter" ? (
         <SitterView data={data} onSaved={load} onError={setError} />
@@ -854,8 +882,37 @@ function GuardianView({ data }: { data: ApiResponse }) {
   }
 
   return (
-    <div className="space-y-5">
-      <section className="rounded-2xl bg-royal-50 p-4">
+    <div id="care-log-print-root" className="space-y-5">
+      {/* 인쇄에서만 보이는 문서 헤더 — 보험 청구·가족 공유·분쟁 대비 증빙으로 쓰인다.
+          케어네이션류 "기록→증명" 구조의 우리 버전이되, 회사는 기록의 출력만 제공한다. */}
+      <div className="hidden print:block">
+        <p className="text-lg font-extrabold">돌봄 기록 내역</p>
+        <p className="mt-1 text-sm">
+          {data.requestSummary} · 매니저 {data.sitterNickname}
+          {data.pay &&
+            ` · 사례비 ${data.pay.unit === "시간" ? "시간당" : "하루"} ${data.pay.amount.toLocaleString()}원(${
+              data.pay.agreed ? "확정 제안" : "등록 시 희망"
+            })`}
+        </p>
+        <p className="mt-0.5 text-xs">
+          출력일 {new Date().toLocaleDateString("ko-KR")} · 돌보다(dolboda.kr)
+        </p>
+        <p className="mt-2 border-y py-1.5 text-[11px] leading-relaxed">
+          이 내역은 돌보다에 저장된 돌봄일지를 그대로 출력한 것입니다. 돌보다는 기록의 보관과
+          출력만 제공하며, 기록 내용은 작성자(매니저)와 확인자(보호자)에게 있습니다.
+        </p>
+      </div>
+
+      {/* 인쇄 격리 — 이 화면을 인쇄하면 사이트 셸 없이 기록만 문서로 나온다
+          (합의서 §7과 같은 브라우저 인쇄→PDF 노선, 서버 PDF 없음). */}
+      <style>{`@media print {
+        body * { visibility: hidden; }
+        #care-log-print-root, #care-log-print-root * { visibility: visible; }
+        #care-log-print-root { position: absolute; left: 0; top: 0; width: 100%; }
+        .print-hide { display: none !important; }
+      }`}</style>
+
+      <section className="rounded-2xl bg-royal-50 p-4 print:bg-transparent print:p-0">
         <p className="mb-1 text-sm font-bold text-ink-900">{data.sitterNickname}님이 남긴 기록</p>
         <p className="text-[12px] text-ink-500">
           전체 {dayGroups.length}일 · 식사 잘하신 날 {mealDays}일
@@ -908,6 +965,17 @@ function GuardianView({ data }: { data: ApiResponse }) {
             })}
           </ul>
         </section>
+      )}
+
+      {data.logs.length > 0 && (
+        <button
+          type="button"
+          onClick={() => window.print()}
+          className="print-hide flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-xl border border-ink-100 bg-white text-[13px] font-bold text-ink-700 transition-all duration-150 hover:bg-ink-100/50 active:scale-[0.98]"
+        >
+          🖨️ 기록 내역 인쇄 · PDF 저장
+          <span className="font-normal text-ink-400">— 보험 청구·가족 공유용</span>
+        </button>
       )}
 
       {data.logs.length === 0 ? (
@@ -984,7 +1052,7 @@ function GuardianView({ data }: { data: ApiResponse }) {
                   const current =
                     reactions[l.id] !== undefined ? reactions[l.id] : l.guardianReaction;
                   return (
-                    <div className="mt-3 flex gap-1.5 border-t border-ink-100 pt-2.5">
+                    <div className="print-hide mt-3 flex gap-1.5 border-t border-ink-100 pt-2.5">
                       {REACTION_META.map((r) => (
                         <button
                           key={r.key}

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { rateLimit, clientIp, tooManyRequests } from "@/lib/rateLimit";
+import { careRequestSummary } from "@/lib/careLocationTypes";
 import { resend } from "@/lib/resend";
 import { SITE_NAME, MAIL_FROM } from "@/lib/siteConfig";
 import {
@@ -149,6 +150,21 @@ export async function GET(req: Request) {
     guardianName: guardianUser?.name ?? null,
     startDate: ctx.request.startDate,
     endDate: ctx.request.endDate,
+    // "무슨 요청인지" 한 줄 + 합의 기준 사례비 — 보호자·매니저가 같은 조건을 매일 보는
+    // 것이 요금 분쟁(보호자 1위 불만) 예방 장치다. 우선순위는 합의서 봉인과 동일:
+    // 확정 지원의 제안 금액이 있으면 그 값, 없으면 등록 시 희망가. 금액 결정·정산에
+    // 개입하는 게 아니라 이미 기록된 값의 재표시다(care-agreement-spec §1의 선 유지).
+    requestSummary: careRequestSummary(ctx.request),
+    pay:
+      ctx.application.proposedAmount != null
+        ? {
+            amount: ctx.application.proposedAmount,
+            unit: ctx.application.proposedUnit ?? "일",
+            agreed: true,
+          }
+        : ctx.request.budgetAmount != null
+          ? { amount: ctx.request.budgetAmount, unit: ctx.request.budgetUnit ?? "일", agreed: false }
+          : null,
     taskChips: taskChipsFor(ctx.request),
     options: {
       meal: MEAL_OPTIONS,
