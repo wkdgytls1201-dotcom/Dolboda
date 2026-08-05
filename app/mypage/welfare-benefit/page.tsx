@@ -322,6 +322,12 @@ function BenefitDashboard({ profile }: { profile: CareProfileSummary }) {
         </p>
       </div>
 
+      {/* 잔액 계산기 — 이로움돌봄의 "급여 잔액 확인"에서 배웠지만, 우리는 공단 연동이
+          없으므로(위 주석의 원칙) 지어내지 않고 "직접 입력한 사용액" 기준임을 명시한다 */}
+      <div className="animate-fade-up" style={{ animationDelay: "90ms" }}>
+        <RemainingCalculator />
+      </div>
+
       {/* 비교 그래픽 */}
       <div className="animate-fade-up rounded-2xl bg-white p-5 shadow-card" style={{ animationDelay: "120ms" }}>
         <h2 className="mb-3 text-[15px] font-bold text-ink-900">10만원어치 구매 시 본인부담금</h2>
@@ -348,6 +354,85 @@ function BenefitDashboard({ profile }: { profile: CareProfileSummary }) {
       <div className="animate-fade-up" style={{ animationDelay: "270ms" }}>
         <WelfareConsultHistory />
       </div>
+    </div>
+  );
+}
+
+// ── 잔액 계산기 ──────────────────────────────────────────────────────────
+// "올해 얼마나 썼는지"를 입력하면 남은 한도를 보여준다. 공단 실시간 조회가 아니라
+// 사용자가 아는 만큼 적는 메모형 도구다 — 연도가 바뀌면 저장값도 자연히 초기화된다.
+const USED_KEY = `dolboda-welfare-used-${BASE_YEAR}`;
+
+function RemainingCalculator() {
+  const [used, setUsed] = useState<number | null>(null); // null = 아직 복원 전
+  const [restored, setRestored] = useState(false);
+
+  // 렌더 중 localStorage를 읽지 않는다(CLAUDE.md 하이드레이션 규칙) — 복원은 effect에서,
+  // 복원 전에는 저장도 하지 않는다.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(USED_KEY);
+      const n = raw === null ? 0 : Number(raw);
+      setUsed(Number.isFinite(n) && n >= 0 ? Math.min(n, ANNUAL_LIMIT) : 0);
+    } catch {
+      setUsed(0);
+    }
+    setRestored(true);
+  }, []);
+
+  useEffect(() => {
+    if (!restored || used === null) return;
+    try {
+      localStorage.setItem(USED_KEY, String(used));
+    } catch {
+      /* 저장소가 막혀 있어도 계산기는 계속 동작한다 */
+    }
+  }, [used, restored]);
+
+  const remaining = Math.max(0, ANNUAL_LIMIT - (used ?? 0));
+  const pct = Math.round((remaining / ANNUAL_LIMIT) * 100);
+
+  return (
+    <div className="rounded-2xl bg-white p-5 shadow-card">
+      <h2 className="mb-1 text-[15px] font-bold text-ink-900">올해 얼마나 남았을까요?</h2>
+      <p className="mb-3 text-[12px] leading-relaxed text-ink-400">
+        올해 복지용구에 쓴 금액을 적으면 남은 한도를 보여드려요.
+      </p>
+
+      <label className="mb-3 flex items-center gap-2 rounded-xl border border-ink-100 px-3.5 py-2.5 focus-within:border-primary-400">
+        <span className="shrink-0 text-[13px] font-semibold text-ink-500">올해 사용액</span>
+        <input
+          type="text"
+          inputMode="numeric"
+          value={used === null ? "" : used === 0 ? "" : used.toLocaleString()}
+          onChange={(e) => {
+            const n = Number(e.target.value.replace(/[^0-9]/g, ""));
+            setUsed(Number.isFinite(n) ? Math.min(n, ANNUAL_LIMIT) : 0);
+          }}
+          placeholder="0"
+          className="min-w-0 flex-1 bg-transparent text-right text-[15px] font-bold text-ink-900 outline-none"
+        />
+        <span className="shrink-0 text-[13px] text-ink-400">원</span>
+      </label>
+
+      <div className="mb-1.5 flex items-baseline justify-between">
+        <span className="text-[13px] text-ink-500">남은 한도</span>
+        <span className="text-lg font-extrabold text-primary-600">
+          {remaining.toLocaleString()}원
+        </span>
+      </div>
+      {/* 게이지 — transform이 아니라 width지만 입력 때만 바뀌는 값이라 프레임 단위 변경이 아니다 */}
+      <div className="h-2 overflow-hidden rounded-full bg-ink-100">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-primary-400 to-peach-400 transition-[width] duration-300"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+
+      <p className="mt-2 text-[11px] leading-relaxed text-ink-300">
+        직접 입력하신 금액 기준이에요. 공단이 확인해주는 실제 잔액은 사업소 상담이나
+        국민건강보험공단(1577-1000)으로 확인해주세요.
+      </p>
     </div>
   );
 }
