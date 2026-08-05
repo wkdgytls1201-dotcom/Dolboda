@@ -77,6 +77,7 @@ export const getHeroSlides = unstable_cache(
     `;
     return rows;
   },
-  ["hero-slides-v2"],
+  // v3: photo-rehero(2026-08-05)로 photos[0]이 바뀐 시설이 있어 캐시를 새로 굽는다
+  ["hero-slides-v3"],
   { revalidate: 86400 }
 );

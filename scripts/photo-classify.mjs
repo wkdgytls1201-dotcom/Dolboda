@@ -85,7 +85,7 @@ const RULES = [
  * 시설명 안의 낱말이 규칙에 걸려 엉뚱하게 분류된다(실측: "정원"노인요양원 → outdoor,
  * "나나재활"요양원 → rehab). 시설명을 먼저 지우고 나머지만 보고 판단한다.
  */
-function stripName(caption, facilityName) {
+export function stripName(caption, facilityName) {
   if (!facilityName) return caption;
   let out = caption.split(facilityName).join(" ");
   // 시설명이 띄어쓰기만 다르게 들어간 경우까지 잡는다
@@ -111,14 +111,47 @@ export function classifyArea({ category, caption, facilityName }) {
   return "etc";
 }
 
+/**
+ * 캡션이 "사람이 주인공인 사진"을 암시하는가 — 대표 자리에서 감점한다.
+ * (사용자 피드백 2026-08-05: "외관에 사람이 있으면 그건 외관이 아니라 사람" —
+ * 건물·간판이 먼저 와야 한다.) 시설명을 걷어낸 텍스트에만 적용할 것 —
+ * "늘봄어르신주간보호센터 전경"처럼 시설명 속 '어르신'이 걸리면 오탐이다(실측).
+ * 검사 전에 neutralizeRoomNames()를 거칠 것 — "프로그램실"은 방 이름이지 사람이 아니다.
+ */
+export const HERO_PERSON_RE =
+  /원장|직원|선생|요양보호사|사회복지사|어르신|단체|기념|행사|생신|생일|잔치|수업|참여|봉사|가족|환영|회의|회식|워크샵|워크숍|교육|세미나|간담회|모임|파티|송년|신년|체육대회|야유회|레크리에이션|레크레이션|미소|웃음|함께|축하|나들이|소풍|공연|위문|만들기|놀이|프로그램|활동|치료|운동/;
+
+/** 문서·그래픽류(명함·로고) — 글자는 있지만 "시설 사진"이 아니라서 대표 부적합 */
+export const HERO_GRAPHIC_RE = /명함|로고/;
+
+/** 건물임을 강하게 암시하는 낱말 — 간판·입구는 "글자가 보이는 시설 사진"이라 대표 적합.
+ * "오시는 길"은 넣지 않는다 — 실측상 대부분 지도·약도 이미지였다(사진이 아님). */
+export const HERO_BUILDING_RE = /간판|입구|정문|현관/;
+
+/** 지도·약도류 — 시설 "사진"이 아니라서 대표로 올리면 안 된다(실측: "오시는길 지도") */
+export const HERO_MAP_RE = /지도|약도|오시는\s*길|찾아오시는/;
+
+/** "프로그램실"·"활동실"처럼 방 이름에 들어간 낱말이 사람 규칙에 걸리지 않게 중화한다 */
+export function neutralizeRoomNames(text) {
+  return text.replace(/(프로그램|활동|치료|운동|재활)\s*실/g, "실");
+}
+
 /** 대표사진 후보 점수 — 높을수록 대표로 적합. "시설구조·전경 + 외부" 조합이 최고점. */
 function heroScore(p) {
-  const text = stripName(p.caption, p.facilityName);
+  const text = neutralizeRoomNames(stripName(p.caption, p.facilityName));
   let s = 0;
   if (p.area === "exterior") s += 100;
   if (p.category.includes("시설구조")) s += 50; // 사용자 요청: 시설구조·전경이 메인
-  if (/외부전경|외관|건물전경|시설전경/.test(text)) s += 30;
+  if (/외부전경|외관|건물전경|건물전면|건물사진|시설전경/.test(text)) s += 30;
   if (/전경/.test(text)) s += 10;
+  if (HERO_BUILDING_RE.test(text)) s += 20;
+  // 사람·행사 캡션은 크게 뒤로 — 외관(+100)+시설구조(+50)라도 사람 없는 건물 사진에
+  // 밀리게 하되(-60), 대안이 하나도 없는 시설에서는 여전히 최선이 남게 한다.
+  if (HERO_PERSON_RE.test(text)) s -= 60;
+  // 지도·약도·명함·로고는 시설 사진이 아니다 — 화장실도 대표 자리에는 못 오게 한다
+  if (HERO_MAP_RE.test(text)) s -= 40;
+  if (HERO_GRAPHIC_RE.test(text)) s -= 30;
+  if (/화장실/.test(text)) s -= 50;
   if (p.ext === "bmp") s -= 5; // bmp는 원본 품질이 들쭉날쭉해 동점이면 뒤로
   return s;
 }
