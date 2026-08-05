@@ -5,6 +5,7 @@ import { FACILITY_TYPE_LABEL, type FacilityType } from "@/lib/types";
 import { SITE_URL, OG_IMAGE } from "@/lib/siteConfig";
 import { findRegionByAddress, sigunguOf } from "@/lib/regionSeo";
 import { jsonLdHtml } from "@/lib/jsonLd";
+import { missingLongEnough } from "@/lib/facilityPresence";
 
 // generateMetadata와 레이아웃 렌더가 같은 요청 안에서 한 번만 조회하도록 캐시.
 const getFacility = cache((id: string) =>
@@ -19,6 +20,7 @@ const getFacility = cache((id: string) =>
       lng: true,
       phone: true,
       dataSource: true,
+      missingSince: true,
     },
   })
 );
@@ -60,6 +62,11 @@ export async function generateMetadata({
     title,
     description,
     alternates: { canonical: `/facility/${facility.id}` },
+    // 공단 파일에서 7일+ 사라진 시설(폐업 추정)은 색인에서 뺀다 — 검색결과에 폐업 시설이
+    // 나오면 신뢰 문제. 링크는 따라가게 follow 유지, 데이터·페이지는 보존(lib/facilityPresence.ts)
+    ...(missingLongEnough(facility.missingSince) && {
+      robots: { index: false, follow: true },
+    }),
     openGraph: {
       images: [OG_IMAGE],
       title,
@@ -143,6 +150,18 @@ export default async function FacilityLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }}
         />
+      )}
+      {/* 폐업 추정 안내 — "확인되지 않음"까지만 말한다(상호 변경·이전일 수도 있어 폐업 단정 금지) */}
+      {facility && missingLongEnough(facility.missingSince) && (
+        <div className="mx-auto max-w-3xl px-4 pt-4">
+          <p
+            role="status"
+            className="break-keep rounded-2xl bg-amber-50 px-4 py-3.5 text-sm font-semibold leading-relaxed text-amber-900 ring-1 ring-amber-200"
+          >
+            이 시설은 최근 국민건강보험공단 공개 자료에서 확인되지 않아요. 폐업했거나 상호·주소가
+            바뀌었을 수 있으니, 방문 전에 전화로 확인해 주세요.
+          </p>
+        </div>
       )}
       {children}
     </>

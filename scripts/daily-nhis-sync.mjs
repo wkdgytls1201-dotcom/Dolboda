@@ -219,7 +219,7 @@ async function main() {
   const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: dbUrl() }) });
   try {
     const current = await prisma.$queryRaw`
-      SELECT id, grade,
+      SELECT id, name, grade, "missingSince",
              COALESCE((extra->>'capacity')::int, 0)         AS capacity,
              COALESCE((extra->>'currentOccupancy')::int, 0) AS occupancy,
              COALESCE((extra->>'waitlistCount')::int, 0)    AS waitlist
@@ -260,9 +260,15 @@ async function main() {
         }
       }
     }
-    const missing = current.length - (byKey.size - unknown);
+    // 파일에서 사라진 시설을 날짜와 함께 기록한다 — "몇 달 뒤 이 지역에서 몇 곳 폐업"을
+    // 집계할 수 있는 유일한 근거. 다시 나타나면 복구해 하루 누락은 자동 치유된다.
+    const fileIds = new Set([...byKey.values()].map((f) => f.id));
+    const missingRows = current.filter((c) => !fileIds.has(c.id));
+    const newlyMissing = missingRows.filter((c) => c.missingSince == null);
+    const reappeared = current.filter((c) => fileIds.has(c.id) && c.missingSince != null);
+    const missing = missingRows.length;
     console.log(
-      `변경 ${changed.length}곳 · 신규(미반영) ${unknown}곳 · 이번 파일에 없는 기존 시설 ${missing}곳`
+      `변경 ${changed.length}곳 · 신규(미반영) ${unknown}곳 · 이번 파일에 없는 기존 시설 ${missing}곳 (오늘 처음 ${newlyMissing.length}곳 · 재등장 ${reappeared.length}곳)`
     );
 
     if (!WRITE) {
@@ -288,6 +294,24 @@ async function main() {
       `;
     }
     console.log(`UPDATE 완료: ${changed.length}곳`);
+
+    // 3-1) 사라짐 기록·복구 — 행 삭제는 하지 않는다(스냅샷·연결 보존, 사이트맵·noindex가
+    // missingSince 7일 경과를 보고 알아서 노출을 거둔다. lib/facilityPresence.ts 참조)
+    if (newlyMissing.length > 0) {
+      const ids = newlyMissing.map((c) => c.id);
+      await prisma.$executeRaw`
+        UPDATE "Facility" SET "missingSince" = ${today}::date
+        WHERE id = ANY(${ids}) AND "missingSince" IS NULL
+      `;
+      console.log(`사라짐 기록: ${newlyMissing.length}곳 (missingSince=${today})`);
+    }
+    if (reappeared.length > 0) {
+      const ids = reappeared.map((c) => c.id);
+      await prisma.$executeRaw`
+        UPDATE "Facility" SET "missingSince" = NULL WHERE id = ANY(${ids})
+      `;
+      console.log(`재등장 복구: ${reappeared.length}곳`);
+    }
 
     // 4) 스냅샷 적재 — 첫 실행이면 전체 기준선, 이후엔 변경분만
     const [{ n: snapCount }] = await prisma.$queryRaw`
@@ -321,7 +345,12 @@ async function main() {
       for (const g of gradeChanges.slice(0, 5)) lines.push(`   - ${g}`);
     }
     if (unknown > 0) lines.push(`· 신규 기관 ${unknown}곳 감지 (미등록 — 추가는 별도 작업)`);
-    if (missing > 0) lines.push(`· 파일에서 사라진 기관 ${missing}곳 (폐업 가능성)`);
+    if (newlyMissing.length > 0) {
+      lines.push(`· 오늘 처음 사라진 기관 ${newlyMissing.length}곳 (폐업 가능성, 날짜 기록됨):`);
+      for (const c of newlyMissing.slice(0, 3)) lines.push(`   - ${c.name}`);
+      if (newlyMissing.length > 3) lines.push(`   … 외 ${newlyMissing.length - 3}곳`);
+    }
+    if (reappeared.length > 0) lines.push(`· 다시 나타난 기관 ${reappeared.length}곳 (기록 복구)`);
     await sendTelegram(lines.join("\n"));
   } finally {
     await prisma.$disconnect();

@@ -43,11 +43,18 @@ model Facility {
   parking         Json?
   extra           Json
 
+  // 공단 일일 파일에서 처음 사라진 날(폐업 추정 시작일). 다시 나타나면 null로 복구된다 —
+  // 하루 데이터 누락은 자동 치유. 7일 연속 사라지면 사이트맵 제외·noindex(폐업 "확정"은 아님 —
+  // 이름+주소 해시 매칭이라 상호명 변경·이전도 여기 잡힌다). 행은 삭제하지 않는다(스냅샷·연결 보존).
+  // 기간·지역별 폐업 집계: WHERE "missingSince" BETWEEN ... GROUP BY 주소 접두어.
+  missingSince DateTime? @db.Date
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([facilityType])
   @@index([dataSource])
+  @@index([missingSince])
 }
 
 // 돌봄 합의서 — 보호자와 돌보다 매니저가 직접 맺는 합의의 기록.

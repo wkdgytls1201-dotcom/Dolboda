@@ -1,5 +1,6 @@
 import { prisma } from "./prisma";
 import { SITE_URL } from "./siteConfig";
+import { presentFacilityWhere } from "./facilityPresence";
 import { getRegionIndex } from "./regionData";
 import { findTypeSeoByType, FACILITY_TYPE_SEO } from "./facilityTypeSeo";
 import { GUIDES } from "./guides";
@@ -19,7 +20,10 @@ export interface SitemapEntry {
 }
 
 export async function facilityChunkCount(): Promise<number> {
-  const total = await prisma.facility.count({ where: { dataSource: { not: "mock" } } });
+  // 폐업 추정(7일+ 사라짐) 시설은 사이트맵에서 뺀다 — facilityEntries와 반드시 같은 where
+  const total = await prisma.facility.count({
+    where: { dataSource: { not: "mock" }, ...presentFacilityWhere() },
+  });
   return Math.max(1, Math.ceil(total / FACILITIES_PER_SITEMAP));
 }
 
@@ -30,6 +34,7 @@ export async function sitemapNames(): Promise<string[]> {
     "static",
     "guides",
     "regions",
+    "region-services",
     ...Array.from({ length: chunks }, (_, i) => `facilities-${i + 1}`),
   ];
 }
@@ -69,6 +74,7 @@ async function staticEntries(): Promise<SitemapEntry[]> {
     })),
     { loc: `${SITE_URL}/about`, changefreq: "monthly", priority: 0.7 },
     { loc: `${SITE_URL}/data-policy`, changefreq: "monthly", priority: 0.7 },
+    { loc: `${SITE_URL}/editorial-policy`, changefreq: "monthly", priority: 0.5 },
     { loc: `${SITE_URL}/compare`, changefreq: "weekly", priority: 0.5 },
     { loc: `${SITE_URL}/terms`, changefreq: "yearly", priority: 0.2 },
     { loc: `${SITE_URL}/privacy`, changefreq: "yearly", priority: 0.2 },
@@ -84,6 +90,8 @@ function guideEntries(): SitemapEntry[] {
   }));
 }
 
+// 지역 허브(시/도·시/군/구)와 지역+유형 페이지를 사이트맵을 나눠 싣는다 —
+// 서치콘솔에서 "어느 묶음이 색인에서 빠지는가"를 구분해 보기 위해서다(시설 청크와 같은 이유).
 async function regionEntries(): Promise<SitemapEntry[]> {
   const index = await getRegionIndex();
   const sidoSet = new Set<string>();
@@ -102,22 +110,32 @@ async function regionEntries(): Promise<SitemapEntry[]> {
       sigunguSet.add(sigunguPath);
       entries.push({ loc: `${SITE_URL}${sigunguPath}`, changefreq: "weekly", priority: 0.75 });
     }
+  }
+  return entries;
+}
+
+async function regionServiceEntries(): Promise<SitemapEntry[]> {
+  const index = await getRegionIndex();
+  const entries: SitemapEntry[] = [];
+
+  for (const row of index) {
     const typeSeo = findTypeSeoByType(row.facilityType);
-    if (typeSeo) {
-      entries.push({
-        loc: `${SITE_URL}${sigunguPath}/${encodeURIComponent(typeSeo.slug)}`,
-        changefreq: "weekly",
-        priority: 0.7,
-      });
-    }
+    if (!typeSeo) continue;
+    entries.push({
+      loc: `${SITE_URL}/region/${encodeURIComponent(row.sidoSlug)}/${encodeURIComponent(
+        row.sigungu
+      )}/${encodeURIComponent(typeSeo.slug)}`,
+      changefreq: "weekly",
+      priority: 0.7,
+    });
   }
   return entries;
 }
 
 async function facilityEntries(chunk: number): Promise<SitemapEntry[]> {
-  // 데모 시설(mock)은 실재하지 않으므로 색인 대상에서 뺀다
+  // 데모 시설(mock)과 폐업 추정(7일+ 사라짐) 시설은 색인 대상에서 뺀다
   const rows = await prisma.facility.findMany({
-    where: { dataSource: { not: "mock" } },
+    where: { dataSource: { not: "mock" }, ...presentFacilityWhere() },
     select: { id: true, updatedAt: true },
     orderBy: { id: "asc" },
     skip: chunk * FACILITIES_PER_SITEMAP,
@@ -135,6 +153,7 @@ export async function entriesFor(name: string): Promise<SitemapEntry[] | null> {
   if (name === "static") return staticEntries();
   if (name === "guides") return guideEntries();
   if (name === "regions") return regionEntries();
+  if (name === "region-services") return regionServiceEntries();
   const m = /^facilities-(\d+)$/.exec(name);
   if (m) {
     const n = Number(m[1]);
