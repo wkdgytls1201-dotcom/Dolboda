@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { buildVacancySeries, trendHeadline, ymdKst } from "@/lib/vacancyTrend";
 
 // 자리 추이 — 매일 쌓이는 FacilitySnapshot(정원·현원·대기)을 처음으로 화면에 쓴다.
 //
@@ -13,18 +14,6 @@ import { prisma } from "@/lib/prisma";
 //
 // 서버 컴포넌트라 HTML에 그대로 실린다(SEO·AI 검색이 읽을 수 있는 고유 정보).
 // 차트 라이브러리를 쓰지 않는다 — 막대는 CSS 높이(%)뿐이라 클라이언트 JS 0바이트.
-
-const WINDOW_DAYS = 30;
-
-function ymdKst(d: Date): string {
-  return d.toLocaleDateString("sv-SE", { timeZone: "Asia/Seoul" });
-}
-
-function shift(ymd: string, days: number): string {
-  return new Date(new Date(`${ymd}T00:00:00Z`).getTime() + days * 86_400_000)
-    .toISOString()
-    .slice(0, 10);
-}
 
 export async function VacancyTrend({
   facilityId,
@@ -44,47 +33,16 @@ export async function VacancyTrend({
     })
     .catch(() => []);
 
-  // 관측이 한 번뿐이면 "추이"가 아니다 — 오늘 값은 위 CapacityMeter가 이미 보여준다
-  if (rows.length < 2) return null;
-
-  const today = ymdKst(new Date());
-  const from = (() => {
-    const windowStart = shift(today, -(WINDOW_DAYS - 1));
-    // 관측이 시작된 날보다 앞은 그릴 게 없다(빈 왼쪽 여백이 "자료 없음"으로 오해된다)
-    return rows[0].date > windowStart ? rows[0].date : windowStart;
-  })();
-
-  // forward-fill — 관측일 사이는 마지막 값이 유지된 것으로 본다
-  const series: { date: string; vacancy: number; waitlist: number }[] = [];
-  let cursor = 0;
-  let last: (typeof rows)[number] | null = null;
-  for (let d = from; d <= today; d = shift(d, 1)) {
-    while (cursor < rows.length && rows[cursor].date <= d) last = rows[cursor++];
-    if (!last) continue;
-    series.push({
-      date: d,
-      vacancy: Math.max(0, last.capacity - last.currentOccupancy),
-      waitlist: last.waitlistCount,
-    });
-  }
-  if (series.length < 2) return null;
+  // 계산은 lib/vacancyTrend.ts(순수 함수) — 시나리오를 바꿔가며 검증하려고 떼어냈다
+  const series = buildVacancySeries(rows, ymdKst(new Date()));
+  if (series.length === 0) return null;
 
   const first = series[0];
   const latest = series[series.length - 1];
   const maxVacancy = Math.max(...series.map((s) => s.vacancy), 1);
-  const vacancyDelta = latest.vacancy - first.vacancy;
   const waitDelta = latest.waitlist - first.waitlist;
   const days = series.length;
-
-  // 한 줄 요약 — 막대만 보고 스스로 해석하게 두지 않는다(50~70대 타깃)
-  const headline =
-    vacancyDelta > 0
-      ? `최근 ${days}일 사이 빈자리가 ${vacancyDelta}개 늘었어요.`
-      : vacancyDelta < 0
-        ? `최근 ${days}일 사이 빈자리가 ${Math.abs(vacancyDelta)}개 줄었어요.`
-        : latest.vacancy > 0
-          ? `최근 ${days}일 동안 빈자리 ${latest.vacancy}개가 그대로예요.`
-          : `최근 ${days}일 동안 계속 정원이 찬 상태예요.`;
+  const headline = trendHeadline(series);
 
   return (
     <section className="rounded-2xl bg-white p-4 shadow-card">

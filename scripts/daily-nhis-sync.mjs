@@ -59,6 +59,37 @@ const REGIONS = [
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/** 하루 사라짐이 전체의 이 비율을 넘으면 데이터를 의심한다 */
+export const MISSING_SANE_RATIO = 0.02;
+/** 표본이 작을 때 비율만으로 판단하지 않기 위한 하한 */
+export const MISSING_MIN_LIMIT = 300;
+
+/**
+ * "오늘 사라진 것으로 보이는 시설들"을 폐업으로 기록해도 되는가.
+ *
+ * 두 경우엔 믿을 수 없다:
+ *  ① 지역 다운로드가 하나라도 실패했다 — 그 지역 시설 수천 곳이 통째로 파일에 없는
+ *     것처럼 보인다. 전체 시설 수 가드(20,000)는 이걸 못 잡는다(한두 지역이 빠져도
+ *     합계는 그 위에 남는다).
+ *  ② 실패는 없었는데 사라진 수가 비정상적으로 많다 — 공단이 파일 형식이나 기관 표기를
+ *     바꿨을 때가 이렇다(전남광주 통합 같은 개편이 전례).
+ *
+ * 잘못 찍힌 missingSince는 7일 뒤 사이트맵 제외·noindex로 이어져 멀쩡한 시설이
+ * 검색에서 사라진다. 건너뛰는 손해(폐업 감지가 하루 늦음)가 훨씬 작다.
+ *
+ * @returns 건너뛸 이유(사람이 읽는 문장) 또는 null(기록해도 됨)
+ */
+export function missingSkipReason({ failedRegions, newlyMissingCount, currentCount }) {
+  if (failedRegions.length > 0) {
+    return `지역 다운로드 실패(${failedRegions.join(", ")})로 파일이 불완전함`;
+  }
+  const limit = Math.max(MISSING_MIN_LIMIT, Math.floor(currentCount * MISSING_SANE_RATIO));
+  if (newlyMissingCount > limit) {
+    return `오늘 처음 사라진 곳이 비정상적으로 많음(${newlyMissingCount} > ${limit})`;
+  }
+  return null;
+}
+
 /** 텔레그램 알림 — TELEGRAM_BOT_TOKEN·TELEGRAM_CHAT_ID가 있을 때만 보낸다(없으면 조용히 스킵).
     수집 결과 요약과 실패 알림을 운영자 폰으로 바로 받아보기 위한 것. */
 async function sendTelegram(text) {
@@ -192,14 +223,18 @@ async function main() {
 
   // 1) 16개 지역 다운로드 + 파싱
   const byKey = new Map();
+  const failedRegions = [];
   let rawRows = 0;
   for (const [label, cd] of REGIONS) {
     let buf;
     try {
       buf = await downloadRegion(cd);
     } catch (e) {
-      // 한 지역이 실패해도 전체를 중단하지 않되, 실패는 반드시 표면화한다
+      // 한 지역이 실패해도 전체를 중단하지 않되, 실패는 반드시 표면화한다.
+      // ★ 실패한 지역은 기억해 둔다 — 그 지역 시설이 통째로 "파일에 없음"으로 보이기 때문에
+      //   아래 폐업 기록을 그대로 돌리면 멀쩡한 시설 수천 곳에 missingSince가 찍힌다.
       console.error(`✗ ${label}(${cd}) 다운로드 실패: ${e.message}`);
+      failedRegions.push(label);
       process.exitCode = 1;
       await sleep(3000);
       continue;
@@ -271,6 +306,25 @@ async function main() {
       `변경 ${changed.length}곳 · 신규(미반영) ${unknown}곳 · 이번 파일에 없는 기존 시설 ${missing}곳 (오늘 처음 ${newlyMissing.length}곳 · 재등장 ${reappeared.length}곳)`
     );
 
+    // ★ 폐업 기록 안전장치 — 두 경우엔 "사라짐"을 믿을 수 없다.
+    //
+    //   ① 지역 다운로드가 하나라도 실패했다: 그 지역 시설 수천 곳이 통째로 파일에 없는
+    //      것처럼 보인다. 전체 시설 수 가드(20,000)는 이걸 못 잡는다 — 한두 지역이
+    //      빠져도 합계는 그 위에 남기 때문이다.
+    //   ② 실패는 없었는데 사라진 수가 비정상적으로 많다: 공단이 파일 형식이나 기관
+    //      표기를 바꿨을 때가 이렇다(전남광주 통합 같은 개편이 전례).
+    //
+    //   잘못 찍힌 missingSince는 7일 뒤 사이트맵 제외·noindex로 이어져 멀쩡한 시설이
+    //   검색에서 사라진다. 기록을 건너뛰는 손해(폐업 감지가 하루 늦음)가 훨씬 작다.
+    const skipMissingReason = missingSkipReason({
+      failedRegions,
+      newlyMissingCount: newlyMissing.length,
+      currentCount: current.length,
+    });
+    if (skipMissingReason) {
+      console.error(`⚠️ 폐업 기록 건너뜀 — ${skipMissingReason}`);
+    }
+
     if (!WRITE) {
       console.log("드라이런 종료 — 반영하려면 --write");
       return;
@@ -297,7 +351,7 @@ async function main() {
 
     // 3-1) 사라짐 기록·복구 — 행 삭제는 하지 않는다(스냅샷·연결 보존, 사이트맵·noindex가
     // missingSince 7일 경과를 보고 알아서 노출을 거둔다. lib/facilityPresence.ts 참조)
-    if (newlyMissing.length > 0) {
+    if (newlyMissing.length > 0 && !skipMissingReason) {
       const ids = newlyMissing.map((c) => c.id);
       await prisma.$executeRaw`
         UPDATE "Facility" SET "missingSince" = ${today}::date
@@ -305,6 +359,8 @@ async function main() {
       `;
       console.log(`사라짐 기록: ${newlyMissing.length}곳 (missingSince=${today})`);
     }
+    // 재등장 복구는 안전장치와 무관하게 항상 돌린다 — 파일에 실제로 나타난 시설이므로
+    // 근거가 확실하고, 잘못 찍힌 기록을 되돌리는 방향이라 늦출 이유가 없다.
     if (reappeared.length > 0) {
       const ids = reappeared.map((c) => c.id);
       await prisma.$executeRaw`
@@ -345,7 +401,12 @@ async function main() {
       for (const g of gradeChanges.slice(0, 5)) lines.push(`   - ${g}`);
     }
     if (unknown > 0) lines.push(`· 신규 기관 ${unknown}곳 감지 (미등록 — 추가는 별도 작업)`);
-    if (newlyMissing.length > 0) {
+    if (failedRegions.length > 0) {
+      lines.push(`⚠️ 다운로드 실패 지역: ${failedRegions.join(", ")} — 그만큼 빠진 집계입니다`);
+    }
+    if (skipMissingReason) {
+      lines.push(`⚠️ 폐업 기록 건너뜀 — ${skipMissingReason}`);
+    } else if (newlyMissing.length > 0) {
       lines.push(`· 오늘 처음 사라진 기관 ${newlyMissing.length}곳 (폐업 가능성, 날짜 기록됨):`);
       for (const c of newlyMissing.slice(0, 3)) lines.push(`   - ${c.name}`);
       if (newlyMissing.length > 3) lines.push(`   … 외 ${newlyMissing.length - 3}곳`);
@@ -357,6 +418,12 @@ async function main() {
   }
 }
 
+// 이 파일은 missingSkipReason을 테스트에서 import한다(순수 함수). 그때 수집이 통째로
+// 돌아가면 안 되므로, 직접 실행됐을 때만 main을 부른다.
+const isDirectRun = process.argv[1] && import.meta.url.endsWith(path.basename(process.argv[1]));
+if (!isDirectRun) {
+  // import된 경우 — 아무것도 실행하지 않는다
+} else
 main().catch(async (e) => {
   console.error("실패:", e);
   await sendTelegram(`⚠️ 돌보다 일일 수집 실패\n${String(e.message || e).slice(0, 300)}\n(GitHub Actions 로그를 확인하세요)`);
