@@ -90,9 +90,13 @@ export default async function AdminPage() {
       placements={placements.map((p) => ({
         id: p.id,
         facilityId: p.facilityId,
+        subscriptionId: p.subscriptionId,
         scope: p.scope,
         regionKey: p.regionKey,
         active: p.active,
+        // 해지 여부까지 넘겨야 화면의 슬롯 사용량이 서버(lib/sponsor.ts)와 같은 기준이 된다 —
+        // "노출 중"만 세면 입금 대기분이 빠져 빈자리로 보인다
+        ended: p.endsAt != null && p.endsAt <= new Date(),
       }))}
       banners={banners.map((b) => ({
         facilityId: b.facilityId,

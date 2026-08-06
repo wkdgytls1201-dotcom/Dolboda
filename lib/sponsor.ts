@@ -81,18 +81,64 @@ export const getSponsorsForSigungu = unstable_cache(
   { revalidate: 300 }
 );
 
-/** 남은 슬롯 수 — 관리자 화면에서 "더 팔아도 되는지" 판단에 쓴다. */
+/**
+ * 남은 슬롯 수 — 관리자 화면에서 "더 팔아도 되는지" 판단에 쓴다.
+ *
+ * ⚠️ `active: true`로 세면 안 된다. 승인 시점의 슬롯은 **입금 대기라 active=false**로
+ * 만들어지기 때문에, 그것만 세면 이미 판 자리가 "비어 있음"으로 보여 초과 판매가 된다.
+ * 초과분은 노출 조회의 `take` 상한에 걸려 조용히 안 나가고, 그 시설은 **돈을 내고도
+ * 노출 0**이 된다(월간 보고서에도 0으로 찍힌다).
+ *
+ * 자리를 비우는 것은 해지뿐이다(endsAt이 찍힌다). 일시중지는 잠깐 끄는 것이라 자리를 유지한다.
+ */
 export async function remainingSlots(scope: SponsorScope, regionKey: string): Promise<number> {
+  const used = await heldSlots(scope, regionKey);
+  return Math.max(0, SPONSOR_SLOTS_PER_SIGUNGU - used);
+}
+
+/**
+ * 슬롯 카운트 옵션.
+ * - `excludeFacilityId`: 자기 자신은 빼고 센다(재승인·활성화처럼 이미 자기 행이 있는 경우).
+ * - `onlyActive`: true면 **지금 실제로 노출 중인 것만** 센다. 판매 가능 여부는 예약분까지
+ *   세야 하고(false), 노출을 켜도 되는지는 실제 노출분만 세야 한다(true) — 기준이 다르다.
+ */
+interface SlotCountOptions {
+  excludeFacilityId?: string;
+  onlyActive?: boolean;
+}
+
+/** 자리를 잡고 있는 스폰서 슬롯 수(기본: 입금 대기·일시중지 포함, 해지·기간만료 제외). */
+export async function heldSlots(
+  scope: SponsorScope,
+  regionKey: string,
+  opts: SlotCountOptions = {}
+): Promise<number> {
   const now = new Date();
-  const used = await prisma.sponsorPlacement.count({
+  return prisma.sponsorPlacement.count({
     where: {
       scope,
       regionKey,
-      active: true,
+      ...(opts.excludeFacilityId ? { facilityId: { not: opts.excludeFacilityId } } : {}),
+      ...(opts.onlyActive ? { active: true } : {}),
       OR: [{ endsAt: null }, { endsAt: { gt: now } }],
     },
   });
-  return Math.max(0, SPONSOR_SLOTS_PER_SIGUNGU - used);
+}
+
+/** 지역 배너도 같은 규칙 — 상한이 1이라 한 곳만 새어도 바로 약속이 깨진다. */
+export async function heldBannerSlots(
+  regionKey: string,
+  opts: SlotCountOptions = {}
+): Promise<number> {
+  const now = new Date();
+  return prisma.facilityBanner.count({
+    where: {
+      regionKey,
+      ...(opts.excludeFacilityId ? { facilityId: { not: opts.excludeFacilityId } } : {}),
+      ...(opts.onlyActive ? { active: true } : {}),
+      OR: [{ endsAt: null }, { endsAt: { gt: now } }],
+    },
+  });
 }
 
 // ---- 지역 배너 (지역 프리미엄 이상, 시·군·구당 1곳) ----
@@ -106,8 +152,16 @@ export interface RegionBanner {
 }
 
 async function loadBannerUnsafe(regionKey: string): Promise<RegionBanner | null> {
+  const now = new Date();
   const row = await prisma.facilityBanner.findFirst({
-    where: { regionKey, active: true, imageUrl: { not: null } },
+    // endsAt(해지 시각)을 함께 본다 — 스폰서와 같은 규칙이다. active만 보면
+    // 해지 처리가 한 곳이라도 새는 순간 "해지했는데 광고가 계속 나간다"가 된다.
+    where: {
+      regionKey,
+      active: true,
+      imageUrl: { not: null },
+      OR: [{ endsAt: null }, { endsAt: { gt: now } }],
+    },
     orderBy: { createdAt: "asc" },
   });
   if (!row || !row.imageUrl) return null;

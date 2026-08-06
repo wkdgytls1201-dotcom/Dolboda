@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
 import { findPlan, BANNER_PLANS, BANNER_SLOTS_PER_SIGUNGU } from "@/lib/businessPlans";
-import { remainingSlots } from "@/lib/sponsor";
+import { remainingSlots, heldBannerSlots } from "@/lib/sponsor";
 import { canonicalRegionKey } from "@/lib/regionSeo";
 
 // 운영자용 입점 신청 처리.
@@ -132,10 +132,11 @@ export async function PATCH(req: Request) {
     }
   }
   if (needsBanner) {
-    // 배너는 시설당 1행(PK)이라 카운트도 단순하다 — 이 시설 자신의 행은 아직
-    // 없을 것이므로(첫 승인) 그대로 세면 된다.
-    const bannerUsed = await prisma.facilityBanner.count({
-      where: { regionKey: sponsorRegion, active: true },
+    // 배너는 시설당 1행(PK)이다. 재승인 경로에서는 이 시설 행이 이미 있을 수 있어
+    // 자기 자신은 빼고 센다 — 안 그러면 자기 행 때문에 자기 승인이 막힌다.
+    // 카운트 기준은 "노출 중"이 아니라 "자리를 잡고 있는지"다(입금 대기분 포함).
+    const bannerUsed = await heldBannerSlots(sponsorRegion, {
+      excludeFacilityId: targetFacilityId,
     });
     if (bannerUsed >= BANNER_SLOTS_PER_SIGUNGU) {
       return NextResponse.json(
@@ -160,8 +161,11 @@ export async function PATCH(req: Request) {
       },
     });
 
+    // 구독을 먼저 만들고 그 id를 슬롯에 물린다 — 나중에 해지할 때 "이 구독이 산 자리"만
+    // 정확히 끌 수 있어야 한다(시설 단위로 끄면 그 시설의 다른 지역 광고까지 같이 꺼진다).
+    let subscriptionId: string | null = null;
     if (plan && plan.monthly && plan.monthly > 0) {
-      await tx.facilitySubscription.create({
+      const sub = await tx.facilitySubscription.create({
         data: {
           facilityId: targetFacilityId,
           plan: plan.id,
@@ -169,7 +173,9 @@ export async function PATCH(req: Request) {
           status: "pending",
           monthlyPrice: plan.monthly,
         },
+        select: { id: true },
       });
+      subscriptionId = sub.id;
     }
 
     if (needsSponsor) {
@@ -179,7 +185,9 @@ export async function PATCH(req: Request) {
           scope: "sigungu",
           regionKey: sponsorRegion,
           // 구독이 pending인 동안은 노출하지 않는다. 입금 확인 후 켠다.
+          // active=false여도 endsAt이 null이라 자리는 잡고 있다(슬롯 카운트에 들어간다).
           active: false,
+          subscriptionId,
         },
       });
     }
@@ -187,10 +195,16 @@ export async function PATCH(req: Request) {
     if (needsBanner) {
       // 이미지는 시설이 콘솔에서 나중에 올린다 — 여기서는 지역 슬롯만 예약해 둔다.
       // upsert인 이유: 재승인·요금제 변경 같은 드문 경로에서 이미 행이 있을 수 있다.
+      // 재승인이면 endsAt(지난 해지 시각)을 지워 자리를 다시 잡게 한다.
       await tx.facilityBanner.upsert({
         where: { facilityId: targetFacilityId },
-        update: { regionKey: sponsorRegion },
-        create: { facilityId: targetFacilityId, regionKey: sponsorRegion, active: false },
+        update: { regionKey: sponsorRegion, subscriptionId, endsAt: null },
+        create: {
+          facilityId: targetFacilityId,
+          regionKey: sponsorRegion,
+          active: false,
+          subscriptionId,
+        },
       });
     }
 

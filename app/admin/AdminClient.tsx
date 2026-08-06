@@ -38,9 +38,13 @@ interface Subscription {
 interface Placement {
   id: string;
   facilityId: string;
+  /** 이 슬롯을 산 구독 (예전 데이터는 null) */
+  subscriptionId: string | null;
   scope: string;
   regionKey: string;
   active: boolean;
+  /** 해지돼 자리가 풀렸는지 */
+  ended: boolean;
 }
 
 interface FacilityLite {
@@ -129,10 +133,13 @@ export function AdminClient({
 
   // 시·군·구별로 스폰서 슬롯이 얼마나 찼는지 — 승인 전에 여기부터 본다.
   // 상한을 넘겨 팔면 /business에 공개한 약속이 바로 거짓이 된다.
+  //
+  // 세는 기준은 "노출 중"이 아니라 "자리를 잡고 있는지"다(lib/sponsor.ts의 heldSlots와 같은 기준).
+  // 승인 직후 슬롯은 입금 대기라 active=false인데, 그걸 빈자리로 보면 같은 자리를 또 판다.
   const slotUsage = useMemo(() => {
     const m = new Map<string, number>();
     for (const p of placements) {
-      if (p.scope !== "sigungu" || !p.active) continue;
+      if (p.scope !== "sigungu" || p.ended) continue;
       m.set(p.regionKey, (m.get(p.regionKey) ?? 0) + 1);
     }
     return m;
@@ -221,10 +228,19 @@ export function AdminClient({
       if (json.subscription) {
         const next = json.subscription;
         setSubs((prev) => prev.map((s) => (s.id === id ? { ...s, ...next } : s)));
-        // 슬롯 사용량 표시가 즉시 맞도록 노출 상태도 같이 반영한다
+        // 슬롯 사용량 표시가 즉시 맞도록 노출 상태도 같이 반영한다.
+        // 서버와 같은 범위(이 구독이 산 슬롯만)를 건드려야 한다 — 시설 전체를 바꾸면
+        // 같은 시설의 다른 지역 계약이 화면에서만 꺼진 것처럼 보인다.
         setPlacements((prev) =>
           prev.map((p) =>
-            p.facilityId === next.facilityId ? { ...p, active: next.status === "active" } : p
+            p.facilityId === next.facilityId &&
+            (p.subscriptionId === next.id || p.subscriptionId === null)
+              ? {
+                  ...p,
+                  active: next.status === "active",
+                  ended: next.status === "cancelled" ? true : p.ended,
+                }
+              : p
           )
         );
       }
@@ -349,8 +365,15 @@ export function AdminClient({
             <ul className="space-y-3">
               {subs.map((s) => {
                 const f = facilityById.get(s.facilityId);
-                const mine = placements.filter((p) => p.facilityId === s.facilityId);
+                // 이 구독이 산 슬롯만 — 시설로 묶으면 다른 지역 계약까지 이 카드에 딸려 보인다
+                const mine = placements.filter(
+                  (p) =>
+                    p.facilityId === s.facilityId &&
+                    (p.subscriptionId === s.id || p.subscriptionId === null)
+                );
                 const banner = banners.find((b) => b.facilityId === s.facilityId);
+                // 해지는 끝이다 — 되살리는 대신 새로 신청받는다(서버도 409로 막는다)
+                const ended = s.status === "cancelled";
                 return (
                   <li key={s.id} className={CARD}>
                     <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-2">
@@ -379,32 +402,38 @@ export function AdminClient({
                         </>
                       )}
                     </p>
-                    <div className="flex flex-wrap gap-1.5">
-                      <button
-                        type="button"
-                        disabled={busy === s.id || s.status === "active"}
-                        onClick={() => patchSub(s.id, "active")}
-                        className={`${BTN} bg-mint-100 text-mint-700 hover:bg-mint-200`}
-                      >
-                        <Check size={13} /> 입금 확인 · 노출 시작
-                      </button>
-                      <button
-                        type="button"
-                        disabled={busy === s.id || s.status === "paused"}
-                        onClick={() => patchSub(s.id, "paused")}
-                        className={`${BTN} bg-ink-100 text-ink-700 hover:bg-ink-100/70`}
-                      >
-                        <RefreshCw size={13} /> 일시중지
-                      </button>
-                      <button
-                        type="button"
-                        disabled={busy === s.id || s.status === "cancelled"}
-                        onClick={() => patchSub(s.id, "cancelled")}
-                        className={`${BTN} bg-primary-50 text-primary-700 hover:bg-primary-100`}
-                      >
-                        <X size={13} /> 해지
-                      </button>
-                    </div>
+                    {ended ? (
+                      <p className="text-xs text-ink-400">
+                        해지된 구독이에요. 다시 이용하려면 새로 신청받아 승인해주세요.
+                      </p>
+                    ) : (
+                      <div className="flex flex-wrap gap-1.5">
+                        <button
+                          type="button"
+                          disabled={busy === s.id || s.status === "active"}
+                          onClick={() => patchSub(s.id, "active")}
+                          className={`${BTN} bg-mint-100 text-mint-700 hover:bg-mint-200`}
+                        >
+                          <Check size={13} /> 입금 확인 · 노출 시작
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busy === s.id || s.status === "paused"}
+                          onClick={() => patchSub(s.id, "paused")}
+                          className={`${BTN} bg-ink-100 text-ink-700 hover:bg-ink-100/70`}
+                        >
+                          <RefreshCw size={13} /> 일시중지
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busy === s.id}
+                          onClick={() => patchSub(s.id, "cancelled")}
+                          className={`${BTN} bg-primary-50 text-primary-700 hover:bg-primary-100`}
+                        >
+                          <X size={13} /> 해지
+                        </button>
+                      </div>
+                    )}
                   </li>
                 );
               })}

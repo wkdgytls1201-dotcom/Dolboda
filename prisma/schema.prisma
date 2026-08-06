@@ -709,6 +709,13 @@ model FacilityBanner {
   // 구독 확인 전까지는 false — SponsorPlacement.active와 같은 규칙(입금 확인 후 admin이 켠다)
   active     Boolean @default(false)
 
+  // 이 배너를 산 구독. 한 시설이 구독을 여러 개 가질 수 있어(FacilitySubscription 참고)
+  // "이 구독을 해지했을 때 무엇을 꺼야 하는가"를 시설이 아니라 구독 단위로 판단해야 한다.
+  subscriptionId String?
+  // 해지 시각. null이면 아직 자리를 잡고 있다는 뜻 — 입금 대기·일시중지도 자리는 유지한다.
+  // 지역당 1곳 상한을 셀 때 active만 보면 "입금 대기" 예약분이 안 세어져 초과 판매가 된다.
+  endsAt         DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -734,11 +741,16 @@ model SponsorPlacement {
   endsAt   DateTime?
   active   Boolean   @default(true)
 
+  // 이 슬롯을 산 구독. 한 시설이 여러 지역을 사면 슬롯도 여러 개인데, 구독을 하나
+  // 해지했다고 그 시설의 다른 지역 슬롯까지 꺼지면 안 된다(그래서 시설이 아니라 구독에 묶는다).
+  subscriptionId String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([scope, regionKey, active])
   @@index([facilityId])
+  @@index([subscriptionId])
 }
 
 // 보호자가 저장해두는 "어르신 돌봄 프로필" — 검색 개인화·돌봄 요청 자동 채움에 재사용한다.
