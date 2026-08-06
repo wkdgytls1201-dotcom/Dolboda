@@ -17,6 +17,7 @@
 //   node --env-file=.env.local scripts/send-open-request-nudges.mjs --write   # 실제 발송
 
 import { createRequire } from "module";
+import { renderEmail } from "./lib/emailShell.mjs";
 const require = createRequire(import.meta.url);
 const { PrismaClient } = require("@prisma/client");
 const { PrismaPg } = require("@prisma/adapter-pg");
@@ -63,25 +64,31 @@ function mailBody(t) {
     `${t.desc} 요청을 올리신 지 ${t.daysSince}일이 지났는데 아직 지원자가 없어요.\n\n` +
     tips.map((s) => `· ${s}`).join("\n") +
     `\n\n요청은 지원자를 받는 동안 언제든 수정할 수 있어요.\n${SITE_URL}/care-request`;
+  // 제안 셋은 번호를 붙여 "따라 하면 되는 순서"로 보이게 한다(막연한 조언보다 행동 가능)
   const tipItems = tips
     .map(
-      (s) =>
-        `<li style="margin:0 0 6px;font-size:13px;line-height:1.7;color:#3A3452;">${esc(s)}</li>`
+      (s, i) => `
+<tr><td valign="top" width="26" style="padding:0 0 10px;">
+  <span style="display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;background:#FFF3F1;border-radius:999px;font-size:11px;font-weight:800;color:#EB4632;">${i + 1}</span>
+</td><td style="padding:0 0 10px;font-size:13.5px;line-height:1.75;color:#3A3452;word-break:keep-all;">${esc(s)}</td></tr>`
     )
     .join("");
-  const html = `<!doctype html><html lang="ko"><body style="margin:0;padding:0;background:#FFFBF3;font-family:-apple-system,BlinkMacSystemFont,'Malgun Gothic',sans-serif;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FFFBF3;padding:32px 16px;"><tr><td align="center">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:460px;background:#fff;border-radius:20px;overflow:hidden;">
-<tr><td style="padding:18px 24px;border-bottom:1px solid #F0EDF6;"><a href="${SITE_URL}" style="text-decoration:none;color:#FF6250;font-size:19px;font-weight:800;">${SITE_NAME}</a></td></tr>
-<tr><td style="padding:24px;">
-<p style="margin:0 0 6px;font-size:12px;font-weight:700;color:#9C97AC;">지원자를 기다리는 중</p>
-<p style="margin:0 0 12px;font-size:15px;font-weight:800;color:#1B1730;">아직 지원자가 없어요 — 조건을 조금 조정해보세요</p>
-<p style="margin:0 0 12px;font-size:14px;line-height:1.7;color:#3A3452;">${esc(t.desc)} 요청을 올리신 지 ${t.daysSince}일이 지났어요. 이렇게 해보시면 어떨까요?</p>
-<ul style="margin:0 0 16px;padding-left:18px;">${tipItems}</ul>
-<a href="${SITE_URL}/care-request" style="display:inline-block;background:#FF6250;color:#fff;font-size:14px;font-weight:700;text-decoration:none;padding:12px 20px;border-radius:12px;">내 요청 수정하러 가기 →</a>
-<p style="margin:20px 0 0;font-size:11px;line-height:1.6;color:#9C97AC;">요청은 지원자를 받는 동안(수정·취소 가능 상태) 언제든 고칠 수 있어요. 이 안내는 요청당 한 번만 보내드려요.</p>
-</td></tr>
-</table></td></tr></table></body></html>`;
+
+  const html = renderEmail({
+    siteUrl: SITE_URL,
+    siteName: SITE_NAME,
+    preheader: `${t.desc} 요청에 아직 지원자가 없어요 — 조건을 조금 조정해보세요`,
+    eyebrow: "지원자를 기다리는 중",
+    title: "아직 지원자가 없어요",
+    subtitle: `${t.desc} 요청을 올리신 지 ${t.daysSince}일이 지났어요.`,
+    bodyHtml: `
+<p style="margin:0 0 12px;font-size:14.5px;font-weight:800;color:#1B1730;word-break:keep-all;">이렇게 해보시면 어떨까요?</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">${tipItems}</table>`,
+    ctaText: "내 요청 수정하러 가기",
+    ctaHref: `${SITE_URL}/care-request`,
+    note: "요청은 지원자를 받는 동안(수정·취소 가능 상태) 언제든 고칠 수 있어요. 이 안내는 요청당 한 번만 보내드려요.",
+    withIntro: false, // 이미 우리 서비스를 쓰고 있는 보호자라 소개가 필요 없다
+  });
   return { text, html };
 }
 

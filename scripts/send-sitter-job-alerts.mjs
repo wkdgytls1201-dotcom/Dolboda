@@ -32,6 +32,7 @@
 //   node ... --date=2026-08-04                                              # 그 하루만 지정(기본은 어제~오늘 이틀 창)
 
 import { createRequire } from "module";
+import { renderEmail } from "./lib/emailShell.mjs";
 const require = createRequire(import.meta.url);
 const { PrismaClient } = require("@prisma/client");
 const { PrismaPg } = require("@prisma/adapter-pg");
@@ -110,25 +111,30 @@ function mailBody(jobs) {
   const cards = jobs
     .map(
       (j) => `
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:12px;border:1px solid #F0EDF6;border-radius:14px;">
-  <tr><td style="padding:16px 18px;">
-    <p style="margin:0;font-size:14px;line-height:1.6;color:#3A3452;">${esc(j.desc)}</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:11px;border:1px solid #F0EDF6;border-radius:15px;">
+  <tr><td style="padding:15px 17px;">
+    <p style="margin:0 0 6px;"><span style="display:inline-block;padding:3px 10px;background:#FFF3F1;border-radius:999px;font-size:11px;font-weight:800;color:#EB4632;">새 공고</span></p>
+    <p style="margin:0;font-size:14.5px;line-height:1.7;color:#3A3452;word-break:keep-all;">${esc(j.desc)}</p>
   </td></tr>
 </table>`
     )
     .join("");
 
-  const html = `<!doctype html><html lang="ko"><body style="margin:0;padding:0;background:#FFFBF3;font-family:-apple-system,BlinkMacSystemFont,'Malgun Gothic',sans-serif;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FFFBF3;padding:32px 16px;"><tr><td align="center">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:460px;background:#fff;border-radius:20px;overflow:hidden;">
-<tr><td style="padding:18px 24px;border-bottom:1px solid #F0EDF6;"><a href="${SITE_URL}" style="text-decoration:none;color:#FF6250;font-size:19px;font-weight:800;">${SITE_NAME}</a></td></tr>
-<tr><td style="padding:24px;">
-<p style="margin:0 0 16px;font-size:15px;font-weight:700;color:#1B1730;">${esc(headline)}</p>
-${cards}
-<a href="${SITE_URL}/mypage/sitter/jobs" style="display:inline-block;margin-top:4px;background:#FF6250;color:#fff;font-size:14px;font-weight:700;text-decoration:none;padding:12px 20px;border-radius:12px;">일자리 보러 가기 →</a>
-</td></tr>
-<tr><td style="padding:14px 24px;background:#F7F5FB;text-align:center;"><a href="${SITE_URL}/mypage/sitter/notifications" style="color:#9C97AC;font-size:12px;">알림 설정 변경</a></td></tr>
-</table></td></tr></table></body></html>`;
+  const html = renderEmail({
+    siteUrl: SITE_URL,
+    siteName: SITE_NAME,
+    preheader: jobs[0].desc,
+    eyebrow: "새 일자리 알림",
+    title: headline,
+    subtitle: "먼저 지원할수록 보호자 눈에 먼저 띄어요.",
+    bodyHtml: cards,
+    ctaText: "일자리 보러 가기",
+    ctaHref: `${SITE_URL}/mypage/sitter/jobs`,
+    footerLinkText: "알림 설정 변경",
+    footerLinkHref: `${SITE_URL}/mypage/sitter/notifications`,
+    // 매니저에게 가는 메일 — 보호자용 서비스 소개는 맥락에 안 맞는다
+    withIntro: false,
+  });
   return { text, html };
 }
 

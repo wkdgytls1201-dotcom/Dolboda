@@ -18,6 +18,7 @@
 //   node ... --date=2026-08-04                                                 # 날짜 지정(기본 오늘 KST)
 
 import { createRequire } from "module";
+import { renderEmail } from "./lib/emailShell.mjs";
 const require = createRequire(import.meta.url);
 const { PrismaClient } = require("@prisma/client");
 const { PrismaPg } = require("@prisma/adapter-pg");
@@ -54,17 +55,17 @@ function mailBody(t) {
     `${t.relation} 등급테스트 결과를 저장하신 지 ${t.monthsSince}개월이 지났어요.\n\n` +
     `그동안 건강 상태가 달라졌을 수 있어요. 3분이면 다시 확인할 수 있어요.\n\n` +
     `${SITE_URL}/grade-test`;
-  const html = `<!doctype html><html lang="ko"><body style="margin:0;padding:0;background:#FFFBF3;font-family:-apple-system,BlinkMacSystemFont,'Malgun Gothic',sans-serif;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FFFBF3;padding:32px 16px;"><tr><td align="center">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:460px;background:#fff;border-radius:20px;overflow:hidden;">
-<tr><td style="padding:18px 24px;border-bottom:1px solid #F0EDF6;"><a href="${SITE_URL}" style="text-decoration:none;color:#FF6250;font-size:19px;font-weight:800;">${SITE_NAME}</a></td></tr>
-<tr><td style="padding:24px;">
-<p style="margin:0 0 12px;font-size:15px;font-weight:700;color:#1B1730;">${esc(t.relation)} 등급테스트 결과를 저장하신 지 ${t.monthsSince}개월이 지났어요.</p>
-<p style="margin:0 0 20px;font-size:14px;line-height:1.7;color:#3A3452;">그동안 건강 상태가 달라졌을 수 있어요. 3분이면 다시 확인할 수 있어요.</p>
-<a href="${SITE_URL}/grade-test" style="display:inline-block;background:#FF6250;color:#fff;font-size:14px;font-weight:700;text-decoration:none;padding:12px 20px;border-radius:12px;">등급테스트 다시 하러 가기 →</a>
-<p style="margin:20px 0 0;font-size:11px;line-height:1.6;color:#9C97AC;">이 테스트는 참고용 예상이며 공단의 실제 등급 판정과 다를 수 있어요.</p>
-</td></tr>
-</table></td></tr></table></body></html>`;
+  const html = renderEmail({
+    siteUrl: SITE_URL,
+    siteName: SITE_NAME,
+    preheader: "그동안 건강 상태가 달라졌을 수 있어요. 3분이면 다시 확인할 수 있어요.",
+    eyebrow: "등급테스트 재확인",
+    title: `${t.relation} 등급테스트를 저장하신 지 ${t.monthsSince}개월이 지났어요`,
+    bodyHtml: `<p style="margin:0;font-size:14.5px;line-height:1.8;color:#3A3452;word-break:keep-all;">그동안 건강 상태가 달라졌을 수 있어요. 3분이면 다시 확인할 수 있어요.</p>`,
+    ctaText: "등급테스트 다시 하러 가기",
+    ctaHref: `${SITE_URL}/grade-test`,
+    note: "이 테스트는 참고용 예상이며 공단의 실제 등급 판정과 다를 수 있어요.",
+  });
   return { text, html };
 }
 

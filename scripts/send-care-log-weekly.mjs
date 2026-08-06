@@ -19,6 +19,7 @@
 //   node --env-file=.env.local scripts/send-care-log-weekly.mjs --write   # 실제 발송
 
 import { createRequire } from "module";
+import { renderEmail } from "./lib/emailShell.mjs";
 const require = createRequire(import.meta.url);
 const { PrismaClient } = require("@prisma/client");
 const { PrismaPg } = require("@prisma/adapter-pg");
@@ -80,34 +81,47 @@ function mailBody(t) {
     `\n\n기록 전체 보기: ${SITE_URL}/care-request/care-log\n\n` +
     `기록이 없는 날도 있을 수 있어요. 돌봄일지는 매니저님이 자율적으로 남기는 기록이에요.`;
 
-  const statItems = lines
+  // 숫자는 목록보다 타일이 눈에 잘 들어온다 — 주간 요약의 핵심이 "며칠·얼마나"라서
+  const tiles = lines
     .slice(1)
-    .map(
-      (s) =>
-        `<li style="margin:0 0 6px;font-size:14px;line-height:1.7;color:#3A3452;">${esc(s)}</li>`
-    )
-    .join("");
+    .map((s) => {
+      const m = s.match(/^(.*?)\s*(\d+[가-힣]*)$/);
+      const label = m ? m[1] : s;
+      const value = m ? m[2] : "";
+      return `<td width="33%" align="center" style="padding:12px 6px;background:#FFF7E9;border-radius:14px;">
+<div style="font-size:19px;font-weight:800;color:#B15E13;">${esc(value)}</div>
+<div style="margin-top:3px;font-size:11.5px;color:#9A7B52;">${esc(label)}</div></td>`;
+    })
+    .join('<td width="8">&nbsp;</td>');
 
-  const html = `<!doctype html><html lang="ko"><body style="margin:0;padding:0;background:#FFFBF3;font-family:-apple-system,BlinkMacSystemFont,'Malgun Gothic',sans-serif;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FFFBF3;padding:32px 16px;"><tr><td align="center">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:460px;background:#fff;border-radius:20px;overflow:hidden;">
-<tr><td style="padding:18px 24px;border-bottom:1px solid #F0EDF6;"><a href="${SITE_URL}" style="text-decoration:none;color:#FF6250;font-size:19px;font-weight:800;">${SITE_NAME}</a></td></tr>
-<tr><td style="padding:24px;">
-<p style="margin:0 0 6px;font-size:12px;font-weight:700;color:#9C97AC;">${esc(t.from)} ~ ${esc(t.to)}</p>
-<p style="margin:0 0 12px;font-size:15px;font-weight:800;color:#1B1730;">지난 주 돌봄 기록을 정리했어요</p>
-<p style="margin:0 0 12px;font-size:14px;line-height:1.7;color:#3A3452;">${esc(t.sitterNickname)}님이 <strong>${t.dayCount}일</strong> 기록을 남기셨어요.</p>
-<ul style="margin:0 0 16px;padding-left:18px;">${statItems}</ul>
+  const bodyHtml = `
+<p style="margin:0 0 14px;font-size:14.5px;line-height:1.8;color:#3A3452;word-break:keep-all;">
+  ${esc(t.sitterNickname)}님이 <strong style="color:#1B1730;">${t.dayCount}일</strong> 기록을 남기셨어요.
+</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>${tiles}</tr></table>
 ${
   t.memo
-    ? `<div style="margin:0 0 16px;padding:14px 16px;background:#FFF4F2;border-radius:14px;">
-<p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#9C97AC;">${esc(t.sitterNickname)}님이 남긴 한마디</p>
-<p style="margin:0;font-size:14px;line-height:1.7;color:#3A3452;font-style:italic;">“${esc(t.memo)}”</p></div>`
+    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0 0;background:#FFF4F2;border-radius:15px;">
+<tr><td style="padding:15px 17px;">
+<p style="margin:0 0 5px;font-size:11.5px;font-weight:800;color:#C93524;">${esc(t.sitterNickname)}님이 남긴 한마디</p>
+<p style="margin:0;font-size:14.5px;line-height:1.8;color:#3A3452;font-style:italic;word-break:keep-all;">&ldquo;${esc(t.memo)}&rdquo;</p>
+</td></tr></table>`
     : ""
-}
-<a href="${SITE_URL}/care-request/care-log" style="display:inline-block;background:#FF6250;color:#fff;font-size:14px;font-weight:700;text-decoration:none;padding:12px 20px;border-radius:12px;">기록 전체 보기 →</a>
-<p style="margin:20px 0 0;font-size:11px;line-height:1.6;color:#9C97AC;">기록이 없는 날도 있을 수 있어요. 돌봄일지는 매니저님이 자율적으로 남기는 기록이에요. 이 요약은 기록이 있었던 주에만 한 번 보내드려요.</p>
-</td></tr>
-</table></td></tr></table></body></html>`;
+}`;
+
+  const html = renderEmail({
+    siteUrl: SITE_URL,
+    siteName: SITE_NAME,
+    preheader: t.memo
+      ? `${t.sitterNickname}님: "${t.memo.slice(0, 40)}"`
+      : `기록한 날 ${t.dayCount}일 · ${t.from} ~ ${t.to}`,
+    eyebrow: `${t.from} ~ ${t.to}`,
+    title: "지난 주 돌봄 기록을 정리했어요",
+    bodyHtml,
+    ctaText: "기록 전체 보기",
+    ctaHref: `${SITE_URL}/care-request/care-log`,
+    note: "기록이 없는 날도 있을 수 있어요. 돌봄일지는 매니저님이 자율적으로 남기는 기록이에요. 이 요약은 기록이 있었던 주에만 한 번 보내드려요.",
+  });
   return { text, html };
 }
 
