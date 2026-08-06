@@ -158,6 +158,10 @@ export interface NursingHomeExtra {
 // 행정처분(위반사실 공표) 이력 — scripts/import-admin-actions.mjs 로 채운다
 // 시설 실사진의 촬영 영역 — 메인은 반드시 외관(건물 밖에서 본 모습)이어야 한다.
 // 보호자가 찾아갈 때 알아볼 수 있는 사진이 첫인상이 되게 하기 위함.
+// 2026-08-06: bath·care·office 신설. 기존엔 목욕실·간호사실·사무실이 전부 "기타"에
+// 뭉뚱그려져 있었는데, 실측해보니 etc 11,879장 중 4,882장(41%)이 이 셋이었다.
+// 특히 목욕·위생은 보호자가 시설을 고를 때 실제로 보는 항목이라(주 몇 회 목욕,
+// 거동 불편한 어르신의 화장실 접근성) "기타"에 묻어두면 안 되는 정보다.
 export type FacilityPhotoArea =
   | "exterior" // 외관 (메인)
   | "entrance" // 입구·로비
@@ -166,6 +170,9 @@ export type FacilityPhotoArea =
   | "program" // 프로그램·활동
   | "dining" // 식당·급식
   | "rehab" // 재활·물리치료
+  | "bath" // 목욕실·화장실·세면
+  | "care" // 간호사실·상담실
+  | "office" // 사무실·행정
   | "outdoor" // 마당·산책로
   | "etc"; // 기타
 
@@ -177,11 +184,15 @@ export const PHOTO_AREA_LABEL: Record<FacilityPhotoArea, string> = {
   program: "프로그램·활동",
   dining: "식당·급식",
   rehab: "재활·물리치료",
+  bath: "목욕·위생",
+  care: "간호·상담",
+  office: "사무·행정",
   outdoor: "마당·산책로",
   etc: "기타",
 };
 
-/** 갤러리에서 보여주는 순서 — 외관(찾아가는 길) → 생활 공간 → 활동 → 부대시설 */
+/** 갤러리에서 보여주는 순서 — 외관(찾아가는 길) → 생활 공간 → 활동 → 부대시설.
+ *  목욕·위생은 보호자 관심이 높아 재활 다음에 두고, 사무·행정은 가장 뒤로 보낸다. */
 export const PHOTO_AREA_ORDER: FacilityPhotoArea[] = [
   "exterior",
   "common",
@@ -189,8 +200,11 @@ export const PHOTO_AREA_ORDER: FacilityPhotoArea[] = [
   "program",
   "dining",
   "rehab",
+  "bath",
   "outdoor",
   "entrance",
+  "care",
+  "office",
   "etc",
 ];
 
