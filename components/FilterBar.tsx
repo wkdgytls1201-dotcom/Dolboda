@@ -14,6 +14,7 @@ import {
   BellPlus,
   ArrowDownUp,
   Loader2,
+  Users,
 } from "lucide-react";
 import { FACILITY_TYPE_LABEL, Facility, FacilityType, isHospital } from "@/lib/types";
 import { InfoTooltip } from "./InfoTooltip";
@@ -324,6 +325,13 @@ export function FilterBar({
         onRemove: () => onChange({ ...filters, hasPhotoOnly: false }),
       });
     }
+    if (filters.longTenureOnly) {
+      chips.push({
+        key: "long-tenure",
+        label: "오래 일한 직원 많은 곳",
+        onRemove: () => onChange({ ...filters, longTenureOnly: false }),
+      });
+    }
     return chips;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters]);
@@ -336,7 +344,8 @@ export function FilterBar({
     filters.departments.length +
     (filters.onlyVacancy ? 1 : 0) +
     (filters.verifiedOnly ? 1 : 0) +
-    (filters.hasPhotoOnly ? 1 : 0);
+    (filters.hasPhotoOnly ? 1 : 0) +
+    (filters.longTenureOnly ? 1 : 0);
 
   return (
     <div>
@@ -571,6 +580,25 @@ export function FilterBar({
               onClick={() => setDraft((d) => ({ ...d, hasPhotoOnly: !d.hasPhotoOnly }))}
             />
           </div>
+        </FilterSection>
+
+        <FilterSection icon={<Users size={15} />} label="돌보는 사람">
+          <p className="mb-2 text-[11px] leading-relaxed text-ink-300">
+            익숙한 분이 계속 곁에 계신지는 보호자들이 가장 많이 묻는 것 중 하나예요.
+            공단에 신고된 직원 근속 기간으로 골라볼 수 있어요.
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            <FilterPill
+              label="🤝 오래 일한 직원 많은 곳"
+              selected={draft.longTenureOnly}
+              onClick={() => setDraft((d) => ({ ...d, longTenureOnly: !d.longTenureOnly }))}
+            />
+          </div>
+          {/* 요양병원은 심평원 자료에 근속 항목이 없어 이 조건이 적용되지 않는다.
+              말없이 빠지면 "왜 병원은 안 걸러지지"가 되므로 화면에서 미리 알린다. */}
+          <p className="mt-2 text-[11px] leading-relaxed text-ink-300">
+            요양병원은 공개 자료에 근속 항목이 없어 이 조건이 적용되지 않아요.
+          </p>
         </FilterSection>
 
         <FilterSection icon={<Sparkles size={15} />} label="프로그램">

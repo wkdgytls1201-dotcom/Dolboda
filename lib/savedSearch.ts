@@ -28,6 +28,7 @@ export function summarizeFilters(filters: FacilityFilters): string {
   if (filters.verifiedOnly) parts.push("공공데이터 확인 시설");
   if (filters.goodScoreOnly) parts.push("안심지수 우수만");
   if (filters.hasPhotoOnly) parts.push("실사진 있는 곳만");
+  if (filters.longTenureOnly) parts.push("오래 일한 직원 많은 곳");
 
   if (parts.length === 0) return "전체 시설";
   return parts.slice(0, 4).join(" · ") + (parts.length > 4 ? ` 외 ${parts.length - 4}개` : "");
@@ -44,6 +45,7 @@ export function hasAnyFilter(filters: FacilityFilters): boolean {
     filters.onlyVacancy ||
     filters.verifiedOnly ||
     filters.goodScoreOnly ||
-    filters.hasPhotoOnly
+    filters.hasPhotoOnly ||
+    filters.longTenureOnly
   );
 }

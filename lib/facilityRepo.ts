@@ -1,6 +1,7 @@
 import type { Facility as FacilityDTO } from "./types";
 import type { Facility as FacilityRow } from "@prisma/client";
 import { calcDolbodaScore } from "./dolbodaScore";
+import { tenureSignalOf, perCareWorkerOf } from "./tenureSignal";
 
 // DB row(기본 컬럼 + extra jsonb) → 클라이언트가 쓰는 Facility 형태로 복원 (seed.ts의 역변환)
 export function rowToFacility(row: FacilityRow): FacilityDTO {
@@ -31,8 +32,15 @@ export function toCardFacility(f: FacilityDTO): FacilityDTO {
   // 빠지므로 클라이언트가 계산할 수 없다. 인근 병원 거리(extras) 없이 계산하는 방식은
   // 유사시설 추천(lib/similarity.ts)과 동일하다.
   const dolbodaTotal = calcDolbodaScore(f).total;
+  // 근속·돌봄인원은 **서버에서 lib/tenureSignal.ts로 계산해** 결과만 싣는다.
+  // 상세 페이지가 같은 함수를 직접 부르므로 목록과 상세의 판정이 어긋날 수 없다.
+  const tenure = tenureSignalOf(f);
+  const perCareWorker = perCareWorkerOf(f);
   return {
     dolbodaTotal,
+    tenurePct: tenure?.pct,
+    tenureGood: tenure?.isGood || undefined, // false는 안 싣는다 — 300건이면 그것도 부피다
+    perCareWorker: perCareWorker ?? undefined,
     id: f.id,
     name: f.name,
     facilityType: f.facilityType,

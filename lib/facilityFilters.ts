@@ -27,6 +27,17 @@ export interface FacilityFilters {
    * (2026-08-06 기준 32%, 곧 90%대) 지금은 좁히는 필터지만 곧 기본 기대치가 된다.
    */
   hasPhotoOnly: boolean;
+  /**
+   * 2년 이상 일한 직원 비율이 그 유형의 상위 25%인 곳만.
+   *
+   * 보호자 체크리스트가 공통으로 "직원 교체율"을 묻고, 미국 CMS는 이직률을 요양원
+   * 별점에 편입했다. 우리는 공단 자료로 26,235곳(91%)의 근속 분포를 이미 갖고 있었는데
+   * 시설 상세 안쪽에만 있었다. 판정은 lib/tenureSignal.ts 한 곳에서만 한다.
+   *
+   * ⚠️ 요양병원은 이 조건을 적용하지 않는다 — 심평원 자료에 근속 항목이 없어
+   *    1,282곳 전부 데이터가 없다. 거르면 "조용히 0곳"이 된다.
+   */
+  longTenureOnly: boolean;
 }
 
 export const EMPTY_FILTERS: FacilityFilters = {
@@ -39,6 +50,7 @@ export const EMPTY_FILTERS: FacilityFilters = {
   programTags: [],
   goodScoreOnly: false,
   hasPhotoOnly: false,
+  longTenureOnly: false,
 };
 
 // ---------------------------------------------------------------------------
@@ -128,6 +140,11 @@ export function filterFacilityList(
   if (filters.hasPhotoOnly) {
     // 카드 페이로드는 photos를 첫 장만 싣는다(lib/facilityRepo.ts) — 있고 없고만 보면 된다
     list = list.filter((x) => (x.f.photos?.length ?? 0) > 0);
+  }
+  if (filters.longTenureOnly) {
+    // 요양병원은 근속 자료 자체가 없다 — 거르면 통째로 사라지므로 조건에서 제외한다.
+    // 판정값(tenureGood)은 서버가 lib/tenureSignal.ts로 미리 계산해 실어준다.
+    list = list.filter((x) => isHospital(x.f) || x.f.tenureGood === true);
   }
   return list;
 }

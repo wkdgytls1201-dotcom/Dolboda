@@ -256,6 +256,14 @@ export interface FacilityBase {
   /** 목록 카드용 안심지수 총점 — 서버(toCardFacility)가 미리 계산해 실어준다.
       상세 페이지는 인근 병원 거리(extras)까지 반영해 직접 계산하므로 몇 점 다를 수 있다. */
   dolbodaTotal?: number | null;
+  /** 목록 카드용 2년 이상 근속 비율(%) — 서버가 lib/tenureSignal.ts로 계산해 실어준다.
+      카드 페이로드에는 근속 원본(직군별 구간)을 싣지 않는다: 카드는 이 숫자만 쓰고,
+      원본을 다 실으면 300건 응답이 헛되이 무거워진다(상세는 원본으로 직접 계산한다). */
+  tenurePct?: number;
+  /** 그 비율이 이 유형의 상위 25%에 드는지 — 카드 배지·검색 필터가 이 값만 본다 */
+  tenureGood?: boolean;
+  /** 돌봄직원 1명당 어르신 수 — 같은 이유로 서버가 미리 계산해 실어준다 */
+  perCareWorker?: number;
 }
 
 export type Facility =

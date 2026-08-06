@@ -207,6 +207,24 @@ export function FacilityCard({
           <p className="line-clamp-1 text-xs text-ink-300">{programTags.join(" · ")}</p>
         )}
 
+        {/* 돌보는 사람 — 보호자 체크리스트가 가장 먼저 묻는 두 가지다.
+            근속 배지는 **상위 25%에만** 단다(lib/tenureSignal.ts). 낮은 곳에 표시를 달면
+            낙인이 되고, 공단 자료는 퇴사 사유를 담지 않아 그렇게 읽힐 근거도 없다. */}
+        {(facility.tenureGood || facility.perCareWorker !== undefined) && (
+          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+            {facility.tenureGood && (
+              <span className="font-semibold text-mint-600">
+                🤝 2년 이상 근속 {facility.tenurePct}%
+              </span>
+            )}
+            {facility.perCareWorker !== undefined && (
+              <span className="text-ink-400">
+                돌봄직원 1명당 {facility.perCareWorker}명
+              </span>
+            )}
+          </p>
+        )}
+
         <div className="mt-3 rounded-xl bg-primary-50 px-3 py-2 text-sm font-medium text-primary-700">
           {keyStat}
         </div>

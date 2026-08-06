@@ -136,6 +136,22 @@ function matchesSavedSearch(facility, filters) {
   }
   if (filters.verifiedOnly && facility.dataSource !== "public") return false;
 
+  // 실사진·근속은 extra만 보면 되는 값싼 조건이라 여기서도 지킨다.
+  // (위 예외는 "재현 비용이 큰" 두 가지에 대한 것이지, 확인할 수 있는 조건까지
+  //  넘기라는 뜻이 아니다 — 저장할 때 고른 조건이 알림에서 조용히 무시되면
+  //  "이 시설은 왜 왔지"가 된다.)
+  if (filters.hasPhotoOnly && (extra.photos?.length ?? 0) === 0) return false;
+  if (filters.longTenureOnly && !isHospital) {
+    // ⚠️ 임계값 사본 — 원본은 lib/tenureSignal.ts의 TENURE_GOOD_PCT·TENURE_MIN_STAFF.
+    //    순수 node라 ts를 못 읽어 두 벌이다. 한쪽만 고치면 화면과 알림의 판정이 갈린다.
+    const good = { NURSING_HOME: 60, DAY_NIGHT_CARE: 62, HOME_CARE: 52 }[facility.facilityType];
+    const rows = extra.tenure ?? [];
+    const staff = rows.reduce((s, t) => s + (Number(t.total) || 0), 0);
+    if (good === undefined || staff < 5) return false;
+    const over2y = rows.reduce((s, t) => s + (Number(t.over2y) || 0), 0);
+    if (Math.round((over2y / staff) * 100) < good) return false;
+  }
+
   return true;
 }
 
