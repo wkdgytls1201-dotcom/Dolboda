@@ -247,6 +247,28 @@ async function cmdConvert(zipPath, outDir, limit) {
   const progressPath = path.join(outDir, "convert-progress.json");
   const done = fs.existsSync(progressPath) ? new Set(JSON.parse(fs.readFileSync(progressPath, "utf8"))) : new Set();
 
+  // ⚠️ progress에는 **매칭 실패로 건너뛴 시설도 "처리됨"으로 들어간다.** 그래서 매칭 규칙을
+  //    고친 뒤 다시 돌리면 새로 매칭된 시설이 그대로 건너뛰어진다(2026-08-06에 실제로 겪었다 —
+  //    "처리 0곳"이 나온다). 매칭을 바꾼 뒤 재실행할 때는 **manifest에 없는데 inventory에는
+  //    facilityId가 있는 instCode**를 progress에서 빼고 돌릴 것(convert·extras 양쪽 모두).
+  //    manifest.jsonl이 "실제로 변환된 것"의 진실이고, progress는 "시도한 것"일 뿐이다.
+  const converted = fs.existsSync(manifestPath)
+    ? new Set(
+        fs
+          .readFileSync(manifestPath, "utf8")
+          .split("\n")
+          .filter(Boolean)
+          .map((l) => JSON.parse(l).instCode)
+      )
+    : new Set();
+  const skippedButMatched = [...done].filter((c) => !converted.has(c)).length;
+  if (skippedButMatched > 0) {
+    console.log(
+      `참고: progress에 있으나 manifest에 없는 시설 ${skippedButMatched}곳 — 매칭 실패로 건너뛴 분입니다.\n` +
+        `      매칭 규칙을 고쳤다면 그중 새로 매칭된 것을 progress에서 빼야 다시 변환됩니다.`
+    );
+  }
+
   console.log(`zip 여는 중: ${zipPath}`);
   const zip = await openZip(zipPath);
   const entryByPath = new Map();
