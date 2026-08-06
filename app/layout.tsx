@@ -60,9 +60,15 @@ export const metadata: Metadata = {
   // 서치콘솔 소유 확인 코드 — 어차피 HTML에 공개되는 값이라 코드에 직접 둔다.
   // (환경변수가 있으면 그 값이 우선)
   verification: {
-    google:
-      process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION ??
+    // ⚠️ 여러 개를 **함께** 둔다. 하나를 지우면 그 코드로 인증해 둔 속성의 소유 확인이
+    //    풀려 그쪽 데이터(색인 현황·검색어)를 못 보게 된다. 태그는 몇 개 있어도 무해하다.
+    //    환경변수를 쓰면 그것도 함께 실린다(덮어쓰지 않는다 — 예전엔 덮어써서
+    //    env를 넣는 순간 코드의 값이 사라졌다).
+    google: [
+      process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+      "80SbxSidn91JamAcS6TgAs6RENnGxRDsXS-03sEWgQM", // 2026-08-07 추가
       "D0jTYRzQmyfFDSMJOOXVyxKSU9BI-vnARrGfgiEd29M",
+    ].filter((v): v is string => Boolean(v)),
     other: {
       "naver-site-verification":
         process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION ??
