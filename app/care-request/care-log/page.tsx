@@ -318,12 +318,22 @@ function SitterView({
   onError: (e: string | null) => void;
 }) {
   const todayKst = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Seoul" });
-  const todayLog = latestOf(data.logs, todayKst);
+  // 쓰는 대상 날짜. 보통은 오늘이지만, 돌봄이 어제로 끝났고 지금이 유예 기간이면
+  // "마지막 돌봄 날"이 된다 — 유예의 존재 이유가 그 날들의 지각 작성인데, 예전엔 폼이
+  // 무조건 오늘 날짜로 저장을 시도해서 100% 400("종료일 이후는 기록할 수 없어요")을
+  // 맞는 함정이었다(2026-08-06 실측). 서버 가드와 같은 값(logWindow.max)을 쓴다.
+  const targetDate = data.logWindow.max < todayKst ? data.logWindow.max : todayKst;
+  const isBackfill = targetDate !== todayKst;
+  const targetLabel = isBackfill ? fmtDate(targetDate) : "오늘";
+  const todayLog = latestOf(data.logs, targetDate);
   const pastDates = Array.from(new Set(data.logs.map((l) => l.careDate)))
-    .filter((d) => d < todayKst)
+    .filter((d) => d < targetDate)
     .sort()
     .reverse();
   const yesterdayLog = pastDates[0] ? latestOf(data.logs, pastDates[0]) : undefined;
+  // 빠른 알림은 "지금 이 순간"의 소식이라 지각 작성이 없다 — 돌봄이 끝났으면 숨긴다
+  // (서버도 오늘이 창 밖이면 400으로 거부한다. 눌러보고 실패하게 두지 않는다)
+  const quickNotesOpen = !isBackfill;
 
   const [sending, setSending] = useState<string | null>(null);
   const [meal, setMeal] = useState<string | null>(null);
@@ -431,6 +441,8 @@ function SitterView({
           tasks,
           memo: memo.trim() || undefined,
           photos: photos.length > 0 ? photos : undefined,
+          // 지각 작성 모드면 마지막 돌봄 날로 저장한다 — 서버 가드(careDateError)와 같은 값
+          careDate: targetDate,
           correctsId: correcting ? todayLog?.id : undefined,
         }),
       });
@@ -468,7 +480,19 @@ function SitterView({
 
   return (
     <div className="space-y-5">
-      {/* 빠른 알림 — 하루 정리보다 위. 대부분의 방문은 "지금 알리려고" 온다(§7-1) */}
+      {/* 돌봄이 끝난 뒤의 유예 기간 — 무엇을 할 수 있는 상태인지 먼저 말해준다.
+          이게 없으면 "왜 오늘 기록이 안 되지"를 눌러보고 나서야 안다. */}
+      {isBackfill && (
+        <p className="break-keep rounded-2xl bg-ivory-100 px-4 py-3 text-[13px] font-semibold leading-relaxed text-ink-700 ring-1 ring-ink-100">
+          돌봄이 {targetLabel}로 끝났어요. {data.logWindow.closesAfter.slice(5).replace("-", ".")}까지는
+          못 남긴 날의 기록을 이어서 남길 수 있어요.
+        </p>
+      )}
+
+      {/* 빠른 알림 — 하루 정리보다 위. 대부분의 방문은 "지금 알리려고" 온다(§7-1).
+          돌봄이 끝났으면 통째로 숨긴다 — "방금 식사하셨어요"는 지금의 소식이라
+          지각 작성이 없고, 서버도 창 밖이면 400으로 거부한다. */}
+      {quickNotesOpen && (
       <section className="rounded-2xl bg-white p-4 shadow-card">
         <p className="mb-3 flex items-center gap-1.5 text-sm font-bold text-ink-900">
           <Sparkles size={15} className="text-primary-500" />
@@ -516,11 +540,12 @@ function SitterView({
           </ul>
         )}
       </section>
+      )}
 
-      {/* 오늘 하루 정리 */}
+      {/* 하루 정리 — 지각 작성 모드면 제목이 그 날짜가 된다("8월 5일 (수) 하루 정리") */}
       <section className="rounded-2xl bg-white p-4 shadow-card">
         <div className="mb-3 flex items-center justify-between">
-          <p className="text-sm font-bold text-ink-900">오늘 하루 정리</p>
+          <p className="text-sm font-bold text-ink-900">{targetLabel} 하루 정리</p>
           {todayLog && !correcting && (
             <span className="animate-pop flex items-center gap-1 rounded-full bg-mint-100 px-2.5 py-1 text-[11px] font-bold text-mint-700">
               <Check size={11} />
@@ -725,7 +750,7 @@ function SitterView({
               onClick={save}
               className="flex min-h-[50px] w-full items-center justify-center rounded-xl bg-primary-500 text-sm font-bold text-white shadow-soft transition-colors hover:bg-primary-600 disabled:opacity-60"
             >
-              {saving ? "저장 중…" : "오늘 기록 남기기"}
+              {saving ? "저장 중…" : `${targetLabel} 기록 남기기`}
             </button>
             {yesterdayLog && !correcting && (
               <button
@@ -763,7 +788,9 @@ function SitterView({
         </div>
       </section>
 
-      <PastLogs logs={data.logs.filter((l) => l.careDate !== todayKst)} />
+      {/* 위 "하루 정리" 카드가 보여주는 날은 지난 기록에서 뺀다(중복 노출 방지) —
+          지각 작성 모드면 그 날이 오늘이 아니라 마지막 돌봄 날이다 */}
+      <PastLogs logs={data.logs.filter((l) => l.careDate !== targetDate)} />
     </div>
   );
 }
