@@ -15,7 +15,7 @@ import { PageLoader } from "@/components/PageLoader";
 import { FacilityCardSkeleton } from "@/components/FacilityCardSkeleton";
 import { useFacilities, useNearbyFacilities } from "@/lib/useFacilities";
 import { useUserOrigin } from "@/lib/userLocation";
-import { FACILITY_TYPE_LABEL, FacilityType } from "@/lib/types";
+import { FACILITY_TYPE_LABEL, FacilityType, type Facility } from "@/lib/types";
 import { filterAndSortFacilityList } from "@/lib/facilityFilters";
 import { useFlipGrid } from "@/lib/useFlipGrid";
 import { PROGRAM_TAG_META, type ProgramTag } from "@/lib/programTaxonomy";
@@ -58,7 +58,7 @@ function readPersistedState(): PersistedSearchState | null {
   }
 }
 
-function SearchContent() {
+function SearchContent({ initialFacilities }: { initialFacilities: Facility[] }) {
   const params = useSearchParams();
   const initialQuery = params.get("q") ?? "";
   // ?type=DAY_NIGHT_CARE,HOME_CARE 처럼 복수 유형도 받는다 (등급별 맞춤 CTA가 사용)
@@ -163,10 +163,20 @@ function SearchContent() {
     enabled: queriesReady && useNearest,
   });
 
-  const facilities = useNearest ? nearestQuery.facilities : listQuery.facilities;
+  const fetched = useNearest ? nearestQuery.facilities : listQuery.facilities;
   // 아직 아무것도 안 부른 구간(복원·위치 대기)도 "불러오는 중"으로 본다 —
   // 그러지 않으면 그 찰나에 "조건에 맞는 시설이 없어요"가 번쩍인다.
   const loading = !queriesReady || (useNearest ? nearestQuery.loading : listQuery.loading);
+
+  // 받아온 게 없는 동안은 **서버가 미리 그려 보낸 첫 화면 카드**를 쓴다.
+  // 이게 이 화면의 첫 방문 체감을 결정한다 — 예전엔 번들·하이드레이션이 끝나고
+  // 300건 왕복이 돌아와야 첫 카드가 떴다.
+  //
+  // ⚠️ 서버와 클라이언트의 **첫 렌더 출력이 같아야** 하이드레이션이 안 깨진다.
+  //    복원(useLayoutEffect)은 하이드레이션 뒤에 돌므로 첫 렌더는 양쪽 다 기본값이고,
+  //    그래서 양쪽 모두 여기서 initialFacilities를 그린다. 복원된 조건이 기본과 다르면
+  //    곧바로 요청이 나가 이 목록을 대체한다(뼈대를 거치지 않아 깜빡임도 없다).
+  const facilities = fetched.length > 0 ? fetched : initialFacilities;
   const total = useNearest ? nearestQuery.total : listQuery.total;
 
   useEffect(() => {
@@ -504,10 +514,15 @@ function SearchContent() {
   );
 }
 
-export default function SearchPageClient() {
+export default function SearchPageClient({
+  initialFacilities = [],
+}: {
+  /** 서버가 미리 그려 보낸 첫 화면 카드 — app/search/page.tsx 주석 참조 */
+  initialFacilities?: Facility[];
+}) {
   return (
     <Suspense fallback={null}>
-      <SearchContent />
+      <SearchContent initialFacilities={initialFacilities} />
     </Suspense>
   );
 }

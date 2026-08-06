@@ -79,6 +79,28 @@ const CARD_EXTRA = Prisma.raw(`
 `);
 
 /**
+ * 검색 첫 화면이 서버에서 그릴 카드 몇 장.
+ *
+ * 왜: 목록이 "번들 → 하이드레이션 → 그제서야 요청" 순서라, 첫 방문은 JS가 다 뜬 뒤에야
+ * 카드가 보인다. 서버가 첫 화면 분량만 들고 내려오면 그 왕복이 통째로 빠진다.
+ *
+ * **첫 페이지 분량(기본 30장)만** 보낸다 — 300건을 HTML에 실으면 190KB가 붙는다.
+ * 클라이언트는 평소대로 300건을 따로 받아 필터·정렬에 쓰고, 도착하면 이 목록을 대체한다.
+ *
+ * 조건 없는 기본 목록만 만든다(검색어·필터가 있으면 서버가 그걸 알 수 없고,
+ * 알아도 조합이 무한이라 캐시가 의미 없다).
+ */
+export async function defaultFirstPageCards(take: number): Promise<FacilityDTO[]> {
+  const idRows = await prisma.facility.findMany({
+    where: { dataSource: { not: "mock" } },
+    orderBy: { createdAt: "asc" },
+    take,
+    select: { id: true },
+  });
+  return cardFacilitiesByIds(idRows.map((r) => r.id));
+}
+
+/**
  * 주어진 id들의 카드 페이로드를 가져온다. **호출자가 준 id 순서를 그대로 지킨다** —
  * 정렬(등록순·거리순)은 이미 앞 단계에서 정해졌고, 여기서 순서가 흐트러지면
  * 화면의 정렬이 조용히 무너진다.

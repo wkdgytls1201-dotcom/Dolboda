@@ -1,5 +1,18 @@
 import type { Metadata } from "next";
+import { unstable_cache } from "next/cache";
 import SearchPageClient from "./SearchPageClient";
+import { defaultFirstPageCards } from "@/lib/facilityCardQuery";
+
+// 첫 화면 카드 수 — SearchPageClient의 PAGE_SIZE와 같아야 한다.
+// 더 보내면 HTML만 무거워지고(300건이면 190KB), 덜 보내면 첫 화면이 빈다.
+const FIRST_PAGE = 30;
+
+// 시설 데이터는 공공데이터 일일 수집 때만 바뀐다 — 방문마다 DB를 훑을 이유가 없다.
+const getFirstPage = unstable_cache(
+  () => defaultFirstPageCards(FIRST_PAGE),
+  ["search-first-page"],
+  { revalidate: 3600 }
+);
 
 // 검색 조건(q·type)이 붙은 URL은 조합이 무한이라 색인시키면 안 된다 — 크롤 예산만 낭비하고
 // 지역·유형 검색어는 /region/... 정적 페이지가 담당한다. 기본 /search만 색인을 허용한다.
@@ -20,10 +33,13 @@ const TYPE_GUIDE: { label: string; desc: string }[] = [
   { label: "방문요양센터", desc: "요양보호사가 어르신 댁으로 방문해 일상생활을 도와드려요." },
 ];
 
-export default function SearchPage() {
+export default async function SearchPage() {
+  // 실패해도 화면은 떠야 한다 — 서버 렌더는 "빨리 보여주기"지 필수 데이터가 아니다.
+  const initialFacilities = await getFirstPage().catch(() => []);
+
   return (
     <>
-      <SearchPageClient />
+      <SearchPageClient initialFacilities={initialFacilities} />
       {/* 검색봇용 서버 렌더 안내 — 화면에서도 검색 결과 아래에 유형 설명으로 보인다.
           이 제목이 페이지의 h1이다: 검색 UI 쪽은 검색창부터 시작해 제목 자리가 없고,
           그대로 두면 색인이 허용된 /search에 h1이 하나도 없게 된다(실측으로 확인).
