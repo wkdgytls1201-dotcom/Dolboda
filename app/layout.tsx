@@ -66,7 +66,8 @@ export const metadata: Metadata = {
     //    env를 넣는 순간 코드의 값이 사라졌다).
     google: [
       process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
-      "80SbxSidn91JamAcS6TgAs6RENnGxRDsXS-03sEWgQM", // 2026-08-07 추가
+      "0TAi_K94aopxqYtLgRXdMvL0uOCV37DAHTvlX9J6xyk", // 2026-08-07 URL 접두어 속성
+      "80SbxSidn91JamAcS6TgAs6RENnGxRDsXS-03sEWgQM", // 2026-08-07 도메인 속성(DNS TXT용)
       "D0jTYRzQmyfFDSMJOOXVyxKSU9BI-vnARrGfgiEd29M",
     ].filter((v): v is string => Boolean(v)),
     other: {
