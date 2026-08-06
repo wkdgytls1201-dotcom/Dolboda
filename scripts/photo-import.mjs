@@ -47,6 +47,75 @@ function loadEnv() {
   return env;
 }
 
+/** zip 최상위 폴더명("47_경상북도")에서 시도를 뽑는다 — DB 주소의 첫 토큰과 같은 표기다. */
+function sidoOf(facility) {
+  const top = facility.photos?.[0]?.path?.split("/")[0] ?? "";
+  return top.replace(/^\d+_/, "");
+}
+
+/**
+ * zip 시설 → 우리 DB facilityId 매칭.
+ *
+ * 1차는 기관기호(`extra.instCode`) 정확 일치다. 그런데 공단 사진 zip의 기관기호가
+ * 우리가 가진 값과 어긋나는 시설이 실제로 있다 — 5개 지역 실측(2026-08-06)에서
+ * **361곳**이 "사진은 있는데 코드가 안 맞아" 버려지고 있었다. 매칭에서 빠지면
+ * convert 자체를 안 하므로, 원본 zip을 지우는 순간 그 사진은 영영 사라진다
+ * (서울·경기·경북·강원 254곳이 실제로 그렇게 유실됐다).
+ *
+ * 그래서 2차로 **이름 + 시도**를 본다. 다만 이름 매칭은 틀리면 남의 시설에 남의 사진을
+ * 붙이는 사고라, 세 조건을 **모두** 만족할 때만 인정한다:
+ *   ① 같은 시도에 같은 이름이 **정확히 1곳** (2곳 이상이면 포기 — 어느 쪽인지 알 수 없다)
+ *   ② 그 시설에 아직 사진이 없다 (있으면 덮어쓸 위험)
+ *   ③ 이미 다른 zip 시설이 그 id를 가져가지 않았다
+ * 전남광주·대전 실측: 미매칭 287곳 중 68곳 인정, 위험한 39곳(동명 2곳 이상)은 제외.
+ */
+async function matchFacilities(client, facilities) {
+  const codes = [...facilities.keys()];
+  const { rows } = await client.query(
+    `SELECT id, extra->>'instCode' AS "instCode" FROM "Facility" WHERE extra->>'instCode' = ANY($1)`,
+    [codes]
+  );
+  const idByCode = new Map(rows.map((r) => [r.instCode, r.id]));
+  const exact = idByCode.size;
+
+  const unmatched = [...facilities.values()].filter((f) => !idByCode.has(f.instCode));
+  const taken = new Set(idByCode.values());
+  let byName = 0;
+
+  if (unmatched.length > 0) {
+    // 이름+시도로 후보를 한 번에 받아 자바스크립트에서 유일성을 판정한다
+    const names = [...new Set(unmatched.map((f) => f.name))];
+    const sidos = [...new Set(unmatched.map(sidoOf).filter(Boolean))];
+    const { rows: cand } = await client.query(
+      `SELECT id, name, split_part(address,' ',1) AS sido,
+              jsonb_array_length(COALESCE(extra->'photos','[]'::jsonb)) AS photos
+         FROM "Facility"
+        WHERE "dataSource" <> 'mock' AND name = ANY($1) AND split_part(address,' ',1) = ANY($2)`,
+      [names, sidos]
+    );
+    const byKey = new Map();
+    for (const r of cand) {
+      const k = `${r.sido} ${r.name}`;
+      (byKey.get(k) ?? byKey.set(k, []).get(k)).push(r);
+    }
+    for (const f of unmatched) {
+      const hits = byKey.get(`${sidoOf(f)} ${f.name}`) ?? [];
+      if (hits.length !== 1) continue; // ① 유일해야 한다
+      const hit = hits[0];
+      if (hit.photos > 0) continue; // ② 이미 사진이 있으면 건드리지 않는다
+      if (taken.has(hit.id)) continue; // ③ 중복 배정 금지
+      idByCode.set(f.instCode, hit.id);
+      taken.add(hit.id);
+      byName++;
+    }
+  }
+
+  console.log(
+    `DB 매칭: ${idByCode.size} / ${codes.length}  (기관기호 ${exact}곳 + 이름·시도 ${byName}곳)`
+  );
+  return idByCode;
+}
+
 function openZip(file) {
   return new Promise((res, rej) =>
     yauzl.open(file, { lazyEntries: true, autoClose: false }, (e, z) => (e ? rej(e) : res(z)))
@@ -158,12 +227,7 @@ async function cmdInventory(zipPath, outDir) {
   });
 
   const facilities = groupByFacility([...entryByPath.keys()]);
-  const codes = [...facilities.keys()];
-  const { rows } = await client.query(
-    `SELECT id, extra->>'instCode' AS "instCode" FROM "Facility" WHERE extra->>'instCode' = ANY($1)`,
-    [codes]
-  );
-  const idByCode = new Map(rows.map((r) => [r.instCode, r.id]));
+  const idByCode = await matchFacilities(client, facilities);
   await client.end();
 
   await writeInventory(entryByPath, facilities, idByCode, outDir);
@@ -199,14 +263,8 @@ async function cmdConvert(zipPath, outDir, limit) {
   const facilities = groupByFacility([...entryByPath.keys()]);
   console.log(`zip 내 시설: ${facilities.size}곳 / 이미 처리됨: ${done.size}곳`);
 
-  // instCode → facilityId 일괄 조회 (한 번에)
-  const codes = [...facilities.keys()];
-  const { rows } = await client.query(
-    `SELECT id, extra->>'instCode' AS "instCode" FROM "Facility" WHERE extra->>'instCode' = ANY($1)`,
-    [codes]
-  );
-  const idByCode = new Map(rows.map((r) => [r.instCode, r.id]));
-  console.log(`DB 매칭: ${idByCode.size} / ${codes.length}`);
+  // instCode → facilityId 일괄 조회 (기관기호 → 이름·시도 2차, matchFacilities 주석 참조)
+  const idByCode = await matchFacilities(client, facilities);
   await client.end();
 
   // 원본 zip을 지우기 전에 "무엇이 있었는지"를 먼저 남긴다 — 한 번 쓰면 다시 안 쓴다
