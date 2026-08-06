@@ -5,6 +5,13 @@ export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.dolboda
 
 export const SITE_NAME = "돌보다";
 
+// 메일 머리말·푸터에 들어가는 한 줄 소개. 브랜드를 처음 보는 사람이 "이게 뭐 하는
+// 곳인지" 알게 하는 자리다(메일은 사이트 밖에서 읽히니 맥락이 없다).
+// 소개 페이지의 정식 한 줄("…에이지테크 플랫폼")은 메일에 쓰기엔 길어서, 홈 히어로
+// 배지와 같은 표현을 쓴다 — 이미 화면에서 검증된 문구라 브랜드 목소리가 어긋나지 않는다.
+// ⚠️ 바꾸면 scripts/lib/emailShell.mjs의 사본도 같이 고칠 것(순수 node라 이 파일을 못 읽는다).
+export const SITE_SLOGAN = "공공데이터로 찾는 믿을 수 있는 요양시설";
+
 // 메일 발신 주소 — Resend에서 도메인 인증(SPF·DKIM)을 마치기 전에는 테스트 전용
 // onboarding@resend.dev만 쓸 수 있고, 이 주소로는 우리 계정 소유자 외 수신자에게
 // 보내면 거부된다. 인증이 끝나면 코드를 고치지 말고 환경변수만 넣으면 된다.

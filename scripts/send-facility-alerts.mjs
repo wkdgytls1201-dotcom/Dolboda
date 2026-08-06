@@ -17,6 +17,8 @@
 //   node ... --date=2026-08-03                                            # 날짜 지정(기본 오늘 KST)
 
 import { createRequire } from "module";
+// 메일 껍데기(로고 헤더·코랄 그라데이션 히어로·돌보다 소개·푸터)는 스크립트 전체가 공유한다
+import { renderEmail, infoCard } from "./lib/emailShell.mjs";
 const require = createRequire(import.meta.url);
 const { PrismaClient } = require("@prisma/client");
 const { PrismaPg } = require("@prisma/adapter-pg");
@@ -179,31 +181,49 @@ function mailBody(allEvents) {
     `\n\n국민건강보험공단 공개자료 기준이라 실제와 다를 수 있어요. 입소 가능 여부는 시설에 직접 확인해 주세요.\n\n` +
     `알림 설정 변경: ${SITE_URL}/notifications`;
 
+  // 사건 종류를 카드 위 배지로 — 여러 건이 섞여 올 때 무엇이 무엇인지 바로 갈린다
+  const badgeOf = (kind) =>
+    kind === "vacancy"
+      ? "자리 남음"
+      : kind === "gradeChange"
+        ? "등급 변동"
+        : kind === "savedSearch"
+          ? "저장 조건 일치"
+          : "새 시설";
+
   const cards = events
-    .map(
-      (e) => `
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:12px;border:1px solid #F0EDF6;border-radius:14px;">
-  <tr><td style="padding:16px 18px;">
-    <p style="margin:0 0 6px;font-size:17px;font-weight:800;color:#1B1730;">${esc(e.facilityName)}</p>
-    <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#3A3452;">${esc(e.detail)}</p>
-    <a href="${SITE_URL}/facility/${e.facilityId}" style="color:#FF6250;font-size:14px;font-weight:700;text-decoration:none;">시설 자세히 보기 →</a>
-  </td></tr>
-</table>`
+    .map((e) =>
+      infoCard({
+        badge: badgeOf(e.kind),
+        title: e.facilityName,
+        detail: e.detail,
+        linkText: "시설 자세히 보기",
+        linkHref: `${SITE_URL}/facility/${e.facilityId}`,
+      })
     )
     .join("");
 
-  const html = `<!doctype html><html lang="ko"><body style="margin:0;padding:0;background:#FFFBF3;font-family:-apple-system,BlinkMacSystemFont,'Malgun Gothic',sans-serif;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FFFBF3;padding:32px 16px;"><tr><td align="center">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:460px;background:#fff;border-radius:20px;overflow:hidden;">
-<tr><td style="padding:18px 24px;border-bottom:1px solid #F0EDF6;"><a href="${SITE_URL}" style="text-decoration:none;color:#FF6250;font-size:19px;font-weight:800;">${SITE_NAME}</a></td></tr>
-<tr><td style="padding:24px;">
-<p style="margin:0 0 16px;font-size:15px;font-weight:700;color:#1B1730;">${esc(headline)}</p>
-${cards}
-${overflow > 0 ? `<p style="margin:0 0 14px;font-size:13px;font-weight:700;color:#9C97AC;">…외 ${overflow}건 더 있어요. 사이트에서 전체를 확인해 주세요.</p>` : ""}
-<p style="margin:14px 0 0;font-size:12px;line-height:1.7;color:#9C97AC;">국민건강보험공단 공개자료 기준이라 실제와 다를 수 있어요. 입소 가능 여부는 시설에 직접 확인해 주세요.</p>
-</td></tr>
-<tr><td style="padding:14px 24px;background:#F7F5FB;text-align:center;"><a href="${SITE_URL}/notifications" style="color:#9C97AC;font-size:12px;">알림 설정 변경·수신 거부</a></td></tr>
-</table></td></tr></table></body></html>`;
+  const overflowHtml =
+    overflow > 0
+      ? `<p style="margin:2px 0 0;font-size:13px;font-weight:700;color:#8A839E;word-break:keep-all;">…외 ${overflow}건 더 있어요. 사이트에서 전체를 확인해 주세요.</p>`
+      : "";
+
+  const html = renderEmail({
+    siteUrl: SITE_URL,
+    siteName: SITE_NAME,
+    // 받은편지함 미리보기 — 열어볼지가 여기서 갈린다. 첫 시설명을 앞세운다.
+    preheader:
+      events.length === 1
+        ? `${events[0].facilityName} · ${events[0].detail}`
+        : `${events[0].facilityName} 외 ${allEvents.length - 1}곳 소식이 도착했어요`,
+    eyebrow: hasNewKind && !hasFacilityKind ? "새 시설 알림" : "관심시설 알림",
+    title: headline,
+    subtitle: "공단 공개자료가 어제와 달라진 곳만 골라 알려드려요.",
+    bodyHtml: cards + overflowHtml,
+    ctaText: "관심시설 전체 보기",
+    ctaHref: `${SITE_URL}/favorites`,
+    note: "국민건강보험공단 공개자료 기준이라 실제와 다를 수 있어요. 입소 가능 여부는 시설에 직접 확인해 주세요.",
+  });
   return { text, html };
 }
 
