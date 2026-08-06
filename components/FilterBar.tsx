@@ -15,6 +15,7 @@ import {
   ArrowDownUp,
   Loader2,
   Users,
+  HandHeart,
 } from "lucide-react";
 import { FACILITY_TYPE_LABEL, Facility, FacilityType, isHospital } from "@/lib/types";
 import { InfoTooltip } from "./InfoTooltip";
@@ -26,6 +27,7 @@ import { BottomSheet } from "./BottomSheet";
 import { useFacilities, useNearbyFacilities } from "@/lib/useFacilities";
 import {
   EMPTY_FILTERS,
+  EXTRA_SERVICE_OPTIONS,
   filterFacilityList,
   type FacilityFilters,
   type FilterContext,
@@ -332,6 +334,14 @@ export function FilterBar({
         onRemove: () => onChange({ ...filters, longTenureOnly: false }),
       });
     }
+    filters.extraServices.forEach((s) => {
+      chips.push({
+        key: `extra-${s}`,
+        label: `${s} 가능`,
+        onRemove: () =>
+          onChange({ ...filters, extraServices: filters.extraServices.filter((x) => x !== s) }),
+      });
+    });
     return chips;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters]);
@@ -345,7 +355,8 @@ export function FilterBar({
     (filters.onlyVacancy ? 1 : 0) +
     (filters.verifiedOnly ? 1 : 0) +
     (filters.hasPhotoOnly ? 1 : 0) +
-    (filters.longTenureOnly ? 1 : 0);
+    (filters.longTenureOnly ? 1 : 0) +
+    filters.extraServices.length;
 
   return (
     <div>
@@ -604,6 +615,36 @@ export function FilterBar({
               말없이 빠지면 "왜 병원은 안 걸러지지"가 되므로 화면에서 미리 알린다. */}
           <p className="mt-2 text-[11px] leading-relaxed text-ink-300">
             요양병원은 공개 자료에 근속 항목이 없어 이 조건이 적용되지 않아요.
+          </p>
+        </FilterSection>
+
+        <FilterSection icon={<HandHeart size={15} />} label="함께 받을 수 있는 서비스">
+          <p className="mb-2 text-[11px] leading-relaxed text-ink-300">
+            같은 기관에서 함께 제공하는 급여예요. 거동이 불편하실수록 방문목욕이 되는지가
+            크게 다릅니다.
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {EXTRA_SERVICE_OPTIONS.map((s) => (
+              <FilterPill
+                key={s}
+                label={s}
+                selected={draft.extraServices.includes(s)}
+                onClick={() =>
+                  setDraft((d) => ({
+                    ...d,
+                    extraServices: d.extraServices.includes(s)
+                      ? d.extraServices.filter((x) => x !== s)
+                      : [...d.extraServices, s],
+                  }))
+                }
+              />
+            ))}
+          </div>
+          {/* 입소 시설엔 이 값이 없는 게 데이터 결손이 아니라 사실이라, 걸러지는 게 맞다.
+              그래도 말없이 사라지면 "필터가 이상하다"가 되므로 이유를 미리 밝힌다. */}
+          <p className="mt-2 text-[11px] leading-relaxed text-ink-300">
+            요양원·요양병원은 어르신이 지내시는 곳이라 방문 서비스를 하지 않아요.
+            이 조건을 고르면 방문요양·주야간보호 중에서 찾게 됩니다.
           </p>
         </FilterSection>
 

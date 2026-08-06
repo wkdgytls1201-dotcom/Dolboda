@@ -38,7 +38,23 @@ export interface FacilityFilters {
    *    1,282곳 전부 데이터가 없다. 거르면 "조용히 0곳"이 된다.
    */
   longTenureOnly: boolean;
+  /**
+   * 같은 기관이 함께 제공하는 다른 급여 — 전부 만족해야 통과(AND).
+   *
+   * 방문목욕이 특히 실질적이다(10,348곳 보유). 거동이 어려운 어르신에게 목욕은 가장
+   * 힘든 일이고 "방문요양 받는 곳에서 목욕도 되나"는 보호자가 반드시 묻는 것인데,
+   * 지금까지는 시설을 하나씩 열어봐야 알 수 있었다(상세의 한 줄로만 있었다).
+   *
+   * ⚠️ 근속 필터와 달리 **입소 시설(요양원·요양병원)을 예외 처리하지 않는다.**
+   *    그쪽에 이 값이 없는 건 데이터 결손이 아니라 **실제로 방문 서비스를 안 하기
+   *    때문**이라, 걸러지는 게 맞다(실측: 요양원·요양병원 0%, 재가 58.8%, 주야간 20%).
+   *    대신 필터 화면에서 그 이유를 미리 밝힌다.
+   */
+  extraServices: string[];
 }
+
+/** 필터로 낼 부가 급여 — 표본이 얇은 것(단기보호 47곳)과 별도 화면이 있는 것(복지용구)은 뺐다 */
+export const EXTRA_SERVICE_OPTIONS = ["방문목욕", "방문요양", "방문간호"] as const;
 
 export const EMPTY_FILTERS: FacilityFilters = {
   types: [],
@@ -51,6 +67,7 @@ export const EMPTY_FILTERS: FacilityFilters = {
   goodScoreOnly: false,
   hasPhotoOnly: false,
   longTenureOnly: false,
+  extraServices: [],
 };
 
 // ---------------------------------------------------------------------------
@@ -148,6 +165,14 @@ export function filterFacilityList(
     //    사진 항목이 아예 없다(실측 2026-08-06: 요양병원 1,282곳 중 실사진 0곳).
     //    거르면 "요양병원 + 실사진" 조합이 **항상 0곳**이 된다. 근속 필터와 같은 이유.
     list = list.filter((x) => isHospital(x.f) || (x.f.photos?.length ?? 0) > 0);
+  }
+  if (filters.extraServices.length > 0) {
+    // 입소 시설은 여기서 자연히 걸러진다 — 방문 서비스를 제공하지 않으니 맞는 동작이다.
+    list = list.filter((x) => {
+      // 요양병원은 이 항목 자체가 없는 유형이라 빈 배열로 본다(programTags와 같은 처리)
+      const owned = new Set(isHospital(x.f) ? [] : x.f.otherServices ?? []);
+      return filters.extraServices.every((s) => owned.has(s));
+    });
   }
   if (filters.longTenureOnly) {
     // 요양병원은 근속 자료 자체가 없다 — 거르면 통째로 사라지므로 조건에서 제외한다.

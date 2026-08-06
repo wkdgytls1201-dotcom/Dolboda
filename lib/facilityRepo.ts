@@ -81,6 +81,9 @@ export function toCardFacility(f: FacilityDTO): FacilityDTO {
       : undefined,
     // 프로그램 필터·카드 배지에 쓰는 태그 요약 (원본 12만 행 대신 미리 계산된 요약만)
     programTags: anyF.programTags,
+    // 같은 기관이 함께 제공하는 다른 급여(방문목욕 등) — 검색 필터가 쓴다.
+    // 짧은 문자열 배열이라 페이로드 영향은 무시할 수준(시설당 20바이트 안팎).
+    otherServices: anyF.otherServices,
     // 홈 "점수 높은 시설"·검색 등급순 동점 비교가 총점만 쓰므로 domains 등 큰 덩어리는 뺀다
     evaluationDetail: anyF.evaluationDetail
       ? { totalScore: (anyF.evaluationDetail as { totalScore: number }).totalScore }

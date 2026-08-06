@@ -3,7 +3,11 @@ import type { Prisma } from "@prisma/client";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { MAX_SAVED_SEARCHES, hasAnyFilter, summarizeFilters } from "@/lib/savedSearch";
-import { EMPTY_FILTERS, type FacilityFilters } from "@/lib/facilityFilters";
+import {
+  EMPTY_FILTERS,
+  EXTRA_SERVICE_OPTIONS,
+  type FacilityFilters,
+} from "@/lib/facilityFilters";
 
 // 저장한 검색조건 — /search에서 저장하면 여기 쌓이고, /notifications에서 목록·삭제한다.
 // 매칭·발송은 scripts/send-facility-alerts.mjs가 매일 새로 등록된 시설을 이 조건들과
@@ -47,6 +51,12 @@ export async function POST(req: Request) {
     goodScoreOnly: raw.goodScoreOnly === true,
     hasPhotoOnly: raw.hasPhotoOnly === true,
     longTenureOnly: raw.longTenureOnly === true,
+    // 알려진 급여만 통과시킨다 — 모르는 값이 들어오면 매칭 스크립트가 영영 0건이 된다
+    extraServices: Array.isArray(raw.extraServices)
+      ? raw.extraServices.filter((s): s is string =>
+          (EXTRA_SERVICE_OPTIONS as readonly string[]).includes(s as string)
+        )
+      : EMPTY_FILTERS.extraServices,
   };
 
   if (!hasAnyFilter(filters)) {

@@ -143,6 +143,11 @@ function matchesSavedSearch(facility, filters) {
   // 요양병원은 실사진 자료가 존재하지 않는다(심평원 자료에 항목 없음) — 화면 필터와
   // 같이 제외한다. 안 그러면 이 조건을 저장한 사람에게 요양병원 알림이 영영 안 간다.
   if (filters.hasPhotoOnly && !isHospital && (extra.photos?.length ?? 0) === 0) return false;
+  if (filters.extraServices?.length > 0) {
+    // 입소 시설은 방문 서비스를 하지 않아 자연히 걸러진다 — 화면 필터와 같은 규칙이다.
+    const owned = new Set(extra.otherServices ?? []);
+    if (!filters.extraServices.every((s) => owned.has(s))) return false;
+  }
   if (filters.longTenureOnly && !isHospital) {
     // ⚠️ 임계값 사본 — 원본은 lib/tenureSignal.ts의 TENURE_GOOD_PCT·TENURE_MIN_STAFF.
     //    순수 node라 ts를 못 읽어 두 벌이다. 한쪽만 고치면 화면과 알림의 판정이 갈린다.
