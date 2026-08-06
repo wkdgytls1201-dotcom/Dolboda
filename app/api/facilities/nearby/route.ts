@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { rowToFacility, toCardFacility } from "@/lib/facilityRepo";
+import { rowToFacility } from "@/lib/facilityRepo";
+import { cardFacilitiesByIds } from "@/lib/facilityCardQuery";
 
 // "총 N개"에 쓰는 건수는 좌표가 있는 시설 수라 사용자 위치와 무관하다 — 유형 조합에만
 // 달려 있는데도 요청마다 28,000행을 세고 있었다. 유형 조합별로 하루 캐시한다.
@@ -59,18 +60,25 @@ export async function GET(req: Request) {
     LIMIT ${limit}
   `;
 
-  const rows = await prisma.facility.findMany({ where: { id: { in: nearest.map((n) => n.id) } } });
-  const rowById = new Map(rows.map((r) => [r.id, r]));
   const distanceById = new Map(nearest.map((n) => [n.id, n.distanceKm]));
+  const orderedIds = nearest.map((n) => n.id);
 
-  const items = nearest
-    .map((n) => rowById.get(n.id))
-    .filter((r): r is NonNullable<typeof r> => !!r)
-    .map((row) => {
-      const f = rowToFacility(row);
-      const base = searchParams.get("view") === "card" ? toCardFacility(f) : f;
-      return { ...base, distanceKm: distanceById.get(row.id) };
+  // 카드 화면은 추린 페이로드로 받는다 — 여기도 300건을 부르는 자리라 검색 목록과
+  // 같은 이유로 전체 컬럼을 받을 이유가 없다(lib/facilityCardQuery.ts 주석 참조).
+  if (searchParams.get("view") === "card") {
+    const cards = await cardFacilitiesByIds(orderedIds);
+    return NextResponse.json({
+      items: cards.map((f) => ({ ...f, distanceKm: distanceById.get(f.id) })),
+      total: await totalPromise,
     });
+  }
+
+  const rows = await prisma.facility.findMany({ where: { id: { in: orderedIds } } });
+  const rowById = new Map(rows.map((r) => [r.id, r]));
+  const items = orderedIds
+    .map((id) => rowById.get(id))
+    .filter((r): r is NonNullable<typeof r> => !!r)
+    .map((row) => ({ ...rowToFacility(row), distanceKm: distanceById.get(row.id) }));
 
   return NextResponse.json({ items, total: await totalPromise });
 }

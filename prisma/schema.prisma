@@ -55,6 +55,10 @@ model Facility {
   @@index([facilityType])
   @@index([dataSource])
   @@index([missingSince])
+  // 목록 API의 기본 정렬이 createdAt이다. 인덱스가 없으면 300건을 고르려고 28,000행을
+  // 전부 훑어 정렬한다(실측: Seq Scan 28,834행 → top-N heapsort). 인덱스가 있으면
+  // 순서대로 걸어가다 300건을 채우고 멈춘다 — 제외 대상(mock)이 10곳뿐이라 거의 300행만 본다.
+  @@index([createdAt])
 }
 
 // 돌봄 합의서 — 보호자와 돌보다 매니저가 직접 맺는 합의의 기록.

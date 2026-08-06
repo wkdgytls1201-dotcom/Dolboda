@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { Prisma, FacilityType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { rowToFacility, toCardFacility } from "@/lib/facilityRepo";
+import { cardFacilitiesByIds } from "@/lib/facilityCardQuery";
 
 const DEFAULT_LIMIT = 200;
 const MAX_LIMIT = 500;
@@ -25,17 +26,17 @@ export async function GET(req: Request) {
   // (비교하기·찜한시설처럼 기본 200건 안에 없을 수도 있는 특정 시설을 조회할 때 씀)
   // view=card는 여기서도 통한다 — 카드만 그리는 화면(홈 최근 본 시설)이 상세용 전체
   // 페이로드를 받을 이유가 없다. 비교함은 표에 전체 필드가 필요해 기본(전체)을 유지.
+  const cardView = searchParams.get("view") === "card";
+
   if (ids) {
     const idList = ids.split(",").filter(Boolean);
+    if (cardView) {
+      const items = await cardFacilitiesByIds(idList);
+      return NextResponse.json({ items, total: items.length }, { headers: CACHE_HEADERS });
+    }
     const rows = await prisma.facility.findMany({ where: { id: { in: idList } } });
     const mapped = rows.map(rowToFacility);
-    return NextResponse.json(
-      {
-        items: searchParams.get("view") === "card" ? mapped.map(toCardFacility) : mapped,
-        total: rows.length,
-      },
-      { headers: CACHE_HEADERS }
-    );
+    return NextResponse.json({ items: mapped, total: rows.length }, { headers: CACHE_HEADERS });
   }
 
   // 데모용 시설(dataSource=mock 10건)은 공개 목록에 섞이면 안 된다 — 실제로 없는 시설이
@@ -59,19 +60,33 @@ export async function GET(req: Request) {
     })) as Prisma.FacilityWhereInput[];
   }
 
+  // 목록 화면은 카드에 쓰는 몇 개 필드만 필요하다. 그래서 두 단계로 나눈다:
+  // ① 필터·정렬은 Prisma로 그대로 두되 **id만** 받고(전송 7KB), ② 그 id들의 카드
+  // 페이로드를 SQL에서 미리 추려 받는다(lib/facilityCardQuery.ts).
+  //
+  // 예전엔 한 번에 전체 컬럼을 받아 Node에서 버렸다 — 300건에 DB→서버 1,628KB·356ms였고,
+  // 그 대부분이 카드가 안 쓰는 사진 목록·프로그램 원본·근속 상세였다(실측 2026-08-06).
+  if (cardView) {
+    const [idRows, total] = await Promise.all([
+      prisma.facility.findMany({
+        where,
+        orderBy: { createdAt: "asc" },
+        take: limit,
+        select: { id: true },
+      }),
+      prisma.facility.count({ where }),
+    ]);
+    const items = await cardFacilitiesByIds(idRows.map((r) => r.id));
+    return NextResponse.json({ items, total }, { headers: CACHE_HEADERS });
+  }
+
   const [rows, total] = await Promise.all([
     prisma.facility.findMany({ where, orderBy: { createdAt: "asc" }, take: limit }),
     prisma.facility.count({ where }),
   ]);
 
-  const items = rows.map(rowToFacility);
-  // 목록 화면은 카드에 쓰는 몇 개 필드만 필요한데, 전체를 내려주면 300건에 290KB가 넘는다.
-  // view=card면 필요한 것만 추려 보낸다(상세 페이지는 ids= 조회라 영향 없음).
   return NextResponse.json(
-    {
-      items: searchParams.get("view") === "card" ? items.map(toCardFacility) : items,
-      total,
-    },
+    { items: rows.map(rowToFacility), total },
     { headers: CACHE_HEADERS }
   );
 }
