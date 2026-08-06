@@ -71,9 +71,12 @@ export const metadata: Metadata = {
       "D0jTYRzQmyfFDSMJOOXVyxKSU9BI-vnARrGfgiEd29M",
     ].filter((v): v is string => Boolean(v)),
     other: {
-      "naver-site-verification":
-        process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION ??
+      // 구글과 같은 이유로 여러 개를 함께 둔다(하나 지우면 그 속성 인증이 풀린다)
+      "naver-site-verification": [
+        process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION,
+        "ce48eee558cc15a53f570f965c0f57964de3c5b1", // 2026-08-07 추가
         "17ae401edac83b65f683811a2f470a9aacc4b299",
+      ].filter((v): v is string => Boolean(v)),
     },
   },
 };
