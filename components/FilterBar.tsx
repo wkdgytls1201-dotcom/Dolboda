@@ -317,6 +317,13 @@ export function FilterBar({
         onRemove: () => onChange({ ...filters, goodScoreOnly: false }),
       });
     }
+    if (filters.hasPhotoOnly) {
+      chips.push({
+        key: "has-photo",
+        label: "실사진 있는 곳만",
+        onRemove: () => onChange({ ...filters, hasPhotoOnly: false }),
+      });
+    }
     return chips;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters]);
@@ -328,7 +335,8 @@ export function FilterBar({
     filters.programTags.length +
     filters.departments.length +
     (filters.onlyVacancy ? 1 : 0) +
-    (filters.verifiedOnly ? 1 : 0);
+    (filters.verifiedOnly ? 1 : 0) +
+    (filters.hasPhotoOnly ? 1 : 0);
 
   return (
     <div>
@@ -553,6 +561,14 @@ export function FilterBar({
               label="공공데이터 확인 시설"
               selected={draft.verifiedOnly}
               onClick={() => setDraft((d) => ({ ...d, verifiedOnly: !d.verifiedOnly }))}
+            />
+            {/* 사진 없는 카드는 일러스트·로드뷰로 채워진다 — 보호자에게 "실제로 어떻게
+                생겼는지 본 곳"과 "안 본 곳"은 판단의 무게가 다르다. 전국 사진을 채우는
+                중이라(2026-08-06 기준 32%) 지금은 크게 좁히는 필터다. */}
+            <FilterPill
+              label="📷 실사진 있는 곳만"
+              selected={draft.hasPhotoOnly}
+              onClick={() => setDraft((d) => ({ ...d, hasPhotoOnly: !d.hasPhotoOnly }))}
             />
           </div>
         </FilterSection>

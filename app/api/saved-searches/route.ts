@@ -45,6 +45,7 @@ export async function POST(req: Request) {
     verifiedOnly: raw.verifiedOnly === true,
     programTags: Array.isArray(raw.programTags) ? raw.programTags : EMPTY_FILTERS.programTags,
     goodScoreOnly: raw.goodScoreOnly === true,
+    hasPhotoOnly: raw.hasPhotoOnly === true,
   };
 
   if (!hasAnyFilter(filters)) {

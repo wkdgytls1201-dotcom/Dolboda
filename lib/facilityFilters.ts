@@ -19,6 +19,14 @@ export interface FacilityFilters {
   programTags: ProgramTag[];
   /** 안심지수 "우수"(전국 상위 25%) 이상만 — 돌보다의 핵심 지표를 필터 첫 자리에 내세운다 */
   goodScoreOnly: boolean;
+  /**
+   * 실사진이 있는 시설만.
+   *
+   * 사진 없는 카드는 일러스트나 로드뷰로 채워지는데, 보호자 입장에서 "실제로 어떻게
+   * 생겼는지 본 곳"과 "안 본 곳"은 판단의 무게가 다르다. 전국 사진을 채워 넣는 중이라
+   * (2026-08-06 기준 32%, 곧 90%대) 지금은 좁히는 필터지만 곧 기본 기대치가 된다.
+   */
+  hasPhotoOnly: boolean;
 }
 
 export const EMPTY_FILTERS: FacilityFilters = {
@@ -30,6 +38,7 @@ export const EMPTY_FILTERS: FacilityFilters = {
   verifiedOnly: false,
   programTags: [],
   goodScoreOnly: false,
+  hasPhotoOnly: false,
 };
 
 // ---------------------------------------------------------------------------
@@ -115,6 +124,10 @@ export function filterFacilityList(
   }
   if (filters.goodScoreOnly) {
     list = list.filter((x) => (x.f.dolbodaTotal ?? 0) >= SCORE_LEVEL_THRESHOLDS.good);
+  }
+  if (filters.hasPhotoOnly) {
+    // 카드 페이로드는 photos를 첫 장만 싣는다(lib/facilityRepo.ts) — 있고 없고만 보면 된다
+    list = list.filter((x) => (x.f.photos?.length ?? 0) > 0);
   }
   return list;
 }
