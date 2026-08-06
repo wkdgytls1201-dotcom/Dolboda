@@ -15,7 +15,7 @@ import { LocationConsentModal } from "@/components/LocationConsentModal";
 import { useNearbyFacilities, type FacilityStats } from "@/lib/useFacilities";
 import { DEFAULT_ORIGIN, haversineDistanceKm } from "@/lib/distance";
 import { isHospital, type Facility } from "@/lib/types";
-import { SCORE_LEVEL_THRESHOLDS } from "@/lib/dolbodaScore";
+import { scoreThresholdsOf } from "@/lib/dolbodaScore";
 import { LOCATION_CONSENT_KEY, saveUserLocation, readUserLocation } from "@/lib/userLocation";
 
 // 홈 전용 경량 목록 — 추천 시설과 "가장 최근 설립"의 전국 대체 후보만 담겨 있다.
@@ -189,7 +189,7 @@ export default function HomeClient({
   const regionTop = useMemo(() => {
     if (nearbyPool.length < 50) return [];
     return nearbyPool
-      .filter((f) => (f.dolbodaTotal ?? 0) >= SCORE_LEVEL_THRESHOLDS.good)
+      .filter((f) => (f.dolbodaTotal ?? 0) >= scoreThresholdsOf(f.facilityType).good)
       .slice()
       .sort((a, b) => (b.dolbodaTotal ?? 0) - (a.dolbodaTotal ?? 0) || a.distanceKm - b.distanceKm)
       .slice(0, 6);

@@ -470,12 +470,50 @@ export function calcDolbodaScore(f: Facility, extras?: ScoreExtras): DolbodaScor
 // (가중치·신호 매핑은 그대로 — 점수 자체는 바뀌지 않고 부르는 이름만 바뀐다)
 export const SCORE_LEVEL_THRESHOLDS = { veryGood: 86, good: 79, fair: 62 } as const;
 
-export function scoreLevel(total: number): { label: string; colorClassName: string } {
-  if (total >= SCORE_LEVEL_THRESHOLDS.veryGood)
-    return { label: "매우 우수", colorClassName: "text-mint-700" };
-  if (total >= SCORE_LEVEL_THRESHOLDS.good)
-    return { label: "우수", colorClassName: "text-primary-600" };
-  if (total >= SCORE_LEVEL_THRESHOLDS.fair)
-    return { label: "보통", colorClassName: "text-accent-600" };
+/**
+ * ★ 라벨 문턱을 **유형별**로 나눈다 (2026-08-06).
+ *
+ * 왜: 하나의 전체 분포로 문턱을 잡았더니, 유형에 따라 라벨이 불공평해졌다.
+ * 전수 대조 실측(18,136곳):
+ *
+ *   유형          "우수" 이상   "확인 필요"   중앙값
+ *   요양원          72.4%        1.2%        84
+ *   요양병원        58.9%        1.0%        80
+ *   주야간보호      38.9%        3.1%        80
+ *   **방문요양**    **0.5%**    **47.3%**    **67**   ← 15,677곳, 전체의 54%
+ *
+ * 원인은 시설 품질이 아니라 계산 구조다. nhisAreas()가 네 유형을 함께 처리하는데
+ * 방문요양에는 정원·침실 구성·프로그램실·격리실이 **존재하지 않는다.** 그 미확보
+ * 가중치는 PRIOR_SCORE(65)로 채워지고, 그래서 방문요양 중앙값이 67에 눌린다
+ * — 점수가 아니라 기본값이 표시되던 셈이다.
+ *
+ * 고친 방식: **점수 계산·가중치는 그대로 두고 부르는 이름만** 유형별 분포에서 다시 뽑았다
+ * (2026-08-06 실측 분위수). 이제 라벨은 "같은 유형 안에서 어디쯤인가"를 뜻한다 —
+ * 보호자는 어차피 유형을 먼저 정하고 그 안에서 고르므로 이쪽이 실제 판단에 맞는다.
+ *
+ * ⚠️ 라벨의 뜻이 바뀌었으므로 화면은 기준을 함께 밝혀야 한다(DolbodaScoreCard의 안내문).
+ *    유형을 모르면 예전처럼 전체 기준을 쓴다.
+ */
+const SCORE_LEVEL_BY_TYPE: Record<string, { veryGood: number; good: number; fair: number }> = {
+  //                  p90         p75        p25
+  NURSING_HOME: { veryGood: 91, good: 87, fair: 78 },
+  NURSING_HOSPITAL: { veryGood: 88, good: 84, fair: 75 },
+  DAY_NIGHT_CARE: { veryGood: 87, good: 82, fair: 71 },
+  HOME_CARE: { veryGood: 72, good: 68, fair: 54 },
+};
+
+/** 이 유형의 라벨 문턱. 모르는 유형이면 전체 기준으로 떨어진다. */
+export function scoreThresholdsOf(facilityType?: string | null) {
+  return SCORE_LEVEL_BY_TYPE[facilityType ?? ""] ?? SCORE_LEVEL_THRESHOLDS;
+}
+
+export function scoreLevel(
+  total: number,
+  facilityType?: string | null
+): { label: string; colorClassName: string } {
+  const t = scoreThresholdsOf(facilityType);
+  if (total >= t.veryGood) return { label: "매우 우수", colorClassName: "text-mint-700" };
+  if (total >= t.good) return { label: "우수", colorClassName: "text-primary-600" };
+  if (total >= t.fair) return { label: "보통", colorClassName: "text-accent-600" };
   return { label: "확인 필요", colorClassName: "text-ink-500" };
 }

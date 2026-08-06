@@ -580,6 +580,12 @@ export function FilterBar({
               onClick={() => setDraft((d) => ({ ...d, hasPhotoOnly: !d.hasPhotoOnly }))}
             />
           </div>
+          {/* 두 조건 모두 요양병원·방문요양에는 해당 자료나 개념이 없다.
+              말없이 통과시키면 "필터가 안 먹는다"로 읽히므로 화면에서 미리 밝힌다. */}
+          <p className="mt-2 text-[11px] leading-relaxed text-ink-300">
+            방문요양·요양병원은 정원 개념이 없어 빈자리 조건에 걸리지 않아요.
+            요양병원은 공개 자료에 사진이 없어 실사진 조건도 적용되지 않아요.
+          </p>
         </FilterSection>
 
         <FilterSection icon={<Users size={15} />} label="돌보는 사람">

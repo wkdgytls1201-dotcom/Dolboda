@@ -140,7 +140,9 @@ function matchesSavedSearch(facility, filters) {
   // (위 예외는 "재현 비용이 큰" 두 가지에 대한 것이지, 확인할 수 있는 조건까지
   //  넘기라는 뜻이 아니다 — 저장할 때 고른 조건이 알림에서 조용히 무시되면
   //  "이 시설은 왜 왔지"가 된다.)
-  if (filters.hasPhotoOnly && (extra.photos?.length ?? 0) === 0) return false;
+  // 요양병원은 실사진 자료가 존재하지 않는다(심평원 자료에 항목 없음) — 화면 필터와
+  // 같이 제외한다. 안 그러면 이 조건을 저장한 사람에게 요양병원 알림이 영영 안 간다.
+  if (filters.hasPhotoOnly && !isHospital && (extra.photos?.length ?? 0) === 0) return false;
   if (filters.longTenureOnly && !isHospital) {
     // ⚠️ 임계값 사본 — 원본은 lib/tenureSignal.ts의 TENURE_GOOD_PCT·TENURE_MIN_STAFF.
     //    순수 node라 ts를 못 읽어 두 벌이다. 한쪽만 고치면 화면과 알림의 판정이 갈린다.

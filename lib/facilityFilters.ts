@@ -1,7 +1,7 @@
 import { isHospital, type Facility, type FacilityType } from "./types";
 import type { ProgramTag } from "./programTaxonomy";
 import { haversineDistanceKm } from "./distance";
-import { SCORE_LEVEL_THRESHOLDS } from "./dolbodaScore";
+import { scoreThresholdsOf } from "./dolbodaScore";
 
 // FilterBar.tsx(클라이언트 컴포넌트)와 서버 쪽(API 라우트·lib/savedSearch.ts)이
 // 같은 타입을 써야 하는데, 클라이언트 컴포넌트 파일에서 값을 import하면 그 파일 전체
@@ -135,11 +135,19 @@ export function filterFacilityList(
     list = list.filter((x) => x.f.dataSource === "public");
   }
   if (filters.goodScoreOnly) {
-    list = list.filter((x) => (x.f.dolbodaTotal ?? 0) >= SCORE_LEVEL_THRESHOLDS.good);
+    // 문턱은 유형별이다 — 전체 하나로 재면 방문요양 15,677곳 중 0.5%만 통과해
+    // "방문요양 + 안심지수 우수"가 사실상 죽은 조합이 된다(실측 2026-08-06).
+    list = list.filter(
+      (x) => (x.f.dolbodaTotal ?? 0) >= scoreThresholdsOf(x.f.facilityType).good
+    );
   }
   if (filters.hasPhotoOnly) {
-    // 카드 페이로드는 photos를 첫 장만 싣는다(lib/facilityRepo.ts) — 있고 없고만 보면 된다
-    list = list.filter((x) => (x.f.photos?.length ?? 0) > 0);
+    // 카드 페이로드는 photos를 첫 장만 싣는다(lib/facilityRepo.ts) — 있고 없고만 보면 된다.
+    //
+    // ⚠️ 요양병원은 제외한다 — 공단 시설사진은 장기요양기관만 있고 심평원 자료에는
+    //    사진 항목이 아예 없다(실측 2026-08-06: 요양병원 1,282곳 중 실사진 0곳).
+    //    거르면 "요양병원 + 실사진" 조합이 **항상 0곳**이 된다. 근속 필터와 같은 이유.
+    list = list.filter((x) => isHospital(x.f) || (x.f.photos?.length ?? 0) > 0);
   }
   if (filters.longTenureOnly) {
     // 요양병원은 근속 자료 자체가 없다 — 거르면 통째로 사라지므로 조건에서 제외한다.
