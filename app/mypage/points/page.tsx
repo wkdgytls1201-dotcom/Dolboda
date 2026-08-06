@@ -18,6 +18,8 @@ import {
 interface PointsData {
   balance: number;
   entries: { id: string; amount: number; kind: string; createdAt: string }[];
+  /** 가장 먼저 소멸하는 미사용 적립분 — 없으면 null */
+  expiring: { amount: number; at: string } | null;
   referral: { code: string; invited: number; rewarded: number };
   ribbon: { eligible: boolean; until: string | null };
   requestBoost: { eligible: boolean; until: string | null };
@@ -110,6 +112,19 @@ export default function PointsPage() {
           보호자의 후기와 감사가 쌓이는 리워드예요. 현금·상품권으로 바꿀 수 없고, 돌보다
           안에서만 쓸 수 있어요.
         </p>
+        {/* "24개월 뒤 사라진다"고 안내만 하고 언제인지 안 알려주면 쓸 기회를 놓친다.
+            오래 적립된 것부터 쓰이므로(FIFO), 여기 뜨는 건 늘 가장 먼저 사라질 몫이다. */}
+        {data.expiring && (
+          <p className="mt-2 rounded-lg bg-white/15 px-2.5 py-1.5 text-[12px] font-semibold">
+            {data.expiring.amount.toLocaleString()}P가{" "}
+            {new Date(data.expiring.at).toLocaleDateString("ko-KR", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })}
+            에 사라져요
+          </p>
+        )}
       </section>
 
       {/* 잔액 바로 아래 — 화면 폭에 따라 여기서 끝처럼 보일 수 있어 아래 내용을 상시 안내 */}

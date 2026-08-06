@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { getPointBalance } from "@/lib/points";
+import { getPointBalance, usableBalance, nextExpiry } from "@/lib/points";
 import { POINT_SPEND } from "@/lib/pointsConfig";
 import { getOrCreateReferralCode } from "@/lib/referral";
 
@@ -15,7 +15,7 @@ export async function GET() {
   }
   const userId = session.user.id;
 
-  const [balance, entries, sitterProfile, openRequest, referralCode, invited, rewarded] =
+  const [balance, entries, allEntries, sitterProfile, openRequest, referralCode, invited, rewarded] =
     await Promise.all([
     getPointBalance(userId),
     prisma.pointLedger.findMany({
@@ -24,6 +24,8 @@ export async function GET() {
       take: 30,
       select: { id: true, amount: true, kind: true, createdAt: true },
     }),
+    // 소멸 예정 계산은 30건이 아니라 원장 전체를 봐야 한다(오래된 적립이 먼저 소멸한다)
+    prisma.pointLedger.findMany({ where: { userId }, select: { amount: true, createdAt: true } }),
     prisma.sitterProfile.findUnique({
       where: { userId },
       select: { id: true, ribbonUntil: true },
@@ -41,9 +43,13 @@ export async function GET() {
     }),
   ]);
 
+  // "24개월 뒤 사라진다"고 안내만 하고 언제인지 안 알려주면 쓸 기회를 놓친다
+  const expiring = nextExpiry(allEntries);
+
   return NextResponse.json({
     balance,
     entries,
+    expiring: expiring ? { amount: expiring.amount, at: expiring.at } : null,
     referral: { code: referralCode, invited, rewarded },
     ribbon: {
       eligible: sitterProfile !== null,
@@ -76,8 +82,13 @@ export async function POST(req: Request) {
     const result = await prisma.$transaction(async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${userId + ":points"}))`;
 
-      const agg = await tx.pointLedger.aggregate({ where: { userId }, _sum: { amount: true } });
-      const balance = agg._sum.amount ?? 0;
+      // 잔액은 소멸분을 뺀 값이어야 한다 — 단순 합산을 쓰면 24개월 지난 포인트로도
+      // 결제가 되고, 화면에 보이는 잔액(getPointBalance)과도 어긋난다.
+      const entries = await tx.pointLedger.findMany({
+        where: { userId },
+        select: { amount: true, createdAt: true },
+      });
+      const balance = usableBalance(entries);
       if (balance < product.price) {
         return { error: `포인트가 부족해요. (보유 ${balance}P / 필요 ${product.price}P)` };
       }
