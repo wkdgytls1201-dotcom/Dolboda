@@ -215,6 +215,10 @@ function nhisAreas(
   extras?: ScoreExtras
 ): ScoreSignal[][] {
   const hasCapacity = f.capacity > 0;
+  // "정원 개념이 없는 유형"은 방문요양뿐이다. 정원 값이 0인 것과 구분해야 한다 —
+  // 요양원 16곳·주야간 13곳은 정원이 0으로 비어 있는 **데이터 결손**이고(실측 2026-08-06),
+  // 그건 '해당 없음'이 아니라 '안 낸 값'이라 평균 수렴 보정을 받는 게 맞다.
+  const isHomeCare = f.facilityType === "HOME_CARE";
   const occupancy = f.currentOccupancy ?? 0;
   const vacancy = hasCapacity ? f.capacity - occupancy : 0;
   const waitlist = f.waitlistCount ?? 0;
@@ -242,10 +246,17 @@ function nhisAreas(
   const medical: ScoreSignal[] = [
     {
       label: "간호인력 배치",
+      // ⚠️ 정원 개념이 없는 유형(방문요양 등)에 간호사가 없는 건 **결격이 아니라 정상**이다.
+      //    간호는 방문간호라는 별도 급여이고, 방문요양센터는 요양보호사가 가정을 찾는 서비스다.
+      //    예전엔 이걸 30점 감점으로 처리해, 재가의 의료 영역 평균이 30점에 눌려 있었다
+      //    (2026-08-06 실측 — 요양원 84 · 주야간 64 · 요양병원 86 대비). 가중치가 23%라
+      //    이 한 항목이 유형 간 점수 격차의 대부분을 만들고 있었다.
       score: !hasStaffData
         ? null
         : nurseCount === 0
-        ? 30
+        ? isHomeCare
+          ? PRIOR_SCORE // 방문요양 — 해당 없음이라 감점도 가점도 하지 않고 중립에 둔다
+          : 30
         : perNurse == null
         ? 70 // 재가처럼 정원 개념이 없으면 배치 사실만으로 중간 이상
         : perNurse <= 15
@@ -431,7 +442,13 @@ function nhisAreas(
           note: waitlist > 0 ? `대기 ${waitlist}명` : "대기 없음",
         },
       ]
-    : [{ label: "입소 여유", score: null, note: "정원 개념이 없는 유형이에요" }];
+    : [
+        {
+          label: "입소 여유",
+          score: null,
+          note: "정원 개념이 없는 유형이에요",
+        },
+      ];
 
   return [safety, medical, care, environment, transparency, availability];
 }
@@ -471,40 +488,22 @@ export function calcDolbodaScore(f: Facility, extras?: ScoreExtras): DolbodaScor
 export const SCORE_LEVEL_THRESHOLDS = { veryGood: 86, good: 79, fair: 62 } as const;
 
 /**
- * ★ 라벨 문턱을 **유형별**로 나눈다 (2026-08-06).
+ * 라벨 문턱은 **전 유형 공통**이다. 유형별로 나누는 안을 한 번 넣었다가 되돌렸다(2026-08-06).
  *
- * 왜: 하나의 전체 분포로 문턱을 잡았더니, 유형에 따라 라벨이 불공평해졌다.
- * 전수 대조 실측(18,136곳):
+ * 되돌린 이유: 유형별로 자르면 각 유형이 기계적으로 상위 25%만 "우수"가 되는데,
+ * 그건 **모든 유형의 품질 분포가 같다고 가정**하는 것이다. 요양원은 인력·시설 기준을
+ * 더 강하게 받으므로 실제로 더 높은 게 자연스럽고, 그 차이까지 눌러 없앨 이유가 없다.
+ * 무엇보다 요양원 등 **약 3,800곳이 "우수"에서 내려앉는** 부작용이 있었다.
  *
- *   유형          "우수" 이상   "확인 필요"   중앙값
- *   요양원          72.4%        1.2%        84
- *   요양병원        58.9%        1.0%        80
- *   주야간보호      38.9%        3.1%        80
- *   **방문요양**    **0.5%**    **47.3%**    **67**   ← 15,677곳, 전체의 54%
+ * 방문요양이 낮게 나오던 진짜 원인은 라벨이 아니라 계산이었다 — 그 유형에 없는 항목을
+ * "미제출"과 같이 취급해 PRIOR_SCORE로 채우던 것(위 `notApplicable` 주석 참조).
+ * 그쪽을 고치니 방문요양이 제자리를 찾았고, 다른 유형은 아무것도 바뀌지 않았다.
  *
- * 원인은 시설 품질이 아니라 계산 구조다. nhisAreas()가 네 유형을 함께 처리하는데
- * 방문요양에는 정원·침실 구성·프로그램실·격리실이 **존재하지 않는다.** 그 미확보
- * 가중치는 PRIOR_SCORE(65)로 채워지고, 그래서 방문요양 중앙값이 67에 눌린다
- * — 점수가 아니라 기본값이 표시되던 셈이다.
- *
- * 고친 방식: **점수 계산·가중치는 그대로 두고 부르는 이름만** 유형별 분포에서 다시 뽑았다
- * (2026-08-06 실측 분위수). 이제 라벨은 "같은 유형 안에서 어디쯤인가"를 뜻한다 —
- * 보호자는 어차피 유형을 먼저 정하고 그 안에서 고르므로 이쪽이 실제 판단에 맞는다.
- *
- * ⚠️ 라벨의 뜻이 바뀌었으므로 화면은 기준을 함께 밝혀야 한다(DolbodaScoreCard의 안내문).
- *    유형을 모르면 예전처럼 전체 기준을 쓴다.
+ * 이 함수는 그 되돌림 이후에도 호출부(카드·필터·홈·상세)를 그대로 두려고 남겨둔 자리다.
+ * 유형별 문턱이 다시 필요해지면 여기만 바꾸면 된다.
  */
-const SCORE_LEVEL_BY_TYPE: Record<string, { veryGood: number; good: number; fair: number }> = {
-  //                  p90         p75        p25
-  NURSING_HOME: { veryGood: 91, good: 87, fair: 78 },
-  NURSING_HOSPITAL: { veryGood: 88, good: 84, fair: 75 },
-  DAY_NIGHT_CARE: { veryGood: 87, good: 82, fair: 71 },
-  HOME_CARE: { veryGood: 72, good: 68, fair: 54 },
-};
-
-/** 이 유형의 라벨 문턱. 모르는 유형이면 전체 기준으로 떨어진다. */
-export function scoreThresholdsOf(facilityType?: string | null) {
-  return SCORE_LEVEL_BY_TYPE[facilityType ?? ""] ?? SCORE_LEVEL_THRESHOLDS;
+export function scoreThresholdsOf(_facilityType?: string | null) {
+  return SCORE_LEVEL_THRESHOLDS;
 }
 
 export function scoreLevel(

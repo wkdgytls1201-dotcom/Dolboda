@@ -400,7 +400,6 @@ export default function FacilityDetailClient({
             grade={facility.grade}
             gradeSource={facility.gradeSource}
             facilityType={facility.facilityType}
-            facilityTypeLabel={FACILITY_TYPE_LABEL[facility.facilityType]}
             regionContext={
               scoreContext?.regionAverage != null && scoreContext.regionName
                 ? {

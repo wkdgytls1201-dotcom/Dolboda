@@ -30,8 +30,19 @@ export async function awardPoints(params: {
       },
     });
     return true;
-  } catch {
-    // 이미 지급된 사건(P2002) 또는 일시 오류 — 어느 쪽이든 본 동작을 막지 않는다
+  } catch (e) {
+    // 이미 지급된 사건(P2002) 또는 일시 오류 — 어느 쪽이든 본 동작을 막지 않는다.
+    //
+    // 다만 **일시 오류는 흔적을 남긴다.** 중복 지급(P2002)은 정상 동작이라 조용해도 되지만,
+    // DB 장애로 못 준 것까지 조용히 삼키면 "포인트가 안 들어왔다"는 문의가 왔을 때
+    // 무슨 일이 있었는지 알 방법이 없다(2026-08-06 감사에서 확인).
+    const code = (e as { code?: string })?.code;
+    if (code !== "P2002") {
+      console.error(
+        `포인트 적립 실패(중복 아님): user=${params.userId} kind=${params.kind} ref=${params.refId}`,
+        e
+      );
+    }
     return false;
   }
 }

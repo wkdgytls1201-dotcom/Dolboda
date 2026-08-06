@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { awardPoints } from "@/lib/points";
-import { POINT_EARN, REFERRAL_CLAIM_WINDOW_DAYS } from "@/lib/pointsConfig";
+import {
+  POINT_EARN,
+  REFERRAL_CLAIM_WINDOW_DAYS,
+  USER_CREATED_AT_BACKFILL_DATE,
+} from "@/lib/pointsConfig";
 
 // 추천 코드 귀속(points-spec §5 2단계) — 초대 링크로 들어와 가입한 계정을 추천인에게
 // 묶고, 그 자리에서 양쪽에 지급한다(2026-08-05 사용자 결정 — 처음엔 "첫 돌봄 완료 시
@@ -38,7 +42,11 @@ export async function POST(req: Request) {
   const me = await prisma.user.findUnique({ where: { id: userId }, select: { createdAt: true } });
   if (
     !me ||
-    me.createdAt.getTime() < Date.now() - REFERRAL_CLAIM_WINDOW_DAYS * 86400000
+    me.createdAt.getTime() < Date.now() - REFERRAL_CLAIM_WINDOW_DAYS * 86400000 ||
+    // createdAt이 필드 추가일과 같으면 실제 가입일을 모르는 기존 회원이다.
+    // 이 줄이 없으면 그 회원 전원이 추가일로부터 14일간 "신규"로 통과한다
+    // (2026-08-06 감사에서 실제로 회원 전원이 그 상태였다 — lib/pointsConfig.ts 주석 참조).
+    me.createdAt.toISOString().slice(0, 10) === USER_CREATED_AT_BACKFILL_DATE
   ) {
     return NextResponse.json(
       { error: `가입 ${REFERRAL_CLAIM_WINDOW_DAYS}일 이내에만 초대를 등록할 수 있어요.` },

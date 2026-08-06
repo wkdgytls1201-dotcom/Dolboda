@@ -40,7 +40,6 @@ export function DolbodaScoreCard({
   grade,
   gradeSource,
   facilityType,
-  facilityTypeLabel,
 }: {
   score: DolbodaScore;
   /** 같은 시군구·같은 유형 시설들의 안심지수 평균 (서버에서 동일 산식으로 계산) */
@@ -48,10 +47,8 @@ export function DolbodaScoreCard({
   /** 국가 평가등급 — 지수와 엇갈릴 때 이유를 설명하기 위해 받는다 */
   grade?: number | null;
   gradeSource?: "HIRA" | "NHIS";
-  /** 라벨(우수·보통 등) 문턱이 유형별이라 어느 유형 기준인지 알아야 한다 */
+  /** 라벨 문턱 조회에 넘긴다(지금은 전 유형 공통 — scoreThresholdsOf 주석 참조) */
   facilityType?: string;
-  /** 그 유형을 사람 말로 — "방문요양센터 중에서" 처럼 기준을 밝히는 데 쓴다 */
-  facilityTypeLabel?: string;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -66,8 +63,6 @@ export function DolbodaScoreCard({
     );
   }
 
-  // 라벨 문턱은 유형별이다 — 정원·침실 같은 항목이 아예 없는 방문요양을 요양원과 같은
-  // 자로 재면 절반이 "확인 필요"로 밀린다(실측). 대신 "무엇과 견준 값인지"를 밝혀야 한다.
   const level = scoreLevel(score.total, facilityType);
 
   // 국가 평가등급과 안심지수가 엇갈려 보일 때(3등급인데 "우수" 등) 왜 그런지 밝힌다.
@@ -110,14 +105,6 @@ export function DolbodaScoreCard({
               돌보다 AI기반 안심지수
             </span>
             <p className="mt-2 text-2xl font-extrabold text-white">{level.label}</p>
-            {/* 라벨의 기준을 밝힌다. 유형마다 공개되는 항목이 달라(방문요양엔 정원·침실이
-                없다) 하나의 자로 재면 유형에 따라 불공평해진다 — 그래서 같은 유형 안에서의
-                위치로 부른다. 기준을 안 밝히면 뜻이 바뀐 것을 숨기는 셈이다. */}
-            {facilityTypeLabel && (
-              <p className="mt-0.5 text-[11px] font-medium text-white/70">
-                전국 {facilityTypeLabel} 중에서
-              </p>
-            )}
           </div>
         </div>
 

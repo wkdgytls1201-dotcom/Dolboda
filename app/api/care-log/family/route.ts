@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { listGuardianContexts, pickContext } from "@/lib/careLogContext";
 
 // 돌봄일지 가족 공유 관리(care-log-spec §9-5) — 전부 보호자 본인만.
 // 초대 생성(POST)·목록(GET)·해제(DELETE). 수락은 별도 라우트(./accept)에서 한다.
@@ -8,24 +9,36 @@ import { prisma } from "@/lib/prisma";
 const MAX_ACTIVE = 5; // 초대·수락 합쳐 활성 5개 — 가족 공유지 공개 배포가 아니다
 const INVITE_TTL_MS = 7 * 86400 * 1000; // 미수락 초대는 7일 뒤 만료
 
-async function findOwnRequest(userId: string) {
-  return prisma.careRequest.findFirst({
-    where: { guardianId: userId, status: { in: ["MATCHED", "COMPLETED"] } },
-    orderBy: { createdAt: "desc" },
-    select: { id: true },
-  });
+/**
+ * 이 보호자의 돌봄 건을 고른다.
+ *
+ * 예전엔 여기서 `findFirst orderBy createdAt desc`로 최신 한 건만 집었다 — 16차에서
+ * 일지·빠른알림·사진 세 라우트가 갖고 있던 것과 **같은 결함**이고, 그때 lib/careLogContext로
+ * 통일하면서 이 라우트만 빠졌다(2026-08-06 감사에서 발견).
+ *
+ * 문제: 지난 돌봄이 쌓이면 보호자도 여러 건을 갖는다. 일지 화면은 건을 전환할 수 있는데
+ * 가족 공유만 항상 최신 건을 잡으면, **A건 일지를 보다가 초대한 가족이 B건을 보게 된다.**
+ * 이제 화면이 보고 있던 `requestId`를 그대로 받고, 없으면 진행 중 건을 먼저 고른다.
+ */
+async function findOwnRequest(userId: string, requestId?: string | null) {
+  const ctx = pickContext(await listGuardianContexts(userId), requestId);
+  return ctx ? { id: ctx.request.id } : null;
+}
+
+function requestIdOf(req: Request): string | null {
+  return new URL(req.url).searchParams.get("requestId");
 }
 
 function isExpired(row: { acceptedAt: Date | null; createdAt: Date }) {
   return !row.acceptedAt && row.createdAt.getTime() < Date.now() - INVITE_TTL_MS;
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "로그인이 필요해요." }, { status: 401 });
   }
-  const request = await findOwnRequest(session.user.id);
+  const request = await findOwnRequest(session.user.id, requestIdOf(req));
   if (!request) {
     return NextResponse.json({ error: "확정된 돌봄이 없어요." }, { status: 404 });
   }
@@ -56,12 +69,12 @@ export async function GET() {
   });
 }
 
-export async function POST() {
+export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "로그인이 필요해요." }, { status: 401 });
   }
-  const request = await findOwnRequest(session.user.id);
+  const request = await findOwnRequest(session.user.id, requestIdOf(req));
   if (!request) {
     return NextResponse.json({ error: "확정된 돌봄이 없어요." }, { status: 404 });
   }
@@ -87,7 +100,7 @@ export async function DELETE(req: Request) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "로그인이 필요해요." }, { status: 401 });
   }
-  const request = await findOwnRequest(session.user.id);
+  const request = await findOwnRequest(session.user.id, requestIdOf(req));
   if (!request) {
     return NextResponse.json({ error: "확정된 돌봄이 없어요." }, { status: 404 });
   }
