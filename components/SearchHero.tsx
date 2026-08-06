@@ -59,11 +59,9 @@ export function SearchHero({ heroSlides }: { heroSlides: HeroSlide[] }) {
           <br />
           <span className="text-primary-500">어디에 모시겠어요?</span>
         </h1>
-        <p className="mt-4 text-base text-ink-500 sm:text-lg">
-          평가등급부터 비급여비용, 인력현황까지
-          <br className="sm:hidden" />
-          {" "}— 우리 지역 요양병원·요양시설을 한눈에
-        </p>
+        {/* 부제("평가등급부터 비급여비용…")는 2026-08-06 사용자 지시로 뺐다.
+            H1이 세 줄이 되면서 그 아래 설명까지 두면 히어로가 글자로 빽빽해졌다.
+            같은 정보는 바로 아래 배너·검색 영역과 아래쪽 유형 설명이 이어받는다. */}
       </div>
 
       <div className="relative mx-auto mt-5 max-w-4xl px-0 sm:px-4">
