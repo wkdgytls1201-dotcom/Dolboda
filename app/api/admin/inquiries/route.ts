@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
-import { findPlan, BANNER_PLANS, BANNER_SLOTS_PER_SIGUNGU } from "@/lib/businessPlans";
-import { remainingSlots, heldBannerSlots } from "@/lib/sponsor";
+import {
+  findPlan,
+  BANNER_PLANS,
+  BANNER_SLOTS_PER_SIGUNGU,
+  SPONSOR_SLOTS_PER_SIGUNGU,
+} from "@/lib/businessPlans";
+import { remainingSlots, heldBannerSlots, heldSlots } from "@/lib/sponsor";
 import { canonicalRegionKey } from "@/lib/regionSeo";
 
 // 운영자용 입점 신청 처리.
@@ -24,7 +29,8 @@ const SPONSOR_PLANS = new Set(["sponsor", "premium", "silvertown"]);
 
 export async function GET(req: Request) {
   const admin = await requireAdmin();
-  if (!admin) return NextResponse.json({ error: "권한이 없어요." }, { status: 403 });
+  if (!admin)
+    return NextResponse.json({ error: "권한이 없어요." }, { status: 403 });
 
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status");
@@ -39,35 +45,50 @@ export async function GET(req: Request) {
 
 export async function PATCH(req: Request) {
   const admin = await requireAdmin();
-  if (!admin) return NextResponse.json({ error: "권한이 없어요." }, { status: 403 });
+  if (!admin)
+    return NextResponse.json({ error: "권한이 없어요." }, { status: 403 });
 
   let body: Record<string, unknown>;
   try {
     body = (await req.json()) as Record<string, unknown>;
   } catch {
-    return NextResponse.json({ error: "요청 형식이 올바르지 않아요." }, { status: 400 });
+    return NextResponse.json(
+      { error: "요청 형식이 올바르지 않아요." },
+      { status: 400 },
+    );
   }
 
   const id = typeof body.id === "string" ? body.id : "";
   const status = typeof body.status === "string" ? body.status : "";
-  const memo = typeof body.memo === "string" ? body.memo.slice(0, 1000) : undefined;
+  const memo =
+    typeof body.memo === "string" ? body.memo.slice(0, 1000) : undefined;
   // 승인 시에만 쓰는 값들
-  const ownerUserId = typeof body.ownerUserId === "string" ? body.ownerUserId.trim() : "";
-  const facilityId = typeof body.facilityId === "string" ? body.facilityId.trim() : "";
-  const regionKey = typeof body.regionKey === "string" ? body.regionKey.trim() : "";
+  const ownerUserId =
+    typeof body.ownerUserId === "string" ? body.ownerUserId.trim() : "";
+  const facilityId =
+    typeof body.facilityId === "string" ? body.facilityId.trim() : "";
+  const regionKey =
+    typeof body.regionKey === "string" ? body.regionKey.trim() : "";
 
   if (!id || !ALLOWED_STATUS.has(status)) {
-    return NextResponse.json({ error: "상태 값이 올바르지 않아요." }, { status: 400 });
+    return NextResponse.json(
+      { error: "상태 값이 올바르지 않아요." },
+      { status: 400 },
+    );
   }
 
   const inquiry = await prisma.businessInquiry.findUnique({ where: { id } });
-  if (!inquiry) return NextResponse.json({ error: "신청을 찾을 수 없어요." }, { status: 404 });
+  if (!inquiry)
+    return NextResponse.json(
+      { error: "신청을 찾을 수 없어요." },
+      { status: 404 },
+    );
   if (inquiry.status === "verified" && status !== "verified") {
     // 이미 승인해 권한·구독을 만든 건을 되돌리면 그것들이 남아 유령 상태가 된다.
     // 해지는 구독 쪽에서 처리할 일이라 여기서는 막는다.
     return NextResponse.json(
       { error: "이미 승인된 신청이에요. 해지는 구독 관리에서 처리해주세요." },
-      { status: 409 }
+      { status: 409 },
     );
   }
 
@@ -84,14 +105,20 @@ export async function PATCH(req: Request) {
   const targetFacilityId = facilityId || inquiry.facilityId;
   if (!targetFacilityId) {
     return NextResponse.json(
-      { error: "연결할 시설을 지정해주세요. (기관기호로 자동 매칭되지 않은 신청이에요)" },
-      { status: 400 }
+      {
+        error:
+          "연결할 시설을 지정해주세요. (기관기호로 자동 매칭되지 않은 신청이에요)",
+      },
+      { status: 400 },
     );
   }
   if (!ownerUserId) {
     return NextResponse.json(
-      { error: "담당자가 로그인한 계정 id가 필요해요. 카카오 로그인 후 안내해주세요." },
-      { status: 400 }
+      {
+        error:
+          "담당자가 로그인한 계정 id가 필요해요. 카카오 로그인 후 안내해주세요.",
+      },
+      { status: 400 },
     );
   }
 
@@ -100,10 +127,21 @@ export async function PATCH(req: Request) {
       where: { id: targetFacilityId },
       select: { id: true, address: true },
     }),
-    prisma.user.findUnique({ where: { id: ownerUserId }, select: { id: true } }),
+    prisma.user.findUnique({
+      where: { id: ownerUserId },
+      select: { id: true },
+    }),
   ]);
-  if (!facility) return NextResponse.json({ error: "시설을 찾을 수 없어요." }, { status: 404 });
-  if (!user) return NextResponse.json({ error: "계정을 찾을 수 없어요." }, { status: 404 });
+  if (!facility)
+    return NextResponse.json(
+      { error: "시설을 찾을 수 없어요." },
+      { status: 404 },
+    );
+  if (!user)
+    return NextResponse.json(
+      { error: "계정을 찾을 수 없어요." },
+      { status: 404 },
+    );
 
   const plan = findPlan(inquiry.plan);
   const needsSponsor = SPONSOR_PLANS.has(inquiry.plan);
@@ -119,15 +157,20 @@ export async function PATCH(req: Request) {
       sponsorRegion = canonicalRegionKey(facility.address ?? "") ?? "";
     }
     if (!sponsorRegion.trim()) {
-      return NextResponse.json({ error: "노출 지역을 지정해주세요." }, { status: 400 });
+      return NextResponse.json(
+        { error: "노출 지역을 지정해주세요." },
+        { status: 400 },
+      );
     }
   }
   if (needsSponsor) {
     const left = await remainingSlots("sigungu", sponsorRegion);
     if (left <= 0) {
       return NextResponse.json(
-        { error: `${sponsorRegion}의 스폰서 슬롯이 모두 찼어요. 대기로 안내해주세요.` },
-        { status: 409 }
+        {
+          error: `${sponsorRegion}의 스폰서 슬롯이 모두 찼어요. 대기로 안내해주세요.`,
+        },
+        { status: 409 },
       );
     }
   }
@@ -140,79 +183,126 @@ export async function PATCH(req: Request) {
     });
     if (bannerUsed >= BANNER_SLOTS_PER_SIGUNGU) {
       return NextResponse.json(
-        { error: `${sponsorRegion}의 배너 자리가 이미 찼어요. 대기로 안내해주세요.` },
-        { status: 409 }
+        {
+          error: `${sponsorRegion}의 배너 자리가 이미 찼어요. 대기로 안내해주세요.`,
+        },
+        { status: 409 },
       );
     }
   }
 
-  await prisma.$transaction(async (tx) => {
-    await tx.facilityOwner.upsert({
-      where: { facilityId_userId: { facilityId: targetFacilityId, userId: ownerUserId } },
-      update: { managerName: inquiry.managerName, phone: inquiry.phone, email: inquiry.email },
-      create: {
-        facilityId: targetFacilityId,
-        userId: ownerUserId,
-        managerName: inquiry.managerName,
-        managerRole: inquiry.managerRole,
-        phone: inquiry.phone,
-        email: inquiry.email,
-        approvedBy: admin.email,
-      },
-    });
+  try {
+    await prisma.$transaction(async (tx) => {
+      // 위의 remainingSlots/heldBannerSlots 검사만으론 부족하다 — 승인 두 건이 거의
+      // 동시에 들어오면 둘 다 "자리 있음"을 보고 통과해 상한을 넘겨 판매할 수 있다
+      // (care-requests POST·points 사용과 같은 요령으로 지역 단위 advisory lock을 건다).
+      if (needsSponsor || needsBanner) {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${"biz-slot:" + sponsorRegion}))`;
+      }
+      if (needsSponsor) {
+        const used = await heldSlots("sigungu", sponsorRegion, {}, tx);
+        if (used >= SPONSOR_SLOTS_PER_SIGUNGU) throw new Error("SLOT_FULL");
+      }
+      if (needsBanner) {
+        const bannerUsed = await heldBannerSlots(
+          sponsorRegion,
+          { excludeFacilityId: targetFacilityId },
+          tx,
+        );
+        if (bannerUsed >= BANNER_SLOTS_PER_SIGUNGU)
+          throw new Error("SLOT_FULL");
+      }
 
-    // 구독을 먼저 만들고 그 id를 슬롯에 물린다 — 나중에 해지할 때 "이 구독이 산 자리"만
-    // 정확히 끌 수 있어야 한다(시설 단위로 끄면 그 시설의 다른 지역 광고까지 같이 꺼진다).
-    let subscriptionId: string | null = null;
-    if (plan && plan.monthly && plan.monthly > 0) {
-      const sub = await tx.facilitySubscription.create({
-        data: {
-          facilityId: targetFacilityId,
-          plan: plan.id,
-          // 입금 확인 전까지는 pending — 승인만으로 광고가 나가면 미수금이 쌓인다
-          status: "pending",
-          monthlyPrice: plan.monthly,
+      await tx.facilityOwner.upsert({
+        where: {
+          facilityId_userId: {
+            facilityId: targetFacilityId,
+            userId: ownerUserId,
+          },
         },
-        select: { id: true },
-      });
-      subscriptionId = sub.id;
-    }
-
-    if (needsSponsor) {
-      await tx.sponsorPlacement.create({
-        data: {
-          facilityId: targetFacilityId,
-          scope: "sigungu",
-          regionKey: sponsorRegion,
-          // 구독이 pending인 동안은 노출하지 않는다. 입금 확인 후 켠다.
-          // active=false여도 endsAt이 null이라 자리는 잡고 있다(슬롯 카운트에 들어간다).
-          active: false,
-          subscriptionId,
+        update: {
+          managerName: inquiry.managerName,
+          phone: inquiry.phone,
+          email: inquiry.email,
         },
-      });
-    }
-
-    if (needsBanner) {
-      // 이미지는 시설이 콘솔에서 나중에 올린다 — 여기서는 지역 슬롯만 예약해 둔다.
-      // upsert인 이유: 재승인·요금제 변경 같은 드문 경로에서 이미 행이 있을 수 있다.
-      // 재승인이면 endsAt(지난 해지 시각)을 지워 자리를 다시 잡게 한다.
-      await tx.facilityBanner.upsert({
-        where: { facilityId: targetFacilityId },
-        update: { regionKey: sponsorRegion, subscriptionId, endsAt: null },
         create: {
           facilityId: targetFacilityId,
-          regionKey: sponsorRegion,
-          active: false,
-          subscriptionId,
+          userId: ownerUserId,
+          managerName: inquiry.managerName,
+          managerRole: inquiry.managerRole,
+          phone: inquiry.phone,
+          email: inquiry.email,
+          approvedBy: admin.email,
         },
       });
-    }
 
-    await tx.businessInquiry.update({
-      where: { id },
-      data: { status: "verified", facilityId: targetFacilityId, ...(memo !== undefined && { memo }) },
+      // 구독을 먼저 만들고 그 id를 슬롯에 물린다 — 나중에 해지할 때 "이 구독이 산 자리"만
+      // 정확히 끌 수 있어야 한다(시설 단위로 끄면 그 시설의 다른 지역 광고까지 같이 꺼진다).
+      let subscriptionId: string | null = null;
+      if (plan && plan.monthly && plan.monthly > 0) {
+        const sub = await tx.facilitySubscription.create({
+          data: {
+            facilityId: targetFacilityId,
+            plan: plan.id,
+            // 입금 확인 전까지는 pending — 승인만으로 광고가 나가면 미수금이 쌓인다
+            status: "pending",
+            monthlyPrice: plan.monthly,
+          },
+          select: { id: true },
+        });
+        subscriptionId = sub.id;
+      }
+
+      if (needsSponsor) {
+        await tx.sponsorPlacement.create({
+          data: {
+            facilityId: targetFacilityId,
+            scope: "sigungu",
+            regionKey: sponsorRegion,
+            // 구독이 pending인 동안은 노출하지 않는다. 입금 확인 후 켠다.
+            // active=false여도 endsAt이 null이라 자리는 잡고 있다(슬롯 카운트에 들어간다).
+            active: false,
+            subscriptionId,
+          },
+        });
+      }
+
+      if (needsBanner) {
+        // 이미지는 시설이 콘솔에서 나중에 올린다 — 여기서는 지역 슬롯만 예약해 둔다.
+        // upsert인 이유: 재승인·요금제 변경 같은 드문 경로에서 이미 행이 있을 수 있다.
+        // 재승인이면 endsAt(지난 해지 시각)을 지워 자리를 다시 잡게 한다.
+        await tx.facilityBanner.upsert({
+          where: { facilityId: targetFacilityId },
+          update: { regionKey: sponsorRegion, subscriptionId, endsAt: null },
+          create: {
+            facilityId: targetFacilityId,
+            regionKey: sponsorRegion,
+            active: false,
+            subscriptionId,
+          },
+        });
+      }
+
+      await tx.businessInquiry.update({
+        where: { id },
+        data: {
+          status: "verified",
+          facilityId: targetFacilityId,
+          ...(memo !== undefined && { memo }),
+        },
+      });
     });
-  });
+  } catch (e) {
+    if (e instanceof Error && e.message === "SLOT_FULL") {
+      return NextResponse.json(
+        {
+          error: `${sponsorRegion}의 자리가 방금 다른 승인으로 다 찼어요. 대기로 안내해주세요.`,
+        },
+        { status: 409 },
+      );
+    }
+    throw e;
+  }
 
   return NextResponse.json({
     ok: true,

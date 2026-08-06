@@ -100,6 +100,11 @@ export default async function ConsolePage() {
       prisma.facilityPost.findMany({
         where: { facilityId: { in: ids } },
         orderBy: { createdAt: "desc" },
+        // 소식을 계속 올릴수록 콘솔 페이로드가 무한정 커지던 문제(select 없이 전 컬럼 +
+        // 상한 없음) — 최근 300건으로 자르고 화면이 실제로 쓰는 필드만 남긴다.
+        // 300은 시설 하나가 현실적으로 쌓을 소식 수를 넉넉히 웃돈다(수동 작성이라 저빈도).
+        take: 300,
+        select: { id: true, facilityId: true, title: true, body: true, createdAt: true },
       }),
       prisma.facilityDailyView.findMany({
         where: { facilityId: { in: ids }, date: { gte: prevMonthAgo } },

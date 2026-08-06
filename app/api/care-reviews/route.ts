@@ -55,9 +55,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "완료된 매니저를 찾을 수 없어요." }, { status: 400 });
   }
 
-  const review = await prisma.careReview.create({
-    data: { careRequestId, sitterProfileId, rating, comment },
-  });
+  let review;
+  try {
+    review = await prisma.careReview.create({
+      data: { careRequestId, sitterProfileId, rating, comment },
+    });
+  } catch (e) {
+    // 위의 careRequest.review 검사만으론 부족하다 — 같은 후기를 거의 동시에 두 번
+    // 제출하면(더블클릭 등) 둘 다 검사를 통과할 수 있다. careRequestId가 @unique라
+    // DB가 두 번째 생성을 막아주는데, 그걸 안 잡으면 처리되지 않은 500이 샌다
+    // (2026-08-07 감사 — lib/points.ts와 같은 P2002 판별 방식).
+    const code = (e as { code?: string })?.code;
+    if (code === "P2002") {
+      return NextResponse.json({ error: "이미 후기를 남기셨어요." }, { status: 409 });
+    }
+    throw e;
+  }
 
   // 돌봄 포인트(docs/points-spec.md) — 완료 자체가 아니라 "보호자의 좋은 반응"이 지급
   // 조건이다(근무 대가가 아니라 감사에 대한 플랫폼 리워드 — 매니저 법적 거리 방침).

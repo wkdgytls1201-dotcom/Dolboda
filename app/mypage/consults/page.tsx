@@ -52,13 +52,16 @@ export default function ConsultHistoryPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // 세션 상태를 기다리지 않고 마운트 시 바로 부른다 — API가 어차피 서버에서
+  // auth()로 401을 가리므로 클라이언트가 authStatus를 다시 기다릴 이유가 없다.
+  // 예전엔 [authStatus authenticated]를 기다렸다 불러서, 세션 확인과 데이터 조회가
+  // 직렬로 이어져 있었다(2026-08-07 감사 — points 페이지와 같은 방식으로 통일).
   useEffect(() => {
-    if (authStatus !== "authenticated") return;
     fetch("/api/consult/mine")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d) => setItems(d.items ?? []))
       .catch(() => setError("상담 내역을 불러오지 못했어요."));
-  }, [authStatus]);
+  }, []);
 
   async function setStatus(id: string, next: string | null) {
     setBusyId(id);

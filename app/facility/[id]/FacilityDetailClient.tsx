@@ -47,9 +47,7 @@ import {
 } from "@/components/DetailVisuals";
 import { CopayCalculator } from "@/components/CopayCalculator";
 import { HospitalCostEstimator } from "@/components/HospitalCostEstimator";
-import { DolbodaScoreCard } from "@/components/DolbodaScoreCard";
 import { CareMatchPoints } from "@/components/CareMatchPoints";
-import { calcDolbodaScore } from "@/lib/dolbodaScore";
 import { checkFee, MONTHLY_BASIS_NOTE } from "@/lib/feeQuality";
 import { feeBenchmarkFor } from "@/lib/feeBenchmarks.generated";
 import { FeeCompareBar } from "@/components/FeeCompareBar";
@@ -78,6 +76,7 @@ export default function FacilityDetailClient({
   facility,
   similarSlot,
   trendSlot,
+  scoreSlot,
   ownerContent,
   ownerPosts,
 }: {
@@ -94,6 +93,11 @@ export default function FacilityDetailClient({
    * 정원 개념이 없는 유형이면 서버 쪽에서 null을 돌려줘 아무것도 그리지 않는다.
    */
   trendSlot?: React.ReactNode;
+  /**
+   * "공공데이터 기반 안심지수"(ScoreContextSection) — 지역 평균·최근접 요양병원 거리를
+   * 서버에서 계산해 슬롯으로 받는다(2026-08-07). 예전엔 마운트 후 클라이언트 fetch였다.
+   */
+  scoreSlot: React.ReactNode;
   /** 시설이 콘솔에서 직접 쓴 소개·사진 — 대부분 null(아직 인증 안 한 시설) */
   ownerContent?: { intro: string | null; photos: string[]; updatedAt: string } | null;
   /** 시설이 올린 소식 최신 3개 — 없으면 빈 배열 */
@@ -113,13 +117,6 @@ export default function FacilityDetailClient({
   const [showGradeCriteria, setShowGradeCriteria] = useState(false);
   // 프로그램 운영 아코디언 — null이면 첫 번째 종류만 열림, "__none__"이면 전부 접힘
   const [openProgramCategory, setOpenProgramCategory] = useState<string | null>(null);
-  // 돌보다 공공데이터 기반 안심지수 맥락(지역 평균·인근 요양병원 거리) — 시설당 1회 조회
-  const [scoreContext, setScoreContext] = useState<{
-    regionName: string | null;
-    regionAverage: number | null;
-    regionCount: number;
-    nearestHospitalKm: number | null;
-  } | null>(null);
 
   // 조회수 비컨 — 기업회원 콘솔의 "페이지 조회" 숫자가 여기서 쌓인다.
   // sendBeacon은 페이지 로드를 조금도 막지 않고, 실패해도 아무 일도 일어나지 않는다.
@@ -127,24 +124,6 @@ export default function FacilityDetailClient({
     const url = `/api/facilities/view?id=${encodeURIComponent(facility.id)}`;
     if (navigator.sendBeacon) navigator.sendBeacon(url);
     else fetch(url, { method: "POST", keepalive: true }).catch(() => {});
-  }, [facility.id]);
-
-  useEffect(() => {
-    // AbortController로 진짜 취소한다 — 예전엔 cancelled 플래그로 응답만 무시했는데,
-    // 요청 자체는 서버까지 그대로 나갔다. 이 엔드포인트는 캐시가 비어 있으면 최대 800행을
-    // 스캔하는 무거운 작업이라(위 route.ts), dev의 StrictMode 이중 마운트에서 뜬 낡은
-    // 요청을 실제로 끊어주는 게 값어치가 있다. 프로덕션에서도 같은 시설을 빠르게 오가는
-    // 경우 낡은 요청이 걸려 있지 않게 된다.
-    const controller = new AbortController();
-    fetch(`/api/facilities/score-context?id=${encodeURIComponent(facility.id)}`, {
-      signal: controller.signal,
-    })
-      .then((r) => r.json())
-      .then((d) => {
-        if (!d.error) setScoreContext(d);
-      })
-      .catch(() => {});
-    return () => controller.abort();
   }, [facility.id]);
 
   // 카드/배너 클릭 시점에 이미 게이트를 통과했지만, 직접 URL로 들어온 경우를 대비해 조회 기록만 남긴다.
@@ -391,26 +370,8 @@ export default function FacilityDetailClient({
             여백(mb-6)은 컴포넌트 내부에 있다 — 여기서 감싸면 null 렌더 시에도 빈 여백이 남는다. */}
         <CareMatchPoints facility={facility} />
 
-        {/* 공공데이터 기반 안심지수 */}
-        <DetailSection id="dolboda-score" title="공공데이터 기반 안심지수">
-          <DolbodaScoreCard
-            score={calcDolbodaScore(facility, {
-              nearestHospitalKm: scoreContext?.nearestHospitalKm ?? null,
-            })}
-            grade={facility.grade}
-            gradeSource={facility.gradeSource}
-            facilityType={facility.facilityType}
-            regionContext={
-              scoreContext?.regionAverage != null && scoreContext.regionName
-                ? {
-                    name: scoreContext.regionName,
-                    average: scoreContext.regionAverage,
-                    count: scoreContext.regionCount,
-                  }
-                : null
-            }
-          />
-        </DetailSection>
+        {/* 공공데이터 기반 안심지수 — 서버에서 스트리밍되는 슬롯(ScoreContextSection) */}
+        {scoreSlot}
 
         {/* 평가정보 */}
         <DetailSection

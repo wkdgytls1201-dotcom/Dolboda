@@ -1,6 +1,11 @@
+import type { Metadata } from "next";
 import { LegalPage } from "@/components/LegalPage";
 
-export const metadata = { title: "돌보다 매니저 이용약관 — 돌보다" };
+export const metadata: Metadata = {
+  title: "돌보다 매니저 이용약관 — 돌보다",
+  description: "돌보다 매니저(시터) 활동과 관련한 회사와 매니저 간의 권리·의무·책임사항을 정한 약관입니다.",
+  alternates: { canonical: "/terms/sitter" },
+};
 
 export default function SitterTermsPage() {
   return (

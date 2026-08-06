@@ -1,6 +1,11 @@
 import { unstable_cache } from "next/cache";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { prisma } from "./prisma";
 import { SPONSOR_SLOTS_PER_SIGUNGU } from "./businessPlans";
+
+/** 슬롯 카운트 함수들이 받는 클라이언트 — 기본은 전역 prisma, 트랜잭션 안에서
+ * advisory lock을 건 뒤 재검사할 땐 tx를 넘긴다(같은 트랜잭션 스냅샷으로 봐야 한다). */
+type Db = PrismaClient | Prisma.TransactionClient;
 
 // 지역 스폰서 노출 조회 (서버 전용).
 //
@@ -24,7 +29,10 @@ export interface SponsorFacility {
 // regionKey는 lib/regionSeo.ts의 canonicalRegionKey()가 만드는 "시도slug 시군구"
 // (예: "경남 김해시") 하나만 쓴다 — 저장(관리자 승인)과 조회(지역 페이지)가 같은 함수를 쓴다.
 
-async function loadSponsors(scope: SponsorScope, regionKeys: string[]): Promise<SponsorFacility[]> {
+async function loadSponsors(
+  scope: SponsorScope,
+  regionKeys: string[],
+): Promise<SponsorFacility[]> {
   if (regionKeys.length === 0) return [];
   try {
     return await loadSponsorsUnsafe(scope, regionKeys);
@@ -38,7 +46,7 @@ async function loadSponsors(scope: SponsorScope, regionKeys: string[]): Promise<
 
 async function loadSponsorsUnsafe(
   scope: SponsorScope,
-  regionKeys: string[]
+  regionKeys: string[],
 ): Promise<SponsorFacility[]> {
   const now = new Date();
   const placements = await prisma.sponsorPlacement.findMany({
@@ -59,7 +67,13 @@ async function loadSponsorsUnsafe(
   const ids = placements.map((p) => p.facilityId);
   const rows = await prisma.facility.findMany({
     where: { id: { in: ids } },
-    select: { id: true, name: true, facilityType: true, grade: true, address: true },
+    select: {
+      id: true,
+      name: true,
+      facilityType: true,
+      grade: true,
+      address: true,
+    },
   });
   const byId = new Map(rows.map((r) => [r.id, r]));
   return ids
@@ -78,7 +92,7 @@ export const getSponsorsForSigungu = unstable_cache(
   async (regionSlug: string, sigungu: string) =>
     loadSponsors("sigungu", [`${regionSlug} ${sigungu}`]),
   ["sponsor-placements-sigungu"],
-  { revalidate: 300 }
+  { revalidate: 300 },
 );
 
 /**
@@ -91,8 +105,12 @@ export const getSponsorsForSigungu = unstable_cache(
  *
  * 자리를 비우는 것은 해지뿐이다(endsAt이 찍힌다). 일시중지는 잠깐 끄는 것이라 자리를 유지한다.
  */
-export async function remainingSlots(scope: SponsorScope, regionKey: string): Promise<number> {
-  const used = await heldSlots(scope, regionKey);
+export async function remainingSlots(
+  scope: SponsorScope,
+  regionKey: string,
+  db: Db = prisma,
+): Promise<number> {
+  const used = await heldSlots(scope, regionKey, {}, db);
   return Math.max(0, SPONSOR_SLOTS_PER_SIGUNGU - used);
 }
 
@@ -111,14 +129,17 @@ interface SlotCountOptions {
 export async function heldSlots(
   scope: SponsorScope,
   regionKey: string,
-  opts: SlotCountOptions = {}
+  opts: SlotCountOptions = {},
+  db: Db = prisma,
 ): Promise<number> {
   const now = new Date();
-  return prisma.sponsorPlacement.count({
+  return db.sponsorPlacement.count({
     where: {
       scope,
       regionKey,
-      ...(opts.excludeFacilityId ? { facilityId: { not: opts.excludeFacilityId } } : {}),
+      ...(opts.excludeFacilityId
+        ? { facilityId: { not: opts.excludeFacilityId } }
+        : {}),
       ...(opts.onlyActive ? { active: true } : {}),
       OR: [{ endsAt: null }, { endsAt: { gt: now } }],
     },
@@ -128,13 +149,16 @@ export async function heldSlots(
 /** 지역 배너도 같은 규칙 — 상한이 1이라 한 곳만 새어도 바로 약속이 깨진다. */
 export async function heldBannerSlots(
   regionKey: string,
-  opts: SlotCountOptions = {}
+  opts: SlotCountOptions = {},
+  db: Db = prisma,
 ): Promise<number> {
   const now = new Date();
-  return prisma.facilityBanner.count({
+  return db.facilityBanner.count({
     where: {
       regionKey,
-      ...(opts.excludeFacilityId ? { facilityId: { not: opts.excludeFacilityId } } : {}),
+      ...(opts.excludeFacilityId
+        ? { facilityId: { not: opts.excludeFacilityId } }
+        : {}),
       ...(opts.onlyActive ? { active: true } : {}),
       OR: [{ endsAt: null }, { endsAt: { gt: now } }],
     },
@@ -151,7 +175,9 @@ export interface RegionBanner {
   imageUrl: string;
 }
 
-async function loadBannerUnsafe(regionKey: string): Promise<RegionBanner | null> {
+async function loadBannerUnsafe(
+  regionKey: string,
+): Promise<RegionBanner | null> {
   const now = new Date();
   const row = await prisma.facilityBanner.findFirst({
     // endsAt(해지 시각)을 함께 본다 — 스폰서와 같은 규칙이다. active만 보면
@@ -170,7 +196,11 @@ async function loadBannerUnsafe(regionKey: string): Promise<RegionBanner | null>
     select: { name: true },
   });
   if (!facility) return null;
-  return { facilityId: row.facilityId, facilityName: facility.name, imageUrl: row.imageUrl };
+  return {
+    facilityId: row.facilityId,
+    facilityName: facility.name,
+    imageUrl: row.imageUrl,
+  };
 }
 
 /** 지역 페이지에서 부른다. 계약 반영 지연을 감안해 스폰서와 같은 5분 캐시. */
@@ -185,5 +215,5 @@ export const getBannerForSigungu = unstable_cache(
     }
   },
   ["region-banner-sigungu"],
-  { revalidate: 300 }
+  { revalidate: 300 },
 );

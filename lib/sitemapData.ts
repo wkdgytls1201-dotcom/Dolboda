@@ -35,6 +35,7 @@ export async function sitemapNames(): Promise<string[]> {
     "guides",
     "regions",
     "region-services",
+    "managers",
     ...Array.from({ length: chunks }, (_, i) => `facilities-${i + 1}`),
   ];
 }
@@ -78,7 +79,26 @@ async function staticEntries(): Promise<SitemapEntry[]> {
     { loc: `${SITE_URL}/compare`, changefreq: "weekly", priority: 0.5 },
     { loc: `${SITE_URL}/terms`, changefreq: "yearly", priority: 0.2 },
     { loc: `${SITE_URL}/privacy`, changefreq: "yearly", priority: 0.2 },
+    { loc: `${SITE_URL}/terms/sitter`, changefreq: "yearly", priority: 0.2 },
+    { loc: `${SITE_URL}/privacy/sitter`, changefreq: "yearly", priority: 0.2 },
   ];
+}
+
+// 매니저 공개 프로필(옵트인) — canonical·JSON-LD를 갖춘 완전한 색인 대상인데
+// 사이트맵에 넣는 함수 자체가 없었다(2026-08-07 감사). publicProfileAt이 있는(매니저가
+// 직접 공개를 켠) 프로필만 대상 — app/manager/[id]/page.tsx의 판정과 반드시 같아야
+// 사이트맵에만 있고 열면 404인 URL이 생기지 않는다.
+async function managerEntries(): Promise<SitemapEntry[]> {
+  const rows = await prisma.sitterProfile.findMany({
+    where: { publicProfileAt: { not: null } },
+    select: { id: true, updatedAt: true },
+  });
+  return rows.map((r) => ({
+    loc: `${SITE_URL}/manager/${r.id}`,
+    lastmod: r.updatedAt.toISOString(),
+    changefreq: "weekly",
+    priority: 0.5,
+  }));
 }
 
 function guideEntries(): SitemapEntry[] {
@@ -154,6 +174,7 @@ export async function entriesFor(name: string): Promise<SitemapEntry[] | null> {
   if (name === "guides") return guideEntries();
   if (name === "regions") return regionEntries();
   if (name === "region-services") return regionServiceEntries();
+  if (name === "managers") return managerEntries();
   const m = /^facilities-(\d+)$/.exec(name);
   if (m) {
     const n = Number(m[1]);

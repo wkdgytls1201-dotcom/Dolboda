@@ -5,6 +5,7 @@ import { rowToFacility } from "@/lib/facilityRepo";
 import FacilityDetailClient from "./FacilityDetailClient";
 import { SimilarSection, SimilarSectionSkeleton } from "./SimilarSection";
 import { VacancyTrend, VacancyTrendSkeleton } from "./VacancyTrend";
+import { ScoreContextSection, ScoreContextSectionSkeleton } from "./ScoreContextSection";
 
 // 28,000여 개 상세페이지는 방문마다 (레이아웃 조회 + 본문 조회 + 유사시설 60행 조회)를
 // 다시 돌고 있었다. 시설 데이터는 import 스크립트를 돌릴 때만 바뀌므로 하루 캐시로 충분하다.
@@ -78,6 +79,13 @@ export default async function FacilityDetailPage({ params }: { params: { id: str
             facilityId={facility.id}
             capacity={"capacity" in facility ? facility.capacity : 0}
           />
+        </Suspense>
+      }
+      // 안심지수 지역 맥락(지역 평균·최근접 요양병원 거리)도 같은 슬롯 방식 —
+      // 클라이언트 마운트 후 fetch를 없애고 서버에서 바로 스트리밍한다.
+      scoreSlot={
+        <Suspense fallback={<ScoreContextSectionSkeleton />}>
+          <ScoreContextSection facility={facility} />
         </Suspense>
       }
       ownerContent={ownerContent}

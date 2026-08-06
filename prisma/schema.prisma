@@ -59,6 +59,10 @@ model Facility {
   // 전부 훑어 정렬한다(실측: Seq Scan 28,834행 → top-N heapsort). 인덱스가 있으면
   // 순서대로 걸어가다 300건을 채우고 멈춘다 — 제외 대상(mock)이 10곳뿐이라 거의 300행만 본다.
   @@index([createdAt])
+  // lib/monthlyReport.ts의 동지역 피어 조회가 address startsWith(지역 접두어)로 거른다
+  // (2026-08-07 감사 — 인덱스 없이 28,000행 텍스트 스캔이었다). btree 인덱스는 접두어
+  // 매칭(LIKE 'prefix%')엔 그대로 쓰이고, 뒤이은 contains 필터는 줄어든 행에만 적용된다.
+  @@index([address])
 }
 
 // 돌봄 합의서 — 보호자와 돌보다 매니저가 직접 맺는 합의의 기록.
@@ -403,6 +407,9 @@ model ConsultRequest {
   createdAt DateTime @default(now())
 
   @@index([userId])
+  // B2B 콘솔이 열릴 때마다(캐시 없음) facilityId 조건으로 여러 쿼리를 돌리는데
+  // 인덱스가 없어 매번 테이블 스캔이었다(2026-08-07 실측 — Facility.createdAt과 같은 문제).
+  @@index([facilityId])
 }
 
 // 복지용구 상담 신청 — ConsultRequest(시설)와 같은 성격의 리드지만 대상이 다르다.

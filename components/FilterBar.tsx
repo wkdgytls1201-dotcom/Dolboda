@@ -418,7 +418,10 @@ export function FilterBar({
                 type="button"
                 aria-label={`${chip.label} 필터 제거`}
                 onClick={chip.onRemove}
-                className="flex h-8 w-8 items-center justify-center rounded-full transition-colors duration-150 hover:bg-primary-100 active:scale-90"
+                // 시각적으로는 32px(칩 높이에 맞춤)을 유지하되, before 가상요소로 히트박스만
+                // 44px까지 넓힌다 — absolute라 레이아웃(칩 높이·줄바꿈)에 영향을 안 준다
+                // (2026-08-07 감사: 실측 37px, 같은 파일 다른 버튼은 44px를 지키는데 이것만 빠짐).
+                className="relative flex h-8 w-8 items-center justify-center rounded-full transition-colors duration-150 before:absolute before:-inset-[6px] before:content-[''] hover:bg-primary-100 active:scale-90"
               >
                 <X size={13} />
               </button>

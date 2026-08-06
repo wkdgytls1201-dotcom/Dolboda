@@ -148,9 +148,17 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       });
       if (claimed.count === 0) throw new Error("ALREADY_MATCHED");
 
-      const app = await tx.careRequestApplication.update({
-        where: { id: params.id },
+      // update가 아니라 updateMany + status 재확인이다 — 매니저가 확정과 거의 동시에
+      // 지원을 철회(DELETE)하면 이 행이 이미 사라졌거나 상태가 바뀌어 있을 수 있다.
+      // update는 그 경우 P2025(레코드 없음)를 던져 처리되지 않은 500으로 샜다
+      // (2026-08-07 감사). updateMany는 조용히 count 0을 돌려주므로 같은 409로 묶을 수 있다.
+      const confirmedApp = await tx.careRequestApplication.updateMany({
+        where: { id: params.id, status: "지원완료" },
         data: { status: "매칭확정" },
+      });
+      if (confirmedApp.count === 0) throw new Error("ALREADY_MATCHED");
+      const app = await tx.careRequestApplication.findUniqueOrThrow({
+        where: { id: params.id },
       });
       // 나머지 지원자는 그 자리에서 "미선정"으로 — 무소식으로 방치하는 것이
       // 매니저 이탈의 가장 큰 원인이다. 떨어진 걸 아는 게 아무 소식 없는 것보다 낫고,

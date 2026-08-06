@@ -1,6 +1,11 @@
+import type { Metadata } from "next";
 import { LegalPage } from "@/components/LegalPage";
 
-export const metadata = { title: "이용약관 — 돌보다" };
+export const metadata: Metadata = {
+  title: "이용약관 — 돌보다",
+  description: "돌보다 서비스 이용과 관련한 회사와 이용자의 권리·의무·책임사항을 정한 이용약관입니다.",
+  alternates: { canonical: "/terms" },
+};
 
 export default function TermsPage() {
   return (

@@ -1,8 +1,15 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { parseLocationType, buildCareRequestData } from "@/lib/careRequestValidation";
-import { resend, careCompletedEmailHtml, requestCancelledEmailHtml } from "@/lib/resend";
+import {
+  parseLocationType,
+  buildCareRequestData,
+} from "@/lib/careRequestValidation";
+import {
+  resend,
+  careCompletedEmailHtml,
+  requestCancelledEmailHtml,
+} from "@/lib/resend";
 import { SITE_NAME, MAIL_FROM } from "@/lib/siteConfig";
 import { careRequestSummary } from "@/lib/careLocationTypes";
 import { findOtherOpenJobSummaries } from "@/lib/otherOpenJobs";
@@ -13,7 +20,10 @@ async function getOwnedRequest(id: string, userId: string) {
   return careRequest;
 }
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(
+  req: Request,
+  { params }: { params: { id: string } },
+) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "로그인이 필요해요." }, { status: 401 });
@@ -34,7 +44,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     if (existing.status !== "MATCHED") {
       return NextResponse.json(
         { error: "매칭이 확정된 돌봄만 완료 처리할 수 있어요." },
-        { status: 409 }
+        { status: 409 },
       );
     }
     // 완료 처리로 상태가 바뀌기 전에 "누구에게 완료 소식을 알릴지" 미리 알아둔다 —
@@ -42,19 +52,42 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     // "매칭확정"으로 찾을 수 없다.
     const matchedSitter = await prisma.careRequestApplication.findFirst({
       where: { careRequestId: params.id, status: "매칭확정" },
-      select: { sitterProfile: { select: { user: { select: { id: true, email: true } } } } },
+      select: {
+        sitterProfile: {
+          select: { user: { select: { id: true, email: true } } },
+        },
+      },
     });
 
-    const [completed] = await prisma.$transaction([
-      prisma.careRequest.update({
-        where: { id: params.id },
-        data: { status: "COMPLETED", completedAt: new Date() },
-      }),
-      prisma.careRequestApplication.updateMany({
-        where: { careRequestId: params.id, status: "매칭확정" },
-        data: { status: "돌봄완료" },
-      }),
-    ]);
+    // 위의 existing.status 검사만으로는 부족하다 — 보호자가 완료 처리와 취소를 거의
+    // 동시에 누르면 둘 다 검사를 통과해(둘 다 MATCHED를 봄) 나중에 커밋되는 쪽이
+    // 앞선 결과를 덮어써, CANCELLED인데 지원은 "돌봄완료"로 남는 모순 상태가 될 수
+    // 있다(§4-1의 "완료된 돌봄이 취소로 뒤집히면 안 된다"가 막으려던 것과 같은 문). confirm
+    // 라우트와 같은 요령으로 트랜잭션 안에서 조건부 updateMany로 한 번 더 잠근다.
+    let completed;
+    try {
+      completed = await prisma.$transaction(async (tx) => {
+        const claimed = await tx.careRequest.updateMany({
+          where: { id: params.id, status: "MATCHED" },
+          data: { status: "COMPLETED", completedAt: new Date() },
+        });
+        if (claimed.count === 0) throw new Error("ALREADY_PROCESSED");
+
+        await tx.careRequestApplication.updateMany({
+          where: { careRequestId: params.id, status: "매칭확정" },
+          data: { status: "돌봄완료" },
+        });
+        return tx.careRequest.findUniqueOrThrow({ where: { id: params.id } });
+      });
+    } catch (e) {
+      if (e instanceof Error && e.message === "ALREADY_PROCESSED") {
+        return NextResponse.json(
+          { error: "이미 처리된 요청이에요." },
+          { status: 409 },
+        );
+      }
+      throw e;
+    }
 
     // 메일은 완료 처리 뒤에 보낸다 — 실패해도 완료 처리 자체는 이미 끝난 상태.
     if (resend && matchedSitter?.sitterProfile.user.email) {
@@ -68,7 +101,9 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
             from: `${SITE_NAME} <${MAIL_FROM}>`,
             to: matchedSitter.sitterProfile.user.email,
             subject: `[${SITE_NAME}] 돌봄이 완료 처리됐어요`,
-            html: careCompletedEmailHtml({ requestSummary: careRequestSummary(existing) }),
+            html: careCompletedEmailHtml({
+              requestSummary: careRequestSummary(existing),
+            }),
           })
           .catch(() => {});
       }
@@ -82,7 +117,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (existing.status !== "OPEN") {
     return NextResponse.json(
       { error: "매칭이 확정된 뒤에는 요청을 수정할 수 없어요." },
-      { status: 409 }
+      { status: 409 },
     );
   }
 
@@ -99,22 +134,36 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   // 수정 후의 유형 기준으로 유형별 필수값을 다시 검증한다.
   const nextType = parsedType ?? existing.locationType;
   const nextMobility =
-    "mobilityLevel" in fields ? (fields.mobilityLevel as string | null) : existing.mobilityLevel;
+    "mobilityLevel" in fields
+      ? (fields.mobilityLevel as string | null)
+      : existing.mobilityLevel;
   const nextTasks =
-    "householdTasks" in fields ? (fields.householdTasks as string[]) : existing.householdTasks;
+    "householdTasks" in fields
+      ? (fields.householdTasks as string[])
+      : existing.householdTasks;
   if (nextType === "HOSPITAL" && !nextMobility) {
-    return NextResponse.json({ error: "거동 수준을 선택해주세요." }, { status: 400 });
+    return NextResponse.json(
+      { error: "거동 수준을 선택해주세요." },
+      { status: 400 },
+    );
   }
   if (nextType === "HOUSEKEEPING" && nextTasks.length === 0) {
-    return NextResponse.json({ error: "필요한 집안일을 1개 이상 선택해주세요." }, { status: 400 });
+    return NextResponse.json(
+      { error: "필요한 집안일을 1개 이상 선택해주세요." },
+      { status: 400 },
+    );
   }
 
   // 날짜 역전 검증 — 등록(POST)에는 있는데 수정에는 빠져 있었다. 한쪽 날짜만 고치면
   // (예: 시작일만 뒤로) 종료일이 시작일보다 앞서는 요청이 저장될 수 있었다.
-  const nextStart = startDate !== undefined ? new Date(startDate) : existing.startDate;
+  const nextStart =
+    startDate !== undefined ? new Date(startDate) : existing.startDate;
   const nextEnd = endDate !== undefined ? new Date(endDate) : existing.endDate;
   if (nextEnd < nextStart) {
-    return NextResponse.json({ error: "종료일이 시작일보다 빨라요." }, { status: 400 });
+    return NextResponse.json(
+      { error: "종료일이 시작일보다 빨라요." },
+      { status: 400 },
+    );
   }
 
   const careRequest = await prisma.careRequest.update({
@@ -131,7 +180,10 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   return NextResponse.json(careRequest);
 }
 
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(
+  _req: Request,
+  { params }: { params: { id: string } },
+) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "로그인이 필요해요." }, { status: 401 });
@@ -144,33 +196,62 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   // 이미 끝났거나 취소된 건을 다시 취소하지 않는다 — 완료된 돌봄이 취소로 뒤집히면
   // 매니저 실적이 사라진다.
   if (existing.status !== "OPEN" && existing.status !== "MATCHED") {
-    return NextResponse.json({ error: "이미 처리된 요청이에요." }, { status: 409 });
+    return NextResponse.json(
+      { error: "이미 처리된 요청이에요." },
+      { status: 409 },
+    );
   }
 
   // 취소 알림(§3-13) 대상을 트랜잭션 "전에" 미리 알아둔다 — updateMany는 몇 건이
   // 바뀌었는지만 알려주고 "누가"인지는 안 알려준다(§3-9의 미선정과 같은 요령).
   const toNotify = await prisma.careRequestApplication.findMany({
-    where: { careRequestId: params.id, status: { in: ["지원완료", "매칭확정"] } },
-    select: { sitterProfile: { select: { user: { select: { id: true, email: true } } } } },
+    where: {
+      careRequestId: params.id,
+      status: { in: ["지원완료", "매칭확정"] },
+    },
+    select: {
+      sitterProfile: {
+        select: { user: { select: { id: true, email: true } } },
+      },
+    },
   });
 
-  const [careRequest] = await prisma.$transaction([
-    prisma.careRequest.update({
-      where: { id: params.id },
-      data: { status: "CANCELLED" },
-    }),
-    // ★ 지원자들의 상태도 함께 정리한다. 예전에는 요청만 취소하고 지원은 그대로 둬서,
-    //   매니저 화면에는 "지원완료"·"매칭확정"이 계속 남아 답을 기다리는 것처럼 보였다.
-    //   무소식으로 방치하는 것이 매니저 이탈의 가장 큰 원인이라, 확정 때 미선정을
-    //   알려주는 것과 같은 이유로 취소도 알려준다.
-    prisma.careRequestApplication.updateMany({
-      where: {
-        careRequestId: params.id,
-        status: { in: ["지원완료", "매칭확정"] },
-      },
-      data: { status: "요청취소" },
-    }),
-  ]);
+  // 위의 existing.status 검사만으로는 부족하다 — 보호자가 취소와 완료 처리를 거의
+  // 동시에 누르면 둘 다 검사를 통과할 수 있다(§4-1). confirm·complete와 같은 요령으로
+  // 트랜잭션 안에서 조건부 updateMany로 한 번 더 잠근다: 이 시점에도 여전히
+  // OPEN·MATCHED인 요청만 실제로 취소되고, 진 쪽(먼저 완료 처리가 커밋된 경우 등)은
+  // count 0을 보고 409로 되돌아간다.
+  let careRequest;
+  try {
+    careRequest = await prisma.$transaction(async (tx) => {
+      const claimed = await tx.careRequest.updateMany({
+        where: { id: params.id, status: { in: ["OPEN", "MATCHED"] } },
+        data: { status: "CANCELLED" },
+      });
+      if (claimed.count === 0) throw new Error("ALREADY_PROCESSED");
+
+      // ★ 지원자들의 상태도 함께 정리한다. 예전에는 요청만 취소하고 지원은 그대로 둬서,
+      //   매니저 화면에는 "지원완료"·"매칭확정"이 계속 남아 답을 기다리는 것처럼 보였다.
+      //   무소식으로 방치하는 것이 매니저 이탈의 가장 큰 원인이라, 확정 때 미선정을
+      //   알려주는 것과 같은 이유로 취소도 알려준다.
+      await tx.careRequestApplication.updateMany({
+        where: {
+          careRequestId: params.id,
+          status: { in: ["지원완료", "매칭확정"] },
+        },
+        data: { status: "요청취소" },
+      });
+      return tx.careRequest.findUniqueOrThrow({ where: { id: params.id } });
+    });
+  } catch (e) {
+    if (e instanceof Error && e.message === "ALREADY_PROCESSED") {
+      return NextResponse.json(
+        { error: "이미 처리된 요청이에요." },
+        { status: 409 },
+      );
+    }
+    throw e;
+  }
 
   // 취소 메일(§3-13) — 상태 정리는 이미 끝났고, 발송 실패가 취소를 되돌리면 안 된다.
   // 화면에만 남기면 매니저가 앱을 열기 전까지 하염없이 기다린다 — 미선정(§3-10)과
@@ -181,7 +262,7 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
     const otherJobs = await findOtherOpenJobSummaries(
       params.id,
       existing.region,
-      existing.locationType
+      existing.locationType,
     );
     for (const t of toNotify) {
       const { id: userId, email } = t.sitterProfile.user;
@@ -196,7 +277,10 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
           from: `${SITE_NAME} <${MAIL_FROM}>`,
           to: email,
           subject: `[${SITE_NAME}] 보호자가 요청을 취소했어요`,
-          html: requestCancelledEmailHtml({ requestSummary: summary, otherJobs }),
+          html: requestCancelledEmailHtml({
+            requestSummary: summary,
+            otherJobs,
+          }),
         })
         .catch(() => {});
     }

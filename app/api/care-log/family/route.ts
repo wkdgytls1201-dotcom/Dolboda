@@ -79,20 +79,32 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "확정된 돌봄이 없어요." }, { status: 404 });
   }
 
-  const active = await prisma.careLogFamilyAccess.findMany({
-    where: { careRequestId: request.id, revokedAt: null },
-  });
-  if (active.filter((r) => !isExpired(r)).length >= MAX_ACTIVE) {
-    return NextResponse.json(
-      { error: `가족 초대는 ${MAX_ACTIVE}명까지예요. 쓰지 않는 초대를 해제해주세요.` },
-      { status: 409 }
-    );
+  // 개수 확인 후 생성(TOCTOU) — 초대 두 개를 거의 동시에 누르면 둘 다 "4명"을 보고
+  // 통과해 5명 상한을 넘길 수 있다(2026-08-07 감사). care-requests POST·points 사용과
+  // 같은 요령으로 이 돌봄 건 단위 advisory lock을 걸고 트랜잭션 안에서 다시 센다.
+  try {
+    const created = await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${"family-invite:" + request.id}))`;
+      const active = await tx.careLogFamilyAccess.findMany({
+        where: { careRequestId: request.id, revokedAt: null },
+      });
+      if (active.filter((r) => !isExpired(r)).length >= MAX_ACTIVE) {
+        throw new Error("INVITE_LIMIT");
+      }
+      return tx.careLogFamilyAccess.create({
+        data: { careRequestId: request.id, token: crypto.randomUUID().replace(/-/g, "") },
+      });
+    });
+    return NextResponse.json({ id: created.id, token: created.token }, { status: 201 });
+  } catch (e) {
+    if (e instanceof Error && e.message === "INVITE_LIMIT") {
+      return NextResponse.json(
+        { error: `가족 초대는 ${MAX_ACTIVE}명까지예요. 쓰지 않는 초대를 해제해주세요.` },
+        { status: 409 }
+      );
+    }
+    throw e;
   }
-
-  const created = await prisma.careLogFamilyAccess.create({
-    data: { careRequestId: request.id, token: crypto.randomUUID().replace(/-/g, "") },
-  });
-  return NextResponse.json({ id: created.id, token: created.token }, { status: 201 });
 }
 
 export async function DELETE(req: Request) {
