@@ -41,6 +41,82 @@ p {
   line-height: 1.65;
 }
 
+/* ─────────────────── 상호작용 기본기 (2026-08-06) ───────────────────
+   버튼·링크가 "누를 수 있다"고 느껴지게 하는 최소 장치들. 화면마다 클래스를 다는 대신
+   여기서 한 번에 깐다 — 빠뜨린 곳이 생기지 않고, 새로 만드는 화면도 그냥 따라온다. */
+
+/* 브라우저 기본 button 커서는 화살표(default)다. Tailwind preflight도 이걸 안 바꾼다 —
+   그래서 데스크톱에서 버튼 위에 올려도 "누를 수 있는 것"으로 안 보였다. */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+label:has(> input[type="checkbox"]),
+label:has(> input[type="radio"]) {
+  cursor: pointer;
+}
+button:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+/* 색·그림자 전환의 기본값. 개별 컴포넌트가 transition을 따로 선언하면 그쪽이 이긴다
+   (Tailwind 유틸리티가 뒤에 오고 특이도도 높다). 여기 있는 건 "아무도 신경 안 쓴 버튼"이
+   딱딱하게 튀지 않게 하는 바닥값이다. transform은 넣지 않는다 — 위치를 옮기는 건
+   의도한 곳에서만 일어나야 한다. */
+button,
+a,
+[role="button"] {
+  transition-property: color, background-color, border-color, box-shadow, opacity;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 키보드 포커스 링 — 전체 앱에서 focus-visible을 쓴 곳이 두 파일뿐이었다.
+   :focus가 아니라 :focus-visible이라 마우스 클릭에는 안 뜨고 Tab 이동에만 보인다.
+   outline(box-shadow 아님)을 쓰는 이유: 요소를 감싸는 컨테이너에 overflow:hidden이
+   있어도 잘리지 않고, 둥근 모서리를 자동으로 따라간다.
+   컴포넌트가 자기 ring을 선언한 곳(HeroBanner·ViewTrendChart)은 그쪽이 이긴다. */
+:where(button, a, [role="button"], input, select, textarea, summary):focus-visible {
+  outline: 2px solid #ff6250;
+  outline-offset: 2px;
+  border-radius: inherit;
+}
+
+/* 주요 CTA의 호버 — 이 앱에서 "진짜 행동 버튼"은 예외 없이 shadow-soft를 달고 있다
+   (bg-primary-500 + shadow-soft 조합, 전 화면 공통). 그 규칙성을 이용해 한 곳에서
+   손맛을 준다: 살짝 떠오르고 그림자가 깊어졌다가, 누르면 도로 내려앉는다.
+
+   ★ hover 가능한 기기에서만. 터치에서 hover가 남으면 버튼이 뜬 채로 굳는다
+     (Tailwind 쪽은 hoverOnlyWhenSupported가 처리하지만, 이 raw CSS는 직접 감싸야 한다).
+   ★ button·a만 노린다 — 검색바 같은 form도 shadow-soft를 쓰는데 그건 움직이면 안 된다.
+   ★ 1px만 올린다. 40~60대 사용자에게 크게 튀는 움직임은 어지러움을 준다(모달 규칙과 동일). */
+@media (hover: hover) and (pointer: fine) {
+  :is(button, a).shadow-soft:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 28px -8px rgba(255, 98, 80, 0.34);
+  }
+}
+:is(button, a).shadow-soft:not(:disabled):active {
+  transform: translateY(0);
+  box-shadow: 0 4px 12px -6px rgba(255, 98, 80, 0.28);
+  transition-duration: 60ms; /* 누르는 반응은 즉각적이어야 눌린 느낌이 난다 */
+}
+/* 위 규칙이 transform을 쓰므로 전환 대상에 넣어준다(기본 전환에는 일부러 뺐던 값) */
+:is(button, a).shadow-soft {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button,
+  a,
+  [role="button"] {
+    transition-duration: 0.01ms;
+  }
+  :is(button, a).shadow-soft:not(:disabled):hover,
+  :is(button, a).shadow-soft:not(:disabled):active {
+    transform: none;
+  }
+}
+
 /* 주 사용자가 40~60대 보호자라 작은 글씨가 특히 불리하다.
    화면마다 클래스를 고치면 레이아웃이 깨지기 쉬워, 크기 정의를 여기서 한 번에 올린다.
    px 고정값(text-[10px] 등)은 루트 폰트(18.5px)에 비례하지 않아 홀로 작아지던 것들이라

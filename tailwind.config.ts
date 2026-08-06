@@ -1,6 +1,13 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  // hover: 변형을 `@media (hover: hover)` 안에만 만든다.
+  //
+  // 왜 필요한가: 터치 기기는 탭한 뒤에도 :hover 상태를 유지한다(다른 곳을 누를 때까지).
+  // 그래서 폰에서 버튼을 누르면 색이 바뀐 채로 남아 "눌린 건가? 로딩 중인가?"로 보인다.
+  // 이 앱은 hover:를 500곳 넘게 쓰고 모바일이 최우선이라(CLAUDE.md) 영향이 컸다.
+  // 이 플래그 한 줄이면 그 전부가 마우스 있는 기기에서만 적용된다 — 데스크톱은 그대로.
+  future: { hoverOnlyWhenSupported: true },
   content: [
     "./app/**/*.{ts,tsx}",
     "./components/**/*.{ts,tsx}",
