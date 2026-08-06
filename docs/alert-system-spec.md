@@ -116,7 +116,7 @@ flowchart LR
 
 ---
 
-## 2. 모든 알림에 공통되는 5가지 원칙
+## 2. 모든 알림에 공통되는 6가지 원칙
 
 이 원칙들은 4개 스크립트 전부가 따른다. 새 알림을 추가할 때도 이 원칙을 지켜야
 한다.
@@ -145,6 +145,27 @@ flowchart LR
    - **평생 한 번뿐인 사건**(예: 시설이 "오늘 새로 등록됨", 공고가 "오늘 새로
      올라옴"): 쿨다운 자체가 필요 없다. 그 사람에게 그 사건을 한 번이라도
      보낸 적 있는지만 확인하면 된다.
+6. **메일 생김새는 `scripts/lib/emailShell.mjs` 하나만 쓴다** (2026-08-06 신설).
+   그 전에는 스크립트마다 인라인 HTML을 따로 갖고 있어서, 받는 사람 입장에서
+   같은 서비스가 보낸 메일인지 알기 어려웠다. **새 알림에서 메일 HTML을 새로
+   쓰지 말 것.**
+   - `renderEmail({ title, preheader, body, cta, withIntro })` — 로고·코랄
+     그라데이션 히어로·슬로건·푸터까지 감싸준다.
+   - `infoCard()` — 본문 안의 정보 블록(시설 카드 등).
+   - **`withIntro: true`는 첫 접촉 성격의 메일만** 켠다(시설 초대 등). 매번
+     서비스 소개를 붙이면 광고처럼 읽힌다.
+   - 히어로 배경은 CSS 그라데이션 + `bgcolor` 폴백을 같이 준다 — Outlook이
+     그라데이션을 무시해서 폴백이 없으면 배경이 하얗게 뜬다.
+   - `preheader`(받은편지함 미리보기 문구)는 비워두지 말 것. 비우면 메일
+     클라이언트가 본문 첫 줄을 아무렇게나 긁어간다.
+
+### 2-A. 발신 주소 (SPF)
+
+`MAIL_FROM` 환경변수를 6개 스크립트가 공유한다. **Resend에 인증된 도메인은
+`send.dolboda.kr`이므로 발신도 `noreply@send.dolboda.kr`여야 한다.**
+2026-08-06 기준 `noreply@dolboda.kr`로 설정돼 있어 **SPF가 어긋난 상태**다 —
+DKIM이 통과해서 지금은 정상 도착하지만, DMARC 정책을 `p=quarantine` 이상으로
+올리면 전 발송이 스팸함으로 간다. 값만 바꾸면 되고 코드 수정은 필요 없다.
 
 ---
 
@@ -410,6 +431,7 @@ flowchart LR
 
 ```
 scripts/
+  lib/emailShell.mjs              # ★ 메일 공용 셸 (§2-6) — 아래 6개가 전부 이걸 쓴다
   send-facility-alerts.mjs        # §3-1~3-3
   send-care-log-reminders.mjs     # §3-5
   send-grade-test-reminders.mjs   # §3-6
