@@ -21,9 +21,18 @@ const getFacility = cache((id: string) =>
       phone: true,
       dataSource: true,
       missingSince: true,
+      // 실사진 URL — 구조화 데이터(image)와 공유 카드(OG)에 쓴다.
+      // extra 통째로가 아니라 필요한 두 키만 뽑는다(비급여·인력 등 큰 덩어리를 안 싣는다).
+      extra: true,
     },
   })
 );
+
+/** extra에서 실사진 URL만 꺼낸다(최대 n장). 없으면 빈 배열. */
+function photoUrlsOf(extra: unknown, n = 6): string[] {
+  const photos = (extra as { photos?: unknown })?.photos;
+  return Array.isArray(photos) ? photos.filter((p): p is string => typeof p === "string").slice(0, n) : [];
+}
 
 // "서울특별시 강남구 ..." → "서울특별시 강남구" 같은 지역 접두어.
 //
@@ -68,7 +77,11 @@ export async function generateMetadata({
       robots: { index: false, follow: true },
     }),
     openGraph: {
-      images: [OG_IMAGE],
+      // 실사진이 있으면 그 시설의 사진을 공유 카드에 쓴다 — 지금까지는 2만 8천 개
+      // 상세를 어디에 공유하든 똑같은 로고 카드가 나갔다. 카톡으로 "여기 어때?"를
+      // 주고받는 것이 이 서비스의 실제 사용 패턴이라 차이가 크다.
+      // 사진이 없는 시설은 기존 OG 이미지로 떨어진다.
+      images: [...photoUrlsOf(facility.extra, 1), OG_IMAGE],
       title,
       description,
       url: `${SITE_URL}/facility/${facility.id}`,
@@ -93,10 +106,17 @@ export default async function FacilityLayout({
     const sigungu = sigunguOf(facility.address);
     const facilityUrl = `${SITE_URL}/facility/${facility.id}`;
 
+    // 실사진을 구조화 데이터에 싣는다 — 리치 결과·AI 검색이 읽는 가장 좋은 재료인데
+    // 그동안 공용 OG 이미지만 들어가고 정작 그 시설의 사진은 빠져 있었다.
+    // 지역 페이지의 ItemList에는 이미 넣어 뒀는데(2026-08-06) 상세만 비어 있었다.
+    // 6장까지만 — schema.org는 개수 제한이 없지만 JSON-LD가 커지면 HTML이 무거워진다.
+    const photoUrls = photoUrlsOf(facility.extra, 6);
+
     const place = {
       "@type": facility.facilityType === "NURSING_HOSPITAL" ? "Hospital" : "LocalBusiness",
       name: facility.name,
       url: facilityUrl,
+      ...(photoUrls.length > 0 && { image: photoUrls }),
       address: {
         "@type": "PostalAddress",
         streetAddress: facility.address,

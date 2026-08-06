@@ -228,6 +228,12 @@ export interface FacilityBase {
   // 영역 정보가 붙은 구조화 사진 목록 (photos와 같은 사진, 상세 갤러리가 영역 라벨에 사용).
   // scripts/import-facility-photos.mts가 photos와 함께 채운다.
   photoItems?: FacilityPhoto[];
+  /**
+   * 첫 사진의 캡션만 뽑아둔 값 — 목록 카드 썸네일의 alt에 쓴다.
+   * 카드 페이로드에는 photoItems 전체를 싣지 않으므로(lib/facilityRepo.ts) 이 한 줄만 따로 둔다.
+   * 상세 페이지처럼 photoItems가 통째로 있는 곳에서는 이 값 대신 photoItems[0].caption을 봐도 된다.
+   */
+  photoCaption?: string;
   parking?: {
     spots: number;
     isFree: boolean;

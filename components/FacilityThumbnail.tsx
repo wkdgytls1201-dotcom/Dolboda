@@ -88,7 +88,10 @@ export function FacilityThumbnail({
     return (
       <img
         src={facility.photos[0]}
-        alt=""
+        // 공단 캡션("2층 세면실 입구", "정원전경입니다")이 있으면 그대로 쓴다 —
+        // 이미지 검색과 스크린리더 양쪽에 실제 정보가 된다. 캡션이 없을 때만 시설명으로
+        // 대신한다. 예전엔 alt=""라 55,000장의 설명이 통째로 버려지고 있었다.
+        alt={facility.photoCaption ?? `${facility.name} 시설 사진`}
         loading="lazy"
         decoding="async"
         onError={() => setPhotoFailed(true)}
@@ -117,6 +120,9 @@ export function FacilityThumbnail({
   return (
     <img
       src={facilityPhotoFor(facility.id, 480)}
+      // ⚠️ 여기는 스톡 사진이다 — 그 시설을 찍은 사진이 아니라 자리를 채우는 이미지.
+      // 시설명을 alt로 달면 "이 시설의 모습"이라고 거짓을 말하게 되고, 이미지 검색에도
+      // 잘못된 신호를 준다. 장식용이므로 alt는 비워두는 것이 맞다(위 실사진과 다른 이유).
       alt=""
       loading="lazy"
       decoding="async"

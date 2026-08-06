@@ -48,6 +48,14 @@ export function toCardFacility(f: FacilityDTO): FacilityDTO {
     // 카드 썸네일은 첫 장(외관 대표사진)만 쓴다 — 시설당 12장씩 실으면 300건 응답에
     // URL 3,600개(약 350KB)가 헛되이 실린다. R2 대량 사진이 붙으면서 실제 문제가 됐다.
     photos: Array.isArray(anyF.photos) ? (anyF.photos as string[]).slice(0, 1) : undefined,
+    // 그 첫 장의 캡션만 함께 — 썸네일 alt에 쓴다.
+    // 공단 사진에는 캡션이 거의 항상 붙어 있고(실측 55,008장 중 54,994장) "2층 세면실 입구",
+    // "정원전경입니다"처럼 구체적이다. 그동안 목록 썸네일이 alt=""라 이 설명이 통째로
+    // 버려지고 있었다 — 이미지 검색 노출과 스크린리더 양쪽에서 손해다.
+    // photoItems 전체가 아니라 문자열 하나만 실으므로 페이로드 영향은 무시할 수준이다.
+    photoCaption: Array.isArray(anyF.photoItems)
+      ? ((anyF.photoItems as { caption?: string | null }[])[0]?.caption ?? undefined)
+      : undefined,
     // 카드에 표시하거나 필터에서 쓰는 값들만 선별
     capacity: anyF.capacity,
     currentOccupancy: anyF.currentOccupancy,
