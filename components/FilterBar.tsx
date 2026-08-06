@@ -583,8 +583,8 @@ export function FilterBar({
               onClick={() => setDraft((d) => ({ ...d, verifiedOnly: !d.verifiedOnly }))}
             />
             {/* 사진 없는 카드는 일러스트·로드뷰로 채워진다 — 보호자에게 "실제로 어떻게
-                생겼는지 본 곳"과 "안 본 곳"은 판단의 무게가 다르다. 전국 사진을 채우는
-                중이라(2026-08-06 기준 32%) 지금은 크게 좁히는 필터다. */}
+                생겼는지 본 곳"과 "안 본 곳"은 판단의 무게가 다르다. 전국 사진 보유율이
+                72%(2026-08-07 기준, 5개 지역 처리 후)라 이제 크게 좁히는 필터는 아니다. */}
             <FilterPill
               label="📷 실사진 있는 곳만"
               selected={draft.hasPhotoOnly}
