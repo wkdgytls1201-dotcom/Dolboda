@@ -33,6 +33,7 @@ import { KakaoRoadview } from "@/components/KakaoRoadview";
 import { ConsultModal } from "@/components/ConsultModal";
 import { AuthModal } from "@/components/AuthModal";
 import { DataSourceNote } from "@/components/DataSourceNote";
+import { ClampedText } from "@/components/ClampedText";
 import { useCompare } from "@/lib/compareContext";
 import { InfoTooltip } from "@/components/InfoTooltip";
 import { TOOLTIPS } from "@/lib/tooltips";
@@ -1107,7 +1108,7 @@ export default function FacilityDetailClient({
                     <div key={label} className="flex gap-3 px-4 py-3">
                       <dt className="w-20 shrink-0 text-xs font-semibold text-ink-300">{label}</dt>
                       <dd className="min-w-0 flex-1 text-sm leading-relaxed text-ink-700">
-                        {value}
+                        {label === "오시는 길" ? <ClampedText text={value} /> : value}
                       </dd>
                     </div>
                   ))}
