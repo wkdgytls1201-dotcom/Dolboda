@@ -7,6 +7,7 @@ import { getTypeSummary, getTopFacilities, getRegionStats, getRegionIndex } from
 import {
   FacilityLinkList,
   RegionFaq,
+  GuideLinkStrip,
   RegionPagination,
   RegionStatStrip,
   regionFaqJsonLd,
@@ -64,12 +65,22 @@ export async function generateMetadata({
     sigungu
   )}/${encodeURIComponent(typeSeo.slug)}`;
 
+  // getTopFacilities는 cache()로 감싸져 있어 페이지 본문의 같은 호출과 중복되지 않는다.
+  const topFacilities = await getTopFacilities(region, sigungu, 12, typeSeo.type);
+  const topPhoto = topFacilities.find((f) => f.photo)?.photo;
+
   return {
     title,
     description,
     // 페이지별 self-canonical — 2페이지를 1페이지로 몰면 뒤쪽 시설이 색인되지 않는다
     alternates: { canonical: page > 1 ? `${path}?page=${page}` : path },
-    openGraph: { title, description, url: `${SITE_URL}${path}`, type: "website", images: [OG_IMAGE] },
+    openGraph: {
+      title,
+      description,
+      url: `${SITE_URL}${path}`,
+      type: "website",
+      images: topPhoto ? [topPhoto, OG_IMAGE] : [OG_IMAGE],
+    },
   };
 }
 
@@ -266,6 +277,9 @@ export default async function RegionTypePage({
       </Link>
 
       {page === 1 && <RegionFaq regionName={sigungu} total={summary.total} typeSeo={typeSeo} />}
+      {/* 지역+유형 897페이지 중 이 자리엔 GuideLinkStrip이 아예 없었다(2026-08-07 감사) —
+          2페이지 이후는 FAQ와 같은 이유로 생략(중복 억제). */}
+      {page === 1 && <GuideLinkStrip facilityType={typeSeo.type} />}
     </main>
   );
 }

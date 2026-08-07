@@ -3,6 +3,7 @@ import { MapPin, ChevronRight } from "lucide-react";
 import { FACILITY_TYPE_LABEL, type FacilityType } from "@/lib/types";
 import type { FacilityTypeSeo } from "@/lib/facilityTypeSeo";
 import { withParticle } from "@/lib/korean";
+import { findGuide } from "@/lib/guides";
 
 // 지역 SEO 랜딩 페이지(/region/...)에서 쓰는 서버 렌더링 조각들.
 // 클라이언트 훅 없이 순수 마크업이라 검색엔진·AI 크롤러가 그대로 읽는다.
@@ -43,7 +44,8 @@ export function FacilityLinkList({
     facilityType: string;
     grade: number | null;
     address: string;
-    /** 대표 실사진(있는 지역만 — 경기도부터). 없으면 썸네일 칸 자체를 안 그린다. */
+    /** 대표 실사진 — 전국 86.6%가 보유(2026-08-07 실측, 전 지역 파이프라인 완료).
+     * 없는 시설도 섞여 있어 없으면 썸네일 칸 자체를 안 그린다. */
     photo?: string | null;
   }[];
 }) {
@@ -303,25 +305,49 @@ export function regionFaqJsonLd(ctx: RegionFaqContext = {}) {
 
 // 지역 페이지 → 가이드 콘텐츠 내부 링크. 지역 검색어로 들어온 보호자를 질문형 콘텐츠로,
 // 가이드를 읽은 보호자를 다시 지역 검색으로 순환시키는 SEO 구조의 절반이다.
-const GUIDE_LINKS = [
-  { slug: "nursing-home-vs-hospital", label: "요양원과 요양병원, 뭐가 다른가요?" },
-  { slug: "nursing-home-cost", label: "요양원 한 달 비용은 얼마나 들까요?" },
-  { slug: "checklist", label: "좋은 요양원 고르는 체크리스트" },
-  { slug: "grade-application", label: "장기요양등급 신청 방법" },
-];
+//
+// 유형별로 고른다(2026-08-07) — 예전엔 4개를 하드코딩해 19편 중 15편이 지역 페이지
+// 어디서도 안 걸렸다(신규 9편은 아예 0). slug만 적어두고 제목·설명은 lib/guides.ts에서
+// findGuide()로 가져온다 — 가이드 문구를 고치면 여기도 자동으로 따라간다.
+const GUIDE_SLUGS_BY_TYPE: Partial<Record<FacilityType, string[]>> = {
+  NURSING_HOME: [
+    "nursing-home-vs-hospital",
+    "nursing-home-cost",
+    "checklist",
+    "dementia-facility",
+    "tenure-signal",
+    "before-you-sign",
+  ],
+  NURSING_HOSPITAL: [
+    "nursing-home-vs-hospital",
+    "hospital-nonpayment",
+    "no-grade-admission",
+    "grade-application",
+  ],
+  DAY_NIGHT_CARE: ["daycare-cost", "visiting-care", "home-care-monthly-limit", "grade-application"],
+  HOME_CARE: ["visiting-care", "home-care-monthly-limit", "family-care-allowance", "copay-reduction"],
+  SILVER_TOWN: ["silver-town-vs-nursing-home", "no-grade-admission", "nursing-home-vs-hospital"],
+};
+// 특정 유형 없이 지역 전체를 보여주는 페이지(시도·시군구 허브)용 기본 묶음 — 가장
+// 범용적인 질문 위주.
+const GENERIC_GUIDE_SLUGS = ["nursing-home-vs-hospital", "checklist", "grade-application", "nursing-home-cost"];
 
-export function GuideLinkStrip() {
+export function GuideLinkStrip({ facilityType }: { facilityType?: FacilityType }) {
+  const slugs = (facilityType && GUIDE_SLUGS_BY_TYPE[facilityType]) || GENERIC_GUIDE_SLUGS;
+  const guides = slugs.map((slug) => findGuide(slug)).filter((g): g is NonNullable<typeof g> => !!g);
+  if (guides.length === 0) return null;
+
   return (
     <section className="mt-10">
       <h2 className="mb-3 text-base font-bold text-ink-900">시설 고르기 전에 읽어보세요</h2>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        {GUIDE_LINKS.map((g) => (
+        {guides.map((g) => (
           <Link
             key={g.slug}
             href={`/guide/${g.slug}`}
             className="flex items-center justify-between rounded-2xl border border-ink-100 bg-white px-4 py-3.5 text-sm font-semibold text-ink-700 transition-colors hover:bg-ink-100"
           >
-            {g.label}
+            {g.shortTitle}
             <ChevronRight size={16} className="shrink-0 text-ink-300" />
           </Link>
         ))}

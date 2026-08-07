@@ -182,13 +182,15 @@ export const getTypeSummary = cache(
 // skip을 주면 페이지네이션(2페이지 이후)에 쓴다.
 export const getTopFacilities = cache(
   async (
-    region: RegionSeo,
+    // null = 지역 무관 전국(전국 유형 허브용) — region.prefixes 조건을 그냥 뺀다
+    region: RegionSeo | null,
     sigungu: string | null,
     take: number,
     facilityType?: FacilityType,
     skip = 0
   ) => {
-    const conditions: object[] = [prefixWhere(region), NOT_MOCK];
+    const conditions: object[] = [NOT_MOCK];
+    if (region) conditions.push(prefixWhere(region));
     if (sigungu) conditions.push({ address: { contains: ` ${sigungu} ` } });
     if (facilityType) conditions.push({ facilityType });
     const rows = await prisma.facility.findMany({

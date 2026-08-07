@@ -62,11 +62,20 @@ export async function generateMetadata({
   }`;
 
   const path = `/region/${encodeURIComponent(region.slug)}/${encodeURIComponent(sigungu)}`;
+  // getTopFacilities는 cache()로 감싸져 있어 페이지 본문의 같은 호출과 중복되지 않는다.
+  const topFacilities = await getTopFacilities(region, sigungu, 12);
+  const topPhoto = topFacilities.find((f) => f.photo)?.photo;
   return {
     title,
     description,
     alternates: { canonical: path },
-    openGraph: { title, description, url: `${SITE_URL}${path}`, type: "website", images: [OG_IMAGE] },
+    openGraph: {
+      title,
+      description,
+      url: `${SITE_URL}${path}`,
+      type: "website",
+      images: topPhoto ? [topPhoto, OG_IMAGE] : [OG_IMAGE],
+    },
   };
 }
 

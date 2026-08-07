@@ -41,12 +41,17 @@ export async function generateMetadata({
     .map((s) => s.name)
     .join(", ")} 등 시·군·구별 요양시설 정보를 제공합니다.`;
 
+  // 대표 시설 실사진 1장 — getTopFacilities는 cache()로 감싸져 있어 아래 페이지 본문의
+  // 같은 호출과 중복되지 않는다(요청당 한 번만 DB를 탄다). 없으면 기본 OG로 폴백.
+  const topFacilities = await getTopFacilities(region, null, 12);
+  const topPhoto = topFacilities.find((f) => f.photo)?.photo;
+
   return {
     title,
     description,
     alternates: { canonical: `/region/${encodeURIComponent(region.slug)}` },
     openGraph: {
-      images: [OG_IMAGE],
+      images: topPhoto ? [topPhoto, OG_IMAGE] : [OG_IMAGE],
       title,
       description,
       url: `${SITE_URL}/region/${encodeURIComponent(region.slug)}`,

@@ -3,7 +3,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { FACILITY_TYPE_SEO, findTypeSeoBySlug, type FacilityTypeSeo } from "@/lib/facilityTypeSeo";
-import { getNationwideTypeSummary, getNationwideTypeStats, getRegionIndex } from "@/lib/regionData";
+import {
+  getNationwideTypeSummary,
+  getNationwideTypeStats,
+  getRegionIndex,
+  getTopFacilities,
+} from "@/lib/regionData";
 import { RegionFaq, regionFaqJsonLd, GuideLinkStrip } from "@/components/RegionSeoParts";
 import { NHIS_GRADE_LETTER } from "@/components/GradeBadge";
 import { SITE_URL, SITE_NAME, OG_IMAGE } from "@/lib/siteConfig";
@@ -59,11 +64,22 @@ export async function generateMetadata({
     .join(", ")}를 찾는다면 여기서 시작하세요.`;
   const path = `/${encodeURIComponent(typeSeo.slug)}`;
 
+  // 지역 무관 전국 대표 12곳 중 실사진 있는 첫 곳 — 지역 페이지 3계층과 같은 방식
+  // (region/[sido] 등, 2026-08-07). 이 페이지는 지역이 없어 region에 null을 넘긴다.
+  const topFacilities = await getTopFacilities(null, null, 12, typeSeo.type);
+  const topPhoto = topFacilities.find((f) => f.photo)?.photo;
+
   return {
     title,
     description,
     alternates: { canonical: path },
-    openGraph: { title, description, url: `${SITE_URL}${path}`, type: "website", images: [OG_IMAGE] },
+    openGraph: {
+      title,
+      description,
+      url: `${SITE_URL}${path}`,
+      type: "website",
+      images: topPhoto ? [topPhoto, OG_IMAGE] : [OG_IMAGE],
+    },
   };
 }
 
@@ -276,7 +292,7 @@ export default async function FacilityTypeHubPage({ params }: { params: { typeSl
       )}
 
       <RegionFaq {...faqCtx} />
-      <GuideLinkStrip />
+      <GuideLinkStrip facilityType={typeSeo.type} />
     </main>
   );
 }
