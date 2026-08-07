@@ -87,7 +87,7 @@ export const GUIDES: Guide[] = [
       { label: "전국 요양원 찾아보기", href: "/요양원" },
       { label: "전국 요양병원 찾아보기", href: "/요양병원" },
     ],
-    related: ["nursing-home-cost", "grade-application", "checklist"],
+    related: ["nursing-home-cost", "grade-application", "checklist", "silver-town-vs-nursing-home", "facility-transfer"],
   },
   {
     slug: "nursing-home-cost",
@@ -133,7 +133,7 @@ export const GUIDES: Guide[] = [
       { label: "우리 지역 요양원 비용 비교하기", href: "/search?type=NURSING_HOME" },
       { label: "예상 등급 확인하기 (1분)", href: "/grade-helper" },
     ],
-    related: ["nursing-home-vs-hospital", "hospital-nonpayment", "before-you-sign"],
+    related: ["nursing-home-vs-hospital", "hospital-nonpayment", "before-you-sign", "copay-reduction"],
   },
   {
     slug: "hospital-nonpayment",
@@ -238,7 +238,7 @@ export const GUIDES: Guide[] = [
       { label: "예상 등급 1분 만에 확인", href: "/grade-helper" },
       { label: "정식 52문항 등급 테스트", href: "/grade-test" },
     ],
-    related: ["no-grade-admission", "grade-reading", "grade-renewal"],
+    related: ["no-grade-admission", "grade-reading", "grade-renewal", "family-care-allowance"],
   },
   {
     slug: "no-grade-admission",
@@ -282,7 +282,7 @@ export const GUIDES: Guide[] = [
       { label: "등급 신청 방법 보기", href: "/guide/grade-application" },
       { label: "요양병원 찾아보기", href: "/요양병원" },
     ],
-    related: ["grade-application", "nursing-home-vs-hospital"],
+    related: ["grade-application", "nursing-home-vs-hospital", "silver-town-vs-nursing-home"],
   },
   {
     slug: "dementia-facility",
@@ -383,7 +383,7 @@ export const GUIDES: Guide[] = [
     cta: [
       { label: "체크리스트 기준으로 시설 비교하기", href: "/search" },
     ],
-    related: ["grade-reading", "dementia-facility", "before-you-sign"],
+    related: ["grade-reading", "dementia-facility", "before-you-sign", "silver-town-vs-nursing-home", "facility-transfer"],
   },
   {
     slug: "grade-reading",
@@ -567,7 +567,7 @@ export const GUIDES: Guide[] = [
       { label: "방문요양센터 찾기", href: "/방문요양" },
       { label: "주야간보호 찾기", href: "/search?type=DAY_NIGHT_CARE" },
     ],
-    related: ["visiting-care", "daycare-cost", "grade-application"],
+    related: ["visiting-care", "daycare-cost", "copay-reduction", "family-care-allowance"],
   },
   {
     slug: "welfare-equipment-benefit",
@@ -612,7 +612,7 @@ export const GUIDES: Guide[] = [
       { label: "복지용구 품목·한도 계산기 보기", href: "/welfare-equipment" },
       { label: "장기요양등급 신청 방법 보기", href: "/guide/grade-application" },
     ],
-    related: ["grade-application", "nursing-home-cost", "home-care-monthly-limit"],
+    related: ["grade-application", "nursing-home-cost", "home-care-monthly-limit", "copay-reduction"],
   },
   {
     slug: "grade-renewal",
@@ -710,7 +710,200 @@ export const GUIDES: Guide[] = [
       { label: "좋은 요양원 체크리스트로 돌아가기", href: "/guide/checklist" },
       { label: "우리 지역 요양원 비교하기", href: "/search?type=NURSING_HOME" },
     ],
-    related: ["checklist", "nursing-home-cost"],
+    related: ["checklist", "nursing-home-cost", "facility-transfer"],
+  },
+  {
+    slug: "copay-reduction",
+    title: "장기요양 본인부담 경감 — 40%·60% 낮추는 법",
+    shortTitle: "본인부담 경감 신청",
+    description:
+      "건강보험료가 낮은 가구는 장기요양 본인부담금을 40%나 60% 덜 낼 수 있어요. 대상 기준과 신청이 필요한 경우를 정리했어요.",
+    category: "비용",
+    updated: "2026-08-07",
+    keyPoints: [
+      "건보료 순위 하위 25%는 60% 감경, 25~50%는 40% 감경",
+      "대부분 공단이 자동으로 확인해 적용한다",
+      "보험료가 최근 바뀌었다면 직접 신청해야 할 수 있다",
+    ],
+    sections: [
+      {
+        heading: "감경 기준 — 건강보험료 순위로 정해진다",
+        paragraphs: [
+          "장기요양 본인부담률은 소득 수준에 따라 세 단계로 낮아집니다. 건강보험료 순위가 전체 가입자 중 하위 25% 안에 들고 일정 재산 기준 이하면 본인부담의 60%를 감경(시설급여 8%, 재가급여 6%만 부담)받고, 25~50% 구간이면서 재산 기준을 충족하면 40% 감경(시설급여 12%, 재가급여 9%)을 받습니다. 국민기초생활수급자는 본인부담이 아예 없습니다.",
+          "이 기준은 요양원·재가급여(방문요양·주야간보호)·복지용구 어디에나 똑같이 적용됩니다. 시설을 옮기거나 서비스 종류를 바꿔도 감경 등급 자체는 그대로 유지돼요.",
+        ],
+      },
+      {
+        heading: "신청이 필요할 때와 필요 없을 때",
+        paragraphs: [
+          "대부분은 국민건강보험공단이 보유한 소득·재산 자료로 자동 확인해 감경을 적용합니다. 등급판정을 받는 시점에 별도로 신청서를 낼 필요가 없는 경우가 많아요.",
+          "다만 최근 건강보험료가 낮아졌거나 재산 상황이 바뀌었는데 아직 감경이 적용되지 않았다면, 공단 지사에 감경신청서를 직접 제출해야 반영됩니다. 등급판정서의 본인부담률이 예상과 다르게 찍혀 있다면 이 경우를 의심해 보세요.",
+        ],
+        list: [
+          "60% 감경 — 건보료 순위 하위 25% + 재산 기준",
+          "40% 감경 — 건보료 순위 25~50% + 재산 기준",
+          "기초생활수급자 — 본인부담 없음",
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: "감경 여부는 어디서 확인하나요?",
+        a: "국민건강보험공단 노인장기요양보험 홈페이지나 The건강보험 앱에서 본인의 감경 등급을 확인할 수 있습니다. 이용 중인 시설·센터에 문의해도 안내받을 수 있어요.",
+      },
+      {
+        q: "감경받다가 취소될 수도 있나요?",
+        a: "네. 매년 건강보험료가 재산정되면서 순위가 바뀌면 감경 등급도 함께 조정될 수 있습니다.",
+      },
+    ],
+    cta: [
+      { label: "요양원 한 달 비용 계산해보기", href: "/guide/nursing-home-cost" },
+      { label: "복지용구 급여 알아보기", href: "/guide/welfare-equipment-benefit" },
+    ],
+    related: ["nursing-home-cost", "home-care-monthly-limit", "welfare-equipment-benefit"],
+  },
+  {
+    slug: "family-care-allowance",
+    title: "가족요양비란 — 방문요양기관이 없는 지역의 현금 급여",
+    shortTitle: "가족요양비(특별현금급여)",
+    description:
+      "섬·벽지처럼 방문요양센터가 없는 지역에 살거나 특별한 사정이 있으면, 가족이 직접 돌보는 것에 대해 현금으로 급여를 받을 수 있어요.",
+    category: "제도",
+    updated: "2026-08-07",
+    keyPoints: [
+      "방문요양기관이 없는 지역이나 천재지변·신체 사유가 있을 때 지급",
+      "매달 정액을 수급자 본인 계좌로 입금 — 서비스가 아니라 현금",
+      "정확한 금액은 매년 고시로 정해져 국민건강보험공단에서 확인해야 한다",
+    ],
+    sections: [
+      {
+        heading: "재가급여를 받을 수 없는 상황을 위한 제도",
+        paragraphs: [
+          "가족요양비(특별현금급여)는 장기요양등급을 받았지만 방문요양·주야간보호 같은 재가급여를 이용하기 어려운 분들을 위한 현금 급여입니다. 섬이나 벽지처럼 요양기관 자체가 없는 지역에 살거나, 천재지변, 신체·정신·성격상의 사유로 가족 등에게서 방문요양에 준하는 돌봄을 받을 때 지급됩니다.",
+          "다른 재가급여처럼 서비스를 제공받고 그 비용의 일부를 부담하는 구조가 아니라, 정해진 금액이 매달 수급자 본인 계좌로 그대로 입금됩니다. 방문요양센터를 이용할 수 없는 상황에서 가족의 돌봄 부담을 현금으로 조금이나마 보전하는 성격입니다.",
+        ],
+      },
+      {
+        heading: "얼마를 받을 수 있나요",
+        paragraphs: [
+          "지급액은 등급과 무관하게 매년 보건복지부 고시로 정해지는 정액입니다. 고시 금액은 해마다 바뀌므로, 정확한 금액은 국민건강보험공단 노인장기요양보험 홈페이지나 관할 공단 지사에서 확인하는 것이 가장 정확해요.",
+        ],
+        list: [
+          "섬·벽지 등 장기요양기관이 없는 지역 거주",
+          "천재지변 등으로 재가·시설급여 이용이 어려운 경우",
+          "신체·정신·성격상의 사유로 가족 등에게 방문요양 수준의 돌봄을 받는 경우",
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: "신청은 어떻게 하나요?",
+        a: "장기요양등급 신청 시 또는 등급을 받은 뒤 국민건강보험공단 지사에 가족요양비 지급을 신청하면, 대상 사유에 해당하는지 확인 후 결정됩니다.",
+      },
+      {
+        q: "받으면서 다른 급여도 함께 쓸 수 있나요?",
+        a: "가족요양비는 재가급여를 이용하기 어려운 상황을 전제로 하는 급여라, 방문요양 등 다른 재가급여와 함께 받을 수 없는 것이 원칙입니다. 정확한 병행 가능 여부는 공단에 확인하세요.",
+      },
+    ],
+    cta: [
+      { label: "장기요양등급 신청 방법 보기", href: "/guide/grade-application" },
+      { label: "방문요양센터 찾기", href: "/방문요양" },
+    ],
+    related: ["grade-application", "visiting-care", "home-care-monthly-limit"],
+  },
+  {
+    slug: "silver-town-vs-nursing-home",
+    title: "실버타운과 요양원, 뭐가 다를까",
+    shortTitle: "실버타운 vs 요양원",
+    description:
+      "실버타운은 장기요양보험이 적용되지 않는 민간 주거시설이고, 요양원은 보험이 적용되는 돌봄시설이에요. 가장 크게 갈리는 기준을 정리했어요.",
+    category: "시설 선택",
+    updated: "2026-08-07",
+    keyPoints: [
+      "실버타운은 보험 밖 민간 주거시설, 요양원은 장기요양보험 적용 시설",
+      "실버타운은 자립 생활이 가능한 어르신 대상, 요양원은 상시 돌봄이 필요한 분 대상",
+      "실버타운은 등급이 필요 없고, 비용은 전액 자비 부담",
+    ],
+    sections: [
+      {
+        heading: "가장 큰 차이는 '보험 적용 여부'",
+        paragraphs: [
+          "요양원은 장기요양보험 시설급여로 운영돼 본인부담이 20%(또는 감경 시 더 낮은 비율)로 제한됩니다. 반면 실버타운(노인복지주택·유료양로시설)은 장기요양보험 대상이 아닌 민간 주거시설이라 입주보증금과 월 생활비를 전액 자비로 부담합니다. 그래서 실버타운은 장기요양등급이 없어도 입주할 수 있습니다.",
+          "대상도 다릅니다. 요양원은 일상생활에 상시 도움이 필요한 어르신을 위한 곳이고, 실버타운은 식사·청소 같은 편의 서비스를 받으며 스스로 생활할 수 있는 어르신을 위한 주거 공간에 가깝습니다.",
+        ],
+      },
+      {
+        heading: "이런 경우에 실버타운을 검토해요",
+        paragraphs: [
+          "아직 거동이나 인지에 큰 문제가 없어 장기요양등급 대상은 아니지만, 혼자 사는 것보다 식사·안전 관리가 되는 곳에서 지내고 싶은 경우 실버타운이 맞는 선택일 수 있습니다. 다만 비용이 정부 수가로 정해진 요양원과 달리 시설마다 천차만별이라, 보증금·월 생활비·추가 서비스 비용을 꼼꼼히 비교해야 합니다.",
+        ],
+        list: [
+          "장기요양등급 없이 들어갈 수 있는 곳을 찾는다 → 실버타운 검토",
+          "이미 등급이 있고 상시 돌봄이 필요하다 → 요양원이 우선",
+          "나중에 돌봄이 더 필요해질 걸 대비하고 싶다 → 요양원 연계 서비스가 있는지 확인",
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: "실버타운에 있다가 요양원으로 옮길 수 있나요?",
+        a: "네. 실버타운 생활 중 장기요양등급을 받게 되면 요양원으로 옮기거나, 등급에 따라 방문요양 등 재가급여를 실버타운 안에서 연계해 쓰는 경우도 있습니다. 시설마다 연계 여부가 다르니 확인이 필요해요.",
+      },
+    ],
+    cta: [
+      { label: "전국 실버타운 찾아보기", href: "/실버타운" },
+      { label: "요양원 vs 요양병원 차이 보기", href: "/guide/nursing-home-vs-hospital" },
+    ],
+    related: ["nursing-home-vs-hospital", "no-grade-admission", "checklist"],
+  },
+  {
+    slug: "facility-transfer",
+    title: "다른 시설로 옮겨야 할 때 — 전원 절차와 확인할 것",
+    shortTitle: "시설 전원 절차",
+    description:
+      "지금 계신 요양원이 잘 안 맞거나 사정이 바뀌었을 때, 다른 시설로 옮기는 절차와 미리 확인해야 할 것들을 정리했어요.",
+    category: "시설 선택",
+    updated: "2026-08-07",
+    keyPoints: [
+      "장기요양등급은 개인에게 부여되므로 시설을 옮겨도 그대로 유지된다",
+      "기존 시설 계약 해지 통보 기간과 정산 기준을 먼저 확인한다",
+      "복용약·진료 기록은 새 시설에 미리 전달해야 적응이 매끄럽다",
+    ],
+    sections: [
+      {
+        heading: "등급은 그대로, 계약만 새로 맺습니다",
+        paragraphs: [
+          "장기요양등급은 시설이 아니라 어르신 개인에게 부여된 자격이라, 시설을 옮긴다고 등급이 사라지거나 다시 신청해야 하는 것이 아닙니다. 새 시설과 새로 계약을 맺고, 기존 시설과는 계약을 해지하는 절차만 거치면 됩니다.",
+          "다만 두 절차가 매끄럽게 이어지지 않으면 그 사이 공백이 생길 수 있으니, 새 시설의 입소 가능일을 먼저 확정한 뒤 기존 시설에 퇴소를 통보하는 순서가 안전합니다.",
+        ],
+      },
+      {
+        heading: "옮기기 전에 확인할 것",
+        paragraphs: [
+          "기존 계약서의 해지 통보 기간(보통 며칠 전 통보)과 중도 퇴소 시 정산 기준(비급여 선납분을 일할 계산해 돌려주는지)을 먼저 확인하세요. 정산 기준이 불명확하면 미리 시설에 문의해 서면으로 받아두는 것이 좋습니다.",
+        ],
+        list: [
+          "기존 시설 — 해지 통보 기간, 중도 퇴소 정산 기준, 물품 반환",
+          "새 시설 — 입소 가능일, 계약서의 비급여 항목",
+          "인수인계 — 복용약 목록, 최근 진료 기록, 알레르기·주의사항",
+        ],
+      },
+    ],
+    faq: [
+      {
+        q: "옮기는 이유를 새 시설에 설명해야 하나요?",
+        a: "의무는 아니지만, 어르신 상태나 이전 시설에서 있었던 특이사항을 미리 전달하면 적응이 더 수월합니다.",
+      },
+      {
+        q: "무엇을 기준으로 새 시설을 골라야 하나요?",
+        a: "체크리스트 가이드의 방문 전·방문해서 확인 항목을 그대로 적용하면 됩니다. 다만 이번엔 비교 대상이 있으니 지금 시설과 무엇이 다른지를 기준으로 보세요.",
+      },
+    ],
+    cta: [
+      { label: "좋은 요양원 체크리스트 보기", href: "/guide/checklist" },
+      { label: "우리 지역 요양원 비교하기", href: "/search?type=NURSING_HOME" },
+    ],
+    related: ["checklist", "before-you-sign", "nursing-home-vs-hospital"],
   },
   {
     slug: "visiting-care",
@@ -761,7 +954,7 @@ export const GUIDES: Guide[] = [
       { label: "방문요양센터 찾기", href: "/방문요양" },
       { label: "돌봄 매니저에게 요청하기", href: "/services" },
     ],
-    related: ["daycare-cost", "grade-application", "home-care-monthly-limit"],
+    related: ["daycare-cost", "grade-application", "home-care-monthly-limit", "family-care-allowance"],
   },
 ];
 

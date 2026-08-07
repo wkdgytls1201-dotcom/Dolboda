@@ -124,7 +124,7 @@ export default function GuidePage({ params }: { params: { slug: string } }) {
       </p>
 
       {/* 카테고리별 일러스트 — 글만 이어지면 읽기 부담이 커서 시선을 쉬어가게 한다 */}
-      <GuideIllustration category={guide.category} />
+      <GuideIllustration slug={guide.slug} category={guide.category} />
 
       {/* 3줄 요약 — 바쁜 보호자가 여기까지만 읽어도 답을 얻게 */}
       <div className="mb-6 rounded-2xl bg-gradient-to-br from-primary-50 to-peach-100/60 p-5 ring-1 ring-primary-100/60">
