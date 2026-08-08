@@ -98,6 +98,12 @@ export function MobileMenuSheet({
   const { selectedIds } = useCompare();
   const { favoriteIds } = useFavorites();
 
+  // ⚠️ 여기엔 useBackToClose를 쓰지 않는다(2026-08-08 판단).
+  //    이 시트는 존재 목적이 "다른 화면으로 이동"이라 거의 매번 링크를 타고 나간다.
+  //    히스토리를 한 칸 쌓아두면 이동한 뒤 뒤로가기를 눌렀을 때 그 빈 칸을 먼저 밟아
+  //    "뒤로가기가 한 번 헛도는" 증상이 사용할 때마다 생긴다. 뒤로가기로 닫히는 이득보다
+  //    그 부작용이 크다. 이동이 목적이 아닌 오버레이(로그인·상담·필터 시트)에만 적용한다.
+  //
   // 열려 있는 동안 본문 스크롤 잠금 + ESC 닫기
   useEffect(() => {
     const prev = document.documentElement.style.overflow;

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { X, Lock } from "lucide-react";
 import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
+import { useBackToClose } from "@/lib/useBackToClose";
 
 type AuthProviderId = "kakao" | "naver" | "google";
 const READY_PROVIDERS: AuthProviderId[] = ["kakao", "naver"]; // 구글은 아직 미연동
@@ -93,6 +94,10 @@ export function AuthModal({
   // 로그인 창이 떠 있는데 뒤 페이지가 스크롤되면 "덜 만든 웹"처럼 느껴진다
   useBodyScrollLock();
 
+  // 뒤로가기 = 창 닫기. 없으면 로그인 창을 열어둔 채 뒤로가기를 눌렀을 때 창은 그대로
+  // 있고 페이지가 통째로 뒤로 간다. 닫기 버튼도 이 경로를 쓴다(아래 requestClose).
+  const requestClose = useBackToClose("dolbodaAuthModal", onClose);
+
   return (
     // dvh: iOS 주소창이 접히고 펴질 때 vh는 그대로라 85vh가 화면을 넘친다.
     // overscroll-contain: 모달 끝까지 밀어도 뒤 페이지로 스크롤이 새지 않게 한다.
@@ -102,7 +107,7 @@ export function AuthModal({
           <h3 className="text-lg font-bold text-ink-900">로그인</h3>
           <button
             type="button"
-            onClick={onClose}
+            onClick={requestClose}
             aria-label="닫기"
             className="rounded-full p-1 text-ink-300 transition-colors duration-150 hover:bg-ink-100 hover:text-ink-700 active:scale-90"
           >

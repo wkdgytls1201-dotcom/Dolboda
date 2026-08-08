@@ -5,6 +5,7 @@ import Link from "next/link";
 import { X, CheckCircle2, ChevronRight } from "lucide-react";
 import { useCareProfiles } from "@/lib/careProfileContext";
 import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
+import { useBackToClose } from "@/lib/useBackToClose";
 
 export function ConsultModal({
   facilityId,
@@ -58,6 +59,10 @@ export function ConsultModal({
   // 상담 신청 폼이 떠 있는 동안 뒤 페이지 스크롤 잠금(AuthModal과 같은 훅)
   useBodyScrollLock();
 
+  // 뒤로가기 = 창 닫기(AuthModal과 같은 훅). 폼을 채우다 뒤로가기를 눌렀을 때
+  // 시설 상세가 통째로 pop되면 입력이 전부 날아간다.
+  const requestClose = useBackToClose("dolbodaConsultModal", onClose);
+
   return (
     // dvh·overscroll-contain은 AuthModal과 같은 이유(iOS 주소창 높이·스크롤 체이닝)
     <div className="animate-overlay-in fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overscroll-contain bg-ink-900/40 px-4 py-8">
@@ -66,7 +71,7 @@ export function ConsultModal({
           <h3 className="text-lg font-bold text-ink-900">상담 신청</h3>
           <button
             type="button"
-            onClick={onClose}
+            onClick={requestClose}
             aria-label="닫기"
             className="rounded-full p-1 text-ink-300 transition-colors duration-150 hover:bg-ink-100 hover:text-ink-700 active:scale-90"
           >
@@ -83,7 +88,7 @@ export function ConsultModal({
             <div className="mt-2 flex w-full flex-col gap-2">
               <button
                 type="button"
-                onClick={onClose}
+                onClick={requestClose}
                 className="min-h-[48px] w-full rounded-xl bg-primary-500 px-5 text-sm font-bold text-white shadow-soft transition-all duration-200 ease-snappy hover:-translate-y-0.5 hover:bg-primary-600 hover:shadow-card-hover active:translate-y-0 active:scale-95"
               >
                 확인
