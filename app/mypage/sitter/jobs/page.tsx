@@ -16,6 +16,7 @@ import {
   Search,
   MapPinned,
 } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { MyPageShell } from "@/components/MyPageShell";
 import { PageLoader } from "@/components/PageLoader";
 import { ApplyConfirmSheet, type ApplyPayload } from "@/components/ApplyConfirmSheet";
@@ -261,6 +262,7 @@ export default function SitterJobsPage() {
       setTab(requested as Tab);
     }
   }, []);
+  const { data: session, status } = useSession();
   const [isSitter, setIsSitter] = useState<boolean | null>(null);
   const [jobs, setJobs] = useState<JobRequest[]>([]);
   const [applications, setApplications] = useState<MyApplication[]>([]);
@@ -343,6 +345,30 @@ export default function SitterJobsPage() {
     await fetch(`/api/care-request-applications/${applicationId}`, { method: "DELETE" });
     loadApplications();
     loadJobs();
+  }
+
+  // ⚠️ 로그인 여부를 isSitter보다 먼저 본다.
+  //    loadJobs()는 404(매니저 아님)만 isSitter=false로 확정하고, **401(비로그인·세션
+  //    만료)에서는 그냥 return해서 isSitter가 null로 남는다.** 그러면 아래 `null → 로더`에
+  //    걸려 **화면이 영영 로더만 돌았다** — 실측(2026-08-08): 비로그인으로 들어가면 4초 뒤에도
+  //    헤더·푸터뿐이고 본문이 아예 없다. 사용자에겐 "눌렀는데 아무 일도 안 일어난다"로 보인다.
+  //    (401에서 isSitter=false로 두면 이미 등록한 매니저에게 "등록하지 않으셨어요"가 뜨므로
+  //     그 방향이 아니라, 로그인 안내를 따로 내보내는 게 맞다.)
+  if (status === "loading") {
+    return (
+      <MyPageShell>
+        <PageLoader compact />
+      </MyPageShell>
+    );
+  }
+
+  if (!session?.user) {
+    return (
+      <main className="mx-auto max-w-md px-4 py-16 text-center">
+        <h1 className="mb-2 text-xl font-bold text-ink-900">로그인이 필요해요</h1>
+        <p className="text-sm text-ink-500">돌봄 공고는 로그인 후 확인할 수 있어요.</p>
+      </main>
+    );
   }
 
   if (isSitter === null) {

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { maskAccount } from "@/lib/maskAccount";
 import { Wallet } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { MyPageShell } from "@/components/MyPageShell";
 import { PageLoader } from "@/components/PageLoader";
 import { useSitterProfileContext } from "@/lib/sitterProfileContext";
@@ -10,12 +11,27 @@ import { useSitterProfileContext } from "@/lib/sitterProfileContext";
 export default function SitterSettlementsPage() {
   // MyPageShell이 이미 불러온 데이터를 그대로 쓴다 — 이 화면에서 또 fetch하지 않는다.
   const { profile } = useSitterProfileContext();
+  const { data: session, status } = useSession();
 
-  if (profile === undefined) {
+  if (status === "loading" || profile === undefined) {
     return (
       <MyPageShell>
         <PageLoader compact />
       </MyPageShell>
+    );
+  }
+
+  // ⚠️ 로그인 여부를 profile보다 먼저 본다. sitterProfileContext는 401도 profile=null로
+  //    처리하므로(lib/sitterProfileContext.tsx의 refetch), 구분하지 않으면 **이미 등록한
+  //    매니저가 로그아웃 상태에서 "아직 등록하지 않으셨어요"를 보고 등록을 다시 시도하게
+  //    된다.** 여기는 정산(돈) 화면이라 더 혼란스럽다(2026-08-08 실사용 검증).
+  //    문구·구조는 app/mypage/sitter/profile/page.tsx의 기존 게이트와 맞췄다.
+  if (!session?.user) {
+    return (
+      <main className="mx-auto max-w-md px-4 py-16 text-center">
+        <h1 className="mb-2 text-xl font-bold text-ink-900">로그인이 필요해요</h1>
+        <p className="text-sm text-ink-500">정산 내역은 로그인 후 확인할 수 있어요.</p>
+      </main>
     );
   }
 
