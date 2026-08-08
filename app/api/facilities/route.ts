@@ -3,13 +3,36 @@ import { Prisma, FacilityType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { rowToFacility, toCardFacility } from "@/lib/facilityRepo";
 import { cardFacilitiesByIds } from "@/lib/facilityCardQuery";
+import { rateLimit, clientIp, tooManyRequests } from "@/lib/rateLimit";
 
 const DEFAULT_LIMIT = 200;
 const MAX_LIMIT = 500;
 
+// ids= 한 번에 조회할 수 있는 시설 수 상한.
+//
+// 상한이 없던 시절, 이 경로는 limit을 통째로 무시하고 넘긴 id를 전부 돌려줬다.
+// 실측(2026-08-08): id 400개 → **2.05MB를 0.27초**에. 이 응답은 카드용 축약본이 아니라
+// 비급여 비용·인력·근속·프로그램·정원/대기·좌표·사진 URL이 전부 담긴 전체 레코드라
+// 시설당 약 6KB다. 전국 28,000여 곳이면 175MB이고, 400개씩이면 72번이면 끝난다.
+// 우리가 돈과 시간을 들여 쌓은 자리 추이·근속·사진을 통째로 퍼가는 통로였다.
+//
+// 200이면 실제 화면은 전부 여유롭게 들어간다(비교함 3, 최근 본 시설 12, 찜은 상한이
+// 없지만 그 이상 담는 사용자는 useFacilitiesByIds가 200개씩 나눠 보낸다).
+const MAX_IDS = 200;
+
 // 22,000건 넘는 전국 데이터를 매번 통째로 내려주면 응답이 20MB에 달해 브라우저가 멈춘다.
 // q(이름/주소 검색)나 type으로 서버에서 먼저 좁히고, limit으로 상한을 둔다.
 export async function GET(req: Request) {
+  // 대량 수집 방어. 이 API는 CDN에 1시간 캐시되므로(아래 CACHE_HEADERS) 같은 조건을
+  // 반복해 보는 정상 사용자는 대부분 캐시에서 끝나 여기까지 오지도 않는다.
+  // 반대로 매번 새로운 id 조합·검색어를 던지는 스크래퍼는 전부 캐시 미스라 원본에 닿는다
+  // — 즉 이 상한은 실사용자에게는 사실상 보이지 않고 수집기에만 걸린다.
+  // 화면 하나가 여러 조회를 함께 던지는 경우(홈: 목록+최근본+근처)를 감안해 넉넉히 잡았다.
+  const limited = rateLimit(`facilities:${clientIp(req)}`, 120, 60_000);
+  if (!limited.ok) {
+    return tooManyRequests("요청이 너무 많아요. 잠시 후 다시 시도해 주세요.", limited.retryAfter);
+  }
+
   const { searchParams } = new URL(req.url);
   const q = searchParams.get("q")?.trim();
   const type = searchParams.get("type");
@@ -29,7 +52,7 @@ export async function GET(req: Request) {
   const cardView = searchParams.get("view") === "card";
 
   if (ids) {
-    const idList = ids.split(",").filter(Boolean);
+    const idList = ids.split(",").filter(Boolean).slice(0, MAX_IDS);
     if (cardView) {
       const items = await cardFacilitiesByIds(idList);
       return NextResponse.json({ items, total: items.length }, { headers: CACHE_HEADERS });

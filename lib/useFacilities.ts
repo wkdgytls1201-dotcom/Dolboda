@@ -155,11 +155,24 @@ export function useFacilitiesByIds(ids: string[], opts?: { card?: boolean }) {
     }
     let cancelled = false;
     setLoading(true);
-    fetch(`/api/facilities?ids=${encodeURIComponent(key)}${card ? "&view=card" : ""}`)
-      .then((r) => r.json())
-      .then((data: { items: Facility[] }) => {
+
+    // 서버가 한 요청당 200개까지만 받는다(대량 수집 방어 — app/api/facilities/route.ts의
+    // MAX_IDS). 찜은 개수 제한이 없어 그보다 많이 담는 사용자가 있을 수 있으므로,
+    // 여기서 200개씩 잘라 보내고 합친다 — 서버 상한은 지키면서 화면은 전부 나온다.
+    const CHUNK = 200;
+    const chunks: string[][] = [];
+    for (let i = 0; i < ids.length; i += CHUNK) chunks.push(ids.slice(i, i + CHUNK));
+
+    Promise.all(
+      chunks.map((chunk) =>
+        fetch(`/api/facilities?ids=${encodeURIComponent(chunk.join(","))}${card ? "&view=card" : ""}`)
+          .then((r) => r.json())
+          .then((data: { items?: Facility[] }) => data.items ?? [])
+      )
+    )
+      .then((groups) => {
         if (!cancelled) {
-          setFacilities(data.items);
+          setFacilities(groups.flat());
           setLoading(false);
         }
       })
