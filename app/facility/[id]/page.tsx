@@ -6,6 +6,8 @@ import FacilityDetailClient from "./FacilityDetailClient";
 import { SimilarSection, SimilarSectionSkeleton } from "./SimilarSection";
 import { VacancyTrend, VacancyTrendSkeleton } from "./VacancyTrend";
 import { ScoreContextSection, ScoreContextSectionSkeleton } from "./ScoreContextSection";
+import { findRegionByAddress, sigunguOf } from "@/lib/regionSeo";
+import { findTypeSeoByType } from "@/lib/facilityTypeSeo";
 
 // 28,000여 개 상세페이지는 방문마다 (레이아웃 조회 + 본문 조회 + 유사시설 60행 조회)를
 // 다시 돌고 있었다. 시설 데이터는 import 스크립트를 돌릴 때만 바뀌므로 하루 캐시로 충분하다.
@@ -59,6 +61,21 @@ export default async function FacilityDetailPage({ params }: { params: { id: str
         }
       : null;
 
+  // "이 지역 전체 보기" 링크용 — 순수 함수라 DB를 또 안 탄다(2026-08-07,
+  // layout.tsx의 breadcrumb 계산과 같은 방식). 지역·유형을 못 알아보면 undefined로
+  // 남아 SimilarFacilities가 알아서 /search로 폴백한다.
+  const regionForLink = findRegionByAddress(facility.address);
+  const sigunguForLink = sigunguOf(facility.address);
+  const typeSeoForLink = findTypeSeoByType(facility.facilityType);
+  const regionHref =
+    regionForLink && sigunguForLink && typeSeoForLink
+      ? `/region/${encodeURIComponent(regionForLink.slug)}/${encodeURIComponent(
+          sigunguForLink
+        )}/${encodeURIComponent(typeSeoForLink.slug)}`
+      : undefined;
+  const regionLabel =
+    sigunguForLink && typeSeoForLink ? `${sigunguForLink} ${typeSeoForLink.short}` : undefined;
+
   return (
     <FacilityDetailClient
       facility={facility}
@@ -66,7 +83,7 @@ export default async function FacilityDetailPage({ params }: { params: { id: str
       // 이렇게 해야 1,100줄짜리 FacilityDetailClient를 건드리지 않고 이 섹션만 스트리밍된다.
       similarSlot={
         <Suspense fallback={<SimilarSectionSkeleton />}>
-          <SimilarSection facilityId={facility.id} />
+          <SimilarSection facilityId={facility.id} regionHref={regionHref} regionLabel={regionLabel} />
         </Suspense>
       }
       // 자리 추이도 같은 슬롯 방식 — 스냅샷 조회가 본문을 붙잡지 않게 흘려보낸다.

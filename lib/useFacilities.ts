@@ -14,6 +14,15 @@ export interface FacilitiesQuery {
   cardView?: boolean;
   /** 프로그램 태그 필터 — 서버에서 전체 시설을 대상으로 걸러준다 */
   programTags?: string[];
+  /**
+   * 서버 렌더 시점에 이미 알고 있는 총 개수(예: 필터 없는 기본 상태의 전국 집계) —
+   * 첫 클라이언트 조회가 끝나기 전까지 이 값을 보여준다.
+   *
+   * 이게 없으면 total은 무조건 0에서 시작한다. facilities는 initialFacilities로
+   * 채워져 있어 카드는 30장 보이는데 그 위 "총 0개 시설"만 0으로 남아 검색봇이
+   * 읽는 초기 HTML이 어긋났다(2026-08-07 실측 — 카드와 숫자가 서로 다른 걸 말한다).
+   */
+  initialTotal?: number;
 }
 
 interface FacilitiesResult {
@@ -62,13 +71,13 @@ function writeCache(url: string, items: Facility[], total: number) {
 }
 
 export function useFacilities(query: FacilitiesQuery = {}): FacilitiesResult {
-  const { q = "", limit = 200, enabled = true, cardView = false } = query;
+  const { q = "", limit = 200, enabled = true, cardView = false, initialTotal = 0 } = query;
   // 배열을 그대로 의존성에 쓰면 매 렌더마다 새 배열이라 무한 요청이 된다.
   const typeKey = (query.types ?? []).join(",");
   const programTagKey = (query.programTags ?? []).join(",");
   const [state, setState] = useState<{ facilities: Facility[]; total: number }>({
     facilities: [],
-    total: 0,
+    total: initialTotal,
   });
   const [loading, setLoading] = useState(enabled);
 

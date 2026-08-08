@@ -25,10 +25,16 @@ const INTENTS: SimilarIntent[] = ["similar", "better", "available", "cheaper", "
 export function SimilarFacilities({
   facilityId,
   initialItems = [],
+  regionHref,
+  regionLabel,
 }: {
   facilityId: string;
   /** 서버에서 계산해 넘어온 "비슷한 곳" — 첫 화면은 이걸 그대로 써서 스켈레톤을 건너뛴다 */
   initialItems?: SimilarItem[];
+  /** 지역+유형 허브 링크(예: /region/경남/김해시/요양원) — 있으면 맨 끝 카드가 여기로,
+   * 없으면(주소 파싱 실패 등) /search로 폴백한다(2026-08-07). */
+  regionHref?: string;
+  regionLabel?: string;
 }) {
   const [intent, setIntent] = useState<SimilarIntent>("similar");
   // 탭마다 그 탭 데이터만 받아 캐시해둔다(한 번 받으면 다시 안 받음).
@@ -175,14 +181,24 @@ export function SimilarFacilities({
             </Link>
           ))}
 
-          {/* 마지막에 전체 검색으로 나가는 카드 — 캐러셀 끝에서 막다른 길이 되지 않게 */}
+          {/* 마지막에 나가는 카드 — 캐러셀 끝에서 막다른 길이 되지 않게.
+              지역+유형을 알면 그 지역 허브로(더 구체적이고 색인 대상), 모르면 검색으로. */}
           <Link
-            href="/search"
+            href={regionHref ?? "/search"}
             className="flex w-[52vw] shrink-0 snap-start flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-ink-100 bg-white/60 text-xs font-bold text-ink-500 sm:w-40"
           >
             <ChevronRight size={18} className="text-ink-300" />
-            더 많은 시설
-            <span className="font-medium text-ink-300">조건으로 찾기</span>
+            {regionHref ? (
+              <>
+                {regionLabel}
+                <span className="font-medium text-ink-300">전체 보기</span>
+              </>
+            ) : (
+              <>
+                더 많은 시설
+                <span className="font-medium text-ink-300">조건으로 찾기</span>
+              </>
+            )}
           </Link>
         </div>
       )}

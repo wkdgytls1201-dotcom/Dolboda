@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { unstable_cache } from "next/cache";
 import SearchPageClient from "./SearchPageClient";
 import { defaultFirstPageCards } from "@/lib/facilityCardQuery";
+import { getFacilityStats } from "@/lib/facilityStats";
 
 // 첫 화면 카드 수 — SearchPageClient의 PAGE_SIZE와 같아야 한다.
 // 더 보내면 HTML만 무거워지고(300건이면 190KB), 덜 보내면 첫 화면이 빈다.
@@ -35,11 +36,18 @@ const TYPE_GUIDE: { label: string; desc: string }[] = [
 
 export default async function SearchPage() {
   // 실패해도 화면은 떠야 한다 — 서버 렌더는 "빨리 보여주기"지 필수 데이터가 아니다.
-  const initialFacilities = await getFirstPage().catch(() => []);
+  // stats는 홈 페이지와 같은 캐시(하루 1회 집계)라 여기서 또 불러도 비용이 없다 —
+  // "총 0개 시설" SSR 어긋남을 없애는 데 이 total 하나면 충분하다(facilityFilters 등
+  // 필터 조합별 정확한 개수까지 서버에서 미리 낼 필요는 없다 — 필터 없는 기본 상태만
+  // 맞으면 되고, 필터가 걸리면 어차피 클라이언트 조회가 실제 값으로 바로 덮어쓴다).
+  const [initialFacilities, stats] = await Promise.all([
+    getFirstPage().catch(() => []),
+    getFacilityStats().catch(() => null),
+  ]);
 
   return (
     <>
-      <SearchPageClient initialFacilities={initialFacilities} />
+      <SearchPageClient initialFacilities={initialFacilities} initialTotal={stats?.total ?? 0} />
       {/* 검색봇용 서버 렌더 안내 — 화면에서도 검색 결과 아래에 유형 설명으로 보인다.
           이 제목이 페이지의 h1이다: 검색 UI 쪽은 검색창부터 시작해 제목 자리가 없고,
           그대로 두면 색인이 허용된 /search에 h1이 하나도 없게 된다(실측으로 확인).

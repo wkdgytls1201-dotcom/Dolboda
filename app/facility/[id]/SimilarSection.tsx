@@ -11,7 +11,16 @@ import { getSimilar } from "@/lib/similarFacilities";
 // ★ SEO는 영향받지 않는다. "클라이언트에서 불러오면 크롤러가 링크를 못 탄다"는 건
 //   *브라우저 fetch*일 때 얘기고, RSC 스트리밍은 서버가 최종 HTML을 이어서 흘려보내므로
 //   크롤러도 인접 시설 링크를 그대로 받는다.
-export async function SimilarSection({ facilityId }: { facilityId: string }) {
+export async function SimilarSection({
+  facilityId,
+  regionHref,
+  regionLabel,
+}: {
+  facilityId: string;
+  /** 지역+유형 허브 링크 — page.tsx가 facility.address로 미리 계산해 넘긴다(2026-08-07) */
+  regionHref?: string;
+  regionLabel?: string;
+}) {
   const all = await getSimilar(facilityId);
   const items = all?.similar ?? [];
 
@@ -25,7 +34,12 @@ export async function SimilarSection({ facilityId }: { facilityId: string }) {
         규모·프로그램 구성·평가등급·비용대를 비교해 비슷한 시설을 찾았어요. 이 시설과 무엇이
         다른지 함께 보여드려요.
       </p>
-      <SimilarFacilities facilityId={facilityId} initialItems={items} />
+      <SimilarFacilities
+        facilityId={facilityId}
+        initialItems={items}
+        regionHref={regionHref}
+        regionLabel={regionLabel}
+      />
     </DetailSection>
   );
 }

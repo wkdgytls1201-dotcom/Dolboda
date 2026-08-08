@@ -58,7 +58,13 @@ function readPersistedState(): PersistedSearchState | null {
   }
 }
 
-function SearchContent({ initialFacilities }: { initialFacilities: Facility[] }) {
+function SearchContent({
+  initialFacilities,
+  initialTotal = 0,
+}: {
+  initialFacilities: Facility[];
+  initialTotal?: number;
+}) {
   const params = useSearchParams();
   const initialQuery = params.get("q") ?? "";
   // ?type=DAY_NIGHT_CARE,HOME_CARE 처럼 복수 유형도 받는다 (등급별 맞춤 CTA가 사용)
@@ -157,6 +163,9 @@ function SearchContent({ initialFacilities }: { initialFacilities: Facility[] })
     programTags: filters.programTags,
     enabled: queriesReady && !useNearest,
     cardView: true,
+    // 필터 없는 기본 상태의 전국 집계를 시딩값으로 — 첫 조회가 끝나기 전(SSR 포함)에
+    // "총 0개 시설"이 뜨지 않는다. 복원된 필터가 다르면 첫 조회 결과가 곧바로 덮어쓴다.
+    initialTotal,
   });
   const nearestQuery = useNearbyFacilities(origin.lat, origin.lng, 300, {
     types: filters.types,
@@ -516,13 +525,16 @@ function SearchContent({ initialFacilities }: { initialFacilities: Facility[] })
 
 export default function SearchPageClient({
   initialFacilities = [],
+  initialTotal = 0,
 }: {
   /** 서버가 미리 그려 보낸 첫 화면 카드 — app/search/page.tsx 주석 참조 */
   initialFacilities?: Facility[];
+  /** 필터 없는 기본 상태의 전국 집계 — "총 0개 시설" SSR 어긋남 방지(app/search/page.tsx 참조) */
+  initialTotal?: number;
 }) {
   return (
     <Suspense fallback={null}>
-      <SearchContent initialFacilities={initialFacilities} />
+      <SearchContent initialFacilities={initialFacilities} initialTotal={initialTotal} />
     </Suspense>
   );
 }

@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import { cache } from "react";
+import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { FACILITY_TYPE_LABEL, type FacilityType } from "@/lib/types";
 import { SITE_URL, OG_IMAGE } from "@/lib/siteConfig";
 import { findRegionByAddress, sigunguOf } from "@/lib/regionSeo";
+import { findTypeSeoByType } from "@/lib/facilityTypeSeo";
 import { jsonLdHtml } from "@/lib/jsonLd";
 import { missingLongEnough } from "@/lib/facilityPresence";
 
@@ -101,6 +104,7 @@ export default async function FacilityLayout({
 
   // 지역 검색 노출용 구조화 데이터 — 좌표(geo)와 시/도·시/군/구를 함께 제공한다.
   let jsonLd: object | null = null;
+  let crumbs: { name: string; item: string }[] = [];
   if (facility) {
     const region = findRegionByAddress(facility.address);
     const sigungu = sigunguOf(facility.address);
@@ -135,14 +139,27 @@ export default async function FacilityLayout({
         }),
     };
 
-    // 홈 → 시/도 → 시/군/구 → 시설 (지역 랜딩 페이지로 연결되는 크롤 경로)
-    const crumbs: { name: string; item: string }[] = [{ name: "돌보다", item: SITE_URL }];
+    // 홈 → 시/도 → 시/군/구 → 유형 → 시설 (지역 랜딩 페이지로 연결되는 크롤 경로).
+    // 화면에 보이는 breadcrumb(아래 <nav>)과 이 JSON-LD가 같은 배열을 쓴다 — 둘이
+    // 따로 놀면(보이는 것과 구조화 데이터가 다르면) 검색엔진이 신뢰하지 않는다.
+    const typeSeo = findTypeSeoByType(facility.facilityType as FacilityType);
+    crumbs = [{ name: "돌보다", item: SITE_URL }];
+    let sigunguUrl: string | null = null;
     if (region) {
       const sidoUrl = `${SITE_URL}/region/${encodeURIComponent(region.slug)}`;
-      crumbs.push({ name: `${region.label} 요양시설`, item: sidoUrl });
+      crumbs.push({ name: region.label, item: sidoUrl });
       if (sigungu) {
-        crumbs.push({ name: `${sigungu} 요양시설`, item: `${sidoUrl}/${encodeURIComponent(sigungu)}` });
+        sigunguUrl = `${sidoUrl}/${encodeURIComponent(sigungu)}`;
+        crumbs.push({ name: sigungu, item: sigunguUrl });
       }
+    }
+    if (typeSeo) {
+      crumbs.push({
+        name: typeSeo.label,
+        item: sigunguUrl
+          ? `${sigunguUrl}/${encodeURIComponent(typeSeo.slug)}`
+          : `${SITE_URL}/${encodeURIComponent(typeSeo.slug)}`,
+      });
     }
     crumbs.push({ name: facility.name, item: facilityUrl });
 
@@ -170,6 +187,30 @@ export default async function FacilityLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }}
         />
+      )}
+      {/* 빵부스러기 — 위 JSON-LD BreadcrumbList와 같은 crumbs 배열을 그린다(2026-08-07).
+          가이드 상세(app/guide/[slug]/page.tsx)와 같은 스타일. 마지막 항목(시설명)만
+          링크가 아니라 텍스트 — "지금 여기"라 눌러도 갈 곳이 없다. */}
+      {crumbs.length > 0 && (
+        <nav aria-label="현재 위치" className="mx-auto max-w-3xl px-4 pt-4">
+          <ol className="flex flex-wrap items-center gap-1 text-xs text-ink-300">
+            {crumbs.map((c, i) => (
+              <li key={c.item} className="flex items-center gap-1 min-w-0">
+                {i > 0 && <ChevronRight size={12} className="shrink-0" />}
+                {i === crumbs.length - 1 ? (
+                  <span className="truncate text-ink-500">{c.name}</span>
+                ) : (
+                  <Link
+                    href={c.item.replace(SITE_URL, "") || "/"}
+                    className="shrink-0 hover:text-ink-500"
+                  >
+                    {c.name}
+                  </Link>
+                )}
+              </li>
+            ))}
+          </ol>
+        </nav>
       )}
       {/* 폐업 추정 안내 — "확인되지 않음"까지만 말한다(상호 변경·이전일 수도 있어 폐업 단정 금지) */}
       {facility && missingLongEnough(facility.missingSince) && (
