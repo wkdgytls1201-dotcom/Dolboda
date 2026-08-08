@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { LegalPage } from "@/components/LegalPage";
 
 export const metadata: Metadata = {
-  title: "돌보다 매니저 개인정보 수집·이용 동의 — 돌보다",
+  title: "돌보다 매니저 개인정보 수집·이용 동의",
   description: "돌보다 매니저 프로필 등록 시 추가로 수집하는 개인정보 항목과 목적을 안내합니다.",
   alternates: { canonical: "/privacy/sitter" },
 };

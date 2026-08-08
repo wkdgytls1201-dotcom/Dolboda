@@ -440,7 +440,10 @@ export function BottomSheet({
   const fullOpen = snap === "full";
 
   return createPortal(
-    <div className="fixed inset-0 z-50" role="presentation">
+    <div
+      className={`fixed inset-0 z-50${isDesktop ? " flex items-center justify-center" : ""}`}
+      role="presentation"
+    >
       {/* 딤 — opacity는 paint()가 시트 위치에 비례해 직접 구동. 블러 없음(성능 스펙) */}
       <div
         ref={backdropRef}
@@ -458,7 +461,12 @@ export function BottomSheet({
         tabIndex={-1}
         className={
           isDesktop
-            ? "animate-slide-up absolute left-1/2 top-1/2 flex max-h-[80vh] w-full max-w-md -translate-x-1/2 -translate-y-1/2 flex-col rounded-3xl bg-white shadow-card-hover outline-none"
+            ? // 중앙정렬을 transform(-translate-x/y-1/2)으로 하면 안 된다: slide-up 키프레임의
+              // 최종 transform(fill-mode both)과 paint()의 인라인 transform이 둘 다 이 값을
+              // 덮어써서 시트가 화면 정중앙이 아니라 "중앙점에서 오른쪽·아래로" 놓이고,
+              // 아래쪽(적용 버튼)이 화면 밖으로 잘린다. 부모 flex 중앙정렬이면 transform이
+              // 무엇이든 자리가 흔들리지 않는다.
+              "animate-slide-up relative flex max-h-[80vh] w-full max-w-md flex-col rounded-3xl bg-white shadow-card-hover outline-none"
             : "absolute inset-x-0 bottom-0 flex flex-col rounded-t-3xl bg-white shadow-[0_-2px_16px_rgba(27,23,48,0.10)] outline-none will-change-transform"
         }
         style={isDesktop ? undefined : { transform: "translate3d(0, 100vh, 0)" }}
