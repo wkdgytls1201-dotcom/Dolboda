@@ -538,25 +538,48 @@ function ProviderFinder() {
 
   const regions = useMemo(() => REGION_SEO, []);
 
+  // ⚠️ 두 effect 모두 cancelled 가드가 필요하다. 시/도를 빠르게 바꾸면(서울 → 부산)
+  //    두 요청이 함께 떠 있는데, 먼저 보낸 서울 응답이 나중에 도착하면 부산을 고른
+  //    화면에 서울 시군구가 채워졌다. 그 상태로 시군구를 고르면 (부산, 서울시군구)로
+  //    조회해 결과가 비어버린다 — 사용자에겐 "고른 지역에 사업소가 없다"로 보인다.
+  //    cleanup에서 플래그를 내리면 오래된 응답은 화면에 아무것도 쓰지 못한다.
   useEffect(() => {
     if (!sido) return;
+    let cancelled = false;
     setLoading(true);
     setSigunguList(null);
     setSigungu(null);
     setProviders(null);
     fetch(`/api/welfare-providers?sido=${encodeURIComponent(sido)}`)
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => setSigunguList(Array.isArray(d?.sigunguList) ? d.sigunguList : []))
-      .finally(() => setLoading(false));
+      .then((d) => {
+        if (cancelled) return;
+        setSigunguList(Array.isArray(d?.sigunguList) ? d.sigunguList : []);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [sido]);
 
   useEffect(() => {
     if (!sido || !sigungu) return;
+    let cancelled = false;
     setLoading(true);
     fetch(`/api/welfare-providers?sido=${encodeURIComponent(sido)}&sigungu=${encodeURIComponent(sigungu)}`)
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => setProviders(Array.isArray(d?.providers) ? d.providers : []))
-      .finally(() => setLoading(false));
+      .then((d) => {
+        if (cancelled) return;
+        setProviders(Array.isArray(d?.providers) ? d.providers : []);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [sido, sigungu]);
 
   return (

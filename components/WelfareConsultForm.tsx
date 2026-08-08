@@ -37,13 +37,23 @@ export function WelfareConsultForm({
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
 
+  // cancelled 가드 — 시/도를 빠르게 바꾸면 먼저 보낸 요청이 나중에 도착해 지금 고른
+  // 지역에 엉뚱한 시군구 목록이 채워질 수 있다(상담 신청서라 잘못된 지역으로 접수되면
+  // 실제 피해가 난다). cleanup에서 플래그를 내려 오래된 응답을 버린다.
   useEffect(() => {
     if (!sido) return;
+    let cancelled = false;
     setSigunguList(null);
     setSigungu("");
     fetch(`/api/welfare-providers?sido=${encodeURIComponent(sido)}`)
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => setSigunguList(Array.isArray(d?.sigunguList) ? d.sigunguList : []));
+      .then((d) => {
+        if (cancelled) return;
+        setSigunguList(Array.isArray(d?.sigunguList) ? d.sigunguList : []);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [sido]);
 
   function toggleItem(name: string) {

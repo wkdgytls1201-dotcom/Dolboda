@@ -28,16 +28,25 @@ export default function WorkplacesPage() {
   const [active, setActive] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // cancelled 가드 — 지역 탭을 연달아 누르면 먼저 보낸 요청이 나중에 도착해
+  // 지금 선택한 탭에 이전 지역의 시설 목록이 남을 수 있다. cleanup에서 플래그를 내린다.
   useEffect(() => {
     const url = active ? `/api/sitter/workplaces?region=${encodeURIComponent(active)}` : "/api/sitter/workplaces";
+    let cancelled = false;
     setItems(null);
     fetch(url)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d) => {
+        if (cancelled) return;
         setItems(d.items ?? []);
         if (d.regions?.length) setRegions(d.regions);
       })
-      .catch(() => setError("정보를 불러오지 못했어요."));
+      .catch(() => {
+        if (!cancelled) setError("정보를 불러오지 못했어요.");
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [active]);
 
   return (
