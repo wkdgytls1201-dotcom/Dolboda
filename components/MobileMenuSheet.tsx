@@ -146,7 +146,10 @@ export function MobileMenuSheet({
   ];
 
   const body = (
-    <div className="fixed inset-0 z-[80] sm:hidden">
+    // lg:hidden — Header의 햄버거 그룹(lg:hidden)과 반드시 같은 경계여야 한다.
+    // sm:hidden이던 시절엔 640~1023px에서 메뉴 버튼은 보이는데 이 시트가 display:none이라
+    // 눌러도 아무것도 안 열렸다(2026-08-08 헤더 가로스크롤 수정과 한 쌍).
+    <div className="fixed inset-0 z-[80] lg:hidden">
       <style>{`
         @keyframes menu-sheet-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
         @keyframes menu-backdrop-in { from { opacity: 0; } to { opacity: 1; } }

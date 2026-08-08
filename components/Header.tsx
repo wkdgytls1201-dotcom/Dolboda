@@ -100,8 +100,14 @@ export function Header() {
             </span>
           </Link>
 
-          {/* 데스크톱 내비게이션 */}
-          <nav className="hidden items-center gap-1 sm:flex">
+          {/* 데스크톱 내비게이션.
+              ⚠️ 브레이크포인트는 lg(1024px)여야 한다 — sm(640px)이던 시절, 이 nav가
+              실제로 차지하는 폭(로그인 상태 기준 약 899px)보다 훨씬 좁은 화면부터
+              펼쳐져서 640~899px 전 구간에서 **페이지 전체가 가로로 스크롤**됐다
+              (실측: 700px에서 199px, 아이패드 세로 768px에서 131px 밀림 — 2026-08-08).
+              햄버거 그룹(아래 lg:hidden)과 MobileMenuSheet의 경계도 같은 값이라야 한다.
+              하나만 옮기면 그 구간에서 메뉴 버튼을 눌러도 시트가 안 열린다. */}
+          <nav className="hidden items-center gap-1 lg:flex">
             {navItems.map((item) => {
               const active = pathname?.startsWith(item.href);
               const badge = badgeFor(item.href);
@@ -180,7 +186,7 @@ export function Header() {
           {/* justify-between 아래서 데스크톱 nav가 display:none이 되면 모바일엔 로고·이 그룹
               둘만 남아야 하는데, 묶지 않으면 돌봄요청 버튼이 셋째 아이템으로 화면 가운데에
               떠버린다. 햄버거와 한 그룹으로 묶어서 항상 오른쪽 끝에 붙인다. */}
-          <div className="flex items-center gap-2 sm:hidden">
+          <div className="flex items-center gap-2 lg:hidden">
             {/* 마이페이지 화면에서만 — 여기까지 온 로그인 사용자에게 돌봄요청을 눈에 띄게 보여준다 */}
             {user && pathname?.startsWith("/mypage") && (
               <Link

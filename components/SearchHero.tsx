@@ -108,7 +108,10 @@ export function SearchHero({ heroSlides }: { heroSlides: HeroSlide[] }) {
           아래 내용의 존재를 모르는 문제. 흐름 안에 두면 그것조차 화면 밖이라(실측 863px),
           스크롤 전까지만 탭바 위에 고정으로 띄우고 내리기 시작하면 치운다. */}
       {showScrollHint && (
-        <div className="pointer-events-none fixed inset-x-0 bottom-[72px] z-30 flex justify-center pb-2 sm:hidden">
+        // bottom 값에 safe-area를 더한다 — 탭바가 홈 인디케이터만큼 더 높아지는
+        // 아이폰에서 72px 고정이면 이 힌트가 탭바 뒤로 들어가 가려진다(2026-08-08).
+        // 탭바(59px+safe) 위 13px에 뜨는 관계는 기기와 무관하게 유지된다.
+        <div className="pointer-events-none fixed inset-x-0 z-30 flex justify-center pb-2 [bottom:calc(72px+env(safe-area-inset-bottom))] sm:hidden">
           <span className="flex items-center gap-1 rounded-full bg-ink-900/85 px-3.5 py-2 text-xs font-semibold text-white shadow-card backdrop-blur">
             아래로 내려 시설을 둘러보세요
             <ChevronDown size={14} className="animate-bounce" aria-hidden />

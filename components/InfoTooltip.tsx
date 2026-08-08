@@ -43,9 +43,13 @@ export function InfoTooltip({ text, flush = false }: { text: string; flush?: boo
         type="button"
         aria-label="용어 설명"
         onClick={() => setOpen((o) => !o)}
-        // 아이콘은 작게 보이되 손가락으로 누를 수 있게 실제 버튼 영역은 넉넉히
+        // 아이콘은 작게 보이되 손가락으로 누를 수 있게 실제 버튼 영역은 넉넉히.
+        // flush의 가로 음수 여백이 -mx-3이던 시절, 44px 버튼이 부모 밖으로 한쪽당 14px씩
+        // 삐져나와 홈 화면 3열 통계의 맨 오른쪽 타일에서 화면 밖으로 2px 나갔다(320px에서
+        // 페이지 전체가 가로 스크롤 — 2026-08-08). -mx-2로 줄이면 버튼이 레이아웃에서
+        // 차지하는 폭만 9px 늘어나고 **터치 영역 44×44는 그대로**다.
         className={`${
-          flush ? "-mx-3 -my-2" : "-my-2 ml-0.5"
+          flush ? "-mx-2 -my-2" : "-my-2 ml-0.5"
         } inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-300 transition-colors duration-150 hover:bg-ink-100 hover:text-primary-500 active:scale-90`}
       >
         <HelpCircle size={14} />

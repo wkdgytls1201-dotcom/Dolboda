@@ -56,8 +56,12 @@ export function MobileTabBar() {
 
   return (
     <>
-      {/* 탭바 높이만큼 문서 흐름에 여백을 만들어 마지막 콘텐츠가 탭바에 가려지지 않게 한다. */}
-      <div className="h-[60px] sm:hidden" aria-hidden />
+      {/* 탭바 높이만큼 문서 흐름에 여백을 만들어 마지막 콘텐츠가 탭바에 가려지지 않게 한다.
+          ⚠️ safe-area를 함께 더해야 한다 — 탭바 자신은 아래 [padding-bottom:env(...)]로
+          홈 인디케이터를 피하지만, 이 스페이서가 60px 고정이면 그만큼이 계산에서 빠진다.
+          브라우저(safe-area=0)에선 탭바 59px < 60px라 멀쩡해 보이고, 홈 인디케이터가 있는
+          아이폰에서만 탭바가 93px가 되어 **마지막 33px이 가려졌다**(실측 2026-08-08). */}
+      <div className="h-[calc(60px+env(safe-area-inset-bottom))] sm:hidden" aria-hidden />
       <nav
         className="fixed inset-x-0 bottom-0 z-40 border-t border-ink-100 bg-white/95 backdrop-blur sm:hidden [padding-bottom:env(safe-area-inset-bottom)]"
         aria-label="주요 메뉴"
