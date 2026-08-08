@@ -13,6 +13,8 @@ import { CareProfileProvider } from "@/lib/careProfileContext";
 import { AlertPreferencesProvider } from "@/lib/alertPreferencesContext";
 import { SITE_URL, SITE_NAME, SITE_TITLE, SITE_DESCRIPTION } from "@/lib/siteConfig";
 import { jsonLdHtml } from "@/lib/jsonLd";
+import { Analytics } from "@/components/Analytics";
+import { PageViewTracker } from "@/components/PageViewTracker";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -149,6 +151,10 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: jsonLdHtml(SITE_JSONLD) }}
         />
+        {/* GA4 — NEXT_PUBLIC_GA_ID가 없으면 둘 다 아무것도 렌더하지 않는다.
+            ID를 넣기 전에 배포해도 무해하고, 넣는 순간 그 배포부터 수집이 시작된다. */}
+        <Analytics />
+        <PageViewTracker />
         <SessionProvider>
           {/* 세션(전체 페이지 로드)당 한 번만 어르신 돌봄 프로필을 받아 여기서 공유한다.
               이전엔 시설 상세·상담 모달·돌봄요청 마법사가 각자 훅으로 따로 불러서,
