@@ -16,6 +16,44 @@ const FIELD =
   "w-full rounded-xl border border-ink-100 bg-white px-3.5 py-3 text-sm text-ink-900 outline-none transition-colors placeholder:text-ink-300 focus:border-primary-400";
 const LABEL = "mb-1.5 block text-sm font-semibold text-ink-700";
 
+// 서버(app/api/business-inquiry/route.ts)와 같은 규칙을 클라이언트에도 둔다.
+//
+// 왜 필요한가: 그 API는 IP당 **시간당 5회** 상한이 있고, **검증에 실패한 요청도 함께 센다.**
+// 클라이언트 검증이 없던 동안에는 오타 한 번이 그 5회를 하나씩 깎아서, 다섯 번 틀리면
+// 한 시간 잠겼다. 기관기호(11자리)는 사업자등록번호(10자리)와 헷갈리기 쉬운 값이라
+// 시설 담당자가 몇 번 틀리는 게 정상이다 — 첫 유료 고객이 신청 도중 잠기면 손해가 크다.
+//
+// ⚠️ 서버 검증을 대체하는 게 아니다. 서버는 그대로 두고(우회 가능한 건 클라이언트뿐),
+//    여기서는 왕복 없이 즉시 알려주는 역할만 한다.
+const PHONE_RE = /^0\d{1,2}-?\d{3,4}-?\d{4}$/;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** 통과하면 null, 아니면 사용자에게 보여줄 메시지. 서버 메시지와 문구를 맞춘다. */
+function validate(v: {
+  facilityName: string;
+  registryNo: string;
+  managerName: string;
+  phone: string;
+  email: string;
+  agreed: boolean;
+}): string | null {
+  if (!v.facilityName || !v.registryNo || !v.managerName || !v.phone || !v.email) {
+    return "필수 항목을 모두 입력해주세요.";
+  }
+  // 서버의 normalizeRegistryNo와 같은 판단 — 숫자만 남겨 10자리(사업자등록번호)
+  // 또는 11자리(기관기호)여야 한다. 하이픈·공백은 여기서도 무시한다.
+  const digits = v.registryNo.replace(/\D/g, "");
+  if (digits.length !== 10 && digits.length !== 11) {
+    return "기관기호(11자리) 또는 사업자등록번호(10자리)를 확인해주세요.";
+  }
+  if (!PHONE_RE.test(v.phone.replace(/\s/g, ""))) {
+    return "연락처 형식을 확인해주세요. (예: 010-1234-5678)";
+  }
+  if (!EMAIL_RE.test(v.email)) return "이메일 형식을 확인해주세요.";
+  if (!v.agreed) return "개인정보 수집·이용 동의가 필요해요.";
+  return null;
+}
+
 export function BusinessInquiryForm() {
   const [agreed, setAgreed] = useState(false);
   const [marketing, setMarketing] = useState(false);
@@ -27,9 +65,25 @@ export function BusinessInquiryForm() {
     e.preventDefault();
     if (sending) return;
     setError(null);
-    setSending(true);
 
     const data = new FormData(e.currentTarget);
+    const str = (k: string) => String(data.get(k) ?? "").trim();
+
+    // 서버로 보내기 전에 먼저 거른다 — 오타가 시간당 5회 한도를 깎지 않게(위 주석 참고).
+    const invalid = validate({
+      facilityName: str("facilityName"),
+      registryNo: str("registryNo"),
+      managerName: str("managerName"),
+      phone: str("phone"),
+      email: str("email"),
+      agreed,
+    });
+    if (invalid) {
+      setError(invalid);
+      return;
+    }
+
+    setSending(true);
     try {
       const res = await fetch("/api/business-inquiry", {
         method: "POST",

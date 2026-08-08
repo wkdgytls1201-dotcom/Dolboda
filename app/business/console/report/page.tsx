@@ -4,6 +4,8 @@ import { Minus, TrendingDown, TrendingUp } from "lucide-react";
 import { myFacilities, capabilityOf } from "@/lib/facilityOwner";
 import { getMonthlyReport, type MonthlyReport } from "@/lib/monthlyReport";
 import { ViewTrendChart } from "@/components/ViewTrendChart";
+import { auth } from "@/auth";
+import { ConsoleLoginButton } from "../ConsoleLoginButton";
 
 // 월간 성과 보고서 — 지역 프리미엄 이상 전용.
 //
@@ -24,6 +26,24 @@ export default async function ReportPage({
 }: {
   searchParams: { facilityId?: string };
 }) {
+  // 콘솔 본 화면과 같은 이유로 로그인 여부를 먼저 가른다 — myFacilities()는 비로그인도
+  // 빈 배열이라, 구분하지 않으면 **프리미엄 고객이 로그아웃 상태에서 들어왔을 때
+  // "요금제가 안 된다"는 안내를 보게 된다**(2026-08-08 B2B 실사용 검증).
+  const session = await auth();
+  if (!session?.user?.id) {
+    return (
+      <main className="mx-auto max-w-md px-4 py-20 text-center">
+        <h1 className="mb-2 break-keep text-xl font-bold text-ink-900">
+          로그인 후 이용하실 수 있어요
+        </h1>
+        <p className="mb-6 break-keep text-sm leading-relaxed text-ink-500">
+          시설 인증을 신청하실 때 쓰신 계정으로 로그인해 주세요.
+        </p>
+        <ConsoleLoginButton />
+      </main>
+    );
+  }
+
   const facilities = await myFacilities();
   const eligible = facilities.filter((f) => capabilityOf(f.plan).hasReport);
 

@@ -4,6 +4,8 @@ import { myFacilities, capabilityOf } from "@/lib/facilityOwner";
 import { prisma } from "@/lib/prisma";
 import { findPlan } from "@/lib/businessPlans";
 import { ConsoleClient } from "./ConsoleClient";
+import { auth } from "@/auth";
+import { ConsoleLoginButton } from "./ConsoleLoginButton";
 
 // 기업회원 콘솔 — 인증된 시설 담당자가 자기 시설 페이지를 관리하는 화면.
 // 로그인 + FacilityOwner 행이 있어야 내용이 보인다. 색인 대상이 아니다.
@@ -25,6 +27,34 @@ function last30Dates(): string[] {
 }
 
 export default async function ConsolePage() {
+  // ⚠️ 로그인 안 함과 "승인된 시설 없음"을 반드시 구분한다.
+  //    myFacilities()는 둘 다 빈 배열을 돌려주는데(lib/facilityOwner.ts — 세션이 없으면
+  //    조회도 안 하고 [] 반환), 화면이 이걸 구분하지 않으면 **승인이 끝난 기업회원이
+  //    다른 기기나 세션 만료 후 들어왔을 때 "아직 연결된 시설이 없어요"를 보게 된다.**
+  //    자기 승인이 취소된 줄 알고 포기하거나 문의하는 자리다 — 첫 유료 고객에게
+  //    이게 일어나면 손해가 크다(2026-08-08 B2B 실사용 검증에서 발견).
+  const session = await auth();
+  if (!session?.user?.id) {
+    return (
+      <main className="mx-auto max-w-md px-4 py-20 text-center">
+        <h1 className="mb-2 break-keep text-xl font-bold text-ink-900">
+          로그인 후 이용하실 수 있어요
+        </h1>
+        <p className="mb-6 break-keep text-sm leading-relaxed text-ink-500">
+          시설 인증을 신청하실 때 쓰신 계정으로 로그인해 주세요. 이미 승인되셨다면 로그인하는
+          즉시 시설이 이 화면에 나타납니다.
+        </p>
+        <ConsoleLoginButton />
+        <p className="mt-6 text-xs text-ink-400">
+          아직 신청 전이신가요?{" "}
+          <Link href="/business" className="font-semibold text-primary-600 underline">
+            기업회원 안내 보기
+          </Link>
+        </p>
+      </main>
+    );
+  }
+
   const facilities = await myFacilities();
 
   if (facilities.length === 0) {
